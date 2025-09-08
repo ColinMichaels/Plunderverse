@@ -11,7 +11,7 @@ enum Controls {
   right = 'right',
   up = 'up',
   down = 'down',
-  boost = 'boost',
+  shoot = 'shoot',
   land = 'land',
   info = 'info'
 }
@@ -28,7 +28,7 @@ export function CameraController() {
     
     // Movement speeds
     const baseSpeed = 20;
-    const boostMultiplier = controls.boost ? 3 : 1;
+    const boostMultiplier = 1; // Removed boost functionality
     const speed = baseSpeed * boostMultiplier * delta;
 
     // Get camera's forward, right, and up vectors

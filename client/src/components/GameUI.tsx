@@ -11,7 +11,7 @@ enum Controls {
   right = 'right',
   up = 'up',
   down = 'down',
-  boost = 'boost',
+  shoot = 'shoot',
   land = 'land',
   info = 'info'
 }
@@ -65,7 +65,7 @@ export function GameUI() {
               <span className="text-white">Q / E</span>
             </div>
             <div className="flex justify-between gap-4">
-              <span className="text-gray-300">Boost:</span>
+              <span className="text-gray-300">Shoot:</span>
               <span className="text-white">Space</span>
             </div>
             <div className="flex justify-between gap-4">

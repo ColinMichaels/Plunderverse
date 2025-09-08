@@ -14,7 +14,7 @@ enum Controls {
   right = 'right',
   up = 'up',
   down = 'down',
-  boost = 'boost',
+  shoot = 'shoot',
   land = 'land',
   info = 'info'
 }
@@ -26,7 +26,7 @@ const controls = [
   { name: Controls.right, keys: ["KeyD", "ArrowRight"] },
   { name: Controls.up, keys: ["KeyQ"] },
   { name: Controls.down, keys: ["KeyE"] },
-  { name: Controls.boost, keys: ["Space"] },
+  { name: Controls.shoot, keys: ["Space"] },
   { name: Controls.land, keys: ["KeyL"] },
   { name: Controls.info, keys: ["KeyI"] },
 ];
