@@ -21,6 +21,7 @@ enum Controls {
 export function CameraController() {
   const { camera } = useThree();
   const velocityRef = useRef(new THREE.Vector3());
+  const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
   const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
   const { addProjectile } = useShooting();
@@ -30,41 +31,51 @@ export function CameraController() {
   useFrame((state, delta) => {
     const controls = get();
     const velocity = velocityRef.current;
+    const acceleration = accelerationRef.current;
     
-    // Movement speeds
-    const baseSpeed = 20;
-    const boostMultiplier = 1; // Removed boost functionality
-    const speed = baseSpeed * boostMultiplier * delta;
+    // Rocket propulsion physics constants
+    const thrustPower = 8; // Lower thrust for more realistic feel
+    const maxVelocity = 25; // Terminal velocity
+    const dragCoefficient = 0.98; // Air resistance/space friction
+    const rotationalDamping = 0.95; // Rotational drag
+
+    // Reset acceleration each frame
+    acceleration.set(0, 0, 0);
 
     // Get camera's forward, right, and up vectors
     const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
 
-    // Apply movement forces
+    // Apply thruster forces (acceleration-based)
     if (controls.forward) {
-      velocity.add(forward.multiplyScalar(speed));
-      console.log("Moving forward");
+      acceleration.add(forward.multiplyScalar(thrustPower));
     }
     if (controls.backward) {
-      velocity.add(forward.multiplyScalar(-speed));
-      console.log("Moving backward");
+      acceleration.add(forward.multiplyScalar(-thrustPower * 0.7)); // Reverse thrusters less powerful
     }
     if (controls.left) {
-      velocity.add(right.multiplyScalar(-speed));
-      console.log("Moving left");
+      acceleration.add(right.multiplyScalar(-thrustPower * 0.8)); // Side thrusters less powerful
     }
     if (controls.right) {
-      velocity.add(right.multiplyScalar(speed));
-      console.log("Moving right");
+      acceleration.add(right.multiplyScalar(thrustPower * 0.8));
     }
     if (controls.up) {
-      velocity.add(up.multiplyScalar(speed));
-      console.log("Moving up");
+      acceleration.add(up.multiplyScalar(thrustPower * 0.6)); // Vertical thrusters less powerful
     }
     if (controls.down) {
-      velocity.add(up.multiplyScalar(-speed));
-      console.log("Moving down");
+      acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
+    }
+
+    // Apply acceleration to velocity
+    velocity.add(acceleration.clone().multiplyScalar(delta));
+
+    // Apply drag/friction
+    velocity.multiplyScalar(dragCoefficient);
+
+    // Clamp maximum velocity
+    if (velocity.length() > maxVelocity) {
+      velocity.normalize().multiplyScalar(maxVelocity);
     }
 
     // Landing mode
@@ -93,25 +104,26 @@ export function CameraController() {
       }
     }
 
-    // Apply drag
-    velocity.multiplyScalar(0.95);
+    // Update camera position with momentum
+    camera.position.add(velocity.clone().multiplyScalar(delta));
 
-    // Update camera position
-    camera.position.add(velocity);
-
-    // Mouse look controls (simple version)
+    // Mouse look controls with damping for smoother rotation
     const mouse = state.mouse;
     camera.rotation.order = 'YXZ';
     
     // Only apply mouse look if not landing
     if (!isLanding) {
-      const sensitivity = 0.002;
-      camera.rotation.y -= mouse.x * sensitivity;
-      camera.rotation.x = THREE.MathUtils.clamp(
+      const sensitivity = 0.001; // Reduced sensitivity for smoother control
+      const targetRotationY = camera.rotation.y - mouse.x * sensitivity;
+      const targetRotationX = THREE.MathUtils.clamp(
         camera.rotation.x - mouse.y * sensitivity,
         -Math.PI / 2,
         Math.PI / 2
       );
+      
+      // Apply rotational damping
+      camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, targetRotationY, rotationalDamping);
+      camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, targetRotationX, rotationalDamping);
     }
 
     // Auto-landing sequence
