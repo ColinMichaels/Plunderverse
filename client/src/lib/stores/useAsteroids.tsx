@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import * as THREE from "three";
+import { useMissions } from "./useMissions";
+import { useCredits } from "./useCredits";
 
 export interface Asteroid {
   id: string;
@@ -13,6 +15,7 @@ export interface Asteroid {
 
 interface AsteroidState {
   asteroids: Asteroid[];
+  asteroidsDestroyed: number;
   
   // Actions
   addAsteroid: (position: THREE.Vector3) => void;
@@ -25,6 +28,7 @@ interface AsteroidState {
 
 export const useAsteroids = create<AsteroidState>((set, get) => ({
   asteroids: [],
+  asteroidsDestroyed: 0,
   
   addAsteroid: (position) => {
     const newAsteroid: Asteroid = {
@@ -80,9 +84,40 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
     if (newHealth <= 0) {
       // Destroy asteroid
       set(state => ({
-        asteroids: state.asteroids.filter(a => a.id !== id)
+        asteroids: state.asteroids.filter(a => a.id !== id),
+        asteroidsDestroyed: state.asteroidsDestroyed + 1
       }));
-      console.log("Asteroid destroyed!");
+      
+      // Track mission progress
+      const missions = useMissions.getState();
+      const credits = useCredits.getState();
+      
+      // Check for survival missions
+      const survivalMissions = missions.missions.filter(m => m.type === 'survival' && !m.completed);
+      survivalMissions.forEach(mission => {
+        // Update progress based on asteroids destroyed
+        const newProgress = Math.min(100, (get().asteroidsDestroyed / 10) * 100); // 10 asteroids = 100%
+        missions.updateMissionProgress(mission.id, newProgress);
+        
+        // Complete mission if reached 100%
+        if (newProgress >= 100) {
+          missions.completeMission(mission.id);
+          credits.earnCredits(mission.reward);
+        }
+      });
+      
+      // Check for bounty missions targeting asteroids
+      const asteroidBounties = missions.bounties.filter(b => b.target === 'asteroids' && !b.completed);
+      asteroidBounties.forEach(bounty => {
+        const destroyedCount = get().asteroidsDestroyed;
+        if (destroyedCount >= 5) { // Most bounties require 5 asteroids
+          missions.completeBounty(bounty.id);
+          credits.earnCredits(bounty.reward);
+          console.log(`Bounty completed: ${bounty.title} (+${bounty.reward} credits)`);
+        }
+      });
+      
+      console.log(`Asteroid destroyed! Total destroyed: ${get().asteroidsDestroyed}`);
       return true;
     } else {
       // Damage asteroid

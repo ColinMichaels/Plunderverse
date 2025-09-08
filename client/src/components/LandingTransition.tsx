@@ -191,7 +191,7 @@ export function LandingTransition() {
         )}
       </div>
 
-      <style jsx>{`
+      <style>{`
         @keyframes fall {
           to {
             transform: translateY(100vh) rotate(225deg);
