@@ -3,27 +3,17 @@ import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
 export function Starfield() {
-  const starGroupRef = useRef<THREE.Group>(null);
-  const nebulaRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Points>(null);
 
-  // Generate varied star data
+  // Generate enhanced star data with varied colors and sizes
   const starData = useMemo(() => {
-    const starCount = 6000;
+    const starCount = 4000;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
-    const sizes = new Float32Array(starCount);
-    
-    // Star color temperature variations
-    const starTypes = [
-      { color: [1.0, 0.8, 0.6], weight: 0.4 }, // Orange/red stars
-      { color: [1.0, 1.0, 1.0], weight: 0.3 }, // White stars
-      { color: [0.8, 0.9, 1.0], weight: 0.2 }, // Blue-white stars
-      { color: [1.0, 0.9, 0.7], weight: 0.1 }, // Yellow stars
-    ];
     
     for (let i = 0; i < starCount; i++) {
       // Create stars in a large sphere around the solar system
-      const radius = 800 + Math.random() * 1200;
+      const radius = 600 + Math.random() * 800;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
       
@@ -31,79 +21,49 @@ export function Starfield() {
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
       
-      // Select star type based on weights
-      let randomValue = Math.random();
-      let selectedType = starTypes[0];
-      for (const type of starTypes) {
-        if (randomValue < type.weight) {
-          selectedType = type;
-          break;
-        }
-        randomValue -= type.weight;
+      // Star color variations - different stellar types
+      const starType = Math.random();
+      if (starType < 0.4) {
+        // Orange/red stars (most common)
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.7 + Math.random() * 0.2;
+        colors[i * 3 + 2] = 0.5 + Math.random() * 0.2;
+      } else if (starType < 0.7) {
+        // White stars
+        colors[i * 3] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
+      } else if (starType < 0.9) {
+        // Blue-white stars
+        colors[i * 3] = 0.8 + Math.random() * 0.2;
+        colors[i * 3 + 1] = 0.85 + Math.random() * 0.15;
+        colors[i * 3 + 2] = 1.0;
+      } else {
+        // Yellow stars (like our sun)
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 2] = 0.6 + Math.random() * 0.2;
       }
-      
-      // Add some variation to the color
-      const colorVariation = 0.2;
-      colors[i * 3] = selectedType.color[0] + (Math.random() - 0.5) * colorVariation;
-      colors[i * 3 + 1] = selectedType.color[1] + (Math.random() - 0.5) * colorVariation;
-      colors[i * 3 + 2] = selectedType.color[2] + (Math.random() - 0.5) * colorVariation;
-      
-      // Varied star sizes (most small, some large)
-      sizes[i] = Math.random() < 0.8 ? 1 + Math.random() * 2 : 3 + Math.random() * 4;
     }
     
-    return { positions, colors, sizes };
-  }, []);
-
-  // Generate nebula positions and colors
-  const nebulaData = useMemo(() => {
-    const nebulaCount = 15;
-    const positions = [];
-    const scales = [];
-    const colors = [];
-    
-    const nebulaColors = [
-      [0.8, 0.2, 0.6], // Pink/magenta
-      [0.3, 0.6, 0.9], // Blue
-      [0.9, 0.5, 0.2], // Orange
-      [0.5, 0.8, 0.3], // Green
-      [0.7, 0.3, 0.9], // Purple
-    ];
-    
-    for (let i = 0; i < nebulaCount; i++) {
-      const radius = 1500 + Math.random() * 1000;
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.random() * Math.PI;
-      
-      positions.push([
-        radius * Math.sin(phi) * Math.cos(theta),
-        radius * Math.sin(phi) * Math.sin(theta),
-        radius * Math.cos(phi)
-      ]);
-      
-      scales.push(100 + Math.random() * 200);
-      colors.push(nebulaColors[Math.floor(Math.random() * nebulaColors.length)]);
-    }
-    
-    return { positions, scales, colors };
+    return { positions, colors };
   }, []);
 
   // Subtle twinkling animation
   useFrame((state) => {
-    if (starGroupRef.current) {
-      starGroupRef.current.rotation.y += 0.00005;
-    }
-    
-    // Gentle nebula animation
-    if (nebulaRef.current) {
-      nebulaRef.current.rotation.z += 0.0001;
+    if (meshRef.current) {
+      meshRef.current.rotation.y += 0.00008;
+      
+      // Subtle twinkling effect on material opacity
+      const material = meshRef.current.material as THREE.PointsMaterial;
+      material.opacity = 0.7 + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
     }
   });
 
   return (
-    <group ref={starGroupRef}>
-      {/* Main starfield */}
-      <points>
+    <group>
+      {/* Main starfield with varied colors */}
+      <points ref={meshRef}>
         <bufferGeometry>
           <bufferAttribute
             attach="attributes-position"
@@ -117,49 +77,46 @@ export function Starfield() {
             array={starData.colors}
             itemSize={3}
           />
-          <bufferAttribute
-            attach="attributes-size"
-            count={starData.sizes.length}
-            array={starData.sizes}
-            itemSize={1}
-          />
         </bufferGeometry>
         <pointsMaterial
-          size={2}
+          size={1.5}
           transparent
-          opacity={0.9}
+          opacity={0.8}
           sizeAttenuation={false}
           vertexColors
         />
       </points>
 
-      {/* Distant nebulae */}
-      {nebulaData.positions.map((position, index) => (
-        <mesh
-          key={index}
-          position={position}
-          scale={nebulaData.scales[index]}
-        >
-          <planeGeometry args={[1, 1]} />
-          <meshBasicMaterial
-            color={new THREE.Color(...nebulaData.colors[index])}
-            transparent
-            opacity={0.1}
-            side={THREE.DoubleSide}
+      {/* Additional background stars - smaller and dimmer */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={2000}
+            array={useMemo(() => {
+              const positions = new Float32Array(2000 * 3);
+              for (let i = 0; i < 2000; i++) {
+                const radius = 1200 + Math.random() * 600;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+              }
+              return positions;
+            }, [])}
+            itemSize={3}
           />
-        </mesh>
-      ))}
-
-      {/* Milky Way background glow */}
-      <mesh ref={nebulaRef} position={[0, 0, 0]} scale={3000}>
-        <planeGeometry args={[1, 0.3]} />
-        <meshBasicMaterial
-          color={new THREE.Color(0.4, 0.3, 0.6)}
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.8}
+          color="#ffffff"
           transparent
-          opacity={0.05}
-          side={THREE.DoubleSide}
+          opacity={0.4}
+          sizeAttenuation={false}
         />
-      </mesh>
+      </points>
     </group>
   );
 }
