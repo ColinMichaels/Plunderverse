@@ -41,7 +41,7 @@ export function SolarSystem() {
       <Sun />
       
       {/* Planets */}
-      {planets.map((planetData, index) => (
+      {planets.map((planetData: any, index: number) => (
         <Planet
           key={planetData.name}
           data={planetData}

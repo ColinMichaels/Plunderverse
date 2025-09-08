@@ -6,7 +6,7 @@ export function PlanetInfo() {
   
   if (!selectedPlanet) return null;
 
-  const planet = planets.find(p => p.name === selectedPlanet);
+  const planet = planets.find((p: any) => p.name === selectedPlanet);
   if (!planet) return null;
 
   return (
