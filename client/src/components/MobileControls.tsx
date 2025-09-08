@@ -37,9 +37,9 @@ export function MobileControls() {
           gamma: event.gamma
         };
 
-        // Calculate rotation deltas
-        const deltaX = (event.beta! - lastGyroRef.current.beta) * 0.01;
-        const deltaY = (event.alpha! - lastGyroRef.current.alpha) * 0.01;
+        // Calculate rotation deltas with reduced sensitivity
+        const deltaX = (event.beta! - lastGyroRef.current.beta) * 0.003; // Much less sensitive
+        const deltaY = (event.alpha! - lastGyroRef.current.alpha) * 0.003;
 
         // Send rotation changes via global callback
         const callbacks = (window as any).mobileControlCallbacks;
