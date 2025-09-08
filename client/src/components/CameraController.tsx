@@ -3,6 +3,8 @@ import { useKeyboardControls } from "@react-three/drei";
 import { useRef } from "react";
 import * as THREE from "three";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
+import { useShooting } from "../lib/stores/useShooting";
+import { useAudio } from "../lib/stores/useAudio";
 
 enum Controls {
   forward = 'forward',
@@ -21,6 +23,9 @@ export function CameraController() {
   const velocityRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
   const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
+  const { addProjectile } = useShooting();
+  const { playLaser } = useAudio();
+  const lastShotTimeRef = useRef(0);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -66,6 +71,21 @@ export function CameraController() {
     if (controls.land && selectedPlanet && !isLanding) {
       setIsLanding(true);
       console.log(`Attempting to land on ${selectedPlanet}`);
+    }
+
+    // Shooting
+    if (controls.shoot) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastShotTimeRef.current > 0.2) { // 200ms cooldown
+        lastShotTimeRef.current = currentTime;
+        
+        // Get camera's forward direction
+        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        
+        // Create projectile from camera position
+        addProjectile(camera.position.clone(), forward);
+        playLaser();
+      }
     }
 
     // Apply drag

@@ -44,6 +44,11 @@ function App() {
     music.volume = 0.3;
     setBackgroundMusic(music);
     
+    // Load laser sound (using hit.mp3)
+    const laser = new Audio("/sounds/hit.mp3");
+    laser.volume = 0.4;
+    useAudio.getState().setLaserSound(laser);
+    
     setShowCanvas(true);
   }, [setBackgroundMusic]);
 
