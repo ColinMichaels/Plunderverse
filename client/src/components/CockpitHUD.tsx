@@ -193,7 +193,7 @@ export function CockpitHUD() {
                       style={{ height: `${fuel}%` }}
                     />
                   </div>
-                  <span className="text-white text-xs font-mono">{Math.round(fuel)}%</span>
+                  <span className="text-green-400 text-sm font-mono font-bold">{Math.round(fuel)}%</span>
                 </div>
               </div>
 
@@ -207,7 +207,7 @@ export function CockpitHUD() {
                       style={{ height: `${shield}%` }}
                     />
                   </div>
-                  <span className="text-white text-xs font-mono">{Math.round(shield)}%</span>
+                  <span className="text-cyan-400 text-sm font-mono font-bold">{Math.round(shield)}%</span>
                 </div>
               </div>
 
@@ -221,7 +221,7 @@ export function CockpitHUD() {
                       style={{ height: `${hull}%` }}
                     />
                   </div>
-                  <span className="text-white text-xs font-mono">{Math.round(hull)}%</span>
+                  <span className="text-orange-400 text-sm font-mono font-bold">{Math.round(hull)}%</span>
                 </div>
               </div>
             </div>

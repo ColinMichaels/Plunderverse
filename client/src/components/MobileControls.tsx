@@ -102,13 +102,16 @@ export function MobileControls() {
       {/* Mobile UI elements */}
       {permissionGranted && (
         <div className="absolute inset-0 pointer-events-none">
-          {/* Gyro status indicator */}
-          <div className="absolute top-16 left-4 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-xs text-white pointer-events-auto">
+          {/* Gyro toggle button */}
+          <button 
+            className="absolute top-16 left-4 bg-gray-900/80 hover:bg-gray-800/80 border border-gray-600 rounded-lg p-2 text-xs text-white pointer-events-auto transition-colors"
+            onClick={() => setIsGyroEnabled(!isGyroEnabled)}
+          >
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${isGyroEnabled ? 'bg-green-400' : 'bg-red-400'}`} />
               <span>Gyro {isGyroEnabled ? 'ON' : 'OFF'}</span>
             </div>
-          </div>
+          </button>
 
           {/* Fire Button - Bottom Center */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
