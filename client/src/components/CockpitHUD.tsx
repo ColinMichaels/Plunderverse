@@ -6,19 +6,17 @@ import { useRewards } from "../lib/stores/useRewards";
 import { useMissions } from "../lib/stores/useMissions";
 import { useAudio } from "../lib/stores/useAudio";
 import { useGame } from "../lib/stores/useGame";
-import { useThree } from "@react-three/fiber";
 import { planets } from "../lib/planetData";
 
 export function CockpitHUD() {
   const [activePanel, setActivePanel] = useState<'nav' | 'missions' | 'none'>('none');
-  const { selectedPlanet } = useSolarSystem();
+  const { selectedPlanet, cameraPosition } = useSolarSystem();
   const { credits } = useCredits();
-  const { fuel, shields, hull } = useShipStatus();
+  const { fuel, shield, hull } = useShipStatus();
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
   const { toggleMute, isMuted } = useAudio();
   const { showSplash } = useGame();
-  const { camera } = useThree();
 
   const selectedPlanetData = selectedPlanet ? planets.find(p => p.name === selectedPlanet) : null;
 
@@ -79,7 +77,7 @@ export function CockpitHUD() {
             <div className="mb-4 p-3 bg-gray-800/50 rounded border border-gray-600">
               <div className="text-xs text-gray-400 mb-1">COORDINATES</div>
               <div className="font-mono text-sm text-white">
-                X: {Math.round(camera.position.x)} | Y: {Math.round(camera.position.y)} | Z: {Math.round(camera.position.z)}
+                X: {Math.round(cameraPosition.x)} | Y: {Math.round(cameraPosition.y)} | Z: {Math.round(cameraPosition.z)}
               </div>
             </div>
 
@@ -89,7 +87,7 @@ export function CockpitHUD() {
                 <div className="text-xs text-gray-400 mb-1">PLANETARY DATA</div>
                 <div className="text-white">
                   <div className="font-semibold">{selectedPlanet}</div>
-                  <div className="text-sm text-gray-300 mt-1">{selectedPlanetData.info}</div>
+                  <div className="text-sm text-gray-300 mt-1">{selectedPlanetData.description}</div>
                   <div className="text-xs text-cyan-400 mt-2">
                     Distance: {Math.round(selectedPlanetData.distance)} AU
                   </div>
@@ -204,11 +202,11 @@ export function CockpitHUD() {
                 <div className="flex items-center space-x-1">
                   <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
                     <div 
-                      className={`h-full transition-all ${shields > 50 ? 'bg-cyan-400' : shields > 25 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                      style={{ width: `${shields}%` }}
+                      className={`h-full transition-all ${shield > 50 ? 'bg-cyan-400' : shield > 25 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                      style={{ width: `${shield}%` }}
                     />
                   </div>
-                  <span className="text-white text-xs font-mono">{Math.round(shields)}%</span>
+                  <span className="text-white text-xs font-mono">{Math.round(shield)}%</span>
                 </div>
               </div>
 
