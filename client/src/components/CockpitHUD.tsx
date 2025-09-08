@@ -10,6 +10,7 @@ import { planets } from "../lib/planetData";
 
 export function CockpitHUD() {
   const [activePanel, setActivePanel] = useState<'nav' | 'missions' | 'none'>('none');
+  const [showControls, setShowControls] = useState(false);
   const { selectedPlanet, cameraPosition } = useSolarSystem();
   const { credits } = useCredits();
   const { fuel, shield, hull } = useShipStatus();
@@ -259,17 +260,36 @@ export function CockpitHUD() {
         </div>
       </div>
 
-      {/* Flight Controls Help */}
+      {/* Flight Controls Toggle */}
       <div className="absolute top-4 right-4 pointer-events-auto">
-        <div className="bg-gray-900/80 border border-gray-600 rounded-lg p-3 text-xs backdrop-blur-sm">
-          <div className="text-gray-400 mb-1">FLIGHT CONTROLS</div>
-          <div className="space-y-1 text-white">
-            <div>WASD - Navigation</div>
-            <div>SPACE - Fire Lasers</div>
-            <div>L - Land</div>
-            <div>C - Center View</div>
+        <button
+          onClick={() => setShowControls(!showControls)}
+          className="bg-gray-900/90 border border-gray-600 rounded-lg p-2 text-gray-400 hover:text-white transition-colors backdrop-blur-sm"
+          title="Toggle Flight Controls"
+        >
+          ?
+        </button>
+        
+        {showControls && (
+          <div className="absolute top-12 right-0 bg-gray-900/90 border border-gray-600 rounded-lg p-3 text-xs backdrop-blur-sm w-48">
+            <div className="text-gray-400 mb-2">FLIGHT CONTROLS</div>
+            <div className="space-y-1 text-white">
+              <div>WASD - Navigation</div>
+              <div>QE - Up/Down</div>
+              <div>SPACE - Fire Lasers</div>
+              <div>L - Land</div>
+              <div>C - Center View</div>
+              <div>I - Toggle Info</div>
+              <div>ESC - Menu</div>
+            </div>
+            <button
+              onClick={() => setShowControls(false)}
+              className="mt-2 text-xs text-gray-500 hover:text-gray-300 transition-colors"
+            >
+              Click to hide
+            </button>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

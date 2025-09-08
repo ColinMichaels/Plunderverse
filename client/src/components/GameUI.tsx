@@ -4,6 +4,7 @@ import { LandingTransition } from "./LandingTransition";
 import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
 import { CockpitHUD } from "./CockpitHUD";
+import { MiniMap } from "./MiniMap";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -71,6 +72,9 @@ export function GameUI() {
         onClose={hideWarning}
         onAutopilot={handleAutopilot}
       />
+
+      {/* Mini Map - Bottom Left */}
+      <MiniMap />
     </>
   );
 }
