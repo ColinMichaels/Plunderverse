@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
+import { useRewards } from "../lib/stores/useRewards";
 import { planets } from "../lib/planetData";
 
 export function LandingTransition() {
   const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
+  const { processLandingReward } = useRewards();
   const [stage, setStage] = useState<"approach" | "descent" | "landed">("approach");
   const [progress, setProgress] = useState(0);
+  const [rewardAmount, setRewardAmount] = useState(0);
 
   const planet = planets.find(p => p.name === selectedPlanet);
 
@@ -55,6 +58,13 @@ export function LandingTransition() {
         setTimeout(() => {
           clearInterval(progressInterval);
           setStage("landed");
+          
+          // Process landing rewards
+          if (selectedPlanet) {
+            const reward = processLandingReward(selectedPlanet);
+            setRewardAmount(reward);
+          }
+          
           setTimeout(() => {
             setIsLanding(false);
           }, 2000);
@@ -168,8 +178,15 @@ export function LandingTransition() {
         </div>
 
         {stage === "landed" && (
-          <div className="mt-6 text-green-400 font-semibold">
-            ✓ Successfully landed on {planet.name}
+          <div className="mt-6 space-y-2">
+            <div className="text-green-400 font-semibold">
+              ✓ Successfully landed on {planet.name}
+            </div>
+            {rewardAmount > 0 && (
+              <div className="text-yellow-400 font-bold text-lg animate-pulse">
+                💰 +{rewardAmount} Credits Earned!
+              </div>
+            )}
           </div>
         )}
       </div>
