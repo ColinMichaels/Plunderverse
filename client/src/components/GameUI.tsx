@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useKeyboardControls } from "@react-three/drei";
 import { PlanetInfo } from "./PlanetInfo";
+import { CoordinatesDisplay } from "./CoordinatesDisplay";
+import { MiniMap } from "./MiniMap";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
 
@@ -51,9 +53,15 @@ export function GameUI() {
       {/* Planet Information Panel */}
       {showInfo && <PlanetInfo />}
 
+      {/* Coordinates Display */}
+      <CoordinatesDisplay />
+
+      {/* Mini Map */}
+      <MiniMap />
+
       {/* Controls Help Panel */}
       {showControls && (
-        <div className="absolute top-4 right-4 bg-black/80 text-white p-4 rounded-lg backdrop-blur-sm">
+        <div className="absolute top-36 right-4 bg-black/80 text-white p-4 rounded-lg backdrop-blur-sm">
           <h3 className="text-lg font-bold mb-3 text-blue-400">Flight Controls</h3>
           <div className="space-y-1 text-sm">
             <div className="flex justify-between gap-4">
