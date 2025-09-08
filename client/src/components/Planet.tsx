@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState } from "react";
-import { Sphere } from "@react-three/drei";
+import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PlanetData } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
@@ -16,6 +16,9 @@ export function Planet({ data, time }: PlanetProps) {
   const { camera } = useThree();
   const { setSelectedPlanet, selectedPlanet } = useSolarSystem();
   const [hovered, setHovered] = useState(false);
+
+  // Load Jupiter texture conditionally
+  const jupiterTexture = data.name === "Jupiter" ? useTexture("/textures/planets/2k_jupiter.jpg") : null;
 
   // Calculate orbital position
   useFrame(() => {
@@ -68,7 +71,8 @@ export function Planet({ data, time }: PlanetProps) {
         receiveShadow
       >
         <meshStandardMaterial
-          color={data.color}
+          color={jupiterTexture ? "#ffffff" : data.color}
+          map={jupiterTexture}
           roughness={0.8}
           metalness={0.1}
           emissive={isSelected || hovered ? data.color : "#000000"}
