@@ -6,6 +6,7 @@ import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
 import { useAudio } from "../lib/stores/useAudio";
 import { useShipStatus } from "../lib/stores/useShipStatus";
+import { planets } from "../lib/planetData";
 
 enum Controls {
   forward = 'forward',
@@ -24,11 +25,12 @@ export function CameraController() {
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
-  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition } = useSolarSystem();
+  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, time } = useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
   const { fuel, consumeFuel } = useShipStatus();
   const lastShotTimeRef = useRef(0);
+  const lastLandingAttemptRef = useRef(0);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -95,10 +97,35 @@ export function CameraController() {
       velocity.normalize().multiplyScalar(maxVelocity);
     }
 
-    // Landing mode
+    // Landing mode - only allow if close to planet and not recently attempted
     if (controls.land && selectedPlanet && !isLanding) {
-      setIsLanding(true);
-      console.log(`Attempting to land on ${selectedPlanet}`);
+      const currentTime = state.clock.elapsedTime;
+      
+      // Check if enough time has passed since last landing attempt (2 second cooldown)
+      if (currentTime - lastLandingAttemptRef.current > 2) {
+        // Find the selected planet data
+        const planetData = planets.find(p => p.name === selectedPlanet);
+        
+        if (planetData) {
+          // Calculate planet's current orbital position
+          const angle = time * planetData.orbitalSpeed;
+          const planetX = Math.cos(angle) * planetData.distance;
+          const planetZ = Math.sin(angle) * planetData.distance;
+          const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
+          
+          // Check distance to planet
+          const distanceToPlanet = camera.position.distanceTo(planetPosition);
+          const landingRange = planetData.size * 4; // Must be within 4x planet radius
+          
+          if (distanceToPlanet <= landingRange) {
+            setIsLanding(true);
+            lastLandingAttemptRef.current = currentTime;
+            console.log(`Attempting to land on ${selectedPlanet} (distance: ${Math.round(distanceToPlanet)})`);
+          } else {
+            console.log(`Too far from ${selectedPlanet} to land! Distance: ${Math.round(distanceToPlanet)}, required: ${Math.round(landingRange)}`);
+          }
+        }
+      }
     }
 
     // Shooting
@@ -147,20 +174,9 @@ export function CameraController() {
       camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, targetRotationX, rotationalDamping);
     }
 
-    // Auto-landing sequence
-    if (isLanding && selectedPlanet) {
-      // This is a simplified landing - in a real implementation,
-      // you'd calculate the planet's current position and smoothly move to it
-      const landingHeight = 10;
-      const targetY = landingHeight;
-      
-      if (camera.position.y > targetY) {
-        camera.position.y -= 20 * delta;
-        velocity.multiplyScalar(0.9); // Slow down during landing
-      } else {
-        setIsLanding(false);
-        console.log(`Landed on ${selectedPlanet}!`);
-      }
+    // During landing, reduce movement to show transition effect
+    if (isLanding) {
+      velocity.multiplyScalar(0.1); // Dramatically reduce movement during landing sequence
     }
   });
 
