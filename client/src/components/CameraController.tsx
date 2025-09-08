@@ -19,7 +19,8 @@ enum Controls {
   shoot = 'shoot',
   land = 'land',
   info = 'info',
-  menu = 'menu'
+  menu = 'menu',
+  center = 'center'
 }
 
 export function CameraController() {
@@ -35,6 +36,7 @@ export function CameraController() {
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
   const lastMenuPressRef = useRef(0);
+  const lastCenterPressRef = useRef(0);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -185,6 +187,20 @@ export function CameraController() {
         lastMenuPressRef.current = currentTime;
         console.log("Returning to main menu...");
         showSplash();
+      }
+    }
+
+    // Center camera
+    if (controls.center) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastCenterPressRef.current > 0.3) { // 300ms cooldown
+        lastCenterPressRef.current = currentTime;
+        console.log("Centering camera...");
+        
+        // Smoothly return camera to center position (looking forward)
+        camera.rotation.x = 0;
+        camera.rotation.y = 0;
+        camera.rotation.z = 0;
       }
     }
 

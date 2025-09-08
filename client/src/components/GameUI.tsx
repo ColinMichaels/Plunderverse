@@ -5,6 +5,7 @@ import { CoordinatesDisplay } from "./CoordinatesDisplay";
 import { MiniMap } from "./MiniMap";
 import { ShipStatusHUD } from "./ShipStatusHUD";
 import { LandingTransition } from "./LandingTransition";
+import { CockpitOverlay } from "./CockpitOverlay";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
 
@@ -18,7 +19,8 @@ enum Controls {
   shoot = 'shoot',
   land = 'land',
   info = 'info',
-  menu = 'menu'
+  menu = 'menu',
+  center = 'center'
 }
 
 export function GameUI() {
@@ -53,6 +55,9 @@ export function GameUI() {
 
   return (
     <>
+      {/* Cockpit Overlay */}
+      <CockpitOverlay />
+      
       {/* Ship Status HUD */}
       <ShipStatusHUD />
       
@@ -96,6 +101,10 @@ export function GameUI() {
             <div className="flex justify-between gap-4">
               <span className="text-gray-300">Menu:</span>
               <span className="text-white">ESC</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-300">Center Camera:</span>
+              <span className="text-white">C</span>
             </div>
           </div>
           <button
