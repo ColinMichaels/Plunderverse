@@ -18,7 +18,7 @@ export function MiniMap() {
   });
 
   return (
-    <div className="absolute bottom-4 left-4 bg-black/90 text-white p-3 rounded-lg backdrop-blur-sm">
+    <div className="absolute bottom-4 left-4 bg-black/90 text-white p-3 rounded-lg backdrop-blur-sm minimap">
       <h3 className="text-xs font-bold mb-2 text-blue-400">SOLAR SYSTEM MAP</h3>
       
       <div 
