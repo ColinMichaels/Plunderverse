@@ -20,12 +20,13 @@ export function Planet({ data, time }: PlanetProps) {
   // Planet texture mapping - only for textures that exist
   const getTextureForPlanet = (planetName: string) => {
     const textureMap: { [key: string]: string } = {
-      "Earth": "/textures/planets/2k_earth_daymap.jpg",
-      "Mars": "/textures/planets/2k_mars.jpg",
-      "Jupiter": "/textures/planets/2k_jupiter.jpg",
-      "Saturn": "/textures/planets/2k_saturn.jpg",
-      "Uranus": "/textures/planets/2k_uranus.jpg",
-      "Neptune": "/textures/planets/2k_neptune.jpg"
+      Earth: "/textures/planets/2k_earth_daymap.jpg",
+      Mars: "/textures/planets/2k_mars.jpg",
+      Jupiter: "/textures/planets/2k_jupiter.jpg",
+      Saturn: "/textures/planets/2k_saturn.jpg",
+      Uranus: "/textures/planets/2k_uranus.jpg",
+      Neptune: "/textures/planets/2k_neptune.jpg",
+      Ceres: "/textures/planets/2k_ceres_fictional.jpg",
     };
     return textureMap[planetName] || null;
   };
@@ -102,12 +103,15 @@ export function Planet({ data, time }: PlanetProps) {
       )}
 
       {/* Planet atmosphere glow for gas giants */}
-      {(data.name === "Jupiter" || data.name === "Saturn" || data.name === "Uranus" || data.name === "Neptune") && (
+      {(data.name === "Jupiter" ||
+        data.name === "Saturn" ||
+        data.name === "Uranus" ||
+        data.name === "Neptune") && (
         <Sphere args={[data.size * 1.1, 32, 32]}>
           <meshBasicMaterial
             color={data.color}
             transparent
-            opacity={0.2}
+            opacity={0.1}
             side={THREE.BackSide}
           />
         </Sphere>

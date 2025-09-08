@@ -1,0 +1,130 @@
+import { useRef, useEffect, useState } from "react";
+import { useThree } from "@react-three/fiber";
+import * as THREE from "three";
+
+interface MobileControlsProps {
+  onShoot: () => void;
+  onMove: (movement: { x: number; y: number; z: number }) => void;
+  onLook: (rotation: { x: number; y: number }) => void;
+}
+
+export function MobileControls({ onShoot, onMove, onLook }: MobileControlsProps) {
+  const [isGyroEnabled, setIsGyroEnabled] = useState(false);
+  const [permissionGranted, setPermissionGranted] = useState(false);
+  const [isShooting, setIsShooting] = useState(false);
+  const gyroDataRef = useRef({ alpha: 0, beta: 0, gamma: 0 });
+  const lastGyroRef = useRef({ alpha: 0, beta: 0, gamma: 0 });
+
+  // Request device orientation permission
+  const requestPermission = async () => {
+    if (typeof DeviceOrientationEvent !== 'undefined' && 'requestPermission' in DeviceOrientationEvent) {
+      // iOS 13+ permission request
+      const permission = await (DeviceOrientationEvent as any).requestPermission();
+      if (permission === 'granted') {
+        setPermissionGranted(true);
+        enableGyro();
+      }
+    } else if ('DeviceOrientationEvent' in window) {
+      // Android and older iOS
+      setPermissionGranted(true);
+      enableGyro();
+    }
+  };
+
+  const enableGyro = () => {
+    setIsGyroEnabled(true);
+    
+    const handleOrientation = (event: DeviceOrientationEvent) => {
+      if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
+        gyroDataRef.current = {
+          alpha: event.alpha,
+          beta: event.beta,
+          gamma: event.gamma
+        };
+
+        // Calculate rotation deltas
+        const deltaX = (event.beta! - lastGyroRef.current.beta) * 0.01;
+        const deltaY = (event.alpha! - lastGyroRef.current.alpha) * 0.01;
+
+        // Send rotation changes
+        onLook({ x: deltaX, y: deltaY });
+
+        lastGyroRef.current = {
+          alpha: event.alpha,
+          beta: event.beta,
+          gamma: event.gamma
+        };
+      }
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation, true);
+    
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation, true);
+    };
+  };
+
+  // Touch shooting
+  const handleTouchStart = () => {
+    setIsShooting(true);
+    onShoot();
+  };
+
+  const handleTouchEnd = () => {
+    setIsShooting(false);
+  };
+
+  // Detect if we're on mobile
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  if (!isMobile) {
+    return null; // Don't show mobile controls on desktop
+  }
+
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50">
+      {/* Permission request overlay */}
+      {!permissionGranted && (
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center pointer-events-auto">
+          <div className="bg-gray-900 border border-gray-600 rounded-lg p-6 text-center max-w-sm mx-4">
+            <h3 className="text-white text-lg mb-4">Enable Gyro Controls</h3>
+            <p className="text-gray-300 text-sm mb-4">
+              Allow device orientation access to control your ship with phone movement
+            </p>
+            <button
+              onClick={requestPermission}
+              className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-2 rounded transition-colors"
+            >
+              Enable Gyro
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile shooting area - entire screen becomes tap to shoot */}
+      {permissionGranted && (
+        <div
+          className={`absolute inset-0 pointer-events-auto ${isShooting ? 'touch-active' : ''}`}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
+          onMouseDown={handleTouchStart}
+          onMouseUp={handleTouchEnd}
+        >
+          {/* Gyro status indicator */}
+          <div className="absolute top-16 left-4 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-xs text-white">
+            <div className="flex items-center space-x-2">
+              <div className={`w-2 h-2 rounded-full ${isGyroEnabled ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span>Gyro {isGyroEnabled ? 'ON' : 'OFF'}</span>
+            </div>
+          </div>
+
+          {/* Tap indicator */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900/80 border border-gray-600 rounded-lg p-3 text-center text-white">
+            <div className="text-sm">Tap screen to shoot</div>
+            <div className="text-xs text-gray-400 mt-1">Tilt phone to look around</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

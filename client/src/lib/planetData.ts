@@ -26,7 +26,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "88 Earth days",
     dayLength: "176 Earth days",
     moons: 0,
-    description: "The smallest and innermost planet, with extreme temperature variations."
+    description:
+      "The smallest and innermost planet, with extreme temperature variations.",
   },
   {
     name: "Venus",
@@ -40,7 +41,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "225 Earth days",
     dayLength: "243 Earth days",
     moons: 0,
-    description: "The hottest planet with a thick, toxic atmosphere of carbon dioxide."
+    description:
+      "The hottest planet with a thick, toxic atmosphere of carbon dioxide.",
   },
   {
     name: "Earth",
@@ -54,7 +56,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "365.25 days",
     dayLength: "24 hours",
     moons: 1,
-    description: "Our home planet, the only known world with life and liquid water."
+    description:
+      "Our home planet, the only known world with life and liquid water.",
   },
   {
     name: "Mars",
@@ -68,7 +71,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "687 Earth days",
     dayLength: "24.6 hours",
     moons: 2,
-    description: "The red planet with polar ice caps and the largest volcano in the solar system."
+    description:
+      "The red planet with polar ice caps and the largest volcano in the solar system.",
   },
   {
     name: "Jupiter",
@@ -82,7 +86,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "11.9 Earth years",
     dayLength: "9.9 hours",
     moons: 79,
-    description: "The largest planet, a gas giant with a Great Red Spot storm and many moons."
+    description:
+      "The largest planet, a gas giant with a Great Red Spot storm and many moons.",
   },
   {
     name: "Saturn",
@@ -96,7 +101,7 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "29.4 Earth years",
     dayLength: "10.7 hours",
     moons: 82,
-    description: "Famous for its spectacular ring system and low density."
+    description: "Famous for its spectacular ring system and low density.",
   },
   {
     name: "Uranus",
@@ -110,7 +115,8 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "84 Earth years",
     dayLength: "17.2 hours",
     moons: 27,
-    description: "An ice giant that rotates on its side with a faint ring system."
+    description:
+      "An ice giant that rotates on its side with a faint ring system.",
   },
   {
     name: "Neptune",
@@ -124,6 +130,21 @@ export const planets: PlanetData[] = [
     orbitalPeriod: "165 Earth years",
     dayLength: "16.1 hours",
     moons: 14,
-    description: "The windiest planet with the strongest storms in the solar system."
-  }
+    description:
+      "The windiest planet with the strongest storms in the solar system.",
+  },
+  {
+    name: "Ceres",
+    size: 22.4,
+    distance: 250,
+    color: "#4B70DD",
+    orbitalSpeed: 0.02,
+    rotationSpeed: 0.032,
+    realDistance: "30.05",
+    diameter: "49,528",
+    orbitalPeriod: "265 Earth years",
+    dayLength: "36.1 hours",
+    moons: 1,
+    description: "No Data Provided.",
+  },
 ];

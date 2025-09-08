@@ -28,3 +28,45 @@ canvas {
   height: 100% !important;
   touch-action: none;
 }
+
+/* Mobile responsive adjustments */
+@media (max-width: 768px) {
+  .cockpit-panel {
+    @apply w-full max-w-sm p-2 text-sm;
+  }
+  
+  .status-bar {
+    @apply flex-wrap gap-1 p-2;
+  }
+  
+  .status-item {
+    @apply min-w-0 flex-1;
+  }
+  
+  .minimap {
+    @apply w-32 h-32;
+  }
+  
+  .flight-controls {
+    @apply text-xs p-2;
+  }
+}
+
+@media (max-width: 480px) {
+  .cockpit-panel {
+    @apply max-w-xs text-xs;
+  }
+  
+  .status-bar {
+    @apply text-xs;
+  }
+  
+  .minimap {
+    @apply w-24 h-24;
+  }
+}
+
+/* Touch feedback */
+.touch-active {
+  @apply bg-cyan-400/20 border-cyan-400;
+}
