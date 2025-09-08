@@ -14,17 +14,20 @@ export function MobileControls() {
       const permission = await (DeviceOrientationEvent as any).requestPermission();
       if (permission === 'granted') {
         setPermissionGranted(true);
-        enableGyro();
+        // Gyro will be enabled by useEffect when permission is granted
       }
     } else if ('DeviceOrientationEvent' in window) {
       // Android and older iOS
       setPermissionGranted(true);
-      enableGyro();
+      // Gyro will be enabled by useEffect when permission is granted
     }
   };
 
-  const enableGyro = () => {
-    setIsGyroEnabled(true);
+  // Gyro control effect
+  useEffect(() => {
+    if (!permissionGranted || !isGyroEnabled) {
+      return;
+    }
     
     const handleOrientation = (event: DeviceOrientationEvent) => {
       if (event.alpha !== null && event.beta !== null && event.gamma !== null) {
@@ -52,12 +55,14 @@ export function MobileControls() {
       }
     };
 
+    console.log("Gyro listener added");
     window.addEventListener('deviceorientation', handleOrientation, true);
     
     return () => {
+      console.log("Gyro listener removed");
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
-  };
+  }, [permissionGranted, isGyroEnabled]);
 
   // Touch shooting
   const handleTouchStart = () => {

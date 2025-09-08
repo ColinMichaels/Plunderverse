@@ -78,7 +78,7 @@ export function CameraController() {
     const thrustPower = 8; // Lower thrust for more realistic feel
     const maxVelocity = 25; // Terminal velocity
     const dragCoefficient = 0.995; // Reduced friction for stickier momentum
-    const mobileThrustPower = 12; // Higher power for mobile controls
+    const mobileThrustPower = 25; // Much higher power for mobile controls
     const rotationalDamping = 0.95; // Rotational drag
 
     // Reset acceleration each frame
