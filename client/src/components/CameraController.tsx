@@ -74,17 +74,22 @@ export function CameraController() {
     }
 
     // Shooting
-    if (controls.shoot) {
-      const currentTime = state.clock.elapsedTime;
-      if (currentTime - lastShotTimeRef.current > 0.2) { // 200ms cooldown
-        lastShotTimeRef.current = currentTime;
-        
-        // Get camera's forward direction
-        const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-        
-        // Create projectile from camera position
-        addProjectile(camera.position.clone(), forward);
-        playLaser();
+    if (controls && controls.shoot) {
+      try {
+        const currentTime = state.clock.elapsedTime;
+        if (currentTime - lastShotTimeRef.current > 0.2) { // 200ms cooldown
+          lastShotTimeRef.current = currentTime;
+          
+          // Get camera's forward direction
+          const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+          
+          // Create projectile from camera position
+          console.log("Firing laser...");
+          addProjectile(camera.position.clone(), forward);
+          playLaser();
+        }
+      } catch (error) {
+        console.error("Error firing laser:", error);
       }
     }
 

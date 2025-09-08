@@ -22,19 +22,28 @@ export const useShooting = create<ShootingState>((set, get) => ({
   projectiles: [],
   
   addProjectile: (position, direction) => {
-    const newProjectile: Projectile = {
-      id: Math.random().toString(36).substr(2, 9),
-      position: position.clone(),
-      direction: direction.clone().normalize(),
-      speed: 100,
-      life: 5.0 // 5 seconds
-    };
-    
-    set(state => ({
-      projectiles: [...state.projectiles, newProjectile]
-    }));
-    
-    console.log("Laser fired!");
+    try {
+      if (!position || !direction) {
+        console.error("Invalid position or direction for projectile");
+        return;
+      }
+      
+      const newProjectile: Projectile = {
+        id: Math.random().toString(36).substr(2, 9),
+        position: position.clone(),
+        direction: direction.clone().normalize(),
+        speed: 100,
+        life: 5.0 // 5 seconds
+      };
+      
+      set(state => ({
+        projectiles: [...state.projectiles, newProjectile]
+      }));
+      
+      console.log("Laser projectile created!");
+    } catch (error) {
+      console.error("Error in addProjectile:", error);
+    }
   },
   
   updateProjectiles: (delta) => {
