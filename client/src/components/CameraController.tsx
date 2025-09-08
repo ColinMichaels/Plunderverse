@@ -7,6 +7,8 @@ import { useShooting } from "../lib/stores/useShooting";
 import { useAudio } from "../lib/stores/useAudio";
 import { useShipStatus } from "../lib/stores/useShipStatus";
 import { useGame } from "../lib/stores/useGame";
+import { useLandingWarning } from "../lib/stores/useLandingWarning";
+import { useAutopilot } from "../lib/stores/useAutopilot";
 import { planets } from "../lib/planetData";
 
 enum Controls {
@@ -37,6 +39,10 @@ export function CameraController() {
   const lastLandingAttemptRef = useRef(0);
   const lastMenuPressRef = useRef(0);
   const lastCenterPressRef = useRef(0);
+  
+  // Warning and autopilot stores
+  const { showWarning } = useLandingWarning();
+  const { isActive: isAutopilotActive, target: autopilotTarget, activate: activateAutopilot, deactivate: deactivateAutopilot } = useAutopilot();
 
   useFrame((state, delta) => {
     const controls = get();
@@ -129,6 +135,9 @@ export function CameraController() {
             console.log(`Attempting to land on ${selectedPlanet} (distance: ${Math.round(distanceToPlanet)})`);
           } else {
             console.log(`Too far from ${selectedPlanet} to land! Distance: ${Math.round(distanceToPlanet)}, required: ${Math.round(landingRange)}`);
+            
+            // Show warning dialog with autopilot option
+            showWarning(selectedPlanet, distanceToPlanet, landingRange);
           }
         }
       }
@@ -204,11 +213,28 @@ export function CameraController() {
       }
     }
 
+    // Autopilot system
+    if (isAutopilotActive && autopilotTarget) {
+      const direction = autopilotTarget.clone().sub(camera.position).normalize();
+      const autopilotSpeed = 15;
+      
+      // Move towards target
+      velocity.add(direction.multiplyScalar(autopilotSpeed * delta));
+      
+      // Check if we've reached the target
+      const distanceToTarget = camera.position.distanceTo(autopilotTarget);
+      if (distanceToTarget < 8) {
+        deactivateAutopilot();
+        console.log("Autopilot navigation complete!");
+      }
+    }
+
     // During landing, reduce movement to show transition effect
     if (isLanding) {
       velocity.multiplyScalar(0.1); // Dramatically reduce movement during landing sequence
     }
   });
+
 
   return null;
 }

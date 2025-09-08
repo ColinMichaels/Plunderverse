@@ -1,14 +1,20 @@
 import { useState, useEffect } from "react";
 import { useKeyboardControls } from "@react-three/drei";
+import * as THREE from "three";
 import { PlanetInfo } from "./PlanetInfo";
 import { CoordinatesDisplay } from "./CoordinatesDisplay";
 import { MiniMap } from "./MiniMap";
 import { ShipStatusHUD } from "./ShipStatusHUD";
 import { LandingTransition } from "./LandingTransition";
 import { CockpitOverlay } from "./CockpitOverlay";
+import { LandingWarning } from "./LandingWarning";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
 import { useGame } from "../lib/stores/useGame";
+import { useCredits } from "../lib/stores/useCredits";
+import { useLandingWarning } from "../lib/stores/useLandingWarning";
+import { useAutopilot } from "../lib/stores/useAutopilot";
+import { planets } from "../lib/planetData";
 
 enum Controls {
   forward = 'forward',
@@ -27,10 +33,35 @@ enum Controls {
 export function GameUI() {
   const [showInfo, setShowInfo] = useState(true);
   const [showControls, setShowControls] = useState(true);
-  const { selectedPlanet, isLanding } = useSolarSystem();
+  const { selectedPlanet, isLanding, time } = useSolarSystem();
   const { toggleMute, isMuted } = useAudio();
   const { showSplash } = useGame();
+  const { credits } = useCredits();
+  const { isVisible: showLandingWarning, planetName, currentDistance, requiredDistance, hideWarning } = useLandingWarning();
+  const { activate: activateAutopilot } = useAutopilot();
   const [, get] = useKeyboardControls<Controls>();
+
+  // Autopilot activation function
+  const handleAutopilot = () => {
+    if (selectedPlanet) {
+      const planetData = planets.find(p => p.name === selectedPlanet);
+      if (planetData) {
+        // Calculate target position near the planet
+        const angle = time * planetData.orbitalSpeed;
+        const planetX = Math.cos(angle) * planetData.distance;
+        const planetZ = Math.sin(angle) * planetData.distance;
+        const targetPosition = new THREE.Vector3(planetX, 0, planetZ);
+        
+        // Move to a safe distance from the planet (slightly closer than landing range)
+        const approachDirection = new THREE.Vector3(0, 10, 50); // Assume current camera position
+        const safeDistance = planetData.size * 6;
+        targetPosition.add(approachDirection.normalize().multiplyScalar(safeDistance));
+        
+        activateAutopilot(targetPosition);
+        console.log(`Autopilot activated! Navigating to ${selectedPlanet}`);
+      }
+    }
+  };
 
   // Handle info toggle
   useEffect(() => {
@@ -153,8 +184,22 @@ export function GameUI() {
           >
             Menu
           </button>
+          
+          <div className="text-yellow-400 text-xs font-mono">
+            💰 {credits}
+          </div>
         </div>
       </div>
+
+      {/* Landing Warning Dialog */}
+      <LandingWarning
+        isVisible={showLandingWarning}
+        planetName={planetName}
+        currentDistance={currentDistance}
+        requiredDistance={requiredDistance}
+        onClose={hideWarning}
+        onAutopilot={handleAutopilot}
+      />
 
     </>
   );
