@@ -97,14 +97,14 @@ canvas {
 /* Mobile propulsion controls positioning */
 @media (max-width: 768px) {
   .mobile-propulsion {
-    bottom: 80px !important;
+    bottom: 100px !important;
     right: 8px !important;
   }
 }
 
 @media (max-width: 480px) {
   .mobile-propulsion {
-    bottom: 70px !important;
+    bottom: 90px !important;
     right: 4px !important;
     transform: scale(0.9);
   }

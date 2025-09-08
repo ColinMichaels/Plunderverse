@@ -99,27 +99,38 @@ export function MobileControls() {
         </div>
       )}
 
-      {/* Mobile shooting area - entire screen becomes tap to shoot */}
+      {/* Mobile UI elements */}
       {permissionGranted && (
-        <div
-          className={`absolute inset-0 pointer-events-auto ${isShooting ? 'touch-active' : ''}`}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={handleTouchStart}
-          onMouseUp={handleTouchEnd}
-        >
+        <div className="absolute inset-0 pointer-events-none">
           {/* Gyro status indicator */}
-          <div className="absolute top-16 left-4 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-xs text-white">
+          <div className="absolute top-16 left-4 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-xs text-white pointer-events-auto">
             <div className="flex items-center space-x-2">
               <div className={`w-2 h-2 rounded-full ${isGyroEnabled ? 'bg-green-400' : 'bg-red-400'}`} />
               <span>Gyro {isGyroEnabled ? 'ON' : 'OFF'}</span>
             </div>
           </div>
 
-          {/* Tap indicator */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900/80 border border-gray-600 rounded-lg p-3 text-center text-white">
-            <div className="text-sm">Tap screen to shoot</div>
-            <div className="text-xs text-gray-400 mt-1">Tilt phone to look around</div>
+          {/* Fire Button - Bottom Center */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+            <button
+              className={`w-16 h-16 rounded-full border-2 backdrop-blur-sm transition-all ${
+                isShooting 
+                  ? 'bg-red-600/80 border-red-400 text-white scale-95' 
+                  : 'bg-gray-900/80 border-gray-600 text-gray-300 hover:border-red-400 hover:text-red-400'
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleTouchStart}
+              onMouseUp={handleTouchEnd}
+            >
+              <div className="text-xl">🔥</div>
+            </button>
+            <div className="text-center mt-1 text-xs text-gray-400">FIRE</div>
+          </div>
+
+          {/* Controls indicator */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-center text-white pointer-events-none">
+            <div className="text-xs text-gray-400">Tilt phone to look around</div>
           </div>
         </div>
       )}
