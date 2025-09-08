@@ -8,6 +8,7 @@ import { ShipStatusHUD } from "./ShipStatusHUD";
 import { LandingTransition } from "./LandingTransition";
 import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
+import { MissionsPanel } from "./MissionsPanel";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
 import { useGame } from "../lib/stores/useGame";
@@ -33,6 +34,7 @@ enum Controls {
 export function GameUI() {
   const [showInfo, setShowInfo] = useState(true);
   const [showControls, setShowControls] = useState(true);
+  const [showMissions, setShowMissions] = useState(false);
   const { selectedPlanet, isLanding, time } = useSolarSystem();
   const { toggleMute, isMuted } = useAudio();
   const { showSplash } = useGame();
@@ -199,6 +201,12 @@ export function GameUI() {
         requiredDistance={requiredDistance}
         onClose={hideWarning}
         onAutopilot={handleAutopilot}
+      />
+
+      {/* Missions Panel */}
+      <MissionsPanel
+        isVisible={showMissions}
+        onToggle={() => setShowMissions(!showMissions)}
       />
 
     </>
