@@ -8,6 +8,7 @@ import { LandingTransition } from "./LandingTransition";
 import { CockpitOverlay } from "./CockpitOverlay";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
+import { useGame } from "../lib/stores/useGame";
 
 enum Controls {
   forward = 'forward',
@@ -28,6 +29,7 @@ export function GameUI() {
   const [showControls, setShowControls] = useState(true);
   const { selectedPlanet, isLanding } = useSolarSystem();
   const { toggleMute, isMuted } = useAudio();
+  const { showSplash } = useGame();
   const [, get] = useKeyboardControls<Controls>();
 
   // Handle info toggle
@@ -144,7 +146,6 @@ export function GameUI() {
           
           <button
             onClick={() => {
-              const { showSplash } = require("../lib/stores/useGame").useGame.getState();
               showSplash();
             }}
             className="text-gray-400 hover:text-white transition-colors text-xs px-2 py-1 rounded border border-gray-600"
