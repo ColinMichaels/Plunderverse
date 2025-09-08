@@ -182,15 +182,15 @@ export function CockpitHUD() {
         <div className="bg-gray-900/90 border border-gray-600 rounded-lg p-4 backdrop-blur-sm status-bar">
           <div className="flex items-center space-x-8">
             {/* Ship Systems */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-6">
               {/* Fuel */}
               <div className="text-center">
-                <div className="text-xs text-gray-400">FUEL</div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="text-xs text-gray-400 mb-1">FUEL</div>
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-2 h-8 bg-gray-700 rounded-full overflow-hidden relative">
                     <div 
-                      className={`h-full transition-all ${fuel > 30 ? 'bg-green-400' : fuel > 15 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                      style={{ width: `${fuel}%` }}
+                      className={`w-full transition-all absolute bottom-0 ${fuel > 30 ? 'bg-green-400' : fuel > 15 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                      style={{ height: `${fuel}%` }}
                     />
                   </div>
                   <span className="text-white text-xs font-mono">{Math.round(fuel)}%</span>
@@ -199,12 +199,12 @@ export function CockpitHUD() {
 
               {/* Shields */}
               <div className="text-center">
-                <div className="text-xs text-gray-400">SHIELDS</div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="text-xs text-gray-400 mb-1">SHIELDS</div>
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-2 h-8 bg-gray-700 rounded-full overflow-hidden relative">
                     <div 
-                      className={`h-full transition-all ${shield > 50 ? 'bg-cyan-400' : shield > 25 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                      style={{ width: `${shield}%` }}
+                      className={`w-full transition-all absolute bottom-0 ${shield > 50 ? 'bg-cyan-400' : shield > 25 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                      style={{ height: `${shield}%` }}
                     />
                   </div>
                   <span className="text-white text-xs font-mono">{Math.round(shield)}%</span>
@@ -213,12 +213,12 @@ export function CockpitHUD() {
 
               {/* Hull */}
               <div className="text-center">
-                <div className="text-xs text-gray-400">HULL</div>
-                <div className="flex items-center space-x-1">
-                  <div className="w-12 h-2 bg-gray-700 rounded-full overflow-hidden">
+                <div className="text-xs text-gray-400 mb-1">HULL</div>
+                <div className="flex flex-col items-center space-y-1">
+                  <div className="w-2 h-8 bg-gray-700 rounded-full overflow-hidden relative">
                     <div 
-                      className={`h-full transition-all ${hull > 60 ? 'bg-green-400' : hull > 30 ? 'bg-yellow-400' : 'bg-red-400'}`}
-                      style={{ width: `${hull}%` }}
+                      className={`w-full transition-all absolute bottom-0 ${hull > 60 ? 'bg-green-400' : hull > 30 ? 'bg-yellow-400' : 'bg-red-400'}`}
+                      style={{ height: `${hull}%` }}
                     />
                   </div>
                   <span className="text-white text-xs font-mono">{Math.round(hull)}%</span>

@@ -62,6 +62,7 @@ export function CameraController() {
 
   const handleMobileMove = (movement: { x: number; y: number; z: number }) => {
     mobileThrustRef.current.set(movement.x, movement.y, movement.z);
+    console.log("Mobile move input:", movement);
   };
   
   // Warning and autopilot stores
@@ -134,6 +135,7 @@ export function CameraController() {
       acceleration.add(right.multiplyScalar(mobileThrust.x * mobileThrustPower));
       acceleration.add(up.multiplyScalar(mobileThrust.y * mobileThrustPower));
       thrusterActive = true;
+      console.log("Mobile thrust applied:", mobileThrust, "Fuel:", fuel);
     }
 
     // Apply acceleration to velocity
