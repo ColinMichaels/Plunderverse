@@ -122,14 +122,6 @@ export function GameUI() {
         </div>
       </div>
 
-      {/* Welcome Message */}
-      <div className="absolute bottom-4 right-4 bg-black/80 text-white p-4 rounded-lg backdrop-blur-sm max-w-md">
-        <h3 className="text-lg font-bold mb-2 text-blue-400">Welcome to Solar System Explorer</h3>
-        <p className="text-sm text-gray-300">
-          Use your mouse to look around and keyboard to navigate through space. 
-          Approach planets to learn more about them, or land on their surfaces!
-        </p>
-      </div>
     </>
   );
 }

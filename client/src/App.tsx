@@ -3,7 +3,9 @@ import { Suspense, useEffect, useState } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import { SolarSystem } from "./components/SolarSystem";
 import { GameUI } from "./components/GameUI";
+import { SplashScreen } from "./components/SplashScreen";
 import { useAudio } from "./lib/stores/useAudio";
+import { useGame } from "./lib/stores/useGame";
 import "@fontsource/inter";
 
 // Define control keys for space flight
@@ -35,6 +37,7 @@ const controls = [
 function App() {
   const [showCanvas, setShowCanvas] = useState(false);
   const { setBackgroundMusic } = useAudio();
+  const { phase } = useGame();
 
   // Initialize audio and show canvas
   useEffect(() => {
@@ -54,7 +57,11 @@ function App() {
 
   return (
     <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {showCanvas && (
+      {/* Show splash screen */}
+      {phase === "splash" && <SplashScreen />}
+      
+      {/* Show game when playing */}
+      {phase === "playing" && showCanvas && (
         <KeyboardControls map={controls}>
           <Canvas
             shadows
