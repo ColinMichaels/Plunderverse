@@ -6,6 +6,7 @@ import { Planet } from "./Planet";
 import { Starfield } from "./Starfield";
 import { CameraController } from "./CameraController";
 import { ShootingSystem } from "./ShootingSystem";
+import { AsteroidField } from "./AsteroidField";
 import { planets } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 
@@ -55,6 +56,9 @@ export function SolarSystem() {
       
       {/* Shooting system */}
       <ShootingSystem />
+      
+      {/* Asteroid field */}
+      <AsteroidField />
     </group>
   );
 }

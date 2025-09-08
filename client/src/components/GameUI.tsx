@@ -3,6 +3,8 @@ import { useKeyboardControls } from "@react-three/drei";
 import { PlanetInfo } from "./PlanetInfo";
 import { CoordinatesDisplay } from "./CoordinatesDisplay";
 import { MiniMap } from "./MiniMap";
+import { ShipStatusHUD } from "./ShipStatusHUD";
+import { LandingTransition } from "./LandingTransition";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAudio } from "../lib/stores/useAudio";
 
@@ -50,6 +52,12 @@ export function GameUI() {
 
   return (
     <>
+      {/* Ship Status HUD */}
+      <ShipStatusHUD />
+      
+      {/* Landing Transition */}
+      <LandingTransition />
+      
       {/* Planet Information Panel */}
       {showInfo && <PlanetInfo />}
 

@@ -5,6 +5,7 @@ import * as THREE from "three";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
 import { useAudio } from "../lib/stores/useAudio";
+import { useShipStatus } from "../lib/stores/useShipStatus";
 
 enum Controls {
   forward = 'forward',
@@ -23,9 +24,10 @@ export function CameraController() {
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
-  const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
+  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition } = useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
+  const { fuel, consumeFuel } = useShipStatus();
   const lastShotTimeRef = useRef(0);
 
   useFrame((state, delta) => {
@@ -47,24 +49,39 @@ export function CameraController() {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
 
-    // Apply thruster forces (acceleration-based)
-    if (controls.forward) {
+    // Check if we have fuel before applying thrusters
+    const hasFuel = fuel > 0;
+    let thrusterActive = false;
+
+    // Apply thruster forces (acceleration-based) only if we have fuel
+    if (controls.forward && hasFuel) {
       acceleration.add(forward.multiplyScalar(thrustPower));
+      thrusterActive = true;
     }
-    if (controls.backward) {
+    if (controls.backward && hasFuel) {
       acceleration.add(forward.multiplyScalar(-thrustPower * 0.7)); // Reverse thrusters less powerful
+      thrusterActive = true;
     }
-    if (controls.left) {
+    if (controls.left && hasFuel) {
       acceleration.add(right.multiplyScalar(-thrustPower * 0.8)); // Side thrusters less powerful
+      thrusterActive = true;
     }
-    if (controls.right) {
+    if (controls.right && hasFuel) {
       acceleration.add(right.multiplyScalar(thrustPower * 0.8));
+      thrusterActive = true;
     }
-    if (controls.up) {
+    if (controls.up && hasFuel) {
       acceleration.add(up.multiplyScalar(thrustPower * 0.6)); // Vertical thrusters less powerful
+      thrusterActive = true;
     }
-    if (controls.down) {
+    if (controls.down && hasFuel) {
       acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
+      thrusterActive = true;
+    }
+
+    // Consume fuel when thrusters are active
+    if (thrusterActive) {
+      consumeFuel(delta * 2); // Consume 2 fuel per second when using thrusters
     }
 
     // Apply acceleration to velocity
