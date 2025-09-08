@@ -19,7 +19,7 @@ export function Laser({ projectile }: LaserProps) {
   return (
     <mesh ref={meshRef}>
       <cylinderGeometry args={[0.05, 0.05, 2, 8]} />
-      <meshBasicMaterial 
+      <meshStandardMaterial 
         color="#00ffff" 
         emissive="#00ffff"
         emissiveIntensity={0.8}
