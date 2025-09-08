@@ -128,8 +128,8 @@ export function MobileControls() {
             <div className="text-center mt-1 text-xs text-gray-400">FIRE</div>
           </div>
 
-          {/* Controls indicator */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-center text-white pointer-events-none">
+          {/* Controls indicator - Only show briefly on first load */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-900/80 border border-gray-600 rounded-lg p-2 text-center text-white pointer-events-none opacity-0 md:opacity-100">
             <div className="text-xs text-gray-400">Tilt phone to look around</div>
           </div>
         </div>

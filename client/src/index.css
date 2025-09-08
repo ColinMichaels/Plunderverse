@@ -49,8 +49,10 @@ canvas {
   }
   
   .minimap {
-    @apply w-28 h-28;
-    bottom: 80px !important;
+    @apply w-20 h-20;
+    bottom: 140px !important;
+    left: 8px !important;
+    z-index: 50;
   }
   
   .flight-controls {
@@ -60,14 +62,14 @@ canvas {
   /* Mobile navigation buttons */
   .mobile-nav-left {
     left: 4px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    top: 80px !important;
+    transform: none !important;
   }
   
   .mobile-nav-right {
     right: 4px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    top: 80px !important;
+    transform: none !important;
   }
 }
 
@@ -84,8 +86,10 @@ canvas {
   }
   
   .minimap {
-    @apply w-24 h-24;
-    bottom: 70px !important;
+    @apply w-16 h-16;
+    bottom: 130px !important;
+    left: 4px !important;
+    z-index: 50;
   }
 }
 

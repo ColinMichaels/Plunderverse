@@ -18,8 +18,8 @@ export function MiniMap() {
   });
 
   return (
-    <div className="absolute bottom-4 left-4 bg-black/90 text-white p-3 rounded-lg backdrop-blur-sm minimap">
-      <h3 className="text-xs font-bold mb-2 text-blue-400">SOLAR SYSTEM MAP</h3>
+    <div className="absolute bottom-4 left-4 bg-black/90 text-white p-2 rounded-lg backdrop-blur-sm minimap pointer-events-auto">
+      <h3 className="text-xs font-bold mb-1 text-blue-400 hidden md:block">MAP</h3>
       
       <div 
         className="relative border border-gray-600 bg-black"
@@ -92,13 +92,13 @@ export function MiniMap() {
         })()}
       </div>
       
-      <div className="text-xs text-gray-400 mt-1">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+      <div className="text-xs text-gray-400 mt-1 hidden md:block">
+        <div className="flex items-center gap-1">
+          <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
           <span>Sun</span>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-cyan-400 rounded-full border border-white"></div>
+        <div className="flex items-center gap-1">
+          <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full border border-white"></div>
           <span>You</span>
         </div>
       </div>
