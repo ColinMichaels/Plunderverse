@@ -58,7 +58,7 @@ export function CockpitHUD() {
       </div>
 
       {/* Left Navigation Panel */}
-      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto">
+      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto mobile-nav-left">
         <button
           onClick={() => setActivePanel(activePanel === 'nav' ? 'none' : 'nav')}
           className={`mb-2 w-12 h-12 rounded-lg border transition-all ${
@@ -125,7 +125,7 @@ export function CockpitHUD() {
       </div>
 
       {/* Right Missions Panel */}
-      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-auto">
+      <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-auto mobile-nav-right">
         <button
           onClick={() => setActivePanel(activePanel === 'missions' ? 'none' : 'missions')}
           className={`mb-2 w-12 h-12 rounded-lg border transition-all ${

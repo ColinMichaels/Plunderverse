@@ -76,7 +76,8 @@ export function CameraController() {
     // Rocket propulsion physics constants
     const thrustPower = 8; // Lower thrust for more realistic feel
     const maxVelocity = 25; // Terminal velocity
-    const dragCoefficient = 0.98; // Air resistance/space friction
+    const dragCoefficient = 0.995; // Reduced friction for stickier momentum
+    const mobileThrustPower = 12; // Higher power for mobile controls
     const rotationalDamping = 0.95; // Rotational drag
 
     // Reset acceleration each frame
@@ -120,6 +121,19 @@ export function CameraController() {
     // Consume fuel when thrusters are active
     if (thrusterActive) {
       consumeFuel(delta * 2); // Consume 2 fuel per second when using thrusters
+    }
+
+    // Add mobile thrust input
+    const mobileThrust = mobileThrustRef.current;
+    if (mobileThrust.length() > 0 && hasFuel) {
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+      const up = new THREE.Vector3(0, 1, 0);
+      
+      acceleration.add(forward.multiplyScalar(mobileThrust.z * mobileThrustPower));
+      acceleration.add(right.multiplyScalar(mobileThrust.x * mobileThrustPower));
+      acceleration.add(up.multiplyScalar(mobileThrust.y * mobileThrustPower));
+      thrusterActive = true;
     }
 
     // Apply acceleration to velocity

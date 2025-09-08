@@ -33,10 +33,15 @@ canvas {
 @media (max-width: 768px) {
   .cockpit-panel {
     @apply w-full max-w-sm p-2 text-sm;
+    max-height: 60vh !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    right: auto !important;
   }
   
   .status-bar {
-    @apply flex-wrap gap-1 p-2;
+    @apply flex-wrap gap-1 p-2 text-xs;
+    bottom: 80px !important;
   }
   
   .status-item {
@@ -44,25 +49,43 @@ canvas {
   }
   
   .minimap {
-    @apply w-32 h-32;
+    @apply w-28 h-28;
+    bottom: 80px !important;
   }
   
   .flight-controls {
     @apply text-xs p-2;
+  }
+  
+  /* Mobile navigation buttons */
+  .mobile-nav-left {
+    left: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+  }
+  
+  .mobile-nav-right {
+    right: 4px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
   }
 }
 
 @media (max-width: 480px) {
   .cockpit-panel {
     @apply max-w-xs text-xs;
+    max-height: 50vh !important;
+    padding: 8px !important;
   }
   
   .status-bar {
     @apply text-xs;
+    bottom: 70px !important;
   }
   
   .minimap {
     @apply w-24 h-24;
+    bottom: 70px !important;
   }
 }
 
