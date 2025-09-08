@@ -136,6 +136,20 @@ export function CameraController() {
       acceleration.add(up.multiplyScalar(mobileThrust.y * mobileThrustPower));
       thrusterActive = true;
       console.log("Mobile thrust applied:", mobileThrust, "Fuel:", fuel);
+      
+      // Visual feedback for thrust
+      const thrustIndicator = document.getElementById('thrust-indicator');
+      if (thrustIndicator) {
+        thrustIndicator.style.opacity = '1';
+        (thrustIndicator.nextElementSibling as HTMLElement).textContent = 'ACTIVE';
+      }
+    } else {
+      // Reset thrust indicator when not thrusting
+      const thrustIndicator = document.getElementById('thrust-indicator');
+      if (thrustIndicator) {
+        thrustIndicator.style.opacity = '0';
+        (thrustIndicator.nextElementSibling as HTMLElement).textContent = 'IDLE';
+      }
     }
 
     // Apply acceleration to velocity

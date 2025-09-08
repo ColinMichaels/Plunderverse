@@ -238,6 +238,18 @@ export function CockpitHUD() {
             {/* Divider */}
             <div className="w-px h-8 bg-gray-600"></div>
 
+            {/* Thrust Indicator */}
+            <div className="text-center">
+              <div className="text-xs text-gray-400">THRUST</div>
+              <div className="flex items-center space-x-1">
+                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" id="thrust-indicator" style={{ opacity: 0 }}></div>
+                <span className="text-orange-400 text-xs font-mono">IDLE</span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-gray-600"></div>
+
             {/* Controls */}
             <div className="flex items-center space-x-2">
               <button
