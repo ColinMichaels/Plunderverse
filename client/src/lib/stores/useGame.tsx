@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-export type GamePhase = "ready" | "playing" | "ended";
+export type GamePhase = "splash" | "ready" | "playing" | "ended";
 
 interface GameState {
   phase: GamePhase;
@@ -10,16 +10,17 @@ interface GameState {
   start: () => void;
   restart: () => void;
   end: () => void;
+  showSplash: () => void;
 }
 
 export const useGame = create<GameState>()(
   subscribeWithSelector((set) => ({
-    phase: "ready",
+    phase: "splash",
     
     start: () => {
       set((state) => {
-        // Only transition from ready to playing
-        if (state.phase === "ready") {
+        // Transition from splash or ready to playing
+        if (state.phase === "splash" || state.phase === "ready") {
           return { phase: "playing" };
         }
         return {};
@@ -27,7 +28,7 @@ export const useGame = create<GameState>()(
     },
     
     restart: () => {
-      set(() => ({ phase: "ready" }));
+      set(() => ({ phase: "splash" }));
     },
     
     end: () => {
@@ -38,6 +39,10 @@ export const useGame = create<GameState>()(
         }
         return {};
       });
+    },
+    
+    showSplash: () => {
+      set(() => ({ phase: "splash" }));
     }
   }))
 );

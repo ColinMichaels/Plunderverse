@@ -5,11 +5,11 @@ import { useAudio } from "../lib/stores/useAudio";
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const { startGame } = useGame();
+  const { start } = useGame();
   const { toggleMute, isMuted } = useAudio();
 
   const handleEnterCockpit = () => {
-    startGame();
+    start();
   };
 
   const keyBindings = [
