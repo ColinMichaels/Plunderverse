@@ -18,7 +18,8 @@ enum Controls {
   down = 'down',
   shoot = 'shoot',
   land = 'land',
-  info = 'info'
+  info = 'info',
+  menu = 'menu'
 }
 
 const controls = [
@@ -31,6 +32,7 @@ const controls = [
   { name: Controls.shoot, keys: ["Space"] },
   { name: Controls.land, keys: ["KeyL"] },
   { name: Controls.info, keys: ["KeyI"] },
+  { name: Controls.menu, keys: ["Escape"] },
 ];
 
 // Main App component

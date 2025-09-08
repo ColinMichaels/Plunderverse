@@ -17,7 +17,8 @@ enum Controls {
   down = 'down',
   shoot = 'shoot',
   land = 'land',
-  info = 'info'
+  info = 'info',
+  menu = 'menu'
 }
 
 export function GameUI() {
@@ -92,6 +93,10 @@ export function GameUI() {
               <span className="text-gray-300">Toggle Info:</span>
               <span className="text-white">I</span>
             </div>
+            <div className="flex justify-between gap-4">
+              <span className="text-gray-300">Menu:</span>
+              <span className="text-white">ESC</span>
+            </div>
           </div>
           <button
             onClick={() => setShowControls(false)}
@@ -126,6 +131,17 @@ export function GameUI() {
             className="text-gray-400 hover:text-white transition-colors"
           >
             {isMuted ? "🔇" : "🔊"}
+          </button>
+          
+          <button
+            onClick={() => {
+              const { showSplash } = require("../lib/stores/useGame").useGame.getState();
+              showSplash();
+            }}
+            className="text-gray-400 hover:text-white transition-colors text-xs px-2 py-1 rounded border border-gray-600"
+            title="Return to Main Menu (ESC)"
+          >
+            Menu
           </button>
         </div>
       </div>

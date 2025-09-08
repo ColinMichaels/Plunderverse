@@ -6,6 +6,7 @@ import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
 import { useAudio } from "../lib/stores/useAudio";
 import { useShipStatus } from "../lib/stores/useShipStatus";
+import { useGame } from "../lib/stores/useGame";
 import { planets } from "../lib/planetData";
 
 enum Controls {
@@ -17,7 +18,8 @@ enum Controls {
   down = 'down',
   shoot = 'shoot',
   land = 'land',
-  info = 'info'
+  info = 'info',
+  menu = 'menu'
 }
 
 export function CameraController() {
@@ -29,8 +31,10 @@ export function CameraController() {
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
   const { fuel, consumeFuel } = useShipStatus();
+  const { showSplash } = useGame();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
+  const lastMenuPressRef = useRef(0);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -172,6 +176,16 @@ export function CameraController() {
       // Apply rotational damping
       camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, targetRotationY, rotationalDamping);
       camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, targetRotationX, rotationalDamping);
+    }
+
+    // Exit to menu
+    if (controls.menu) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastMenuPressRef.current > 0.5) { // 500ms cooldown to prevent spam
+        lastMenuPressRef.current = currentTime;
+        console.log("Returning to main menu...");
+        showSplash();
+      }
     }
 
     // During landing, reduce movement to show transition effect
