@@ -17,8 +17,21 @@ export function Planet({ data, time }: PlanetProps) {
   const { setSelectedPlanet, selectedPlanet } = useSolarSystem();
   const [hovered, setHovered] = useState(false);
 
-  // Load Jupiter texture conditionally
-  const jupiterTexture = data.name === "Jupiter" ? useTexture("/textures/planets/2k_jupiter.jpg") : null;
+  // Planet texture mapping - only for textures that exist
+  const getTextureForPlanet = (planetName: string) => {
+    const textureMap: { [key: string]: string } = {
+      "Earth": "/textures/planets/2k_earth_daymap.jpg",
+      "Mars": "/textures/planets/2k_mars.jpg",
+      "Jupiter": "/textures/planets/2k_jupiter.jpg",
+      "Saturn": "/textures/planets/2k_saturn.jpg",
+      "Uranus": "/textures/planets/2k_uranus.jpg",
+      "Neptune": "/textures/planets/2k_neptune.jpg"
+    };
+    return textureMap[planetName] || null;
+  };
+
+  const textureUrl = getTextureForPlanet(data.name);
+  const planetTexture = textureUrl ? useTexture(textureUrl) : null;
 
   // Calculate orbital position
   useFrame(() => {
@@ -71,8 +84,8 @@ export function Planet({ data, time }: PlanetProps) {
         receiveShadow
       >
         <meshStandardMaterial
-          color={jupiterTexture ? "#ffffff" : data.color}
-          map={jupiterTexture}
+          color={planetTexture ? "#ffffff" : data.color}
+          map={planetTexture}
           roughness={0.8}
           metalness={0.1}
           emissive={isSelected || hovered ? data.color : "#000000"}
