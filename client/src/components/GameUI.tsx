@@ -5,6 +5,7 @@ import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
 import { CockpitHUD } from "./CockpitHUD";
 import { MiniMap } from "./MiniMap";
+import { MobileControls } from "./MobileControls";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -75,6 +76,9 @@ export function GameUI() {
 
       {/* Mini Map - Bottom Left */}
       <MiniMap />
+
+      {/* Mobile Controls */}
+      <MobileControls />
     </>
   );
 }

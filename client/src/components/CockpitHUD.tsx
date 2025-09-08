@@ -71,7 +71,7 @@ export function CockpitHUD() {
         </button>
 
         {activePanel === 'nav' && (
-          <div className="bg-gray-900/95 border border-cyan-400/50 rounded-lg p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-gray-900/95 border border-cyan-400/50 rounded-lg p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
             <h3 className="text-cyan-400 font-semibold mb-3">NAVIGATION</h3>
             
             {/* Coordinates */}
@@ -138,7 +138,7 @@ export function CockpitHUD() {
         </button>
 
         {activePanel === 'missions' && (
-          <div className="bg-gray-900/95 border border-blue-400/50 rounded-lg p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm">
+          <div className="bg-gray-900/95 border border-blue-400/50 rounded-lg p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
             <h3 className="text-blue-400 font-semibold mb-3">MISSION CONTROL</h3>
             
             {/* Quick Stats */}
@@ -179,7 +179,7 @@ export function CockpitHUD() {
 
       {/* Bottom Status Bar */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-        <div className="bg-gray-900/90 border border-gray-600 rounded-lg p-4 backdrop-blur-sm">
+        <div className="bg-gray-900/90 border border-gray-600 rounded-lg p-4 backdrop-blur-sm status-bar">
           <div className="flex items-center space-x-8">
             {/* Ship Systems */}
             <div className="flex items-center space-x-4">

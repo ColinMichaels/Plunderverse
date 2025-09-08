@@ -40,6 +40,30 @@ export function CameraController() {
   const lastMenuPressRef = useRef(0);
   const lastCenterPressRef = useRef(0);
   
+  // Mobile control states
+  const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
+  const mobileThrustRef = useRef(new THREE.Vector3(0, 0, 0));
+  
+  // Mobile control callbacks
+  const handleMobileShoot = () => {
+    const currentTime = performance.now() / 1000;
+    if (currentTime - lastShotTimeRef.current > 0.2) {
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+      addProjectile(camera.position.clone(), forward.normalize());
+      playLaser();
+      lastShotTimeRef.current = currentTime;
+    }
+  };
+
+  const handleMobileLook = (rotation: { x: number; y: number }) => {
+    mobileRotationRef.current.x += rotation.x;
+    mobileRotationRef.current.y += rotation.y;
+  };
+
+  const handleMobileMove = (movement: { x: number; y: number; z: number }) => {
+    mobileThrustRef.current.set(movement.x, movement.y, movement.z);
+  };
+  
   // Warning and autopilot stores
   const { showWarning } = useLandingWarning();
   const { isActive: isAutopilotActive, target: autopilotTarget, activate: activateAutopilot, deactivate: deactivateAutopilot } = useAutopilot();
@@ -170,16 +194,23 @@ export function CameraController() {
     const { setCameraPosition } = useSolarSystem.getState();
     setCameraPosition(camera.position);
 
-    // Mouse look controls with damping for smoother rotation
+    // Mouse and mobile look controls with damping for smoother rotation
     const mouse = state.mouse;
     camera.rotation.order = 'YXZ';
     
-    // Only apply mouse look if not landing
+    // Only apply look controls if not landing
     if (!isLanding) {
       const sensitivity = 0.001; // Reduced sensitivity for smoother control
-      const targetRotationY = camera.rotation.y - mouse.x * sensitivity;
+      
+      // Combine mouse and mobile rotation inputs
+      const mouseX = mouse.x * sensitivity;
+      const mouseY = mouse.y * sensitivity;
+      const mobileX = mobileRotationRef.current.x * 0.1; // Scale mobile input
+      const mobileY = mobileRotationRef.current.y * 0.1;
+      
+      const targetRotationY = camera.rotation.y - (mouseX + mobileX);
       const targetRotationX = THREE.MathUtils.clamp(
-        camera.rotation.x - mouse.y * sensitivity,
+        camera.rotation.x - (mouseY + mobileY),
         -Math.PI / 2,
         Math.PI / 2
       );
@@ -187,6 +218,9 @@ export function CameraController() {
       // Apply rotational damping
       camera.rotation.y = THREE.MathUtils.lerp(camera.rotation.y, targetRotationY, rotationalDamping);
       camera.rotation.x = THREE.MathUtils.lerp(camera.rotation.x, targetRotationX, rotationalDamping);
+      
+      // Decay mobile rotation input
+      mobileRotationRef.current.multiplyScalar(0.95);
     }
 
     // Exit to menu
@@ -235,6 +269,13 @@ export function CameraController() {
     }
   });
 
+
+  // Expose mobile control callbacks for MobileControls component
+  (window as any).mobileControlCallbacks = {
+    onShoot: handleMobileShoot,
+    onLook: handleMobileLook,
+    onMove: handleMobileMove
+  };
 
   return null;
 }

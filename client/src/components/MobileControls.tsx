@@ -1,14 +1,6 @@
 import { useRef, useEffect, useState } from "react";
-import { useThree } from "@react-three/fiber";
-import * as THREE from "three";
 
-interface MobileControlsProps {
-  onShoot: () => void;
-  onMove: (movement: { x: number; y: number; z: number }) => void;
-  onLook: (rotation: { x: number; y: number }) => void;
-}
-
-export function MobileControls({ onShoot, onMove, onLook }: MobileControlsProps) {
+export function MobileControls() {
   const [isGyroEnabled, setIsGyroEnabled] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
@@ -46,8 +38,11 @@ export function MobileControls({ onShoot, onMove, onLook }: MobileControlsProps)
         const deltaX = (event.beta! - lastGyroRef.current.beta) * 0.01;
         const deltaY = (event.alpha! - lastGyroRef.current.alpha) * 0.01;
 
-        // Send rotation changes
-        onLook({ x: deltaX, y: deltaY });
+        // Send rotation changes via global callback
+        const callbacks = (window as any).mobileControlCallbacks;
+        if (callbacks && callbacks.onLook) {
+          callbacks.onLook({ x: deltaX, y: deltaY });
+        }
 
         lastGyroRef.current = {
           alpha: event.alpha,
@@ -67,7 +62,10 @@ export function MobileControls({ onShoot, onMove, onLook }: MobileControlsProps)
   // Touch shooting
   const handleTouchStart = () => {
     setIsShooting(true);
-    onShoot();
+    const callbacks = (window as any).mobileControlCallbacks;
+    if (callbacks && callbacks.onShoot) {
+      callbacks.onShoot();
+    }
   };
 
   const handleTouchEnd = () => {
