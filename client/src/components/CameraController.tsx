@@ -106,6 +106,10 @@ export function CameraController() {
 
     // Update camera position with momentum
     camera.position.add(velocity.clone().multiplyScalar(delta));
+    
+    // Update camera position in store for UI components
+    const { setCameraPosition } = useSolarSystem.getState();
+    setCameraPosition(camera.position);
 
     // Mouse look controls with damping for smoother rotation
     const mouse = state.mouse;

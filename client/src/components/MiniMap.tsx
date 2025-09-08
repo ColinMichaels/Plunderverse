@@ -1,24 +1,9 @@
-import { useThree } from "@react-three/fiber";
-import { useState, useEffect } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets } from "../lib/planetData";
 
 export function MiniMap() {
-  const { camera } = useThree();
-  const { time } = useSolarSystem();
-  const [playerPos, setPlayerPos] = useState({ x: 0, z: 0 });
-
-  useEffect(() => {
-    const updatePlayerPosition = () => {
-      setPlayerPos({
-        x: camera.position.x,
-        z: camera.position.z
-      });
-    };
-
-    const interval = setInterval(updatePlayerPosition, 100);
-    return () => clearInterval(interval);
-  }, [camera]);
+  const { time, cameraPosition } = useSolarSystem();
+  const playerPos = { x: cameraPosition.x, z: cameraPosition.z };
 
   // Scale factor for the minimap (smaller = more zoomed out)
   const scale = 0.8;

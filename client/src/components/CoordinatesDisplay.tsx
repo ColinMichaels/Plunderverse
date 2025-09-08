@@ -1,23 +1,13 @@
-import { useThree } from "@react-three/fiber";
-import { useState, useEffect } from "react";
+import { useSolarSystem } from "../lib/stores/useSolarSystem";
 
 export function CoordinatesDisplay() {
-  const { camera } = useThree();
-  const [position, setPosition] = useState({ x: 0, y: 0, z: 0 });
+  const { cameraPosition } = useSolarSystem();
 
-  useEffect(() => {
-    const updatePosition = () => {
-      setPosition({
-        x: Math.round(camera.position.x * 10) / 10,
-        y: Math.round(camera.position.y * 10) / 10,
-        z: Math.round(camera.position.z * 10) / 10
-      });
-    };
-
-    // Update position every 100ms for smooth display
-    const interval = setInterval(updatePosition, 100);
-    return () => clearInterval(interval);
-  }, [camera]);
+  const position = {
+    x: Math.round(cameraPosition.x * 10) / 10,
+    y: Math.round(cameraPosition.y * 10) / 10,
+    z: Math.round(cameraPosition.z * 10) / 10
+  };
 
   return (
     <div className="absolute top-4 right-4 bg-black/80 text-white p-3 rounded-lg backdrop-blur-sm min-w-[180px]">
