@@ -93,3 +93,19 @@ canvas {
 .touch-active {
   @apply bg-cyan-400/20 border-cyan-400;
 }
+
+/* Mobile propulsion controls positioning */
+@media (max-width: 768px) {
+  .mobile-propulsion {
+    bottom: 80px !important;
+    right: 8px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .mobile-propulsion {
+    bottom: 70px !important;
+    right: 4px !important;
+    transform: scale(0.9);
+  }
+}

@@ -22,7 +22,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 pointer-events-auto z-40">
+    <div className="fixed bottom-4 right-4 pointer-events-auto z-40 mobile-propulsion">
       {/* Directional Control Pad */}
       <div className="relative w-32 h-32 bg-gray-900/80 border border-gray-600 rounded-full backdrop-blur-sm">
         {/* Center indicator */}
