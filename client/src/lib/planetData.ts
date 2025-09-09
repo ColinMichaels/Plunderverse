@@ -13,6 +13,8 @@ export interface PlanetData {
   description: string;
 }
 
+export const distanceScale = 10;
+
 export const planets: PlanetData[] = [
   {
     name: "Mercury",
@@ -47,7 +49,7 @@ export const planets: PlanetData[] = [
   {
     name: "Earth",
     size: 1.3,
-    distance: 30,
+    distance: 30 * distanceScale,
     color: "#6B93D6",
     orbitalSpeed: 0.1,
     rotationSpeed: 0.02,
@@ -62,7 +64,7 @@ export const planets: PlanetData[] = [
   {
     name: "Mars",
     size: 1.0,
-    distance: 40,
+    distance: 40 * distanceScale,
     color: "#CD5C5C",
     orbitalSpeed: 0.08,
     rotationSpeed: 0.018,
@@ -77,7 +79,7 @@ export const planets: PlanetData[] = [
   {
     name: "Jupiter",
     size: 4.0,
-    distance: 65,
+    distance: 65 * distanceScale,
     color: "#D8CA9D",
     orbitalSpeed: 0.04,
     rotationSpeed: 0.04,
@@ -92,7 +94,7 @@ export const planets: PlanetData[] = [
   {
     name: "Saturn",
     size: 3.5,
-    distance: 90,
+    distance: 90 * distanceScale,
     color: "#FAD5A5",
     orbitalSpeed: 0.03,
     rotationSpeed: 0.038,
@@ -106,7 +108,7 @@ export const planets: PlanetData[] = [
   {
     name: "Uranus",
     size: 2.5,
-    distance: 120,
+    distance: 120 * distanceScale,
     color: "#4FD0E7",
     orbitalSpeed: 0.025,
     rotationSpeed: 0.03,
@@ -121,7 +123,7 @@ export const planets: PlanetData[] = [
   {
     name: "Neptune",
     size: 2.4,
-    distance: 150,
+    distance: 150 * distanceScale,
     color: "#4B70DD",
     orbitalSpeed: 0.02,
     rotationSpeed: 0.032,
@@ -136,7 +138,7 @@ export const planets: PlanetData[] = [
   {
     name: "Ceres",
     size: 22.4,
-    distance: 250,
+    distance: 250 * distanceScale,
     color: "#4B70DD",
     orbitalSpeed: 0.02,
     rotationSpeed: 0.032,
