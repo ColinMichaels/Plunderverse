@@ -25,13 +25,13 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
   return (
     <div className="fixed bottom-4 right-4 pointer-events-auto z-40 mobile-propulsion">
       {/* Directional Control Pad */}
-      <div className="relative w-32 h-32 bg-gray-900/80 border border-gray-600 rounded-full backdrop-blur-sm">
+      <div className="relative w-32 h-32 bg-slate-800/80 border border-slate-600 rounded-full backdrop-blur-sm">
         {/* Center indicator */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-gray-600 rounded-full" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-4 h-4 bg-slate-600 rounded-full" />
         
         {/* Forward */}
         <button
-          className="absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-cyan-600/80 hover:bg-cyan-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute top-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: 0, y: 0, z: 1 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: 0, y: 0, z: 1 })}
@@ -42,7 +42,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
 
         {/* Backward */}
         <button
-          className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-cyan-600/80 hover:bg-cyan-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: 0, y: 0, z: -1 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: 0, y: 0, z: -1 })}
@@ -53,7 +53,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
 
         {/* Left */}
         <button
-          className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-cyan-600/80 hover:bg-cyan-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: -1, y: 0, z: 0 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: -1, y: 0, z: 0 })}
@@ -64,7 +64,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
 
         {/* Right */}
         <button
-          className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-cyan-600/80 hover:bg-cyan-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 bg-cyan-500/80 hover:bg-cyan-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: 1, y: 0, z: 0 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: 1, y: 0, z: 0 })}
@@ -75,7 +75,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
 
         {/* Up */}
         <button
-          className="absolute top-6 right-6 w-6 h-6 bg-green-600/80 hover:bg-green-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute top-6 right-6 w-6 h-6 bg-green-500/80 hover:bg-green-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: 0, y: 1, z: 0 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: 0, y: 1, z: 0 })}
@@ -86,7 +86,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
 
         {/* Down */}
         <button
-          className="absolute bottom-6 right-6 w-6 h-6 bg-orange-600/80 hover:bg-orange-500/80 text-white rounded-full text-xs flex items-center justify-center"
+          className="absolute bottom-6 right-6 w-6 h-6 bg-orange-500/80 hover:bg-orange-400/80 text-slate-900 rounded-full text-xs flex items-center justify-center"
           onTouchStart={() => handleDirectionalThrust({ x: 0, y: -1, z: 0 })}
           onTouchEnd={() => handleDirectionalThrust({ x: 0, y: 0, z: 0 })}
           onMouseDown={() => handleDirectionalThrust({ x: 0, y: -1, z: 0 })}
@@ -97,7 +97,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
       </div>
 
       {/* Control Label */}
-      <div className="text-center mt-2 text-xs text-gray-300">
+      <div className="text-center mt-2 text-xs text-slate-300">
         THRUST
       </div>
     </div>
