@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useCredits } from "./useCredits";
 
 interface ShipStatusState {
   // Ship resources (0-100)
@@ -107,22 +108,28 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   },
   
   refuel: (amount) => {
-    set(state => ({
-      fuel: Math.min(100, state.fuel + amount),
-      isCritical: Math.min(100, state.fuel + amount) < 20 || state.shield < 20 || state.hull < 20
-    }));
+    set(state => {
+      const maxFuel = 100 * state.upgrades.fuelCapacity; // Fuel capacity can be increased
+      return {
+        fuel: Math.min(maxFuel, state.fuel + amount),
+        isCritical: Math.min(maxFuel, state.fuel + amount) < 20 || state.shield < 20 || state.hull < 20
+      };
+    });
   },
   
   resetShip: () => {
-    set({
-      fuel: 100,
-      shield: 100,
-      hull: 100,
-      isDestroyed: false,
-      isCritical: false,
-      isThrusting: false,
-      isWarpMode: false,
-      lastDamageSource: null
+    set(state => {
+      const maxFuel = 100 * state.upgrades.fuelCapacity;
+      return {
+        fuel: maxFuel,
+        shield: 100,
+        hull: 100,
+        isDestroyed: false,
+        isCritical: false,
+        isThrusting: false,
+        isWarpMode: false,
+        lastDamageSource: null
+      };
     });
   },
   
@@ -135,8 +142,12 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   },
   
   upgradeShip: (upgradeType, cost) => {
-    // Import useCredits at the top of the file instead
-    // For now, this is a placeholder - actual implementation would use external store access
+    const creditsStore = useCredits.getState();
+    
+    if (!creditsStore.spendCredits(cost)) {
+      console.log(`Not enough credits for ${upgradeType} upgrade. Need ${cost} credits.`);
+      return false;
+    }
     
     set(state => {
       const newUpgrades = { ...state.upgrades };
@@ -144,12 +155,15 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       switch (upgradeType) {
         case 'fuelCapacity':
           newUpgrades.fuelCapacity = Math.min(3.0, newUpgrades.fuelCapacity + 0.5);
+          console.log(`Fuel capacity upgraded to ${newUpgrades.fuelCapacity}x`);
           break;
         case 'thrustEfficiency':
-          newUpgrades.thrustEfficiency = Math.min(0.3, newUpgrades.thrustEfficiency - 0.1);
+          newUpgrades.thrustEfficiency = Math.max(0.3, newUpgrades.thrustEfficiency - 0.1);
+          console.log(`Thrust efficiency improved to ${newUpgrades.thrustEfficiency}x fuel consumption`);
           break;
         case 'warpCapability':
           newUpgrades.warpCapability = true;
+          console.log("Warp capability unlocked!");
           break;
       }
       
