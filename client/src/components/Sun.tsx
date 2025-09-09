@@ -47,7 +47,7 @@ export function Sun() {
 
       {/* Sun core with texture */}
       <Sphere ref={meshRef} args={[5, 32, 32]}>
-        <meshBasicMaterial
+        <meshStandardMaterial
           map={sunTexture}
           emissive="#FDB813"
           emissiveIntensity={0.6}
