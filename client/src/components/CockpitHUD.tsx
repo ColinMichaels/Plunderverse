@@ -6,20 +6,68 @@ import { useRewards } from "../lib/stores/useRewards";
 import { useMissions } from "../lib/stores/useMissions";
 import { useAudio } from "../lib/stores/useAudio";
 import { useGame } from "../lib/stores/useGame";
+import { useAutopilot } from "../lib/stores/useAutopilot";
 import { planets } from "../lib/planetData";
+import * as THREE from "three";
 
 export function CockpitHUD() {
   const [activePanel, setActivePanel] = useState<'nav' | 'missions' | 'none'>('none');
   const [showControls, setShowControls] = useState(false);
-  const { selectedPlanet, cameraPosition, distanceToTarget } = useSolarSystem();
-  const { credits } = useCredits();
+  const { selectedPlanet, cameraPosition, distanceToTarget, time, setSelectedPlanet } = useSolarSystem();
+  const { credits, spendCredits } = useCredits();
   const { fuel, shield, hull, isThrusting, isWarpMode } = useShipStatus();
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
   const { toggleMute, isMuted } = useAudio();
   const { showSplash } = useGame();
+  const { activate: activateAutopilot, isActive: isAutopilotActive } = useAutopilot();
 
   const selectedPlanetData = selectedPlanet ? planets.find(p => p.name === selectedPlanet) : null;
+
+  // Calculate distances to all planets and filter those within range
+  const planetsWithDistance = planets.map(planet => {
+    const angle = time * planet.orbitalSpeed;
+    const planetX = Math.cos(angle) * planet.distance;
+    const planetZ = Math.sin(angle) * planet.distance;
+    const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
+    const distance = cameraPosition.distanceTo(planetPosition);
+    
+    return {
+      ...planet,
+      currentDistance: distance,
+      position: planetPosition
+    };
+  }).filter(planet => planet.currentDistance <= 2000) // Only show planets within 2000 units
+    .sort((a, b) => a.currentDistance - b.currentDistance); // Sort by distance
+
+  const handleSelectPlanet = (planetName: string) => {
+    setSelectedPlanet(planetName);
+    console.log(`Selected ${planetName} from navigation log`);
+  };
+
+  const handleAutopilot = (planet: typeof planetsWithDistance[0]) => {
+    const autopilotCost = 100; // Cost 100 credits for autopilot
+    
+    if (credits < autopilotCost) {
+      console.log(`Not enough credits for autopilot. Need ${autopilotCost} credits.`);
+      return;
+    }
+    
+    if (isAutopilotActive) {
+      console.log("Autopilot already active!");
+      return;
+    }
+    
+    if (spendCredits(autopilotCost)) {
+      // Calculate safe approach position near the planet
+      const approachDirection = cameraPosition.clone().sub(planet.position).normalize();
+      const safeDistance = planet.size * 8; // Safe distance from planet
+      const targetPosition = planet.position.clone().add(approachDirection.multiplyScalar(safeDistance));
+      
+      activateAutopilot(targetPosition);
+      console.log(`Autopilot engaged to ${planet.name}! Cost: ${autopilotCost} credits`);
+    }
+  };
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
@@ -153,6 +201,52 @@ export function CockpitHUD() {
                 </div>
               </div>
             )}
+
+            {/* Navigation Log */}
+            <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
+              <div className="text-xs text-slate-400 mb-2">NAVIGATION LOG</div>
+              <div className="text-xs text-slate-500 mb-3">Planets within range • Autopilot: 100 credits</div>
+              
+              <div className="space-y-2 max-h-48 overflow-y-auto">
+                {planetsWithDistance.length > 0 ? (
+                  planetsWithDistance.map((planet) => (
+                    <div key={planet.name} className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-slate-600 hover:border-cyan-400/50 transition-colors">
+                      <div className="flex-1">
+                        <button
+                          onClick={() => handleSelectPlanet(planet.name)}
+                          className={`text-left w-full ${
+                            planet.name === selectedPlanet ? 'text-cyan-400' : 'text-white hover:text-cyan-400'
+                          }`}
+                        >
+                          <div className="font-semibold text-sm">{planet.name}</div>
+                          <div className="text-xs text-slate-400">
+                            {Math.round(planet.currentDistance * 10) / 10} units
+                            {visitedPlanets.has(planet.name) && ' • Visited'}
+                          </div>
+                        </button>
+                      </div>
+                      
+                      <button
+                        onClick={() => handleAutopilot(planet)}
+                        disabled={credits < 100 || isAutopilotActive}
+                        className={`ml-2 px-3 py-1 text-xs rounded transition-colors ${
+                          credits < 100 || isAutopilotActive
+                            ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
+                            : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                        }`}
+                        title={isAutopilotActive ? "Autopilot already active" : "Engage autopilot (100 credits)"}
+                      >
+                        {isAutopilotActive ? 'ACTIVE' : 'AUTO'}
+                      </button>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center text-slate-400 text-sm py-4">
+                    No planets within range
+                  </div>
+                )}
+              </div>
+            </div>
 
             {/* Mini System Map */}
             <div className="p-3 bg-slate-700/50 rounded-lg border border-slate-600">
