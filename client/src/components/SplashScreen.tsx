@@ -52,7 +52,7 @@ export function SplashScreen() {
   ];
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-black via-purple-900/20 via-blue-900/80 to-black flex items-center justify-center z-50 overflow-hidden">
+    <div className="fixed inset-0 bg-slate-900 flex items-center justify-center z-50 overflow-hidden">
       {/* Enhanced animated starfield background */}
       <div className="absolute inset-0">
         {/* Moving stars */}
@@ -79,7 +79,7 @@ export function SplashScreen() {
           {Array.from({ length: 30 }).map((_, i) => (
             <div
               key={`particle-${i}`}
-              className="absolute w-1 h-1 bg-blue-400 rounded-full animate-ping"
+              className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-ping"
               style={{
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
@@ -90,76 +90,60 @@ export function SplashScreen() {
           ))}
         </div>
 
-        {/* Nebula effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-pulse opacity-60"></div>
+        {/* Subtle space effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/3 to-transparent animate-pulse opacity-40"></div>
       </div>
 
       <div className="relative z-10 text-center max-w-4xl px-8">
         {/* Enhanced Main Title with animations */}
         <div className="relative mb-4">
-          <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent mb-4 tracking-wider animate-pulse">
+          <h1 className="text-6xl md:text-8xl font-bold text-cyan-400 mb-4 tracking-wider">
             SOLAR SYSTEM
           </h1>
-          {/* Glow effect */}
-          <div className="absolute inset-0 text-6xl md:text-8xl font-bold text-blue-300 opacity-20 blur-sm tracking-wider">
-            SOLAR SYSTEM
-          </div>
         </div>
 
         <div className="relative mb-8">
-          <h2
-            className="text-3xl md:text-4xl font-light bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent tracking-wide animate-pulse"
-            style={{ animationDelay: "0.5s" }}
-          >
+          <h2 className="text-3xl md:text-4xl font-light text-cyan-300 tracking-wide">
             EXPLORER
           </h2>
-          {/* Subtitle glow */}
-          <div className="absolute inset-0 text-3xl md:text-4xl font-light text-cyan-300 opacity-20 blur-sm tracking-wide">
-            EXPLORER
-          </div>
         </div>
 
         {/* Subtitle */}
-        <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
           Pilot your spacecraft through the vastness of space. Explore planets,
           engage targets, and experience realistic rocket propulsion physics.
         </p>
 
-        {/* Enhanced Main Action Button */}
+        {/* Main Action Button */}
         <button
           onClick={handleEnterCockpit}
-          className="relative bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 
-                     text-white font-bold py-4 px-12 rounded-lg text-xl mb-8 
-                     transform transition-all duration-300 hover:scale-110 hover:shadow-2xl
-                     border border-blue-400 shadow-lg animate-bounce overflow-hidden group"
-          style={{ animationDuration: "3s" }}
+          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-4 px-12 rounded-xl text-xl mb-8 
+                     transform transition-all duration-300 hover:scale-105 shadow-lg"
         >
-          {/* Button glow effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
-          <span className="relative z-10">🚀 ENTER THE COCKPIT</span>
+          🚀 ENTER THE COCKPIT
         </button>
 
-        {/* Enhanced Menu Buttons */}
+        {/* Menu Buttons */}
         <div className="flex justify-center gap-6 mb-8">
           <button
             onClick={() => setShowOptions(true)}
-            className="bg-gray-800/80 hover:bg-gray-700 hover:bg-blue-900/50 text-white font-semibold py-3 px-8 
-                       rounded-lg border border-gray-600 hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+            className="bg-slate-700 hover:bg-slate-600 text-cyan-400 font-semibold py-3 px-8 
+                       rounded-xl border border-slate-600 hover:border-cyan-400 transition-all duration-300 hover:scale-105"
           >
             ⚙️ OPTIONS
           </button>
 
           <button
             onClick={() => setShowHelp(true)}
-            className="bg-gray-800/80 hover:bg-gray-700 hover:bg-purple-900/50 text-white font-semibold py-3 px-8 
-                       rounded-lg border border-gray-600 hover:border-purple-400 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
+            className="bg-slate-700 hover:bg-slate-600 text-cyan-400 font-semibold py-3 px-8 
+                       rounded-xl border border-slate-600 hover:border-cyan-400 transition-all duration-300 hover:scale-105"
           >
             ❓ HELP
           </button>
         </div>
 
         {/* Version/Credits */}
-        <p className="text-gray-500 text-sm">
+        <p className="text-slate-500 text-sm">
           Built with React Three Fiber • Press any key for controls
         </p>
       </div>
@@ -167,26 +151,26 @@ export function SplashScreen() {
       {/* Options Modal */}
       {showOptions && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
-          <div className="bg-gray-900 border border-gray-600 rounded-lg p-8 max-w-md w-full mx-4">
-            <h3 className="text-2xl font-bold text-white mb-6">Options</h3>
+          <div className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-md w-full mx-4">
+            <h3 className="text-2xl font-bold text-cyan-400 mb-6">Options</h3>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-gray-300">Audio</span>
+                <span className="text-slate-300">Audio</span>
                 <button
                   onClick={toggleMute}
-                  className={`px-4 py-2 rounded transition-colors ${
+                  className={`px-4 py-2 rounded-lg transition-colors ${
                     isMuted
                       ? "bg-red-600 hover:bg-red-500 text-white"
-                      : "bg-green-600 hover:bg-green-500 text-white"
+                      : "bg-cyan-500 hover:bg-cyan-400 text-slate-900"
                   }`}
                 >
                   {isMuted ? "🔇 Muted" : "🔊 Enabled"}
                 </button>
               </div>
 
-              <div className="border-t border-gray-700 pt-4">
-                <p className="text-sm text-gray-400">
+              <div className="border-t border-slate-600 pt-4">
+                <p className="text-sm text-slate-400">
                   Experience realistic space flight with momentum-based controls
                   and authentic rocket physics.
                 </p>
@@ -195,7 +179,7 @@ export function SplashScreen() {
 
             <button
               onClick={() => setShowOptions(false)}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded transition-colors"
+              className="mt-6 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
             >
               Close
             </button>
@@ -206,26 +190,26 @@ export function SplashScreen() {
       {/* Help Modal */}
       {showHelp && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
-          <div className="bg-gray-900 border border-gray-600 rounded-lg p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold text-white mb-6">
+          <div className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <h3 className="text-2xl font-bold text-cyan-400 mb-6">
               Flight Manual
             </h3>
 
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-blue-300 mb-3">
+                <h4 className="text-lg font-semibold text-cyan-400 mb-3">
                   Controls
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {keyBindings.map((binding, index) => (
                     <div
                       key={index}
-                      className="flex justify-between items-center bg-gray-800 p-2 rounded"
+                      className="flex justify-between items-center bg-slate-700 p-2 rounded-lg"
                     >
-                      <span className="text-gray-300 text-sm">
+                      <span className="text-slate-300 text-sm">
                         {binding.action}
                       </span>
-                      <kbd className="bg-gray-700 text-white px-2 py-1 rounded text-xs font-mono">
+                      <kbd className="bg-slate-600 text-cyan-400 px-2 py-1 rounded text-xs font-mono">
                         {binding.keys}
                       </kbd>
                     </div>
@@ -234,10 +218,10 @@ export function SplashScreen() {
               </div>
 
               <div>
-                <h4 className="text-lg font-semibold text-blue-300 mb-3">
+                <h4 className="text-lg font-semibold text-cyan-400 mb-3">
                   Gameplay Tips
                 </h4>
-                <ul className="text-gray-300 text-sm space-y-2">
+                <ul className="text-slate-300 text-sm space-y-2">
                   <li>
                     • Use realistic momentum-based movement - thrusters build up
                     speed gradually
@@ -260,7 +244,7 @@ export function SplashScreen() {
 
             <button
               onClick={() => setShowHelp(false)}
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 rounded transition-colors"
+              className="mt-6 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
             >
               Launch Mission
             </button>
