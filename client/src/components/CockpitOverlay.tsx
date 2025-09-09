@@ -1,4 +1,8 @@
+import { useShipStatus } from "../lib/stores/useShipStatus";
+
 export function CockpitOverlay() {
+  const { isThrusting } = useShipStatus();
+  
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
       {/* Cockpit frame - top and bottom bars */}
@@ -9,12 +13,14 @@ export function CockpitOverlay() {
       <div className="absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-gray-900/80 to-transparent border-r border-gray-600/50" />
       <div className="absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-gray-900/80 to-transparent border-l border-gray-600/50" />
       
-      {/* Central crosshair */}
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+      {/* Central crosshair - smaller and fade when thrusting */}
+      <div className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${
+        isThrusting ? 'scale-50 opacity-20' : 'scale-100 opacity-60'
+      }`}>
         <div className="relative">
           {/* Main crosshair */}
-          <div className="w-8 h-8 border-2 border-cyan-400 rounded-full opacity-60">
-            <div className="absolute top-1/2 left-1/2 w-2 h-2 transform -translate-x-1/2 -translate-y-1/2">
+          <div className="w-6 h-6 border-2 border-cyan-400 rounded-full">
+            <div className="absolute top-1/2 left-1/2 w-1.5 h-1.5 transform -translate-x-1/2 -translate-y-1/2">
               <div className="w-full h-0.5 bg-cyan-400" />
               <div className="w-0.5 h-full bg-cyan-400 absolute top-0 left-1/2 transform -translate-x-1/2" />
             </div>
@@ -23,11 +29,11 @@ export function CockpitOverlay() {
           {/* Crosshair lines extending outward */}
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             {/* Horizontal lines */}
-            <div className="absolute top-1/2 -left-12 w-8 h-0.5 bg-cyan-400/40 transform -translate-y-1/2" />
-            <div className="absolute top-1/2 left-4 w-8 h-0.5 bg-cyan-400/40 transform -translate-y-1/2" />
+            <div className="absolute top-1/2 -left-10 w-6 h-0.5 bg-cyan-400/40 transform -translate-y-1/2" />
+            <div className="absolute top-1/2 left-4 w-6 h-0.5 bg-cyan-400/40 transform -translate-y-1/2" />
             {/* Vertical lines */}
-            <div className="absolute -top-12 left-1/2 w-0.5 h-8 bg-cyan-400/40 transform -translate-x-1/2" />
-            <div className="absolute top-4 left-1/2 w-0.5 h-8 bg-cyan-400/40 transform -translate-x-1/2" />
+            <div className="absolute -top-10 left-1/2 w-0.5 h-6 bg-cyan-400/40 transform -translate-x-1/2" />
+            <div className="absolute top-4 left-1/2 w-0.5 h-6 bg-cyan-400/40 transform -translate-x-1/2" />
           </div>
         </div>
       </div>

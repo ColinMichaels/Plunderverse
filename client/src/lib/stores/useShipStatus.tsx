@@ -9,9 +9,18 @@ interface ShipStatusState {
   // Status flags
   isDestroyed: boolean;
   isCritical: boolean;
+  isThrusting: boolean;
+  isWarpMode: boolean;
   
   // Damage sources
   lastDamageSource: string | null;
+  
+  // Upgrade system
+  upgrades: {
+    fuelCapacity: number; // multiplier for fuel storage
+    thrustEfficiency: number; // reduces fuel consumption
+    warpCapability: boolean; // enables warp mode
+  };
   
   // Actions
   consumeFuel: (amount: number) => void;
@@ -20,6 +29,9 @@ interface ShipStatusState {
   repairHull: (amount: number) => void;
   refuel: (amount: number) => void;
   resetShip: () => void;
+  setThrusting: (thrusting: boolean) => void;
+  setWarpMode: (warpMode: boolean) => void;
+  upgradeShip: (upgradeType: 'fuelCapacity' | 'thrustEfficiency' | 'warpCapability', cost: number) => boolean;
 }
 
 export const useShipStatus = create<ShipStatusState>((set, get) => ({
@@ -28,7 +40,14 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   hull: 100,
   isDestroyed: false,
   isCritical: false,
+  isThrusting: false,
+  isWarpMode: false,
   lastDamageSource: null,
+  upgrades: {
+    fuelCapacity: 1.0,
+    thrustEfficiency: 1.0,
+    warpCapability: false,
+  },
   
   consumeFuel: (amount) => {
     set(state => {
@@ -59,7 +78,7 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       }
       
       const isDestroyed = newHull <= 0;
-      const isCritical = newFuel < 20 || newShield < 20 || newHull < 20;
+      const isCritical = state.fuel < 20 || newShield < 20 || newHull < 20;
       
       console.log(`Ship took ${amount} damage from ${source}! Hull: ${newHull}, Shield: ${newShield}`);
       
@@ -101,7 +120,42 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       hull: 100,
       isDestroyed: false,
       isCritical: false,
+      isThrusting: false,
+      isWarpMode: false,
       lastDamageSource: null
     });
+  },
+  
+  setThrusting: (thrusting) => {
+    set({ isThrusting: thrusting });
+  },
+  
+  setWarpMode: (warpMode) => {
+    set({ isWarpMode: warpMode });
+  },
+  
+  upgradeShip: (upgradeType, cost) => {
+    // Import useCredits at the top of the file instead
+    // For now, this is a placeholder - actual implementation would use external store access
+    
+    set(state => {
+      const newUpgrades = { ...state.upgrades };
+      
+      switch (upgradeType) {
+        case 'fuelCapacity':
+          newUpgrades.fuelCapacity = Math.min(3.0, newUpgrades.fuelCapacity + 0.5);
+          break;
+        case 'thrustEfficiency':
+          newUpgrades.thrustEfficiency = Math.min(0.3, newUpgrades.thrustEfficiency - 0.1);
+          break;
+        case 'warpCapability':
+          newUpgrades.warpCapability = true;
+          break;
+      }
+      
+      return { upgrades: newUpgrades };
+    });
+    
+    return true;
   }
 }));

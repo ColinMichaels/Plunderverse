@@ -13,13 +13,13 @@ export interface PlanetData {
   description: string;
 }
 
-export const distanceScale = 10;
+export const distanceScale = 2.5;
 
 export const planets: PlanetData[] = [
   {
     name: "Mercury",
     size: 0.8,
-    distance: 15,
+    distance: 15 * distanceScale,
     color: "#8C7853",
     orbitalSpeed: 0.15,
     rotationSpeed: 0.004,
@@ -34,7 +34,7 @@ export const planets: PlanetData[] = [
   {
     name: "Venus",
     size: 1.2,
-    distance: 22,
+    distance: 22 * distanceScale,
     color: "#FFC649",
     orbitalSpeed: 0.12,
     rotationSpeed: -0.002, // Retrograde rotation

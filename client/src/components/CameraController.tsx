@@ -33,7 +33,7 @@ export function CameraController() {
   const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, time } = useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
-  const { fuel, consumeFuel } = useShipStatus();
+  const { fuel, consumeFuel, setThrusting } = useShipStatus();
   const { showSplash } = useGame();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
@@ -119,7 +119,8 @@ export function CameraController() {
       thrusterActive = true;
     }
 
-    // Consume fuel when thrusters are active
+    // Update thrusting state and consume fuel when thrusters are active
+    setThrusting(thrusterActive);
     if (thrusterActive) {
       consumeFuel(delta * 2); // Consume 2 fuel per second when using thrusters
     }
