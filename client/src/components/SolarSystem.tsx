@@ -21,20 +21,8 @@ export function SolarSystem() {
 
   return (
     <group ref={systemRef}>
-      {/* Lighting */}
-      <ambientLight intensity={0.1} />
-      <directionalLight
-        position={[0, 0, 0]}
-        intensity={2}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-far={1000}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
-      />
+      {/* Minimal ambient lighting - sun is primary light source */}
+      <ambientLight intensity={0.05} />
       
       {/* Starfield background */}
       <Starfield />

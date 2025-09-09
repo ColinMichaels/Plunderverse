@@ -1,11 +1,14 @@
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { Sphere } from "@react-three/drei";
+import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 export function Sun() {
   const meshRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
+  
+  // Load sun texture
+  const sunTexture = useTexture("/textures/planets/2k_sun.jpg");
 
   useFrame((state) => {
     // Rotate the sun slowly
@@ -22,13 +25,14 @@ export function Sun() {
 
   return (
     <group position={[0, 0, 0]}>
-      {/* Sun point light */}
+      {/* Sun point light - primary light source for planets */}
       <pointLight
         position={[0, 0, 0]}
-        intensity={2}
+        intensity={3}
         color="#FDB813"
-        distance={1000}
-        decay={2}
+        distance={2000}
+        decay={1}
+        castShadow
       />
 
       {/* Sun glow */}
@@ -41,12 +45,13 @@ export function Sun() {
         />
       </Sphere>
 
-      {/* Sun core */}
+      {/* Sun core with texture */}
       <Sphere ref={meshRef} args={[5, 32, 32]}>
-        <meshStandardMaterial
-          color="#FDB813"
+        <meshBasicMaterial
+          map={sunTexture}
           emissive="#FDB813"
-          emissiveIntensity={0.8}
+          emissiveIntensity={0.6}
+          color="#FFD700"
         />
       </Sphere>
 
