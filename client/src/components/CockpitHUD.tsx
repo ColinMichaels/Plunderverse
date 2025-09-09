@@ -11,7 +11,7 @@ import { planets } from "../lib/planetData";
 export function CockpitHUD() {
   const [activePanel, setActivePanel] = useState<'nav' | 'missions' | 'none'>('none');
   const [showControls, setShowControls] = useState(false);
-  const { selectedPlanet, cameraPosition } = useSolarSystem();
+  const { selectedPlanet, cameraPosition, distanceToTarget } = useSolarSystem();
   const { credits } = useCredits();
   const { fuel, shield, hull, isThrusting } = useShipStatus();
   const { visitedPlanets, landingCount } = useRewards();
@@ -56,7 +56,7 @@ export function CockpitHUD() {
                 {/* Distance & Approach */}
                 <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
                   <div className="text-cyan-400 font-mono mb-1">RANGE</div>
-                  <div className="text-white font-semibold text-sm">{Math.round(selectedPlanetData.distance)} AU</div>
+                  <div className="text-white font-semibold text-sm">{Math.round(distanceToTarget * 10) / 10} units</div>
                   <div className="text-slate-300 mt-1">{selectedPlanetData.realDistance} AU ACTUAL</div>
                 </div>
 

@@ -14,7 +14,7 @@ export function Planet({ data, time }: PlanetProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const { setSelectedPlanet, selectedPlanet } = useSolarSystem();
+  const { setSelectedPlanet, selectedPlanet, setDistanceToTarget } = useSolarSystem();
   const [hovered, setHovered] = useState(false);
 
   // Planet texture mapping - only for textures that exist
@@ -48,11 +48,18 @@ export function Planet({ data, time }: PlanetProps) {
       meshRef.current.rotation.y += data.rotationSpeed;
     }
 
-    // Check distance to camera for auto-selection
+    // Check distance to camera for auto-selection and update real-time distance
     if (groupRef.current) {
       const distance = camera.position.distanceTo(groupRef.current.position);
+      
+      // Auto-select nearby planets
       if (distance < data.size * 3 && selectedPlanet !== data.name) {
         setSelectedPlanet(data.name);
+      }
+      
+      // Update real-time distance if this is the selected planet
+      if (selectedPlanet === data.name) {
+        setDistanceToTarget(distance);
       }
     }
   });
