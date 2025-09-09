@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGame } from "../lib/stores/useGame";
 import { useAudio } from "../lib/stores/useAudio";
 
@@ -6,7 +6,26 @@ export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const { start } = useGame();
-  const { toggleMute, isMuted } = useAudio();
+  const { toggleMute, isMuted, setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic } = useAudio();
+
+  // Initialize sounds and start ambient music
+  useEffect(() => {
+    // Load space ambience
+    const ambientAudio = new Audio('/sounds/space-ambience.mp3');
+    setAmbientMusic(ambientAudio);
+    
+    // Load new laser sound (zap)
+    const zapAudio = new Audio('/sounds/zap.mp3');
+    setLaserSound(zapAudio);
+    
+    // Play ambient music when splash screen loads
+    playAmbientMusic();
+    
+    // Cleanup when component unmounts
+    return () => {
+      stopAmbientMusic();
+    };
+  }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
 
   const handleEnterCockpit = () => {
     start();
@@ -26,32 +45,69 @@ export function SplashScreen() {
   ];
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-b from-black via-blue-900/20 to-black flex items-center justify-center z-50">
-      {/* Starfield background effect */}
-      <div className="absolute inset-0 overflow-hidden">
+    <div className="fixed inset-0 bg-gradient-to-br from-black via-purple-900/10 via-blue-900/20 to-black flex items-center justify-center z-50 overflow-hidden">
+      {/* Enhanced animated starfield background */}
+      <div className="absolute inset-0">
+        {/* Moving stars */}
         <div className="animate-pulse">
-          {Array.from({ length: 100 }).map((_, i) => (
+          {Array.from({ length: 150 }).map((_, i) => (
             <div
               key={i}
-              className="absolute w-1 h-1 bg-white rounded-full opacity-80"
+              className="absolute rounded-full bg-white"
               style={{
+                width: `${Math.random() * 3 + 1}px`,
+                height: `${Math.random() * 3 + 1}px`,
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDelay: `${Math.random() * 3}s`,
+                opacity: Math.random() * 0.8 + 0.2,
+                animationDuration: `${Math.random() * 4 + 2}s`,
+                animationDelay: `${Math.random() * 4}s`,
               }}
             />
           ))}
         </div>
+        
+        {/* Floating particles */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute w-1 h-1 bg-blue-400 rounded-full animate-ping"
+              style={{
+                left: `${Math.random() * 100}%`,
+                top: `${Math.random() * 100}%`,
+                animationDuration: `${Math.random() * 3 + 2}s`,
+                animationDelay: `${Math.random() * 5}s`,
+              }}
+            />
+          ))}
+        </div>
+        
+        {/* Nebula effect */}
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-purple-500/5 to-transparent animate-pulse opacity-60"></div>
       </div>
 
       <div className="relative z-10 text-center max-w-4xl px-8">
-        {/* Main Title */}
-        <h1 className="text-6xl md:text-8xl font-bold text-white mb-4 tracking-wider">
-          SOLAR SYSTEM
-        </h1>
-        <h2 className="text-3xl md:text-4xl font-light text-blue-300 mb-8 tracking-wide">
-          EXPLORER
-        </h2>
+        {/* Enhanced Main Title with animations */}
+        <div className="relative mb-4">
+          <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-cyan-300 to-purple-400 bg-clip-text text-transparent mb-4 tracking-wider animate-pulse">
+            SOLAR SYSTEM
+          </h1>
+          {/* Glow effect */}
+          <div className="absolute inset-0 text-6xl md:text-8xl font-bold text-blue-300 opacity-20 blur-sm tracking-wider">
+            SOLAR SYSTEM
+          </div>
+        </div>
+        
+        <div className="relative mb-8">
+          <h2 className="text-3xl md:text-4xl font-light bg-gradient-to-r from-cyan-300 to-blue-400 bg-clip-text text-transparent tracking-wide animate-pulse" style={{ animationDelay: '0.5s' }}>
+            EXPLORER
+          </h2>
+          {/* Subtitle glow */}
+          <div className="absolute inset-0 text-3xl md:text-4xl font-light text-cyan-300 opacity-20 blur-sm tracking-wide">
+            EXPLORER
+          </div>
+        </div>
         
         {/* Subtitle */}
         <p className="text-xl text-gray-300 mb-12 max-w-2xl mx-auto leading-relaxed">
@@ -59,31 +115,34 @@ export function SplashScreen() {
           and experience realistic rocket propulsion physics.
         </p>
 
-        {/* Main Action Button */}
+        {/* Enhanced Main Action Button */}
         <button
           onClick={handleEnterCockpit}
-          className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 
+          className="relative bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 
                      text-white font-bold py-4 px-12 rounded-lg text-xl mb-8 
-                     transform transition-all duration-300 hover:scale-105 hover:shadow-2xl
-                     border border-blue-400 shadow-lg"
+                     transform transition-all duration-300 hover:scale-110 hover:shadow-2xl
+                     border border-blue-400 shadow-lg animate-bounce overflow-hidden group"
+          style={{ animationDuration: '3s' }}
         >
-          🚀 ENTER THE COCKPIT
+          {/* Button glow effect */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-cyan-400 opacity-0 group-hover:opacity-30 transition-opacity duration-300"></div>
+          <span className="relative z-10">🚀 ENTER THE COCKPIT</span>
         </button>
 
-        {/* Menu Buttons */}
+        {/* Enhanced Menu Buttons */}
         <div className="flex justify-center gap-6 mb-8">
           <button
             onClick={() => setShowOptions(true)}
-            className="bg-gray-800/80 hover:bg-gray-700 text-white font-semibold py-3 px-8 
-                       rounded-lg border border-gray-600 transition-all duration-300 hover:scale-105"
+            className="bg-gray-800/80 hover:bg-gray-700 hover:bg-blue-900/50 text-white font-semibold py-3 px-8 
+                       rounded-lg border border-gray-600 hover:border-blue-400 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
           >
             ⚙️ OPTIONS
           </button>
           
           <button
             onClick={() => setShowHelp(true)}
-            className="bg-gray-800/80 hover:bg-gray-700 text-white font-semibold py-3 px-8 
-                       rounded-lg border border-gray-600 transition-all duration-300 hover:scale-105"
+            className="bg-gray-800/80 hover:bg-gray-700 hover:bg-purple-900/50 text-white font-semibold py-3 px-8 
+                       rounded-lg border border-gray-600 hover:border-purple-400 transition-all duration-300 hover:scale-105 hover:shadow-lg backdrop-blur-sm"
           >
             ❓ HELP
           </button>

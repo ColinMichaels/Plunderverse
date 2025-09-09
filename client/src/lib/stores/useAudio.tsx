@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 interface AudioState {
   backgroundMusic: HTMLAudioElement | null;
+  ambientMusic: HTMLAudioElement | null;
   hitSound: HTMLAudioElement | null;
   successSound: HTMLAudioElement | null;
   laserSound: HTMLAudioElement | null;
@@ -9,6 +10,7 @@ interface AudioState {
   
   // Setter functions
   setBackgroundMusic: (music: HTMLAudioElement) => void;
+  setAmbientMusic: (music: HTMLAudioElement) => void;
   setHitSound: (sound: HTMLAudioElement) => void;
   setSuccessSound: (sound: HTMLAudioElement) => void;
   setLaserSound: (sound: HTMLAudioElement) => void;
@@ -18,16 +20,20 @@ interface AudioState {
   playHit: () => void;
   playSuccess: () => void;
   playLaser: () => void;
+  playAmbientMusic: () => void;
+  stopAmbientMusic: () => void;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
   backgroundMusic: null,
+  ambientMusic: null,
   hitSound: null,
   successSound: null,
   laserSound: null,
   isMuted: true, // Start muted by default
   
   setBackgroundMusic: (music) => set({ backgroundMusic: music }),
+  setAmbientMusic: (music) => set({ ambientMusic: music }),
   setHitSound: (sound) => set({ hitSound: sound }),
   setSuccessSound: (sound) => set({ successSound: sound }),
   setLaserSound: (sound) => set({ laserSound: sound }),
@@ -88,10 +94,29 @@ export const useAudio = create<AudioState>((set, get) => ({
       
       // Clone the sound to allow rapid fire
       const soundClone = laserSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.4;
+      soundClone.volume = 0.6; // Increased volume for zap sound
       soundClone.play().catch(error => {
         console.log("Laser sound play prevented:", error);
       });
+    }
+  },
+  
+  playAmbientMusic: () => {
+    const { ambientMusic, isMuted } = get();
+    if (ambientMusic && !isMuted) {
+      ambientMusic.volume = 0.3; // Low volume for background ambience
+      ambientMusic.loop = true;
+      ambientMusic.play().catch(error => {
+        console.log("Ambient music play prevented:", error);
+      });
+    }
+  },
+  
+  stopAmbientMusic: () => {
+    const { ambientMusic } = get();
+    if (ambientMusic) {
+      ambientMusic.pause();
+      ambientMusic.currentTime = 0;
     }
   }
 }));
