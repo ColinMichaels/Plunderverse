@@ -13,7 +13,7 @@ export function CockpitHUD() {
   const [showControls, setShowControls] = useState(false);
   const { selectedPlanet, cameraPosition } = useSolarSystem();
   const { credits } = useCredits();
-  const { fuel, shield, hull } = useShipStatus();
+  const { fuel, shield, hull, isThrusting } = useShipStatus();
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
   const { toggleMute, isMuted } = useAudio();
@@ -23,9 +23,13 @@ export function CockpitHUD() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
-      {/* Central HUD */}
-      <div className="absolute top-8 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-        <div className="bg-slate-800/90 border border-cyan-400/50 rounded-xl p-4 backdrop-blur-sm">
+      {/* Central HUD - smaller and more transparent when thrusting */}
+      <div className={`absolute top-8 left-1/2 transform -translate-x-1/2 pointer-events-auto transition-all duration-300 ${
+        isThrusting ? 'scale-75 opacity-40' : 'scale-100 opacity-100'
+      }`}>
+        <div className={`border border-cyan-400/50 rounded-xl backdrop-blur-sm transition-all duration-300 ${
+          isThrusting ? 'bg-slate-800/60 p-2' : 'bg-slate-800/90 p-4'
+        }`}>
           {/* Targeting Computer Display */}
           {selectedPlanet && selectedPlanetData ? (
             <div className="w-full">
@@ -38,8 +42,10 @@ export function CockpitHUD() {
                 <div className="text-xs text-slate-400">TARGETING COMPUTER ACTIVE</div>
               </div>
 
-              {/* Main Target Info Grid */}
-              <div className="grid grid-cols-4 gap-4 text-xs">
+              {/* Main Target Info Grid - responsive sizing */}
+              <div className={`grid gap-2 text-xs transition-all duration-300 ${
+                isThrusting ? 'grid-cols-2' : 'grid-cols-4'
+              }`}>
                 {/* Primary Target Data */}
                 <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
                   <div className="text-cyan-400 font-mono mb-1">DESIGNATION</div>
@@ -226,9 +232,13 @@ export function CockpitHUD() {
         )}
       </div>
 
-      {/* Bottom Status Bar */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-        <div className="bg-slate-800/90 border border-slate-600 rounded-xl p-4 backdrop-blur-sm status-bar">
+      {/* Bottom Status Bar - more transparent when thrusting */}
+      <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto transition-all duration-300 ${
+        isThrusting ? 'opacity-60' : 'opacity-100'
+      }`}>
+        <div className={`border border-slate-600 rounded-xl backdrop-blur-sm status-bar transition-all duration-300 ${
+          isThrusting ? 'bg-slate-800/60 p-2' : 'bg-slate-800/90 p-4'
+        }`}>
           <div className="flex items-center space-x-8">
             {/* Ship Systems */}
             <div className="flex items-center space-x-6">
