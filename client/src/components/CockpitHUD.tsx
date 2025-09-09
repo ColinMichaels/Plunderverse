@@ -26,34 +26,83 @@ export function CockpitHUD() {
       {/* Central HUD */}
       <div className="absolute top-8 left-1/2 transform -translate-x-1/2 pointer-events-auto">
         <div className="bg-slate-800/90 border border-cyan-400/50 rounded-xl p-4 backdrop-blur-sm">
-          <div className="flex items-center space-x-6 text-sm">
-            {/* Crosshair/Target */}
-            <div className="flex items-center space-x-2">
-              <div className="w-6 h-6 border border-cyan-400 rounded-full flex items-center justify-center">
-                <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+          {/* Targeting Computer Display */}
+          {selectedPlanet && selectedPlanetData ? (
+            <div className="w-full">
+              {/* Target Header */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
+                  <span className="text-cyan-400 font-mono font-semibold">TARGET ACQUIRED</span>
+                </div>
+                <div className="text-xs text-slate-400">TARGETING COMPUTER ACTIVE</div>
               </div>
-              <span className="text-cyan-400 font-mono">TGT</span>
-            </div>
 
-            {/* Selected Target */}
-            {selectedPlanet && (
-              <div className="text-center">
-                <div className="text-cyan-400 text-xs">TARGET</div>
-                <div className="text-white font-semibold">{selectedPlanet}</div>
-                {selectedPlanetData && (
-                  <div className="text-xs text-slate-400">
-                    {Math.round(selectedPlanetData.distance)} AU
+              {/* Main Target Info Grid */}
+              <div className="grid grid-cols-4 gap-4 text-xs">
+                {/* Primary Target Data */}
+                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                  <div className="text-cyan-400 font-mono mb-1">DESIGNATION</div>
+                  <div className="text-white font-semibold text-sm">{selectedPlanet}</div>
+                  <div className="text-slate-300 mt-1">PLANETARY BODY</div>
+                </div>
+
+                {/* Distance & Approach */}
+                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                  <div className="text-cyan-400 font-mono mb-1">RANGE</div>
+                  <div className="text-white font-semibold text-sm">{Math.round(selectedPlanetData.distance)} AU</div>
+                  <div className="text-slate-300 mt-1">{selectedPlanetData.realDistance} AU ACTUAL</div>
+                </div>
+
+                {/* Physical Characteristics */}
+                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                  <div className="text-cyan-400 font-mono mb-1">DIAMETER</div>
+                  <div className="text-white font-semibold text-sm">{selectedPlanetData.diameter} km</div>
+                  <div className="text-slate-300 mt-1">{selectedPlanetData.moons} MOON{selectedPlanetData.moons !== 1 ? 'S' : ''}</div>
+                </div>
+
+                {/* Orbital Data */}
+                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
+                  <div className="text-cyan-400 font-mono mb-1">ORBIT PERIOD</div>
+                  <div className="text-white font-semibold text-sm">{selectedPlanetData.orbitalPeriod}</div>
+                  <div className="text-slate-300 mt-1">DAY: {selectedPlanetData.dayLength}</div>
+                </div>
+              </div>
+
+              {/* Target Description */}
+              <div className="mt-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600">
+                <div className="text-cyan-400 font-mono text-xs mb-1">INTELLIGENCE BRIEFING</div>
+                <div className="text-slate-300 text-xs leading-relaxed">{selectedPlanetData.description}</div>
+              </div>
+
+              {/* Landing Status */}
+              <div className="mt-3 flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    <span className="text-green-400 text-xs font-mono">LANDING VIABLE</span>
                   </div>
-                )}
+                  {visitedPlanets.has(selectedPlanet) && (
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
+                      <span className="text-cyan-400 text-xs font-mono">PREVIOUSLY VISITED</span>
+                    </div>
+                  )}
+                </div>
+                <div className="text-slate-400 text-xs font-mono">PRESS L TO LAND</div>
               </div>
-            )}
-
-            {/* Velocity/Status */}
-            <div className="text-center">
-              <div className="text-cyan-400 text-xs">STATUS</div>
-              <div className="text-white font-mono text-sm">NOMINAL</div>
             </div>
-          </div>
+          ) : (
+            <div className="flex items-center justify-center py-8">
+              <div className="text-center">
+                <div className="w-8 h-8 border-2 border-slate-600 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
+                </div>
+                <div className="text-slate-400 font-mono text-sm">NO TARGET SELECTED</div>
+                <div className="text-slate-500 text-xs mt-1">Click on a planet to target</div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
