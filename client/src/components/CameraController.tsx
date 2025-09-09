@@ -214,7 +214,7 @@ export function CameraController() {
           
           // Check distance to planet
           const distanceToPlanet = camera.position.distanceTo(planetPosition);
-          const landingRange = planetData.size * 8; // Must be within 8x planet radius (more forgiving)
+          const landingRange = planetData.size * 12; // Must be within 12x planet radius (more forgiving)
           
           if (distanceToPlanet <= landingRange) {
             setIsLanding(true);

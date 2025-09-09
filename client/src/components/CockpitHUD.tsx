@@ -59,9 +59,9 @@ export function CockpitHUD() {
     }
     
     if (spendCredits(autopilotCost)) {
-      // Calculate safe approach position near the planet
+      // Calculate safe approach position near the planet - closer for easier landing
       const approachDirection = cameraPosition.clone().sub(planet.position).normalize();
-      const safeDistance = planet.size * 8; // Safe distance from planet
+      const safeDistance = planet.size * 4; // Closer distance for easier landing
       const targetPosition = planet.position.clone().add(approachDirection.multiplyScalar(safeDistance));
       
       activateAutopilot(targetPosition);
@@ -71,9 +71,9 @@ export function CockpitHUD() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
-      {/* Central HUD - smaller and more transparent when thrusting */}
-      <div className={`absolute top-8 left-1/2 transform -translate-x-1/2 pointer-events-auto transition-all duration-300 ${
-        isThrusting ? 'scale-75 opacity-40' : 'scale-100 opacity-100'
+      {/* Central HUD - smaller and more transparent when thrusting, no pointer events when maneuvering */}
+      <div className={`absolute top-8 left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
+        isThrusting ? 'scale-75 opacity-40 pointer-events-none' : 'scale-100 opacity-100 pointer-events-auto'
       }`}>
         <div className={`border border-cyan-400/50 rounded-xl backdrop-blur-sm transition-all duration-300 ${
           isThrusting ? 'bg-slate-800/60 p-2' : 'bg-slate-800/90 p-4'
