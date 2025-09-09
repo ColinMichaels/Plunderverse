@@ -33,12 +33,15 @@ export function CameraController() {
   const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, time } = useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
-  const { fuel, consumeFuel, setThrusting } = useShipStatus();
+  const { fuel, consumeFuel, setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
   const lastMenuPressRef = useRef(0);
   const lastCenterPressRef = useRef(0);
+  const lastForwardPressRef = useRef(0);
+  const forwardDoubleClickRef = useRef(false);
+  const warpSpeedMultiplierRef = useRef(1);
   
   // Mobile control states
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
@@ -75,11 +78,20 @@ export function CameraController() {
     const acceleration = accelerationRef.current;
     
     // Rocket propulsion physics constants
-    const thrustPower = 8; // Lower thrust for more realistic feel
-    const maxVelocity = 25; // Terminal velocity
+    const baseThrustPower = 8; // Lower thrust for more realistic feel
+    const baseMaxVelocity = 25; // Terminal velocity
     const dragCoefficient = 0.995; // Reduced friction for stickier momentum
     const mobileThrustPower = 25; // Much higher power for mobile controls
     const rotationalDamping = 0.95; // Rotational drag
+    
+    // Warp mode constants
+    const warpThrustMultiplier = upgrades.warpCapability ? 4 : 2; // Enhanced thrust in warp
+    const warpMaxVelocity = upgrades.warpCapability ? 150 : 75; // Much higher max velocity
+    const warpFuelConsumption = 8; // Higher fuel consumption in warp
+    
+    // Apply current modifiers
+    const thrustPower = isWarpMode ? baseThrustPower * warpThrustMultiplier : baseThrustPower;
+    const maxVelocity = isWarpMode ? warpMaxVelocity : baseMaxVelocity;
 
     // Reset acceleration each frame
     acceleration.set(0, 0, 0);
@@ -93,10 +105,26 @@ export function CameraController() {
     const hasFuel = fuel > 0;
     let thrusterActive = false;
 
-    // Apply thruster forces (acceleration-based) only if we have fuel
+    // Detect double-click for warp mode
+    const currentTime = performance.now();
     if (controls.forward && hasFuel) {
+      // Check for double-click
+      if (currentTime - lastForwardPressRef.current < 300) { // 300ms window for double-click
+        if (upgrades.warpCapability || fuel > 30) { // Need warp upgrade OR sufficient fuel
+          setWarpMode(true);
+          forwardDoubleClickRef.current = true;
+          console.log("Warp mode activated!");
+        }
+      }
+      lastForwardPressRef.current = currentTime;
+      
       acceleration.add(forward.multiplyScalar(thrustPower));
       thrusterActive = true;
+    } else if (!controls.forward && isWarpMode) {
+      // Deactivate warp when forward key is released
+      setWarpMode(false);
+      forwardDoubleClickRef.current = false;
+      console.log("Warp mode deactivated");
     }
     if (controls.backward && hasFuel) {
       acceleration.add(forward.multiplyScalar(-thrustPower * 0.7)); // Reverse thrusters less powerful
@@ -122,7 +150,11 @@ export function CameraController() {
     // Update thrusting state and consume fuel when thrusters are active
     setThrusting(thrusterActive);
     if (thrusterActive) {
-      consumeFuel(delta * 2); // Consume 2 fuel per second when using thrusters
+      const baseFuelConsumption = 2;
+      const fuelMultiplier = isWarpMode ? warpFuelConsumption : baseFuelConsumption;
+      const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
+      const finalConsumption = (fuelMultiplier * efficiencyBonus) * delta;
+      consumeFuel(finalConsumption);
     }
 
     // Add mobile thrust input

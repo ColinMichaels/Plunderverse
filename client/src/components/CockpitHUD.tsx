@@ -13,7 +13,7 @@ export function CockpitHUD() {
   const [showControls, setShowControls] = useState(false);
   const { selectedPlanet, cameraPosition, distanceToTarget } = useSolarSystem();
   const { credits } = useCredits();
-  const { fuel, shield, hull, isThrusting } = useShipStatus();
+  const { fuel, shield, hull, isThrusting, isWarpMode } = useShipStatus();
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
   const { toggleMute, isMuted } = useAudio();
@@ -301,8 +301,12 @@ export function CockpitHUD() {
             <div className="text-center">
               <div className="text-xs text-slate-400">THRUST</div>
               <div className="flex items-center space-x-1">
-                <div className="w-2 h-2 bg-orange-400 rounded-full animate-pulse" id="thrust-indicator" style={{ opacity: 0 }}></div>
-                <span className="text-orange-400 text-xs font-mono">IDLE</span>
+                <div className={`w-2 h-2 rounded-full animate-pulse ${
+                  isWarpMode ? 'bg-cyan-400' : 'bg-orange-400'
+                }`} id="thrust-indicator" style={{ opacity: 0 }}></div>
+                <span className={`text-xs font-mono ${
+                  isWarpMode ? 'text-cyan-400' : 'text-orange-400'
+                }`}>{isWarpMode ? 'WARP' : 'IDLE'}</span>
               </div>
             </div>
 
