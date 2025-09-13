@@ -105,61 +105,56 @@ export function CameraController() {
     const hasFuel = fuel > 0;
     let thrusterActive = false;
 
-    // Detect double-click for warp mode
-    const currentTime = performance.now();
-    if (controls.forward && hasFuel) {
-      // Check for double-click
-      if (currentTime - lastForwardPressRef.current < 300) { // 300ms window for double-click
-        if (upgrades.warpCapability || fuel > 30) { // Need warp upgrade OR sufficient fuel
-          setWarpMode(true);
-          forwardDoubleClickRef.current = true;
-          console.log("Warp mode activated!");
+    // Disable movement controls when autopilot is active
+    if (!isAutopilotActive) {
+      // Detect double-click for warp mode
+      const currentTime = performance.now();
+      if (controls.forward && hasFuel) {
+        // Check for double-click
+        if (currentTime - lastForwardPressRef.current < 300) { // 300ms window for double-click
+          if (upgrades.warpCapability || fuel > 30) { // Need warp upgrade OR sufficient fuel
+            setWarpMode(true);
+            forwardDoubleClickRef.current = true;
+            console.log("Warp mode activated!");
+          }
         }
+        lastForwardPressRef.current = currentTime;
+        
+        acceleration.add(forward.multiplyScalar(thrustPower));
+        thrusterActive = true;
+      } else if (!controls.forward && isWarpMode) {
+        // Deactivate warp when forward key is released
+        setWarpMode(false);
+        forwardDoubleClickRef.current = false;
+        console.log("Warp mode deactivated");
       }
-      lastForwardPressRef.current = currentTime;
-      
-      acceleration.add(forward.multiplyScalar(thrustPower));
-      thrusterActive = true;
-    } else if (!controls.forward && isWarpMode) {
-      // Deactivate warp when forward key is released
-      setWarpMode(false);
-      forwardDoubleClickRef.current = false;
-      console.log("Warp mode deactivated");
-    }
-    if (controls.backward && hasFuel) {
-      acceleration.add(forward.multiplyScalar(-thrustPower * 0.7)); // Reverse thrusters less powerful
-      thrusterActive = true;
-    }
-    if (controls.left && hasFuel) {
-      acceleration.add(right.multiplyScalar(-thrustPower * 0.8)); // Side thrusters less powerful
-      thrusterActive = true;
-    }
-    if (controls.right && hasFuel) {
-      acceleration.add(right.multiplyScalar(thrustPower * 0.8));
-      thrusterActive = true;
-    }
-    if (controls.up && hasFuel) {
-      acceleration.add(up.multiplyScalar(thrustPower * 0.6)); // Vertical thrusters less powerful
-      thrusterActive = true;
-    }
-    if (controls.down && hasFuel) {
-      acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
-      thrusterActive = true;
-    }
+      if (controls.backward && hasFuel) {
+        acceleration.add(forward.multiplyScalar(-thrustPower * 0.7)); // Reverse thrusters less powerful
+        thrusterActive = true;
+      }
+      if (controls.left && hasFuel) {
+        acceleration.add(right.multiplyScalar(-thrustPower * 0.8)); // Side thrusters less powerful
+        thrusterActive = true;
+      }
+      if (controls.right && hasFuel) {
+        acceleration.add(right.multiplyScalar(thrustPower * 0.8));
+        thrusterActive = true;
+      }
+      if (controls.up && hasFuel) {
+        acceleration.add(up.multiplyScalar(thrustPower * 0.6)); // Vertical thrusters less powerful
+        thrusterActive = true;
+      }
+      if (controls.down && hasFuel) {
+        acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
+        thrusterActive = true;
+      }
+    } // End autopilot check
 
-    // Update thrusting state and consume fuel when thrusters are active
-    setThrusting(thrusterActive);
-    if (thrusterActive) {
-      const baseFuelConsumption = 2;
-      const fuelMultiplier = isWarpMode ? warpFuelConsumption : baseFuelConsumption;
-      const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
-      const finalConsumption = (fuelMultiplier * efficiencyBonus) * delta;
-      consumeFuel(finalConsumption);
-    }
+    // Note: Fuel consumption moved to end of frame after all thrust sources computed
 
-    // Add mobile thrust input
+    // Add mobile thrust input (also disabled during autopilot)
     const mobileThrust = mobileThrustRef.current;
-    if (mobileThrust.length() > 0 && hasFuel) {
+    if (mobileThrust.length() > 0 && hasFuel && !isAutopilotActive) {
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
       const up = new THREE.Vector3(0, 1, 0);
@@ -190,11 +185,6 @@ export function CameraController() {
 
     // Apply drag/friction
     velocity.multiplyScalar(dragCoefficient);
-
-    // Clamp maximum velocity
-    if (velocity.length() > maxVelocity) {
-      velocity.normalize().multiplyScalar(maxVelocity);
-    }
 
     // Landing mode - only allow if close to planet and not recently attempted
     if (controls.land && selectedPlanet && !isLanding) {
@@ -250,12 +240,7 @@ export function CameraController() {
       }
     }
 
-    // Update camera position with momentum
-    camera.position.add(velocity.clone().multiplyScalar(delta));
-    
-    // Update camera position in store for UI components
-    const { setCameraPosition } = useSolarSystem.getState();
-    setCameraPosition(camera.position);
+    // Note: Camera position update moved to end of frame after velocity clamping
 
     // Mouse and mobile look controls with damping for smoother rotation
     const mouse = state.mouse;
@@ -315,20 +300,64 @@ export function CameraController() {
       const direction = autopilotTarget.clone().sub(camera.position).normalize();
       const autopilotSpeed = 15;
       
-      // Move towards target
-      velocity.add(direction.multiplyScalar(autopilotSpeed * delta));
+      // Disable warp mode during autopilot for consistent behavior
+      if (isWarpMode) {
+        setWarpMode(false);
+      }
+      
+      // Smoothly rotate camera to face target
+      const targetQuaternion = new THREE.Quaternion();
+      const lookAtMatrix = new THREE.Matrix4();
+      lookAtMatrix.lookAt(camera.position, autopilotTarget, new THREE.Vector3(0, 1, 0));
+      targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+      
+      // Smooth interpolation towards target orientation
+      camera.quaternion.slerp(targetQuaternion, delta * 2); // Adjust speed with multiplier
+      
+      // Move towards target with proper speed limiting
+      const autopilotVelocity = direction.multiplyScalar(autopilotSpeed * delta);
+      velocity.add(autopilotVelocity);
+      
+      // Mark as thrusting during autopilot and consume fuel
+      setThrusting(true);
+      thrusterActive = true;
       
       // Check if we've reached the target
       const distanceToTarget = camera.position.distanceTo(autopilotTarget);
       if (distanceToTarget < 8) {
+        // Dampen velocity on arrival to prevent overshoot
+        velocity.multiplyScalar(0.3);
         deactivateAutopilot();
         console.log("Autopilot navigation complete!");
       }
     }
 
+    // Clamp maximum velocity (after all thrust sources computed)
+    const effectiveMaxVelocity = isAutopilotActive ? Math.min(maxVelocity, 25) : maxVelocity;
+    if (velocity.length() > effectiveMaxVelocity) {
+      velocity.normalize().multiplyScalar(effectiveMaxVelocity);
+    }
+
     // During landing, reduce movement to show transition effect
     if (isLanding) {
       velocity.multiplyScalar(0.1); // Dramatically reduce movement during landing sequence
+    }
+    
+    // Update camera position with momentum (after velocity clamping)
+    camera.position.add(velocity.clone().multiplyScalar(delta));
+    
+    // Update camera position in store for UI components
+    const { setCameraPosition } = useSolarSystem.getState();
+    setCameraPosition(camera.position);
+    
+    // Consume fuel after all thrust sources have been computed
+    setThrusting(thrusterActive);
+    if (thrusterActive) {
+      const baseFuelConsumption = 2;
+      const fuelMultiplier = isWarpMode ? warpFuelConsumption : baseFuelConsumption;
+      const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
+      const finalConsumption = (fuelMultiplier * efficiencyBonus) * delta;
+      consumeFuel(finalConsumption);
     }
   });
 
