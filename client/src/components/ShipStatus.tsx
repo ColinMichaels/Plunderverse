@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useCredits } from "../lib/stores/useCredits";
+import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function ShipStatus() {
-  const [isExpanded, setIsExpanded] = useState(false);
   const { equipment, repairEquipment, replenishFuel, getConditionStatus, getPerformanceMultiplier } = useEquipment();
   const { credits, spendCredits } = useCredits();
 
@@ -79,150 +79,120 @@ export function ShipStatus() {
 
   if (shipComponents.length === 0) return null;
 
-  // Minimized view
-  if (!isExpanded) {
-    return (
-      <div className="fixed top-4 left-4 z-20">
-        <div className="bg-gray-900/95 border border-gray-600 rounded-lg p-3 backdrop-blur-sm">
-          <div className="flex items-center justify-between space-x-3">
-            <div className="flex items-center space-x-2">
-              <span className="text-blue-400 text-lg">🚢</span>
-              <div className="flex items-center space-x-2">
-                {shipComponents.map((component) => {
-                  const condition = getConditionStatus(component.id);
-                  const durabilityPercent = (component.currentDurability / component.maxDurability) * 100;
-                  const needsAttention = condition === 'critical' || condition === 'broken';
-                  
-                  return (
-                    <div key={component.id} className="flex items-center space-x-1">
-                      <span className="text-sm">{getSystemIcon(component.type)}</span>
-                      <div className={`text-xs font-medium ${needsAttention ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
-                        {Math.round(durabilityPercent)}%
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <button
-              onClick={() => setIsExpanded(true)}
-              className="text-gray-400 hover:text-blue-400 transition-colors"
-              title="Expand ship status"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 14l5-5 5 5z"/>
-              </svg>
-            </button>
-          </div>
-          
-          {/* Critical status indicator */}
-          {shipComponents.some(c => getConditionStatus(c.id) === 'broken' || getConditionStatus(c.id) === 'critical') && (
-            <div className="mt-2 text-xs text-red-400 animate-pulse">
-              ⚠️ Systems need attention!
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Create compact status summary for collapsed view
+  const criticalCount = shipComponents.filter(c => getConditionStatus(c.id) === 'critical' || getConditionStatus(c.id) === 'broken').length;
 
-  // Expanded view (existing full interface)
   return (
-    <div className="fixed top-4 left-4 z-20 max-w-sm">
-      <div className="bg-gray-900/95 border border-gray-600 rounded-lg p-4 backdrop-blur-sm">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center space-x-2">
-            <span className="text-blue-400 text-lg">🚢</span>
-            <h3 className="text-blue-400 font-semibold">Ship Status</h3>
-          </div>
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="text-gray-400 hover:text-blue-400 transition-colors"
-            title="Minimize ship status"
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M17 10l-5 5-5-5z"/>
-            </svg>
-          </button>
+    <SpaceUIPanel
+      id="ship-status"
+      title="SHIP STATUS"
+      icon="🚢"
+      zone="top-left"
+      priority={1}
+      defaultExpanded={false}
+    >
+      <div className="space-y-3">
+        {/* System status overview */}
+        <div className="space-status-bar grid-cols-2">
+          {shipComponents.map((component) => {
+            const condition = getConditionStatus(component.id);
+            const durabilityPercent = (component.currentDurability / component.maxDurability) * 100;
+            const performance = getPerformanceMultiplier(component.id);
+            
+            return (
+              <div key={component.id} className="space-status-item">
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm">{getSystemIcon(component.type)}</span>
+                  <span className="text-xs">{component.name}</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span className={`text-xs ${getConditionColor(condition)}`}>
+                    {Math.round(durabilityPercent)}%
+                  </span>
+                  {(condition === 'critical' || condition === 'broken') && (
+                    <span className="text-red-400 animate-pulse">⚠️</span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        <div className="space-y-3">
+        {/* Detailed component status */}
+        <div className="space-y-2">
           {shipComponents.map((component) => {
             const condition = getConditionStatus(component.id);
             const performance = getPerformanceMultiplier(component.id);
             const durabilityPercent = (component.currentDurability / component.maxDurability) * 100;
             
             return (
-              <div key={component.id} className="p-3 bg-gray-800/70 rounded-lg border border-gray-700">
-                <div className="flex justify-between items-start mb-2">
+              <div key={component.id} className="p-2 rounded border border-slate-600/50 bg-slate-800/30">
+                <div className="flex justify-between items-start mb-1">
                   <div className="flex items-center space-x-2">
                     <span className="text-lg">{getSystemIcon(component.type)}</span>
                     <div>
-                      <h4 className="text-white font-medium text-sm">{component.name}</h4>
+                      <h4 className="text-cyan-300 font-medium text-xs font-mono">{component.name}</h4>
                       <div className={`text-xs ${getConditionColor(condition)}`}>
                         {getConditionIcon(condition)} {condition.toUpperCase()}
                       </div>
                     </div>
                   </div>
-                  <div className="text-right text-xs">
+                  <div className="text-right text-xs font-mono">
                     {component.isConsumable ? (
                       <div className="text-cyan-300">
-                        <div>Fuel: {Math.round(component.currentDurability)}/{component.maxDurability}</div>
+                        <div>FUEL: {Math.round(component.currentDurability)}/{component.maxDurability}</div>
                         <div>{Math.round(durabilityPercent)}%</div>
                       </div>
                     ) : (
-                      <div className="text-gray-300">
-                        <div>Integrity: {Math.round(durabilityPercent)}%</div>
-                        <div>Performance: {Math.round(performance * 100)}%</div>
+                      <div className="text-slate-300">
+                        <div>INT: {Math.round(durabilityPercent)}%</div>
+                        <div>PERF: {Math.round(performance * 100)}%</div>
                       </div>
                     )}
                   </div>
                 </div>
 
-                {/* Status bar */}
-                <div className="w-full bg-gray-700 rounded-full h-2 mb-2">
+                {/* Progress bar with space styling */}
+                <div className="space-progress-bar mb-2">
                   <div 
-                    className={`h-2 rounded-full transition-all ${
-                      component.isConsumable
-                        ? 'bg-cyan-500' // Fuel bar
-                        : durabilityPercent > 80 ? 'bg-green-500' : 
-                          durabilityPercent > 60 ? 'bg-yellow-500' : 
-                          durabilityPercent > 40 ? 'bg-orange-500' : 'bg-red-500'
+                    className={`space-progress-fill ${
+                      component.isConsumable ? '' : 
+                      durabilityPercent > 80 ? '' : 
+                      durabilityPercent > 60 ? 'bg-yellow-400' : 
+                      durabilityPercent > 40 ? 'bg-orange-400' : 'bg-red-400'
                     }`}
                     style={{ width: `${durabilityPercent}%` }}
                   />
                 </div>
 
-                {/* Action buttons */}
-                <div className="flex space-x-2">
+                {/* Action buttons with space styling */}
+                <div className="flex space-x-1">
                   {component.isConsumable ? (
-                    // Fuel refill button
                     component.currentDurability < component.maxDurability && (
                       <button
                         onClick={handleRefuelShip}
                         disabled={credits < Math.ceil((component.maxDurability - component.currentDurability) * (component.replenishmentCost || 2))}
-                        className={`flex-1 px-2 py-1 rounded text-xs ${
+                        className={`space-button text-xs px-2 py-1 ${
                           credits >= Math.ceil((component.maxDurability - component.currentDurability) * (component.replenishmentCost || 2))
-                            ? 'bg-cyan-600 hover:bg-cyan-700 text-white'
-                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            ? ''
+                            : 'opacity-50 cursor-not-allowed'
                         }`}
                       >
-                        ⛽ Refuel ({Math.ceil((component.maxDurability - component.currentDurability) * (component.replenishmentCost || 2))} credits)
+                        ⛽ REFUEL ({Math.ceil((component.maxDurability - component.currentDurability) * (component.replenishmentCost || 2))}cr)
                       </button>
                     )
                   ) : (
-                    // Repair button for non-consumable components
                     component.currentDurability < component.maxDurability && (
                       <button
                         onClick={() => handleRepairShipComponent(component.id)}
                         disabled={credits < Math.ceil(((component.maxDurability - component.currentDurability) / component.maxDurability) * component.repairCost)}
-                        className={`flex-1 px-2 py-1 rounded text-xs ${
+                        className={`space-button text-xs px-2 py-1 ${
                           credits >= Math.ceil(((component.maxDurability - component.currentDurability) / component.maxDurability) * component.repairCost)
-                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            ? ''
+                            : 'opacity-50 cursor-not-allowed'
                         }`}
                       >
-                        🔧 Repair ({Math.ceil(((component.maxDurability - component.currentDurability) / component.maxDurability) * component.repairCost)} credits)
+                        🔧 REPAIR ({Math.ceil(((component.maxDurability - component.currentDurability) / component.maxDurability) * component.repairCost)}cr)
                       </button>
                     )
                   )}
@@ -230,10 +200,10 @@ export function ShipStatus() {
 
                 {/* Critical warnings */}
                 {(condition === 'critical' || condition === 'broken') && (
-                  <div className="mt-2 text-xs text-red-400 bg-red-900/30 rounded p-1">
+                  <div className="mt-2 text-xs text-red-400 bg-red-900/30 rounded p-1 font-mono">
                     {condition === 'broken' 
-                      ? `❌ ${component.name} is completely broken!`
-                      : `⚠️ ${component.name} needs immediate attention!`
+                      ? `❌ SYSTEM FAILURE: ${component.name.toUpperCase()}`
+                      : `⚠️ CRITICAL: ${component.name.toUpperCase()} NEEDS ATTENTION`
                     }
                   </div>
                 )}
@@ -242,18 +212,24 @@ export function ShipStatus() {
           })}
         </div>
 
-        {/* Overall ship status summary */}
-        <div className="mt-3 pt-3 border-t border-gray-700">
-          <div className="text-xs text-gray-400">
-            Overall Ship Condition: {
-              shipComponents.every(c => getConditionStatus(c.id) === 'excellent') ? '🟢 Excellent' :
-              shipComponents.some(c => getConditionStatus(c.id) === 'broken') ? '🔴 Critical' :
-              shipComponents.some(c => getConditionStatus(c.id) === 'critical') ? '🟠 Poor' : 
-              '🟡 Good'
-            }
+        {/* Overall ship condition with space styling */}
+        <div className="space-status-bar">
+          <div className="space-status-item col-span-2">
+            <span className="text-cyan-400 font-mono">SHIP CONDITION:</span>
+            <span className={`font-mono ${
+              shipComponents.every(c => getConditionStatus(c.id) === 'excellent') ? 'text-green-400' :
+              shipComponents.some(c => getConditionStatus(c.id) === 'broken') ? 'text-red-400' :
+              shipComponents.some(c => getConditionStatus(c.id) === 'critical') ? 'text-orange-400' : 
+              'text-yellow-400'
+            }`}>
+              {shipComponents.every(c => getConditionStatus(c.id) === 'excellent') ? 'EXCELLENT' :
+               shipComponents.some(c => getConditionStatus(c.id) === 'broken') ? 'CRITICAL' :
+               shipComponents.some(c => getConditionStatus(c.id) === 'critical') ? 'POOR' : 
+               'GOOD'}
+            </span>
           </div>
         </div>
       </div>
-    </div>
+    </SpaceUIPanel>
   );
 }

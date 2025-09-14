@@ -1,5 +1,6 @@
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets } from "../lib/planetData";
+import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function MiniMap() {
   const { time, cameraPosition } = useSolarSystem();
@@ -18,33 +19,39 @@ export function MiniMap() {
   });
 
   return (
-    <div className="absolute bottom-4 left-4 bg-black/90 text-white p-2 rounded-lg backdrop-blur-sm minimap pointer-events-auto">
-      <h3 className="text-xs font-bold mb-1 text-blue-400 hidden md:block">MAP</h3>
-      
+    <SpaceUIPanel
+      id="minimap"
+      title="NAVIGATION MAP"
+      icon="🗺️"
+      zone="bottom-left"
+      priority={2}
+      defaultExpanded={true}
+    >
       <div 
-        className="relative border border-gray-600 bg-black"
+        className="relative border border-cyan-400/30 bg-black rounded"
         style={{ width: mapSize, height: mapSize }}
       >
-        {/* Grid lines */}
+        {/* Grid lines with space theme */}
         <svg className="absolute inset-0 w-full h-full">
           <defs>
-            <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#333" strokeWidth="0.5"/>
+            <pattern id="space-grid" width="20" height="20" patternUnits="userSpaceOnUse">
+              <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(6, 182, 212, 0.2)" strokeWidth="0.5"/>
             </pattern>
           </defs>
-          <rect width="100%" height="100%" fill="url(#grid)" />
+          <rect width="100%" height="100%" fill="url(#space-grid)" />
         </svg>
 
-        {/* Sun at center */}
+        {/* Sun at center with glow effect */}
         <div 
           className="absolute w-3 h-3 bg-yellow-400 rounded-full"
           style={{
             left: centerX - 6,
             top: centerY - 6,
+            boxShadow: '0 0 8px rgba(255, 255, 0, 0.6)'
           }}
         />
 
-        {/* Planets */}
+        {/* Planets with enhanced styling */}
         {planets.map((planet, index) => {
           const angle = time * planet.orbitalSpeed;
           const worldX = Math.cos(angle) * planet.distance;
@@ -59,18 +66,19 @@ export function MiniMap() {
           return (
             <div
               key={planet.name}
-              className="absolute w-1.5 h-1.5 rounded-full"
+              className="absolute w-1.5 h-1.5 rounded-full border border-slate-600"
               style={{
                 left: mapPos.x - 3,
                 top: mapPos.y - 3,
                 backgroundColor: planet.color,
+                boxShadow: `0 0 4px ${planet.color}40`
               }}
               title={planet.name}
             />
           );
         })}
 
-        {/* Player position */}
+        {/* Player position with enhanced styling */}
         {(() => {
           const playerMapPos = worldToMap(playerPos.x, playerPos.z);
           
@@ -79,10 +87,11 @@ export function MiniMap() {
               playerMapPos.y >= 0 && playerMapPos.y <= mapSize) {
             return (
               <div 
-                className="absolute w-2 h-2 bg-cyan-400 rounded-full border border-white"
+                className="absolute w-2 h-2 bg-cyan-400 rounded-full border border-white animate-pulse"
                 style={{
                   left: playerMapPos.x - 4,
                   top: playerMapPos.y - 4,
+                  boxShadow: '0 0 6px rgba(6, 182, 212, 0.8)'
                 }}
                 title="Your Position"
               />
@@ -92,16 +101,21 @@ export function MiniMap() {
         })()}
       </div>
       
-      <div className="text-xs text-gray-400 mt-1 hidden md:block">
-        <div className="flex items-center gap-1">
-          <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
-          <span>Sun</span>
+      {/* Legend with space styling */}
+      <div className="space-status-bar mt-2">
+        <div className="space-status-item">
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+            <span className="text-xs font-mono">SOL</span>
+          </div>
         </div>
-        <div className="flex items-center gap-1">
-          <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full border border-white"></div>
-          <span>You</span>
+        <div className="space-status-item">
+          <div className="flex items-center gap-1">
+            <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full border border-white"></div>
+            <span className="text-xs font-mono">SHIP</span>
+          </div>
         </div>
       </div>
-    </div>
+    </SpaceUIPanel>
   );
 }
