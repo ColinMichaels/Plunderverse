@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ResourceData } from "../planetData";
+import { useEquipment } from "./useEquipment";
 
 interface MiningState {
   isActive: boolean;
@@ -57,6 +58,18 @@ export const useMining = create<MiningState>((set, get) => ({
     const state = get();
     if (!state.isActive || !state.targetResource) return null;
     
+    // Get equipment performance multipliers
+    const equipmentStore = useEquipment.getState();
+    const drillPerformance = equipmentStore.getPerformanceMultiplier('drill-mk1');
+    const extractorPerformance = equipmentStore.getPerformanceMultiplier('extractor-basic');
+    
+    // Check if equipment is broken
+    if (drillPerformance === 0) {
+      console.warn("Drill is broken! Mining stopped.");
+      get().stopMining();
+      return null;
+    }
+    
     // Calculate mining progress based on equipment and resource rarity
     const rarityMultiplier = {
       common: 1,
@@ -65,16 +78,24 @@ export const useMining = create<MiningState>((set, get) => ({
       legendary: 0.2
     }[state.targetResource.rarity] || 1;
     
-    const effectiveSpeed = state.miningSpeed * state.drillPower * rarityMultiplier;
+    const effectiveSpeed = state.miningSpeed * state.drillPower * rarityMultiplier * drillPerformance;
     const progressIncrease = (effectiveSpeed * deltaTime * 100) / 10; // 10 seconds per resource base
     
     const newProgress = Math.min(100, state.progress + progressIncrease);
     set({ progress: newProgress });
     
+    // Apply wear to drill equipment during mining
+    const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
+    equipmentStore.applyWear('drill-mk1', stressFactors, deltaTime);
+    
     // Mining complete
     if (newProgress >= 100) {
-      const extractedAmount = Math.floor(state.miningEfficiency * state.extractorLevel);
+      const baseExtraction = Math.floor(state.miningEfficiency * state.extractorLevel);
+      const extractedAmount = Math.floor(baseExtraction * extractorPerformance);
       console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource.type}`);
+      
+      // Apply wear to extractor equipment on completion
+      equipmentStore.applyWear('extractor-basic', stressFactors, 1.0); // Full cycle wear
       
       // Reset for next mining cycle
       set({ progress: 0 });
