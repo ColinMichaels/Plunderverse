@@ -1,4 +1,4 @@
-import React, { useState, createContext, useContext, ReactNode } from 'react';
+import React, { useState, createContext, useContext, ReactNode, useCallback } from 'react';
 
 // Define UI zones for sidebar layout
 export type UIZone = 'left-sidebar' | 'right-sidebar';
@@ -104,31 +104,31 @@ function ExpandedPanel({
 export function UILayoutProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<UIPanel[]>([]);
 
-  const registerPanel = (panel: UIPanel) => {
+  const registerPanel = useCallback((panel: UIPanel) => {
     setPanels(prev => {
       const existing = prev.find(p => p.id === panel.id);
       if (existing) {
-        return prev.map(p => p.id === panel.id ? panel : p);
+        return prev.map(p => p.id === panel.id ? { ...p, ...panel, isExpanded: p.isExpanded } : p);
       }
       return [...prev, panel].sort((a, b) => a.priority - b.priority);
     });
-  };
+  }, []);
 
-  const unregisterPanel = (id: string) => {
+  const unregisterPanel = useCallback((id: string) => {
     setPanels(prev => prev.filter(p => p.id !== id));
-  };
+  }, []);
 
-  const updatePanel = (id: string, updates: Partial<UIPanel>) => {
+  const updatePanel = useCallback((id: string, updates: Partial<UIPanel>) => {
     setPanels(prev => prev.map(p => 
       p.id === id ? { ...p, ...updates } : p
     ));
-  };
+  }, []);
 
-  const togglePanel = (id: string) => {
+  const togglePanel = useCallback((id: string) => {
     setPanels(prev => prev.map(p => 
       p.id === id ? { ...p, isExpanded: !p.isExpanded } : p
     ));
-  };
+  }, []);
 
   // Group panels by sidebar
   const leftSidebarPanels = panels.filter(p => p.zone === 'left-sidebar');
