@@ -90,8 +90,11 @@ export const useMining = create<MiningState>((set, get) => ({
     
     // Mining complete
     if (newProgress >= 100) {
-      const baseExtraction = Math.floor(state.miningEfficiency * state.extractorLevel);
-      const extractedAmount = Math.floor(baseExtraction * extractorPerformance);
+      // Calculate base extraction - ensure minimum 1 for healthy equipment
+      const baseExtraction = Math.max(1, Math.ceil(state.miningEfficiency * state.extractorLevel));
+      
+      // Apply extractor performance - broken extractor gives 0, healthy gives reduced amount
+      const extractedAmount = extractorPerformance === 0 ? 0 : Math.floor(baseExtraction * extractorPerformance);
       
       // Check if extractor is broken
       if (extractorPerformance === 0) {
@@ -104,7 +107,12 @@ export const useMining = create<MiningState>((set, get) => ({
         };
       }
       
-      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource.type}`);
+      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource.type} (base: ${baseExtraction}, performance: ${Math.round(extractorPerformance * 100)}%)`);
+      
+      // Debug assert for healthy extractor
+      if (extractorPerformance >= 1.0 && extractedAmount <= 0) {
+        console.error("DEBUG: Healthy extractor produced 0 resources! Base:", baseExtraction, "Performance:", extractorPerformance);
+      }
       
       // Apply wear to extractor equipment on completion
       equipmentStore.applyWear('extractor-basic', stressFactors, 1.0); // Full cycle wear
@@ -112,7 +120,7 @@ export const useMining = create<MiningState>((set, get) => ({
       // Reset for next mining cycle
       set({ progress: 0 });
       
-      // Return the extracted materials for inventory addition - no forced minimum
+      // Return the extracted materials for inventory addition
       return {
         resource: state.targetResource,
         quantity: extractedAmount,
