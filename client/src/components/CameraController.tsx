@@ -412,8 +412,13 @@ export function CameraController() {
         thrusterActive = true;
 
         // Consume fuel from equipment system during autopilot
-        const autopilotFuelRate = 1.5; // Units per second during autopilot
-        if (!consumeShipFuel(autopilotFuelRate * delta)) {
+        // Reduced autopilot fuel consumption with efficiency factors
+        const baseAutopilotRate = 0.4; // Reduced from 1.5 to 0.4
+        const { getFuelEfficiencyMultiplier } = useEquipment.getState();
+        const fuelEfficiency = getFuelEfficiencyMultiplier();
+        const finalAutopilotConsumption = baseAutopilotRate * fuelEfficiency * delta;
+        
+        if (!consumeShipFuel(finalAutopilotConsumption)) {
           console.warn("Out of fuel! Autopilot deactivated.");
           deactivateAutopilot();
         }
@@ -445,13 +450,17 @@ export function CameraController() {
     // Consume fuel after all thrust sources have been computed
     setThrusting(thrusterActive);
     if (thrusterActive) {
-      const baseFuelConsumption = 2;
-      const fuelMultiplier = isWarpMode ? warpFuelConsumption : baseFuelConsumption;
+      // Reduced base fuel consumption rates
+      const baseFuelConsumption = 0.3; // Reduced from 2 to 0.3
+      const fuelMultiplier = isWarpMode ? warpFuelConsumption * 0.5 : baseFuelConsumption; // Reduced warp consumption
       const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
-      // Degraded engines consume more fuel
-      const engineEfficiency = enginePerformance > 0 ? enginePerformance : 1.0;
-      const engineFuelPenalty = 1 + (1 - engineEfficiency) * 0.5; // Up to 50% more fuel with broken engine
-      const finalConsumption = (fuelMultiplier * efficiencyBonus * engineFuelPenalty) * delta;
+      
+      // Get fuel efficiency from equipment system (engine type + fuel type)
+      const { getFuelEfficiencyMultiplier } = useEquipment.getState();
+      const fuelEfficiency = getFuelEfficiencyMultiplier();
+      
+      // Calculate final consumption with all factors
+      const finalConsumption = (fuelMultiplier * efficiencyBonus * fuelEfficiency) * delta;
       
       // Use equipment fuel system
       if (!consumeShipFuel(finalConsumption)) {

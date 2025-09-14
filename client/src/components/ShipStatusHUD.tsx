@@ -1,7 +1,13 @@
 import { useShipStatus } from "../lib/stores/useShipStatus";
+import { useEquipment } from "../lib/stores/useEquipment";
 
 export function ShipStatusHUD() {
-  const { fuel, shield, hull, isDestroyed, isCritical, lastDamageSource } = useShipStatus();
+  const { shield, hull, isDestroyed, isCritical, lastDamageSource } = useShipStatus();
+  const { getEquipment } = useEquipment();
+  
+  // Get fuel from equipment system
+  const fuelTank = getEquipment('fuel-tank');
+  const fuel = fuelTank ? (fuelTank.currentDurability / fuelTank.maxDurability) * 100 : 0;
 
   const getMeterColor = (value: number, type: "fuel" | "shield" | "hull") => {
     if (value > 60) {

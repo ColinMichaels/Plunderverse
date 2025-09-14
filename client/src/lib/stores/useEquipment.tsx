@@ -12,6 +12,11 @@ export interface EquipmentItem {
   performanceLevel: number; // Current performance multiplier based on condition
   isConsumable?: boolean; // For resources like fuel that need replenishment
   replenishmentCost?: number; // Cost per unit to refill consumables
+  // New fuel and engine properties
+  fuelType?: 'standard' | 'premium' | 'quantum'; // Fuel efficiency rating
+  engineType?: 'standard' | 'efficient' | 'highPerformance'; // Engine characteristics  
+  baseEfficiency?: number; // Base fuel efficiency multiplier
+  speedMultiplier?: number; // Speed vs efficiency trade-off
 }
 
 export interface StressFactors {
@@ -31,6 +36,7 @@ interface EquipmentState {
   consumeFuel: (amount: number) => boolean; // Returns false if insufficient fuel
   getEquipment: (equipmentId: string) => EquipmentItem | undefined;
   getPerformanceMultiplier: (equipmentId: string) => number;
+  getFuelEfficiencyMultiplier: () => number; // Calculate combined fuel efficiency from engine and fuel type
   getConditionStatus: (equipmentId: string) => 'excellent' | 'good' | 'fair' | 'poor' | 'critical' | 'broken';
   calculateStressFactor: (resource: ResourceData, planetName: string) => StressFactors;
   applyShipDegradation: (operationType: 'autopilot' | 'mining' | 'repair', intensity: number, duration: number) => void;
@@ -91,11 +97,14 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
         currentDurability: 150,
         repairCost: 75,
         stressResistance: 0.7,
-        performanceLevel: 1.0
+        performanceLevel: 1.0,
+        engineType: 'standard',
+        baseEfficiency: 1.0, // Standard efficiency
+        speedMultiplier: 1.0 // Standard speed
       },
       {
         id: 'fuel-tank',
-        name: 'Fuel Tank',
+        name: 'Standard Fuel Tank',
         type: 'fuel',
         maxDurability: 100,
         currentDurability: 100,
@@ -103,7 +112,9 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
         stressResistance: 1.0, // Fuel doesn't "wear" but gets consumed
         performanceLevel: 1.0,
         isConsumable: true,
-        replenishmentCost: 2 // Credits per fuel unit
+        replenishmentCost: 2, // Credits per fuel unit
+        fuelType: 'standard',
+        baseEfficiency: 1.0 // Standard fuel efficiency
       },
       {
         id: 'maintenance-kit',
@@ -434,6 +445,44 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
       
       return { equipment };
     });
+  },
+
+  getFuelEfficiencyMultiplier: () => {
+    const state = get();
+    const engine = state.getEquipment('engine-main');
+    const fuelTank = state.getEquipment('fuel-tank');
+    
+    if (!engine || !fuelTank) return 1.0;
+    
+    // Base efficiency from engine condition and type
+    let engineEfficiency = engine.performanceLevel * (engine.baseEfficiency || 1.0);
+    
+    // Adjust based on engine type characteristics
+    switch (engine.engineType) {
+      case 'efficient':
+        engineEfficiency *= 0.7; // 30% better efficiency
+        break;
+      case 'highPerformance':
+        engineEfficiency *= 1.5; // 50% worse efficiency but higher speed
+        break;
+      default: // 'standard'
+        engineEfficiency *= 1.0;
+    }
+    
+    // Fuel type efficiency
+    let fuelEfficiency = fuelTank.baseEfficiency || 1.0;
+    switch (fuelTank.fuelType) {
+      case 'premium':
+        fuelEfficiency *= 0.8; // 20% better efficiency
+        break;
+      case 'quantum':
+        fuelEfficiency *= 0.6; // 40% better efficiency
+        break;
+      default: // 'standard'
+        fuelEfficiency *= 1.0;
+    }
+    
+    return engineEfficiency * fuelEfficiency;
   }
 }));
 

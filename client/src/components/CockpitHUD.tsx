@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useCredits } from "../lib/stores/useCredits";
 import { useShipStatus } from "../lib/stores/useShipStatus";
+import { useEquipment } from "../lib/stores/useEquipment";
 import { useRewards } from "../lib/stores/useRewards";
 import { useMissions } from "../lib/stores/useMissions";
 import { useAudio } from "../lib/stores/useAudio";
@@ -15,7 +16,12 @@ export function CockpitHUD() {
   const [showControls, setShowControls] = useState(false);
   const { selectedPlanet, cameraPosition, distanceToTarget, time, setSelectedPlanet } = useSolarSystem();
   const { credits, spendCredits } = useCredits();
-  const { fuel, shield, hull, isThrusting, isWarpMode } = useShipStatus();
+  const { shield, hull, isThrusting, isWarpMode } = useShipStatus();
+  const { getEquipment } = useEquipment();
+  
+  // Get fuel from equipment system
+  const fuelTank = getEquipment('fuel-tank');
+  const fuel = fuelTank ? (fuelTank.currentDurability / fuelTank.maxDurability) * 100 : 0;
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
   const { toggleMute, isMuted } = useAudio();
