@@ -4,6 +4,8 @@ import { KeyboardControls } from "@react-three/drei";
 import { SolarSystem } from "./components/SolarSystem";
 import { GameUI } from "./components/GameUI";
 import { SplashScreen } from "./components/SplashScreen";
+import { PlanetSurfaceScene } from "./components/PlanetSurfaceScene";
+import { TakeoffControls } from "./components/TakeoffControls";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
 import "@fontsource/inter";
@@ -88,6 +90,8 @@ function App() {
           </Canvas>
           
           <GameUI />
+          <PlanetSurfaceScene />
+          <TakeoffControls />
         </KeyboardControls>
       )}
     </div>

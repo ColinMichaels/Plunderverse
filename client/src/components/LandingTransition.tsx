@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useRewards } from "../lib/stores/useRewards";
+import { useLandedState } from "../lib/stores/useLandedState";
 import { planets } from "../lib/planetData";
 
 export function LandingTransition() {
   const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
   const { processLandingReward } = useRewards();
+  const { setLanded } = useLandedState();
   const [stage, setStage] = useState<"approach" | "descent" | "landed">("approach");
   const [progress, setProgress] = useState(0);
   const [rewardAmount, setRewardAmount] = useState(0);
@@ -59,10 +61,11 @@ export function LandingTransition() {
           clearInterval(progressInterval);
           setStage("landed");
           
-          // Process landing rewards
+          // Process landing rewards and set landed state
           if (selectedPlanet) {
             const reward = processLandingReward(selectedPlanet);
             setRewardAmount(reward);
+            setLanded(selectedPlanet); // Set landed state for mining operations
           }
           
           setTimeout(() => {

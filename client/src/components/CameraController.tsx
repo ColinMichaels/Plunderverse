@@ -11,6 +11,7 @@ import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useMining } from "../lib/stores/useMining";
+import { useLandedState } from "../lib/stores/useLandedState";
 import { planets } from "../lib/planetData";
 
 enum Controls {
@@ -95,6 +96,9 @@ export function CameraController() {
   // Mining system - prevent movement when mining
   const { isActive: isMining } = useMining();
 
+  // Landed state - prevent movement when landed on surface
+  const { isLanded } = useLandedState();
+
   useFrame((state, delta) => {
     const controls = get();
     const velocity = velocityRef.current;
@@ -131,8 +135,8 @@ export function CameraController() {
     const thrustPower = isWarpMode ? baseThrustWithPerformance * warpThrustMultiplier : baseThrustWithPerformance;
     const maxVelocity = isWarpMode ? warpMaxVelocity * enginePerformance : baseMaxVelocity * enginePerformance;
 
-    // Disable movement controls when autopilot is active, mining, or landed
-    if (!isAutopilotActive && !isMining && !isLanding) {
+    // Disable movement controls when autopilot is active, mining, landing, or landed on surface
+    if (!isAutopilotActive && !isMining && !isLanding && !isLanded) {
       // Detect double-click for warp mode
       const currentTime = performance.now();
       if (controls.forward && hasFuel) {
@@ -175,13 +179,13 @@ export function CameraController() {
         acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
         thrusterActive = true;
       }
-    } // End movement controls check (autopilot, mining, landing)
+    } // End movement controls check (autopilot, mining, landing, landed)
 
     // Note: Fuel consumption moved to end of frame after all thrust sources computed
 
-    // Add mobile thrust input (also disabled during autopilot, mining, or landing)
+    // Add mobile thrust input (also disabled during autopilot, mining, landing, or landed)
     const mobileThrust = mobileThrustRef.current;
-    if (mobileThrust.length() > 0 && hasFuel && !isAutopilotActive && !isMining && !isLanding) {
+    if (mobileThrust.length() > 0 && hasFuel && !isAutopilotActive && !isMining && !isLanding && !isLanded) {
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
       const up = new THREE.Vector3(0, 1, 0);
@@ -207,11 +211,12 @@ export function CameraController() {
       }
     }
 
-    // Stop all movement when mining or landed
-    if (isMining || isLanding) {
+    // Stop all movement when mining, landing, or landed on surface
+    if (isMining || isLanding || isLanded) {
       velocity.set(0, 0, 0);
       acceleration.set(0, 0, 0);
-      console.log(`Ship movement stopped - ${isMining ? 'mining' : 'landing'} in progress`);
+      const reason = isMining ? 'mining' : isLanding ? 'landing' : 'landed on surface';
+      console.log(`Ship movement stopped - ${reason}`);
     } else {
       // Apply acceleration to velocity
       velocity.add(acceleration.clone().multiplyScalar(delta));
@@ -423,8 +428,8 @@ export function CameraController() {
         thrusterActive = true;
 
         // Consume fuel from equipment system during autopilot
-        // Reduced autopilot fuel consumption with efficiency factors
-        const baseAutopilotRate = 0.4; // Reduced from 1.5 to 0.4
+        // Further reduced autopilot fuel consumption with efficiency factors
+        const baseAutopilotRate = 0.2; // Further reduced to make fuel last longer
         const { getFuelEfficiencyMultiplier } = useEquipment.getState();
         const fuelEfficiency = getFuelEfficiencyMultiplier();
         const finalAutopilotConsumption = baseAutopilotRate * fuelEfficiency * delta;
@@ -458,11 +463,11 @@ export function CameraController() {
     const { setCameraPosition } = useSolarSystem.getState();
     setCameraPosition(camera.position);
     
-    // Consume fuel after all thrust sources have been computed
+    // Consume fuel after all thrust sources have been computed (but not when landed)
     setThrusting(thrusterActive);
-    if (thrusterActive) {
-      // Reduced base fuel consumption rates
-      const baseFuelConsumption = 0.3; // Reduced from 2 to 0.3
+    if (thrusterActive && !isLanded) {
+      // Further reduced base fuel consumption rates
+      const baseFuelConsumption = 0.1; // Further reduced to make fuel last longer
       const fuelMultiplier = isWarpMode ? warpFuelConsumption * 0.5 : baseFuelConsumption; // Reduced warp consumption
       const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
       

@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { ResourceData } from "../planetData";
 import { useEquipment } from "./useEquipment";
+import { useLandedState } from "./useLandedState";
 
 interface MiningState {
   isActive: boolean;
@@ -27,21 +28,28 @@ export const useMining = create<MiningState>((set, get) => ({
   currentPlanet: null,
   targetResource: null,
   progress: 0,
-  miningSpeed: 1, // 1 resource per second base
-  miningEfficiency: 0.7, // 70% efficiency base
+  miningSpeed: 0.2, // Much slower base mining speed
+  miningEfficiency: 0.4, // Lower base efficiency
   
   // Mining equipment
   drillPower: 1,
   extractorLevel: 1,
   
   startMining: (planet, resource) => {
+    // Check if ship is actually landed on the planet
+    const landedState = useLandedState.getState();
+    if (!landedState.isLanded || landedState.landedPlanet !== planet) {
+      console.warn(`Cannot start mining on ${planet} - ship not landed on surface!`);
+      return;
+    }
+    
     set({
       isActive: true,
       currentPlanet: planet,
       targetResource: resource,
       progress: 0
     });
-    console.log(`Started mining ${resource.type} on ${planet}`);
+    console.log(`Started mining ${resource.type} on ${planet} surface`);
   },
   
   stopMining: () => {
@@ -79,7 +87,7 @@ export const useMining = create<MiningState>((set, get) => ({
     }[state.targetResource.rarity] || 1;
     
     const effectiveSpeed = state.miningSpeed * state.drillPower * rarityMultiplier * drillPerformance;
-    const progressIncrease = (effectiveSpeed * deltaTime * 100) / 10; // 10 seconds per resource base
+    const progressIncrease = (effectiveSpeed * deltaTime * 100) / 30; // 30 seconds per resource base (much slower)
     
     const newProgress = Math.min(100, state.progress + progressIncrease);
     set({ progress: newProgress });
@@ -93,11 +101,19 @@ export const useMining = create<MiningState>((set, get) => ({
     
     // Mining complete
     if (newProgress >= 100) {
-      // Calculate base extraction - ensure minimum 1 for healthy equipment
-      const baseExtraction = Math.max(1, Math.ceil(state.miningEfficiency * state.extractorLevel));
+      // Calculate base extraction - more dependent on equipment levels
+      const equipmentMultiplier = (state.drillPower * state.extractorLevel * drillPerformance * extractorPerformance);
+      const baseExtraction = Math.max(0.1, state.miningEfficiency * equipmentMultiplier);
       
-      // Apply extractor performance - broken extractor gives 0, healthy gives reduced amount
-      const extractedAmount = extractorPerformance === 0 ? 0 : Math.floor(baseExtraction * extractorPerformance);
+      // Apply rarity-based yield reduction and round to reasonable amounts
+      const rarityYieldMultiplier = {
+        common: 1.0,
+        uncommon: 0.8,
+        rare: 0.6,
+        legendary: 0.4
+      }[state.targetResource.rarity] || 1.0;
+      
+      const extractedAmount = extractorPerformance === 0 ? 0 : Math.max(1, Math.ceil(baseExtraction * rarityYieldMultiplier));
       
       // Check if extractor is broken
       if (extractorPerformance === 0) {
