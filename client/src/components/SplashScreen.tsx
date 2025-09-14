@@ -52,49 +52,104 @@ export function SplashScreen() {
   ];
 
   return (
-    <div className="fixed inset-0 bg-slate-900 flex items-center justify-center z-50 overflow-hidden">
-      {/* Enhanced animated starfield background */}
+    <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
+      {/* Enhanced photorealistic starfield background */}
       <div className="absolute inset-0">
-        {/* Moving stars */}
-        <div className="animate-pulse">
-          {Array.from({ length: 150 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full bg-white"
-              style={{
-                width: `${Math.random() * 3 + 1}px`,
-                height: `${Math.random() * 3 + 1}px`,
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                opacity: Math.random() * 0.8 + 0.2,
-                animationDuration: `${Math.random() * 4 + 2}s`,
-                animationDelay: `${Math.random() * 4}s`,
-              }}
-            />
-          ))}
+        {/* Photorealistic twinkling stars */}
+        <div className="absolute inset-0">
+          {Array.from({ length: 200 }).map((_, i) => {
+            const size = Math.random() * 4 + 0.5;
+            const brightness = Math.random() * 0.9 + 0.3;
+            const twinkleSpeed = Math.random() * 6 + 4; // Slower: 4-10 seconds
+            const color = Math.random() > 0.7 ? 
+              (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF'; // Varied star colors
+            
+            return (
+              <div
+                key={i}
+                className="absolute rounded-full star-twinkle"
+                style={{
+                  width: `${size}px`,
+                  height: `${size}px`,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  backgroundColor: color,
+                  opacity: brightness,
+                  boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}40`,
+                  animationDuration: `${twinkleSpeed}s`,
+                  animationDelay: `${Math.random() * 6}s`,
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* Floating particles */}
+        {/* Distant nebula particles - slower and more subtle */}
         <div className="absolute inset-0">
-          {Array.from({ length: 30 }).map((_, i) => (
+          {Array.from({ length: 20 }).map((_, i) => (
             <div
               key={`particle-${i}`}
-              className="absolute w-1 h-1 bg-cyan-400 rounded-full animate-ping"
+              className="absolute rounded-full nebula-glow"
               style={{
+                width: '2px',
+                height: '2px',
                 left: `${Math.random() * 100}%`,
                 top: `${Math.random() * 100}%`,
-                animationDuration: `${Math.random() * 3 + 2}s`,
-                animationDelay: `${Math.random() * 5}s`,
+                backgroundColor: '#4FC3F7',
+                boxShadow: '0 0 6px #4FC3F7, 0 0 12px #4FC3F760',
+                animationDuration: `${Math.random() * 4 + 6}s`, // Slower: 6-10 seconds
+                animationDelay: `${Math.random() * 8}s`,
               }}
             />
           ))}
         </div>
 
-        {/* Subtle space effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-cyan-500/3 to-transparent animate-pulse opacity-40"></div>
+        {/* Subtle moving space dust */}
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 animate-drift"></div>
       </div>
 
-      <div className="relative z-10 text-center max-w-4xl px-8">
+      {/* Custom CSS animations */}
+      <style>{`
+        .star-twinkle {
+          animation: starTwinkle linear infinite;
+        }
+        
+        @keyframes starTwinkle {
+          0%, 100% { opacity: 0.3; transform: scale(0.8); }
+          50% { opacity: 1; transform: scale(1.2); }
+        }
+        
+        .nebula-glow {
+          animation: nebulaGlow ease-in-out infinite;
+        }
+        
+        @keyframes nebulaGlow {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.8; }
+        }
+        
+        .animate-drift {
+          animation: drift 20s ease-in-out infinite;
+        }
+        
+        @keyframes drift {
+          0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+          25% { transform: translateX(1px) translateY(-1px) rotate(0.1deg); }
+          50% { transform: translateX(-0.5px) translateY(1px) rotate(-0.1deg); }
+          75% { transform: translateX(0.5px) translateY(0.5px) rotate(0.05deg); }
+        }
+        
+        .content-float {
+          animation: contentFloat 8s ease-in-out infinite;
+        }
+        
+        @keyframes contentFloat {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-5px); }
+        }
+      `}</style>
+
+      <div className="relative z-10 text-center max-w-4xl px-8 content-float">
         {/* Enhanced Main Title with animations */}
         <div className="relative mb-4">
           <h1 className="text-6xl md:text-8xl font-bold text-cyan-400 mb-4 tracking-wider">
