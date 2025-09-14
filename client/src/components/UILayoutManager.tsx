@@ -82,7 +82,7 @@ function SpacePanel({
   return (
     <div
       style={style}
-      className={`space-panel transition-all duration-300 ${
+      className={`space-panel transition-all duration-300 pointer-events-auto ${
         panel.isExpanded ? 'space-panel-expanded' : 'space-panel-collapsed'
       }`}
       onMouseEnter={() => setIsHovered(true)}

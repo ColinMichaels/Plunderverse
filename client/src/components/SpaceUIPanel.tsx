@@ -22,7 +22,7 @@ export function SpaceUIPanel({
   canCollapse = true,
   children
 }: SpaceUIPanelProps) {
-  const { registerPanel, unregisterPanel } = useUILayout();
+  const { registerPanel, unregisterPanel, updatePanel } = useUILayout();
 
   useEffect(() => {
     registerPanel({
@@ -39,19 +39,10 @@ export function SpaceUIPanel({
     return () => unregisterPanel(id);
   }, [id, title, icon, zone, priority, defaultExpanded, canCollapse]);
 
-  // Update panel content when children change
+  // Update only panel content when children change, preserve expanded state
   useEffect(() => {
-    registerPanel({
-      id,
-      title,
-      icon,
-      zone,
-      priority,
-      isExpanded: defaultExpanded,
-      canCollapse,
-      children
-    });
-  }, [children]);
+    updatePanel(id, { children });
+  }, [children, id, updatePanel]);
 
   // The actual rendering is handled by UILayoutManager
   return null;

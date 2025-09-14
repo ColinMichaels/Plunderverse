@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useEquipment } from "../lib/stores/useEquipment";
+import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function EquipmentWarning() {
   const { equipment, getConditionStatus } = useEquipment();
@@ -20,33 +21,40 @@ export function EquipmentWarning() {
   if (!showWarning) return null;
 
   return (
-    <div className="fixed top-20 right-4 z-30 max-w-sm">
-      <div className="bg-red-900/90 border border-red-500 rounded-lg p-3 animate-pulse">
-        <div className="flex items-center space-x-2 mb-2">
-          <span className="text-red-400 text-lg">⚠️</span>
-          <h3 className="text-red-400 font-semibold">Equipment Alert</h3>
-          <button
-            onClick={() => setShowWarning(false)}
-            className="ml-auto text-red-400 hover:text-red-300"
-          >
-            ✕
-          </button>
+    <SpaceUIPanel
+      id="equipment-warning"
+      title="SYSTEM ALERT"
+      icon="⚠️"
+      zone="top-right"
+      priority={2}
+      defaultExpanded={true}
+      canCollapse={false}
+    >
+      <div className="space-y-2 bg-red-900/30 border border-red-500/50 rounded p-2 animate-pulse">
+        <div className="text-xs text-red-200 font-mono">
+          CRITICAL CONDITION DETECTED:
         </div>
         
-        <div className="text-sm text-red-200">
-          Critical condition detected:
-        </div>
-        
-        <ul className="text-xs text-red-300 mt-1">
+        <ul className="text-xs text-red-300 space-y-1 font-mono">
           {criticalEquipment.map((name, index) => (
-            <li key={index}>• {name}</li>
+            <li key={index} className="flex items-center space-x-2">
+              <span className="text-red-400">●</span>
+              <span>{name.toUpperCase()}</span>
+            </li>
           ))}
         </ul>
         
-        <div className="text-xs text-red-400 mt-2">
-          Equipment needs immediate maintenance!
+        <div className="text-xs text-red-400 font-mono border-t border-red-500/30 pt-2">
+          ⚠️ IMMEDIATE MAINTENANCE REQUIRED!
         </div>
+        
+        <button
+          onClick={() => setShowWarning(false)}
+          className="space-button text-xs w-full bg-red-600/50 hover:bg-red-600/70"
+        >
+          ACKNOWLEDGE
+        </button>
       </div>
-    </div>
+    </SpaceUIPanel>
   );
 }

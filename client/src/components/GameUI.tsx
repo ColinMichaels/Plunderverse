@@ -83,17 +83,11 @@ export function GameUI() {
       {/* Orbital Interface - when orbiting a planet */}
       <OrbitalInterface />
 
-      {/* Inventory Display - top right */}
-      <InventoryDisplay />
-
-      {/* Equipment Warning - top right under inventory */}
-      <EquipmentWarning />
-
-      {/* Ship Status - top left */}
+      {/* UI Components - these register themselves with UILayoutManager but render content via SpaceUIPanel */}
       <ShipStatus />
-
-      {/* Mini Map - Bottom Left */}
       <MiniMap />
+      <InventoryDisplay />
+      <EquipmentWarning />
 
       {/* Mobile Controls */}
       <MobileControls />

@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useInventory } from "../lib/stores/useInventory";
 import { TradingInterface } from "./TradingInterface";
+import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function InventoryDisplay() {
   const { items, getStorageUsed, storageCapacity, getTotalValue } = useInventory();
-  const [isVisible, setIsVisible] = useState(false);
   const [showTrading, setShowTrading] = useState(false);
 
   const storageUsed = getStorageUsed();
@@ -32,105 +32,96 @@ export function InventoryDisplay() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-40">
-      {/* Inventory Toggle Button */}
-      <button
-        onClick={() => setIsVisible(!isVisible)}
-        className="mb-4 px-4 py-2 rounded-lg font-semibold transition-all bg-cyan-600 hover:bg-cyan-700 text-white"
-      >
-        📦 Inventory ({items.length})
-      </button>
-
-      {/* Inventory Panel */}
-      {isVisible && (
-        <div className="bg-gray-900/95 border border-cyan-400 rounded-lg p-4 w-80 max-h-96 overflow-y-auto">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-bold text-cyan-400">Cargo Bay</h2>
-            <button
-              onClick={() => setIsVisible(false)}
-              className="text-gray-400 hover:text-white"
-            >
-              ✕
-            </button>
+    <SpaceUIPanel
+      id="inventory"
+      title="CARGO BAY"
+      icon="📦"
+      zone="top-right"
+      priority={1}
+      defaultExpanded={false}
+    >
+      <div className="space-y-3">
+        {/* Storage Status */}
+        <div className="space-status-bar">
+          <div className="space-status-item">
+            <span className="text-cyan-400 font-mono">STORAGE:</span>
+            <span className="font-mono">{storageUsed}/{storageCapacity}</span>
           </div>
+        </div>
+        
+        <div className="space-progress-bar">
+          <div 
+            className={`space-progress-fill ${
+              storagePercentage > 90 ? 'bg-red-400' : storagePercentage > 70 ? 'bg-yellow-400' : ''
+            }`}
+            style={{ width: `${storagePercentage}%` }}
+          />
+        </div>
 
-          {/* Storage Status */}
-          <div className="mb-4">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-gray-300 text-sm">Storage</span>
-              <span className="text-white text-sm">{storageUsed}/{storageCapacity}</span>
-            </div>
-            <div className="w-full bg-gray-700 rounded-full h-2">
-              <div 
-                className={`h-2 rounded-full transition-all ${
-                  storagePercentage > 90 ? 'bg-red-500' : storagePercentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
-                }`}
-                style={{ width: `${storagePercentage}%` }}
-              />
-            </div>
+        {/* Total Value */}
+        <div className="space-status-bar border border-yellow-400/30 bg-yellow-900/20 rounded">
+          <div className="space-status-item col-span-2">
+            <span className="text-yellow-300 font-mono">TOTAL VALUE:</span>
+            <span className="text-yellow-400 font-bold font-mono">{totalValue}cr</span>
           </div>
+        </div>
 
-          {/* Total Value */}
-          <div className="mb-4 p-2 bg-yellow-900/30 border border-yellow-400 rounded">
-            <div className="flex justify-between items-center">
-              <span className="text-yellow-400">Total Value:</span>
-              <span className="text-yellow-400 font-mono">{totalValue} credits</span>
+        {/* Trading Button */}
+        <button
+          onClick={() => setShowTrading(!showTrading)}
+          className="space-button w-full"
+        >
+          💰 {showTrading ? 'CLOSE' : 'OPEN'} TRADING
+        </button>
+
+        {/* Trading Interface */}
+        {showTrading && (
+          <TradingInterface 
+            isVisible={showTrading} 
+            onClose={() => setShowTrading(false)} 
+          />
+        )}
+
+        {/* Items List */}
+        <div className="space-y-2 max-h-64 overflow-y-auto">
+          {items.length === 0 ? (
+            <div className="text-center text-slate-400 py-4">
+              <p className="font-mono">🌌 EMPTY CARGO BAY</p>
+              <p className="text-xs font-mono">GO MINE SOME ASTEROIDS!</p>
             </div>
-          </div>
-
-          {/* Items List */}
-          <div className="space-y-2">
-            {items.length === 0 ? (
-              <div className="text-center text-gray-500 py-4">
-                No resources collected yet
-              </div>
-            ) : (
-              items.map((item, index) => (
-                <div
-                  key={index}
-                  className={`${getRarityBg(item.rarity)} border rounded-lg p-3`}
-                >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className={`font-semibold ${getRarityColor(item.rarity)}`}>
-                        {item.type}
-                      </h3>
-                      <p className="text-xs text-gray-400 mt-1">
-                        From {item.planetSource}
-                      </p>
-                      <p className="text-xs text-gray-300 mt-1">
-                        {item.description}
-                      </p>
+          ) : (
+            items.map((item, index) => (
+              <div
+                key={index}
+                className={`p-2 rounded border ${getRarityBg(item.rarity)}`}
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <h3 className={`font-semibold font-mono text-xs ${getRarityColor(item.rarity)}`}>
+                      {item.type.toUpperCase()}
+                    </h3>
+                    <p className="text-xs text-slate-400 font-mono">
+                      FROM {item.planetSource}
+                    </p>
+                    <p className="text-xs text-slate-300 font-mono">
+                      {item.description}
+                    </p>
+                  </div>
+                  <div className="text-right ml-3">
+                    <div className="text-white font-bold font-mono">×{item.quantity}</div>
+                    <div className="text-yellow-400 text-xs font-mono">
+                      {item.value * item.quantity}cr
                     </div>
-                    <div className="text-right ml-3">
-                      <div className="text-white font-bold">×{item.quantity}</div>
-                      <div className="text-yellow-400 text-xs font-mono">
-                        {item.value * item.quantity} credits
-                      </div>
+                    <div className={`text-xs px-1 py-0.5 rounded font-mono ${getRarityBg(item.rarity)}`}>
+                      {item.rarity.toUpperCase()}
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="mt-4 pt-3 border-t border-gray-700">
-            <button
-              onClick={() => setShowTrading(true)}
-              className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
-            >
-              💰 Trading Station
-            </button>
-          </div>
+              </div>
+            ))
+          )}
         </div>
-      )}
-
-      {/* Trading Interface */}
-      <TradingInterface 
-        isVisible={showTrading} 
-        onClose={() => setShowTrading(false)} 
-      />
-    </div>
+      </div>
+    </SpaceUIPanel>
   );
 }
