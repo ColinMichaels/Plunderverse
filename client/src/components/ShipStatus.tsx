@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useCredits } from "../lib/stores/useCredits";
 
 export function ShipStatus() {
+  const [isExpanded, setIsExpanded] = useState(false);
   const { equipment, repairEquipment, replenishFuel, getConditionStatus, getPerformanceMultiplier } = useEquipment();
   const { credits, spendCredits } = useCredits();
 
@@ -77,12 +79,71 @@ export function ShipStatus() {
 
   if (shipComponents.length === 0) return null;
 
+  // Minimized view
+  if (!isExpanded) {
+    return (
+      <div className="fixed top-4 left-4 z-20">
+        <div className="bg-gray-900/95 border border-gray-600 rounded-lg p-3 backdrop-blur-sm">
+          <div className="flex items-center justify-between space-x-3">
+            <div className="flex items-center space-x-2">
+              <span className="text-blue-400 text-lg">🚢</span>
+              <div className="flex items-center space-x-2">
+                {shipComponents.map((component) => {
+                  const condition = getConditionStatus(component.id);
+                  const durabilityPercent = (component.currentDurability / component.maxDurability) * 100;
+                  const needsAttention = condition === 'critical' || condition === 'broken';
+                  
+                  return (
+                    <div key={component.id} className="flex items-center space-x-1">
+                      <span className="text-sm">{getSystemIcon(component.type)}</span>
+                      <div className={`text-xs font-medium ${needsAttention ? 'text-red-400 animate-pulse' : 'text-gray-300'}`}>
+                        {Math.round(durabilityPercent)}%
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            <button
+              onClick={() => setIsExpanded(true)}
+              className="text-gray-400 hover:text-blue-400 transition-colors"
+              title="Expand ship status"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 14l5-5 5 5z"/>
+              </svg>
+            </button>
+          </div>
+          
+          {/* Critical status indicator */}
+          {shipComponents.some(c => getConditionStatus(c.id) === 'broken' || getConditionStatus(c.id) === 'critical') && (
+            <div className="mt-2 text-xs text-red-400 animate-pulse">
+              ⚠️ Systems need attention!
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // Expanded view (existing full interface)
   return (
     <div className="fixed top-4 left-4 z-20 max-w-sm">
       <div className="bg-gray-900/95 border border-gray-600 rounded-lg p-4 backdrop-blur-sm">
-        <div className="flex items-center space-x-2 mb-3">
-          <span className="text-blue-400 text-lg">🚢</span>
-          <h3 className="text-blue-400 font-semibold">Ship Status</h3>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-blue-400 text-lg">🚢</span>
+            <h3 className="text-blue-400 font-semibold">Ship Status</h3>
+          </div>
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="text-gray-400 hover:text-blue-400 transition-colors"
+            title="Minimize ship status"
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M17 10l-5 5-5-5z"/>
+            </svg>
+          </button>
         </div>
 
         <div className="space-y-3">
