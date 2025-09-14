@@ -6,16 +6,20 @@ export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   // Removed mouse tracking for smoother space travel animation
-  
+
   // Pre-calculate star configurations to avoid render inconsistencies
-  const starConfigs = useState(() => 
+  const starConfigs = useState(() =>
     Array.from({ length: 60 }, (_, i) => {
       const size = Math.random() * 4 + 0.5;
       const brightness = Math.random() * 0.9 + 0.3;
       const twinkleSpeed = Math.random() * 8 + 4;
-      const color = Math.random() > 0.6 ? 
-        (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF';
-      
+      const color =
+        Math.random() > 0.6
+          ? Math.random() > 0.5
+            ? "#E6F3FF"
+            : "#FFF8E1"
+          : "#FFFFFF";
+
       // Fish-eye positioning - more stars towards edges
       const angle = Math.random() * Math.PI * 2; // Random angle
       const distanceFromCenter = Math.pow(Math.random(), 0.4) * 0.8; // Bias towards edges
@@ -23,24 +27,34 @@ export function SplashScreen() {
       const centerY = 50;
       const x = centerX + Math.cos(angle) * distanceFromCenter * 50;
       const y = centerY + Math.sin(angle) * distanceFromCenter * 50;
-      
+
       const depth = Math.random() * 6 + 1;
       const edgeSpeed = distanceFromCenter * 2 + 1; // Faster at edges
       const travelSpeed = Math.random() * 20 + 10;
-      
+
       // Radial movement - outward from center
       const radialX = Math.cos(angle) * edgeSpeed * (depth + 2);
       const radialY = Math.sin(angle) * edgeSpeed * (depth + 2);
 
       return {
-        size, brightness, twinkleSpeed, color, x, y, depth, 
-        edgeSpeed, travelSpeed, radialX, radialY, distanceFromCenter
+        size,
+        brightness,
+        twinkleSpeed,
+        color,
+        x,
+        y,
+        depth,
+        edgeSpeed,
+        travelSpeed,
+        radialX,
+        radialY,
+        distanceFromCenter,
       };
-    })
+    }),
   )[0];
 
   // Pre-calculate nebula configurations
-  const nebulaConfigs = useState(() => 
+  const nebulaConfigs = useState(() =>
     Array.from({ length: 12 }, (_, i) => {
       const angle = Math.random() * Math.PI * 2;
       const distanceFromCenter = Math.pow(Math.random(), 0.3) * 0.9; // Even more bias towards edges
@@ -48,20 +62,27 @@ export function SplashScreen() {
       const centerY = 50;
       const x = centerX + Math.cos(angle) * distanceFromCenter * 50;
       const y = centerY + Math.sin(angle) * distanceFromCenter * 50;
-      
+
       const depth = Math.random() * 4 + 2;
       const edgeSpeed = distanceFromCenter * 3 + 1;
       const glowSpeed = Math.random() * 6 + 6;
       const travelSpeed = Math.random() * 25 + 15;
-      
+
       const radialX = Math.cos(angle) * edgeSpeed * (depth + 3);
       const radialY = Math.sin(angle) * edgeSpeed * (depth + 3);
 
       return {
-        x, y, depth, edgeSpeed, glowSpeed, travelSpeed, 
-        radialX, radialY, distanceFromCenter
+        x,
+        y,
+        depth,
+        edgeSpeed,
+        glowSpeed,
+        travelSpeed,
+        radialX,
+        radialY,
+        distanceFromCenter,
       };
-    })
+    }),
   )[0];
 
   const { start } = useGame();
@@ -120,22 +141,24 @@ export function SplashScreen() {
             <div
               key={i}
               className="absolute rounded-full star-fisheye"
-              style={{
-                width: `${config.size}px`,
-                height: `${config.size}px`,
-                left: `${config.x}%`,
-                top: `${config.y}%`,
-                backgroundColor: config.color,
-                opacity: config.brightness,
-                boxShadow: `0 0 ${config.size * 3}px ${config.color}, 0 0 ${config.size * 6}px ${config.color}30`,
-                animationDuration: `${config.twinkleSpeed}s, ${config.travelSpeed}s`,
-                animationDelay: `${i * 0.2}s, ${i * 0.5}s`,
-                '--radial-x': `${config.radialX}px`,
-                '--radial-y': `${config.radialY}px`,
-                '--distance': config.distanceFromCenter,
-                '--depth': config.depth,
-                '--edge-speed': config.edgeSpeed,
-              } as React.CSSProperties}
+              style={
+                {
+                  width: `${config.size}px`,
+                  height: `${config.size}px`,
+                  left: `${config.x}%`,
+                  top: `${config.y}%`,
+                  backgroundColor: config.color,
+                  opacity: config.brightness,
+                  boxShadow: `0 0 ${config.size * 3}px ${config.color}, 0 0 ${config.size * 6}px ${config.color}30`,
+                  animationDuration: `${config.twinkleSpeed}s, ${config.travelSpeed}s`,
+                  animationDelay: `${i * 0.2}s, ${i * 0.5}s`,
+                  "--radial-x": `${config.radialX}px`,
+                  "--radial-y": `${config.radialY}px`,
+                  "--distance": config.distanceFromCenter,
+                  "--depth": config.depth,
+                  "--edge-speed": config.edgeSpeed,
+                } as React.CSSProperties
+              }
             />
           ))}
         </div>
@@ -146,21 +169,23 @@ export function SplashScreen() {
             <div
               key={`particle-${i}`}
               className="absolute rounded-full nebula-fisheye"
-              style={{
-                width: '4px',
-                height: '4px',
-                left: `${config.x}%`,
-                top: `${config.y}%`,
-                backgroundColor: '#4FC3F7',
-                boxShadow: '0 0 12px #4FC3F7, 0 0 24px #4FC3F740',
-                animationDuration: `${config.glowSpeed}s, ${config.travelSpeed}s`,
-                animationDelay: `${i * 1.2}s, ${i * 1.8}s`,
-                '--radial-x': `${config.radialX}px`,
-                '--radial-y': `${config.radialY}px`,
-                '--distance': config.distanceFromCenter,
-                '--depth': config.depth,
-                '--edge-speed': config.edgeSpeed,
-              } as React.CSSProperties}
+              style={
+                {
+                  width: "4px",
+                  height: "4px",
+                  left: `${config.x}%`,
+                  top: `${config.y}%`,
+                  backgroundColor: "#4FC3F7",
+                  boxShadow: "0 0 12px #4FC3F7, 0 0 24px #4FC3F740",
+                  animationDuration: `${config.glowSpeed}s, ${config.travelSpeed}s`,
+                  animationDelay: `${i * 1.2}s, ${i * 1.8}s`,
+                  "--radial-x": `${config.radialX}px`,
+                  "--radial-y": `${config.radialY}px`,
+                  "--distance": config.distanceFromCenter,
+                  "--depth": config.depth,
+                  "--edge-speed": config.edgeSpeed,
+                } as React.CSSProperties
+              }
             />
           ))}
         </div>
@@ -176,8 +201,8 @@ export function SplashScreen() {
         }
         
         @keyframes starTwinkle {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.2); }
+          0%, 100% { opacity: 0.3; transform: scale(0.8); blur:0.5px; } }
+          50% { opacity: 1; transform: scale(1.2); blur:3px; }
         }
         
         @keyframes fisheyeTravel {
