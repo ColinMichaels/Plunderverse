@@ -84,6 +84,9 @@ export function GameUI() {
       {/* Inventory Display - top right */}
       <InventoryDisplay />
 
+      {/* Equipment Warning - top right under inventory */}
+      <EquipmentWarning />
+
       {/* Mini Map - Bottom Left */}
       <MiniMap />
 

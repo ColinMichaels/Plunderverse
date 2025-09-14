@@ -92,6 +92,18 @@ export const useMining = create<MiningState>((set, get) => ({
     if (newProgress >= 100) {
       const baseExtraction = Math.floor(state.miningEfficiency * state.extractorLevel);
       const extractedAmount = Math.floor(baseExtraction * extractorPerformance);
+      
+      // Check if extractor is broken
+      if (extractorPerformance === 0) {
+        console.warn("Extractor is broken! No resources extracted.");
+        set({ progress: 0 });
+        return {
+          resource: state.targetResource,
+          quantity: 0,
+          planet: state.currentPlanet || "Unknown"
+        };
+      }
+      
       console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource.type}`);
       
       // Apply wear to extractor equipment on completion
@@ -100,10 +112,10 @@ export const useMining = create<MiningState>((set, get) => ({
       // Reset for next mining cycle
       set({ progress: 0 });
       
-      // Return the extracted materials for inventory addition
+      // Return the extracted materials for inventory addition - no forced minimum
       return {
         resource: state.targetResource,
-        quantity: Math.max(1, extractedAmount),
+        quantity: extractedAmount,
         planet: state.currentPlanet || "Unknown"
       };
     }

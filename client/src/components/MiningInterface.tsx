@@ -3,6 +3,7 @@ import { useMining } from "../lib/stores/useMining";
 import { useInventory } from "../lib/stores/useInventory";
 import { useCredits } from "../lib/stores/useCredits";
 import { useAudio } from "../lib/stores/useAudio";
+import { useEquipment } from "../lib/stores/useEquipment";
 import { ResourceData } from "../lib/planetData";
 
 interface MiningInterfaceProps {
@@ -29,8 +30,9 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   } = useMining();
   
   const { addResource, getStorageUsed, storageCapacity } = useInventory();
-  const { earnCredits } = useCredits();
+  const { earnCredits, spendCredits, credits } = useCredits();
   const { playHit, playSuccess } = useAudio();
+  const { equipment, repairEquipment, getConditionStatus } = useEquipment();
   const [selectedResource, setSelectedResource] = useState<ResourceData | null>(null);
 
   // Precompute particle parameters to avoid Math.random in render
@@ -78,6 +80,13 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
 
   const handleStartMining = () => {
     if (selectedResource) {
+      // Check if drill is broken before starting
+      const drillCondition = getConditionStatus('drill-mk1');
+      if (drillCondition === 'broken') {
+        console.warn("Cannot start mining: drill is broken and needs repair!");
+        return;
+      }
+      
       startMining(planetName, selectedResource);
       
       // Play resource-specific start sound
@@ -91,6 +100,41 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
 
   const storageUsed = getStorageUsed();
   const storagePercentage = (storageUsed / storageCapacity) * 100;
+
+  // Equipment condition helpers
+  const getConditionColor = (condition: string) => {
+    switch (condition) {
+      case 'excellent': return 'text-green-400';
+      case 'good': return 'text-green-300';
+      case 'fair': return 'text-yellow-400';
+      case 'poor': return 'text-orange-400';
+      case 'critical': return 'text-red-400';
+      case 'broken': return 'text-red-600';
+      default: return 'text-gray-400';
+    }
+  };
+
+  const getConditionIcon = (condition: string) => {
+    switch (condition) {
+      case 'excellent': return '🟢';
+      case 'good': return '🟡';
+      case 'fair': return '🟠';
+      case 'poor': return '🔴';
+      case 'critical': return '⚠️';
+      case 'broken': return '💥';
+      default: return '❓';
+    }
+  };
+
+  const handleRepairEquipment = (equipmentId: string) => {
+    const result = repairEquipment(equipmentId, undefined, credits);
+    if (result.success) {
+      spendCredits(result.cost);
+      console.log(`Repaired equipment for ${result.cost} credits`);
+    } else {
+      console.log(`Failed to repair equipment. Need ${result.cost} credits, have ${credits}`);
+    }
+  };
 
   const getRarityColor = (rarity: ResourceData['rarity']) => {
     switch (rarity) {
@@ -282,9 +326,66 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
           </div>
         </div>
 
+        {/* Equipment Status and Maintenance */}
+        <div className="mb-6 p-4 bg-gray-800 rounded-lg">
+          <h3 className="text-cyan-400 font-semibold mb-3">Equipment Status</h3>
+          <div className="space-y-3">
+            {equipment.filter(eq => eq.type === 'drill' || eq.type === 'extractor').map((item) => {
+              const condition = getConditionStatus(item.id);
+              const durabilityPercent = (item.currentDurability / item.maxDurability) * 100;
+              return (
+                <div key={item.id} className="p-3 bg-gray-700 rounded-lg">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="text-white font-medium">{item.name}</h4>
+                      <div className={`text-sm ${getConditionColor(condition)}`}>
+                        {getConditionIcon(condition)} {condition.toUpperCase()} 
+                        ({Math.round(item.performanceLevel * 100)}% efficiency)
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-xs text-gray-400">Durability</div>
+                      <div className="text-sm text-white">
+                        {Math.round(item.currentDurability)}/{item.maxDurability}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Durability bar */}
+                  <div className="w-full bg-gray-600 rounded-full h-2 mb-2">
+                    <div 
+                      className={`h-2 rounded-full transition-all ${
+                        durabilityPercent > 80 ? 'bg-green-500' : 
+                        durabilityPercent > 60 ? 'bg-yellow-500' : 
+                        durabilityPercent > 40 ? 'bg-orange-500' : 'bg-red-500'
+                      }`}
+                      style={{ width: `${durabilityPercent}%` }}
+                    />
+                  </div>
+
+                  {/* Repair button */}
+                  {item.currentDurability < item.maxDurability && (
+                    <button
+                      onClick={() => handleRepairEquipment(item.id)}
+                      disabled={credits < Math.ceil(((item.maxDurability - item.currentDurability) / item.maxDurability) * item.repairCost)}
+                      className={`w-full px-3 py-1 rounded text-sm ${
+                        credits >= Math.ceil(((item.maxDurability - item.currentDurability) / item.maxDurability) * item.repairCost)
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      🔧 Repair ({Math.ceil(((item.maxDurability - item.currentDurability) / item.maxDurability) * item.repairCost)} credits)
+                    </button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Mining Equipment Upgrades */}
         <div className="mb-6 p-4 bg-gray-800 rounded-lg">
-          <h3 className="text-cyan-400 font-semibold mb-3">Mining Equipment</h3>
+          <h3 className="text-cyan-400 font-semibold mb-3">Equipment Upgrades</h3>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <div className="text-sm text-gray-300 mb-2">Drill Power: {drillPower}</div>
@@ -310,18 +411,33 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
         {/* Action Buttons */}
         <div className="flex justify-center space-x-4">
           {!isActive ? (
-            <button
-              onClick={handleStartMining}
-              disabled={!selectedResource || storageUsed >= storageCapacity}
-              className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
-                selectedResource && storageUsed < storageCapacity
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white transform hover:scale-105'
-                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-              }`}
-            >
-              <span>⛏️</span>
-              <span>Start Mining</span>
-            </button>
+            <div className="text-center">
+              <button
+                onClick={handleStartMining}
+                disabled={
+                  !selectedResource || 
+                  storageUsed >= storageCapacity || 
+                  getConditionStatus('drill-mk1') === 'broken'
+                }
+                className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
+                  selectedResource && 
+                  storageUsed < storageCapacity && 
+                  getConditionStatus('drill-mk1') !== 'broken'
+                    ? 'bg-orange-600 hover:bg-orange-700 text-white transform hover:scale-105'
+                    : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                }`}
+              >
+                <span>⛏️</span>
+                <span>Start Mining</span>
+              </button>
+              
+              {/* Warning messages */}
+              {getConditionStatus('drill-mk1') === 'broken' && (
+                <div className="text-red-400 text-sm mt-2">
+                  ⚠️ Drill is broken! Repair required to mine.
+                </div>
+              )}
+            </div>
           ) : (
             <button
               onClick={stopMining}

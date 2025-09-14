@@ -24,7 +24,7 @@ interface EquipmentState {
   // Actions
   initializeEquipment: () => void;
   applyWear: (equipmentId: string, stressFactors: StressFactors, operationTime: number) => void;
-  repairEquipment: (equipmentId: string, repairAmount?: number) => { success: boolean; cost: number };
+  repairEquipment: (equipmentId: string, repairAmount?: number, availableCredits?: number) => { success: boolean; cost: number };
   getEquipment: (equipmentId: string) => EquipmentItem | undefined;
   getPerformanceMultiplier: (equipmentId: string) => number;
   getConditionStatus: (equipmentId: string) => 'excellent' | 'good' | 'fair' | 'poor' | 'critical' | 'broken';
@@ -131,7 +131,7 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     });
   },
   
-  repairEquipment: (equipmentId, repairAmount) => {
+  repairEquipment: (equipmentId, repairAmount, availableCredits) => {
     const state = get();
     const equipment = state.equipment.find(eq => eq.id === equipmentId);
     
@@ -142,6 +142,12 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     const maxRepair = equipment.maxDurability - equipment.currentDurability;
     const actualRepair = repairAmount !== undefined ? Math.min(repairAmount, maxRepair) : maxRepair;
     const repairCost = Math.ceil((actualRepair / equipment.maxDurability) * equipment.repairCost);
+    
+    // Check if player has enough credits
+    if (availableCredits !== undefined && availableCredits < repairCost) {
+      console.log(`Insufficient credits for repair. Need ${repairCost}, have ${availableCredits}`);
+      return { success: false, cost: repairCost };
+    }
     
     set(state => {
       const updatedEquipment = state.equipment.map(eq => {
