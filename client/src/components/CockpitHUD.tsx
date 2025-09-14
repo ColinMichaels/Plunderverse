@@ -89,7 +89,7 @@ export function CockpitHUD() {
           isThrusting ? 'bg-slate-800/40 p-2' : 'bg-slate-800/70 p-3'
         } max-w-md`}>
           {/* Targeting Computer Display */}
-          {selectedPlanet && selectedPlanetData ? (
+          {selectedPlanet && selectedPlanetData && !isLanded ? (
             <div className="w-full">
               {/* Target Header */}
               <div className="flex items-center justify-between mb-3">

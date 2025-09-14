@@ -3,6 +3,7 @@ export interface ResourceData {
   rarity: 'common' | 'uncommon' | 'rare' | 'legendary';
   value: number; // Credits per unit
   description: string;
+  complexity: number; // Number of clicks needed to mine
 }
 
 export interface PlanetData {
@@ -44,9 +45,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "427°C (Day), -173°C (Night)",
     gravity: "0.38g",
     resources: [
-      { type: "Iron Ore", rarity: "common", value: 15, description: "Abundant metallic ore from exposed core" },
-      { type: "Platinum", rarity: "uncommon", value: 85, description: "Precious metal deposits" },
-      { type: "Solar Crystals", rarity: "rare", value: 200, description: "Heat-forged crystalline formations" }
+      { type: "Iron Ore", rarity: "common", value: 15, description: "Abundant metallic ore from exposed core", complexity: 2 },
+      { type: "Platinum", rarity: "uncommon", value: 85, description: "Precious metal deposits", complexity: 4 },
+      { type: "Solar Crystals", rarity: "rare", value: 200, description: "Heat-forged crystalline formations", complexity: 6 }
     ]
   },
   {
@@ -66,9 +67,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "462°C",
     gravity: "0.91g",
     resources: [
-      { type: "Sulfur Compounds", rarity: "common", value: 25, description: "Volcanic sulfur deposits" },
-      { type: "Carbon Fiber", rarity: "uncommon", value: 75, description: "High-pressure carbon formations" },
-      { type: "Atmospheric Gas", rarity: "rare", value: 150, description: "Rare atmospheric components" }
+      { type: "Sulfur Compounds", rarity: "common", value: 25, description: "Volcanic sulfur deposits", complexity: 2 },
+      { type: "Carbon Fiber", rarity: "uncommon", value: 75, description: "High-pressure carbon formations", complexity: 4 },
+      { type: "Atmospheric Gas", rarity: "rare", value: 150, description: "Rare atmospheric components", complexity: 7 }
     ]
   },
   {
@@ -88,9 +89,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "15°C Average",
     gravity: "1.0g",
     resources: [
-      { type: "Water", rarity: "common", value: 10, description: "Essential for life support systems" },
-      { type: "Biomass", rarity: "uncommon", value: 45, description: "Organic compounds and materials" },
-      { type: "Rare Earth Elements", rarity: "rare", value: 180, description: "Advanced technology components" }
+      { type: "Water", rarity: "common", value: 10, description: "Essential for life support systems", complexity: 1 },
+      { type: "Biomass", rarity: "uncommon", value: 45, description: "Organic compounds and materials", complexity: 3 },
+      { type: "Rare Earth Elements", rarity: "rare", value: 180, description: "Advanced technology components", complexity: 5 }
     ]
   },
   {
@@ -110,9 +111,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-65°C Average",
     gravity: "0.38g",
     resources: [
-      { type: "Iron Oxide", rarity: "common", value: 20, description: "The source of Mars' red color" },
-      { type: "Ice Water", rarity: "uncommon", value: 40, description: "Frozen water at polar caps" },
-      { type: "Methane Gas", rarity: "rare", value: 120, description: "Potential fuel source" }
+      { type: "Iron Oxide", rarity: "common", value: 20, description: "The source of Mars' red color", complexity: 2 },
+      { type: "Ice Water", rarity: "uncommon", value: 40, description: "Frozen water at polar caps", complexity: 4 },
+      { type: "Methane Gas", rarity: "rare", value: 120, description: "Potential fuel source", complexity: 6 }
     ]
   },
   {
@@ -132,9 +133,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-110°C",
     gravity: "2.36g",
     resources: [
-      { type: "Helium-3", rarity: "uncommon", value: 95, description: "Fusion reactor fuel" },
-      { type: "Hydrogen", rarity: "common", value: 30, description: "Abundant atmospheric gas" },
-      { type: "Metallic Hydrogen", rarity: "legendary", value: 500, description: "Exotic high-pressure material" }
+      { type: "Helium-3", rarity: "uncommon", value: 95, description: "Fusion reactor fuel", complexity: 4 },
+      { type: "Hydrogen", rarity: "common", value: 30, description: "Abundant atmospheric gas", complexity: 1 },
+      { type: "Metallic Hydrogen", rarity: "legendary", value: 500, description: "Exotic high-pressure material", complexity: 10 }
     ]
   },
   {
@@ -154,9 +155,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-140°C",
     gravity: "0.92g",
     resources: [
-      { type: "Ring Particles", rarity: "common", value: 35, description: "Ice and rock fragments from rings" },
-      { type: "Titan Methane", rarity: "rare", value: 160, description: "Liquid hydrocarbon from moon Titan" },
-      { type: "Exotic Ice", rarity: "legendary", value: 450, description: "Crystalline water ice formations" }
+      { type: "Ring Particles", rarity: "common", value: 35, description: "Ice and rock fragments from rings", complexity: 2 },
+      { type: "Titan Methane", rarity: "rare", value: 160, description: "Liquid hydrocarbon from moon Titan", complexity: 7 },
+      { type: "Exotic Ice", rarity: "legendary", value: 450, description: "Crystalline water ice formations", complexity: 9 }
     ]
   },
   {
@@ -176,9 +177,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-195°C",
     gravity: "0.89g",
     resources: [
-      { type: "Methane Ice", rarity: "uncommon", value: 65, description: "Frozen atmospheric methane" },
-      { type: "Ammonia Crystals", rarity: "rare", value: 140, description: "Crystallized ammonia compounds" },
-      { type: "Diamond Rain", rarity: "legendary", value: 600, description: "Pressure-formed diamond precipitation" }
+      { type: "Methane Ice", rarity: "uncommon", value: 65, description: "Frozen atmospheric methane", complexity: 4 },
+      { type: "Ammonia Crystals", rarity: "rare", value: 140, description: "Crystallized ammonia compounds", complexity: 6 },
+      { type: "Diamond Rain", rarity: "legendary", value: 600, description: "Pressure-formed diamond precipitation", complexity: 12 }
     ]
   },
   {
@@ -198,9 +199,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-200°C",
     gravity: "1.13g",
     resources: [
-      { type: "Storm Energy", rarity: "rare", value: 175, description: "Harness powerful atmospheric storms" },
-      { type: "Tritium", rarity: "uncommon", value: 90, description: "Heavy hydrogen isotope" },
-      { type: "Dark Matter Traces", rarity: "legendary", value: 800, description: "Exotic particles from deep space" }
+      { type: "Storm Energy", rarity: "rare", value: 175, description: "Harness powerful atmospheric storms", complexity: 7 },
+      { type: "Tritium", rarity: "uncommon", value: 90, description: "Heavy hydrogen isotope", complexity: 4 },
+      { type: "Dark Matter Traces", rarity: "legendary", value: 800, description: "Exotic particles from deep space", complexity: 15 }
     ]
   },
   {
@@ -220,9 +221,9 @@ export const planets: PlanetData[] = [
     surfaceTemperature: "-38°C Average",
     gravity: "0.03g",
     resources: [
-      { type: "Asteroid Ore", rarity: "common", value: 22, description: "Rich metallic asteroid materials" },
-      { type: "Water Ice", rarity: "uncommon", value: 50, description: "Subsurface ice deposits" },
-      { type: "Bright Spots", rarity: "rare", value: 190, description: "Mysterious reflective mineral deposits" }
+      { type: "Asteroid Ore", rarity: "common", value: 22, description: "Rich metallic asteroid materials", complexity: 2 },
+      { type: "Water Ice", rarity: "uncommon", value: 50, description: "Subsurface ice deposits", complexity: 3 },
+      { type: "Bright Spots", rarity: "rare", value: 190, description: "Mysterious reflective mineral deposits", complexity: 6 }
     ]
   },
 ];
