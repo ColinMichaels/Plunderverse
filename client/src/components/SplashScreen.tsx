@@ -5,6 +5,7 @@ import { useAudio } from "../lib/stores/useAudio";
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const { start } = useGame();
   const {
     toggleMute,
@@ -14,6 +15,18 @@ export function SplashScreen() {
     playAmbientMusic,
     stopAmbientMusic,
   } = useAudio();
+
+  // Track mouse movement for parallax effect
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
+      const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
+      setMousePos({ x, y });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, []);
 
   // Initialize sounds and start ambient music
   useEffect(() => {
@@ -55,7 +68,7 @@ export function SplashScreen() {
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
       {/* Enhanced photorealistic starfield background */}
       <div className="absolute inset-0">
-        {/* Photorealistic twinkling stars */}
+        {/* Photorealistic twinkling stars with mouse parallax */}
         <div className="absolute inset-0">
           {Array.from({ length: 200 }).map((_, i) => {
             const size = Math.random() * 4 + 0.5;
@@ -63,6 +76,8 @@ export function SplashScreen() {
             const twinkleSpeed = Math.random() * 6 + 4; // Slower: 4-10 seconds
             const color = Math.random() > 0.7 ? 
               (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF'; // Varied star colors
+            const depth = Math.random() * 3 + 1; // Depth layer for parallax
+            const randomSpeed = Math.random() * 0.5 + 0.75; // Random speed multiplier 0.75-1.25
             
             return (
               <div
@@ -76,36 +91,51 @@ export function SplashScreen() {
                   backgroundColor: color,
                   opacity: brightness,
                   boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}40`,
-                  animationDuration: `${twinkleSpeed}s`,
+                  animationDuration: `${twinkleSpeed * randomSpeed}s`,
                   animationDelay: `${Math.random() * 6}s`,
+                  transform: `translate(${mousePos.x * depth * 2}px, ${mousePos.y * depth * 1.5}px)`,
+                  transition: 'transform 0.1s ease-out',
                 }}
               />
             );
           })}
         </div>
 
-        {/* Distant nebula particles - slower and more subtle */}
+        {/* Distant nebula particles - slower and more subtle with parallax */}
         <div className="absolute inset-0">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <div
-              key={`particle-${i}`}
-              className="absolute rounded-full nebula-glow"
-              style={{
-                width: '2px',
-                height: '2px',
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
-                backgroundColor: '#4FC3F7',
-                boxShadow: '0 0 6px #4FC3F7, 0 0 12px #4FC3F760',
-                animationDuration: `${Math.random() * 4 + 6}s`, // Slower: 6-10 seconds
-                animationDelay: `${Math.random() * 8}s`,
-              }}
-            />
-          ))}
+          {Array.from({ length: 20 }).map((_, i) => {
+            const depth = Math.random() * 2 + 0.5; // Parallax depth
+            const randomSpeed = Math.random() * 0.6 + 0.7; // Random speed 0.7-1.3
+            
+            return (
+              <div
+                key={`particle-${i}`}
+                className="absolute rounded-full nebula-glow"
+                style={{
+                  width: '2px',
+                  height: '2px',
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  backgroundColor: '#4FC3F7',
+                  boxShadow: '0 0 6px #4FC3F7, 0 0 12px #4FC3F760',
+                  animationDuration: `${(Math.random() * 4 + 6) * randomSpeed}s`, // Variable speed: 6-10 seconds
+                  animationDelay: `${Math.random() * 8}s`,
+                  transform: `translate(${mousePos.x * depth * 4}px, ${mousePos.y * depth * 3}px)`,
+                  transition: 'transform 0.2s ease-out',
+                }}
+              />
+            );
+          })}
         </div>
 
-        {/* Subtle moving space dust */}
-        <div className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 animate-drift"></div>
+        {/* Subtle moving space dust with mouse interaction */}
+        <div 
+          className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 animate-drift"
+          style={{
+            transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 6}px)`,
+            transition: 'transform 0.3s ease-out',
+          }}
+        ></div>
       </div>
 
       {/* Custom CSS animations */}
@@ -134,9 +164,9 @@ export function SplashScreen() {
         
         @keyframes drift {
           0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-          25% { transform: translateX(1px) translateY(-1px) rotate(0.1deg); }
-          50% { transform: translateX(-0.5px) translateY(1px) rotate(-0.1deg); }
-          75% { transform: translateX(0.5px) translateY(0.5px) rotate(0.05deg); }
+          25% { transform: translateX(2px) translateY(-1.5px) rotate(0.15deg); }
+          50% { transform: translateX(-1px) translateY(2px) rotate(-0.2deg); }
+          75% { transform: translateX(1.5px) translateY(1px) rotate(0.1deg); }
         }
         
         .content-float {
