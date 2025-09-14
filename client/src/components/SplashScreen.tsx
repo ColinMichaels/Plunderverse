@@ -56,18 +56,18 @@ export function SplashScreen() {
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
       {/* Enhanced photorealistic starfield background */}
       <div className="absolute inset-0">
-        {/* Traveling through space - stars with zoom parallax */}
+        {/* Traveling through space - fewer stars with enhanced parallax */}
         <div className="absolute inset-0">
-          {Array.from({ length: 300 }).map((_, i) => {
-            const size = Math.random() * 4 + 0.5;
-            const brightness = Math.random() * 0.9 + 0.3;
-            const twinkleSpeed = Math.random() * 6 + 4;
-            const color = Math.random() > 0.7 ? 
+          {Array.from({ length: 80 }).map((_, i) => {
+            const size = Math.random() * 5 + 0.3;
+            const brightness = Math.random() * 0.9 + 0.2;
+            const twinkleSpeed = Math.random() * 8 + 4;
+            const color = Math.random() > 0.6 ? 
               (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF';
-            const depth = Math.random() * 5 + 1; // Deeper parallax layers
-            const travelSpeed = Math.random() * 20 + 15; // Travel animation speed
-            const driftX = (Math.random() - 0.5) * 4; // Random horizontal drift
-            const driftY = (Math.random() - 0.5) * 4; // Random vertical drift
+            const depth = Math.random() * 8 + 1; // Much deeper parallax layers (1-9)
+            const travelSpeed = Math.random() * 25 + 10; // Varied travel animation speed
+            const driftX = (Math.random() - 0.5) * (6 + depth); // Depth-based drift distance
+            const driftY = (Math.random() - 0.5) * (6 + depth); // Depth-based drift distance
             
             return (
               <div
@@ -92,14 +92,14 @@ export function SplashScreen() {
           })}
         </div>
 
-        {/* Nebula particles with travel effect */}
+        {/* Nebula particles with enhanced parallax */}
         <div className="absolute inset-0">
-          {Array.from({ length: 30 }).map((_, i) => {
-            const depth = Math.random() * 3 + 1;
-            const glowSpeed = Math.random() * 4 + 6;
-            const travelSpeed = Math.random() * 25 + 20;
-            const driftX = (Math.random() - 0.5) * 6;
-            const driftY = (Math.random() - 0.5) * 6;
+          {Array.from({ length: 15 }).map((_, i) => {
+            const depth = Math.random() * 5 + 2; // Deeper layers (2-7)
+            const glowSpeed = Math.random() * 6 + 6;
+            const travelSpeed = Math.random() * 30 + 15;
+            const driftX = (Math.random() - 0.5) * (8 + depth * 2); // Much more depth-based movement
+            const driftY = (Math.random() - 0.5) * (8 + depth * 2);
             
             return (
               <div
@@ -143,13 +143,13 @@ export function SplashScreen() {
             transform: translate(0, 0) scale(1); 
           }
           25% { 
-            transform: translate(calc(var(--drift-x) * 0.5), calc(var(--drift-y) * 0.5)) scale(calc(1 + var(--depth) * 0.1)); 
+            transform: translate(calc(var(--drift-x) * 0.4), calc(var(--drift-y) * 0.4)) scale(calc(1 + var(--depth) * 0.15)); 
           }
           50% { 
-            transform: translate(var(--drift-x), var(--drift-y)) scale(calc(1 + var(--depth) * 0.2)); 
+            transform: translate(calc(var(--drift-x) * 0.8), calc(var(--drift-y) * 0.8)) scale(calc(1 + var(--depth) * 0.3)); 
           }
           75% { 
-            transform: translate(calc(var(--drift-x) * 0.7), calc(var(--drift-y) * 0.7)) scale(calc(1 + var(--depth) * 0.15)); 
+            transform: translate(calc(var(--drift-x) * 0.6), calc(var(--drift-y) * 0.6)) scale(calc(1 + var(--depth) * 0.2)); 
           }
           100% { 
             transform: translate(0, 0) scale(1); 
@@ -170,10 +170,10 @@ export function SplashScreen() {
             transform: translate(0, 0) scale(1); 
           }
           33% { 
-            transform: translate(calc(var(--drift-x) * 0.6), calc(var(--drift-y) * 0.6)) scale(calc(1 + var(--depth) * 0.15)); 
+            transform: translate(calc(var(--drift-x) * 0.5), calc(var(--drift-y) * 0.5)) scale(calc(1 + var(--depth) * 0.2)); 
           }
           66% { 
-            transform: translate(var(--drift-x), var(--drift-y)) scale(calc(1 + var(--depth) * 0.25)); 
+            transform: translate(calc(var(--drift-x) * 0.9), calc(var(--drift-y) * 0.9)) scale(calc(1 + var(--depth) * 0.4)); 
           }
           100% { 
             transform: translate(0, 0) scale(1); 
