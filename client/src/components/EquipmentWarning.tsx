@@ -25,8 +25,8 @@ export function EquipmentWarning() {
       id="equipment-warning"
       title="SYSTEM ALERT"
       icon="⚠️"
-      zone="right-sidebar"
-      priority={2}
+      zone="left-sidebar"
+      priority={4}
       defaultExpanded={false}
       canCollapse={true}
     >

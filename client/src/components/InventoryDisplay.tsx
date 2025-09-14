@@ -36,8 +36,8 @@ export function InventoryDisplay() {
       id="inventory"
       title="CARGO BAY"
       icon="📦"
-      zone="right-sidebar"
-      priority={1}
+      zone="left-sidebar"
+      priority={3}
       defaultExpanded={false}
     >
       <div className="space-y-3">

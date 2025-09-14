@@ -1,6 +1,6 @@
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { KeyboardControls } from "@react-three/drei";
+import { KeyboardControls, useTexture } from "@react-three/drei";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
@@ -16,6 +16,9 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   // Get planet data for surface color
   const planet = planets.find(p => p.name === planetName);
   const surfaceColor = planet?.color || "#8C7853";
+  
+  // Load surface texture
+  const surfaceTexture = useTexture("/textures/surfaces/black-white-details-moon-texture-concept.jpg");
   
   // Generate terrain vertices using useMemo to avoid recreating on every render
   const terrainGeometry = useMemo(() => {
@@ -36,9 +39,20 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     return geometry;
   }, []);
   
+  // Configure texture
+  useEffect(() => {
+    if (surfaceTexture) {
+      surfaceTexture.wrapS = THREE.RepeatWrapping;
+      surfaceTexture.wrapT = THREE.RepeatWrapping;
+      surfaceTexture.repeat.set(8, 8); // Repeat the texture 8x8 times for detail
+      surfaceTexture.anisotropy = 16; // Improve texture quality at angles
+    }
+  }, [surfaceTexture]);
+  
   return (
     <mesh ref={meshRef} geometry={terrainGeometry} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]}>
       <meshStandardMaterial 
+        map={surfaceTexture}
         color={surfaceColor}
         roughness={0.9}
         metalness={0.1}
@@ -281,6 +295,32 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 function HelmetOverlay({ planetName }: { planetName: string }) {
   const planet = planets.find(p => p.name === planetName);
   const needsHelmet = planetName !== "Earth"; // More robust check
+  const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(null);
+  const { isMuted } = useAudio(); // Respect global audio settings
+  
+  // Initialize and manage helmet breathing audio
+  useEffect(() => {
+    if (needsHelmet) {
+      const audio = new Audio('/sounds/space-helmet-breathing.mp3');
+      audio.loop = true;
+      audio.volume = isMuted ? 0 : 0.3; // Respect mute setting
+      audio.play().catch(e => console.log('Helmet audio autoplay prevented:', e));
+      setHelmetAudio(audio);
+      
+      return () => {
+        audio.pause();
+        audio.currentTime = 0;
+        setHelmetAudio(null);
+      };
+    }
+  }, [needsHelmet, isMuted]);
+  
+  // Update volume when mute state changes
+  useEffect(() => {
+    if (helmetAudio) {
+      helmetAudio.volume = isMuted ? 0 : 0.3;
+    }
+  }, [isMuted, helmetAudio]);
   
   if (!needsHelmet) return null;
   
