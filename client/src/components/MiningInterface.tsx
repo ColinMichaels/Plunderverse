@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useState, useMemo } from "react";
 import { useMining } from "../lib/stores/useMining";
 import { useInventory } from "../lib/stores/useInventory";
 import { useCredits } from "../lib/stores/useCredits";
+import { useAudio } from "../lib/stores/useAudio";
 import { ResourceData } from "../lib/planetData";
 
 interface MiningInterfaceProps {
@@ -30,7 +30,20 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   
   const { addResource, getStorageUsed, storageCapacity } = useInventory();
   const { earnCredits } = useCredits();
+  const { playHit, playSuccess } = useAudio();
   const [selectedResource, setSelectedResource] = useState<ResourceData | null>(null);
+
+  // Precompute particle parameters to avoid Math.random in render
+  const particleParams = useMemo(() => {
+    return Array.from({ length: 12 }, (_, i) => ({
+      id: i,
+      left: Math.random() * 100,
+      animationDelay: i * 0.5,
+      animationDuration: 2 + Math.random() * 2
+    }));
+  }, [isActive]); // Regenerate when mining state changes
+
+  // Remove duplicate sound effect - only play in handleStartMining
 
   // Mining progress update loop
   useEffect(() => {
@@ -48,6 +61,9 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
           const creditReward = Math.floor(result.resource.value * result.quantity * 0.1);
           earnCredits(creditReward);
           console.log(`Mining reward: ${creditReward} credits`);
+
+          // Play success sound
+          playSuccess();
         } else {
           console.log("Inventory full! Mining stopped.");
           stopMining();
@@ -63,6 +79,13 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   const handleStartMining = () => {
     if (selectedResource) {
       startMining(planetName, selectedResource);
+      
+      // Play resource-specific start sound
+      if (selectedResource.type === 'Rare Earth Elements') {
+        playSuccess();
+      } else {
+        playHit();
+      }
     }
   };
 
@@ -91,7 +114,70 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 pointer-events-auto">
-      <div className="bg-gray-900 border border-orange-400 rounded-lg p-6 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+      {/* Background Mining Animation */}
+      {isActive && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Animated mining particles using CSS only */}
+          <div className="mining-particles absolute inset-0">
+            {particleParams.map((particle) => (
+              <div
+                key={particle.id}
+                className="particle absolute w-2 h-2 bg-orange-400 rounded-full"
+                style={{
+                  left: `${particle.left}%`,
+                  animationDelay: `${particle.animationDelay}s`,
+                  animationDuration: `${particle.animationDuration}s`
+                }}
+              />
+            ))}
+          </div>
+          
+          {/* Mining beam effect */}
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-orange-500/10 to-transparent animate-pulse" />
+          
+          {/* Drilling indicators */}
+          <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2">
+            <div className="flex space-x-2">
+              {[...Array(5)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-3 h-3 bg-orange-500 rounded-full animate-bounce"
+                  style={{
+                    animationDelay: `${i * 0.2}s`,
+                    animationDuration: '0.8s'
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Inline CSS for mining particle animation */}
+      <style>{`
+        .mining-particles .particle {
+          animation: mining-particle linear infinite;
+        }
+        
+        @keyframes mining-particle {
+          0% {
+            transform: translateY(100vh);
+            opacity: 0;
+          }
+          10% {
+            opacity: 1;
+          }
+          90% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(-20px);
+            opacity: 0;
+          }
+        }
+      `}</style>
+
+      <div className="bg-gray-900 border border-orange-400 rounded-lg p-6 max-w-2xl mx-4 max-h-[90vh] overflow-y-auto relative z-10">
         
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -227,9 +313,9 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
             <button
               onClick={handleStartMining}
               disabled={!selectedResource || storageUsed >= storageCapacity}
-              className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 ${
+              className={`px-6 py-3 rounded-lg font-semibold flex items-center space-x-2 transition-all ${
                 selectedResource && storageUsed < storageCapacity
-                  ? 'bg-orange-600 hover:bg-orange-700 text-white'
+                  ? 'bg-orange-600 hover:bg-orange-700 text-white transform hover:scale-105'
                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
               }`}
             >
@@ -239,7 +325,7 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
           ) : (
             <button
               onClick={stopMining}
-              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold flex items-center space-x-2"
+              className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold flex items-center space-x-2 transform hover:scale-105 transition-all"
             >
               <span>🛑</span>
               <span>Stop Mining</span>
