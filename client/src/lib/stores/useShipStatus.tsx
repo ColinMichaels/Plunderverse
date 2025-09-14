@@ -2,8 +2,7 @@ import { create } from "zustand";
 import { useCredits } from "./useCredits";
 
 interface ShipStatusState {
-  // Ship resources (0-100)
-  fuel: number;
+  // Ship resources (0-100) - fuel moved to equipment system
   shield: number;
   hull: number;
   
@@ -23,12 +22,10 @@ interface ShipStatusState {
     warpCapability: boolean; // enables warp mode
   };
   
-  // Actions
-  consumeFuel: (amount: number) => void;
+  // Actions - consumeFuel and refuel moved to equipment system
   takeDamage: (amount: number, source: string) => void;
   rechargeShield: (amount: number) => void;
   repairHull: (amount: number) => void;
-  refuel: (amount: number) => void;
   resetShip: () => void;
   setThrusting: (thrusting: boolean) => void;
   setWarpMode: (warpMode: boolean) => void;
@@ -36,7 +33,6 @@ interface ShipStatusState {
 }
 
 export const useShipStatus = create<ShipStatusState>((set, get) => ({
-  fuel: 100,
   shield: 100,
   hull: 100,
   isDestroyed: false,
@@ -48,16 +44,6 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
     fuelCapacity: 1.0,
     thrustEfficiency: 1.0,
     warpCapability: false,
-  },
-  
-  consumeFuel: (amount) => {
-    set(state => {
-      const newFuel = Math.max(0, state.fuel - amount);
-      return {
-        fuel: newFuel,
-        isCritical: newFuel < 20 || state.shield < 20 || state.hull < 20
-      };
-    });
   },
   
   takeDamage: (amount, source) => {
@@ -79,7 +65,7 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       }
       
       const isDestroyed = newHull <= 0;
-      const isCritical = state.fuel < 20 || newShield < 20 || newHull < 20;
+      const isCritical = newShield < 20 || newHull < 20;
       
       console.log(`Ship took ${amount} damage from ${source}! Hull: ${newHull}, Shield: ${newShield}`);
       
@@ -96,40 +82,27 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   rechargeShield: (amount) => {
     set(state => ({
       shield: Math.min(100, state.shield + amount),
-      isCritical: state.fuel < 20 || Math.min(100, state.shield + amount) < 20 || state.hull < 20
+      isCritical: Math.min(100, state.shield + amount) < 20 || state.hull < 20
     }));
   },
   
   repairHull: (amount) => {
     set(state => ({
       hull: Math.min(100, state.hull + amount),
-      isCritical: state.fuel < 20 || state.shield < 20 || Math.min(100, state.hull + amount) < 20
+      isCritical: state.shield < 20 || Math.min(100, state.hull + amount) < 20
     }));
   },
   
-  refuel: (amount) => {
-    set(state => {
-      const maxFuel = 100 * state.upgrades.fuelCapacity; // Fuel capacity can be increased
-      return {
-        fuel: Math.min(maxFuel, state.fuel + amount),
-        isCritical: Math.min(maxFuel, state.fuel + amount) < 20 || state.shield < 20 || state.hull < 20
-      };
-    });
-  },
   
   resetShip: () => {
-    set(state => {
-      const maxFuel = 100 * state.upgrades.fuelCapacity;
-      return {
-        fuel: maxFuel,
-        shield: 100,
-        hull: 100,
-        isDestroyed: false,
-        isCritical: false,
-        isThrusting: false,
-        isWarpMode: false,
-        lastDamageSource: null
-      };
+    set({
+      shield: 100,
+      hull: 100,
+      isDestroyed: false,
+      isCritical: false,
+      isThrusting: false,
+      isWarpMode: false,
+      lastDamageSource: null
     });
   },
   

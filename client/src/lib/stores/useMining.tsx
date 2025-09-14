@@ -88,6 +88,9 @@ export const useMining = create<MiningState>((set, get) => ({
     const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
     equipmentStore.applyWear('drill-mk1', stressFactors, deltaTime);
     
+    // Apply ship degradation during mining operations
+    equipmentStore.applyShipDegradation('mining', stressFactors.operationIntensity, deltaTime);
+    
     // Mining complete
     if (newProgress >= 100) {
       // Calculate base extraction - ensure minimum 1 for healthy equipment

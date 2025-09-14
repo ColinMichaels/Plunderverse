@@ -4,12 +4,14 @@ import { ResourceData } from "../planetData";
 export interface EquipmentItem {
   id: string;
   name: string;
-  type: 'drill' | 'extractor' | 'scanner' | 'engine';
+  type: 'drill' | 'extractor' | 'scanner' | 'engine' | 'hull' | 'fuel' | 'maintenance';
   maxDurability: number;
   currentDurability: number;
   repairCost: number;
   stressResistance: number; // 0-1, higher = less wear per operation
   performanceLevel: number; // Current performance multiplier based on condition
+  isConsumable?: boolean; // For resources like fuel that need replenishment
+  replenishmentCost?: number; // Cost per unit to refill consumables
 }
 
 export interface StressFactors {
@@ -25,10 +27,13 @@ interface EquipmentState {
   initializeEquipment: () => void;
   applyWear: (equipmentId: string, stressFactors: StressFactors, operationTime: number) => void;
   repairEquipment: (equipmentId: string, repairAmount?: number, availableCredits?: number) => { success: boolean; cost: number };
+  replenishFuel: (fuelAmount: number, availableCredits: number) => { success: boolean; cost: number };
+  consumeFuel: (amount: number) => boolean; // Returns false if insufficient fuel
   getEquipment: (equipmentId: string) => EquipmentItem | undefined;
   getPerformanceMultiplier: (equipmentId: string) => number;
   getConditionStatus: (equipmentId: string) => 'excellent' | 'good' | 'fair' | 'poor' | 'critical' | 'broken';
   calculateStressFactor: (resource: ResourceData, planetName: string) => StressFactors;
+  applyShipDegradation: (operationType: 'autopilot' | 'mining' | 'repair', intensity: number, duration: number) => void;
 }
 
 export const useEquipment = create<EquipmentState>((set, get) => ({
@@ -36,6 +41,7 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
   
   initializeEquipment: () => {
     const initialEquipment: EquipmentItem[] = [
+      // Mining Equipment
       {
         id: 'drill-mk1',
         name: 'Mining Drill Mk1',
@@ -65,11 +71,54 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
         repairCost: 30,
         stressResistance: 0.9,
         performanceLevel: 1.0
+      },
+      // Ship Components
+      {
+        id: 'hull-primary',
+        name: 'Ship Hull',
+        type: 'hull',
+        maxDurability: 200,
+        currentDurability: 200,
+        repairCost: 100,
+        stressResistance: 0.6,
+        performanceLevel: 1.0
+      },
+      {
+        id: 'engine-main',
+        name: 'Main Engine',
+        type: 'engine',
+        maxDurability: 150,
+        currentDurability: 150,
+        repairCost: 75,
+        stressResistance: 0.7,
+        performanceLevel: 1.0
+      },
+      {
+        id: 'fuel-tank',
+        name: 'Fuel Tank',
+        type: 'fuel',
+        maxDurability: 100,
+        currentDurability: 100,
+        repairCost: 20,
+        stressResistance: 1.0, // Fuel doesn't "wear" but gets consumed
+        performanceLevel: 1.0,
+        isConsumable: true,
+        replenishmentCost: 2 // Credits per fuel unit
+      },
+      {
+        id: 'maintenance-kit',
+        name: 'Maintenance Kit',
+        type: 'maintenance',
+        maxDurability: 50,
+        currentDurability: 50,
+        repairCost: 25,
+        stressResistance: 0.5,
+        performanceLevel: 1.0
       }
     ];
     
     set({ equipment: initialEquipment });
-    console.log("Equipment initialized with basic gear");
+    console.log("Equipment initialized with mining gear and ship components");
   },
   
   applyWear: (equipmentId, stressFactors, operationTime) => {
@@ -179,6 +228,67 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     console.log(`Repaired ${equipment.name}: +${actualRepair.toFixed(1)} durability for ${repairCost} credits`);
     return { success: true, cost: repairCost };
   },
+
+  replenishFuel: (fuelAmount, availableCredits) => {
+    const fuel = get().getEquipment('fuel-tank');
+    if (!fuel || !fuel.isConsumable) {
+      return { success: false, cost: 0 };
+    }
+
+    const maxRefill = fuel.maxDurability - fuel.currentDurability;
+    const actualRefill = Math.min(fuelAmount, maxRefill);
+    const refillCost = Math.ceil(actualRefill * (fuel.replenishmentCost || 2));
+
+    if (availableCredits < refillCost) {
+      console.log(`Insufficient credits for fuel. Need ${refillCost}, have ${availableCredits}`);
+      return { success: false, cost: refillCost };
+    }
+
+    set(state => {
+      const updatedEquipment = state.equipment.map(eq => {
+        if (eq.id === 'fuel-tank') {
+          return {
+            ...eq,
+            currentDurability: eq.currentDurability + actualRefill,
+            performanceLevel: Math.min(1.0, (eq.currentDurability + actualRefill) / eq.maxDurability)
+          };
+        }
+        return eq;
+      });
+      
+      return { equipment: updatedEquipment };
+    });
+
+    console.log(`Refueled ${actualRefill} units for ${refillCost} credits`);
+    return { success: true, cost: refillCost };
+  },
+
+  consumeFuel: (amount) => {
+    const fuel = get().getEquipment('fuel-tank');
+    if (!fuel || fuel.currentDurability < amount) {
+      console.warn(`Insufficient fuel! Need ${amount}, have ${fuel?.currentDurability || 0}`);
+      return false;
+    }
+
+    set(state => {
+      const updatedEquipment = state.equipment.map(eq => {
+        if (eq.id === 'fuel-tank') {
+          const newFuel = Math.max(0, eq.currentDurability - amount);
+          return {
+            ...eq,
+            currentDurability: newFuel,
+            performanceLevel: newFuel / eq.maxDurability
+          };
+        }
+        return eq;
+      });
+      
+      return { equipment: updatedEquipment };
+    });
+
+    console.log(`Consumed ${amount} fuel units`);
+    return true;
+  },
   
   getEquipment: (equipmentId) => {
     const state = get();
@@ -236,6 +346,94 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
       operationIntensity,
       environmentalFactor
     };
+  },
+
+  applyShipDegradation: (operationType, intensity, duration) => {
+    set(state => {
+      const equipment = [...state.equipment];
+      
+      // Apply degradation based on operation type
+      switch (operationType) {
+        case 'autopilot': {
+          // Engine wear from autopilot usage
+          const engineIndex = equipment.findIndex(eq => eq.id === 'engine-main');
+          if (engineIndex >= 0) {
+            const engine = equipment[engineIndex];
+            const engineWear = duration * intensity * 0.05 * (1 - engine.stressResistance);
+            const newDurability = Math.max(0, engine.currentDurability - engineWear);
+            const conditionRatio = newDurability / engine.maxDurability;
+            
+            equipment[engineIndex] = {
+              ...engine,
+              currentDurability: newDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+            
+            console.log(`Engine wear from autopilot: -${engineWear.toFixed(1)} durability`);
+          }
+
+          // Hull stress from space travel
+          const hullIndex = equipment.findIndex(eq => eq.id === 'hull-primary');
+          if (hullIndex >= 0) {
+            const hull = equipment[hullIndex];
+            const hullWear = duration * intensity * 0.02 * (1 - hull.stressResistance);
+            const newDurability = Math.max(0, hull.currentDurability - hullWear);
+            const conditionRatio = newDurability / hull.maxDurability;
+            
+            equipment[hullIndex] = {
+              ...hull,
+              currentDurability: newDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+            
+            console.log(`Hull wear from travel: -${hullWear.toFixed(1)} durability`);
+          }
+          break;
+        }
+        
+        case 'mining': {
+          // Hull stress from mining operations (vibrations, debris impact)
+          const hullIndex = equipment.findIndex(eq => eq.id === 'hull-primary');
+          if (hullIndex >= 0) {
+            const hull = equipment[hullIndex];
+            const hullWear = duration * intensity * 0.01 * (1 - hull.stressResistance);
+            const newDurability = Math.max(0, hull.currentDurability - hullWear);
+            const conditionRatio = newDurability / hull.maxDurability;
+            
+            equipment[hullIndex] = {
+              ...hull,
+              currentDurability: newDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+            
+            console.log(`Hull wear from mining: -${hullWear.toFixed(1)} durability`);
+          }
+          break;
+        }
+        
+        case 'repair': {
+          // Maintenance kit degradation from repairs
+          const maintenanceIndex = equipment.findIndex(eq => eq.id === 'maintenance-kit');
+          if (maintenanceIndex >= 0) {
+            const maintenance = equipment[maintenanceIndex];
+            const maintenanceWear = intensity * 0.5 * (1 - maintenance.stressResistance);
+            const newDurability = Math.max(0, maintenance.currentDurability - maintenanceWear);
+            const conditionRatio = newDurability / maintenance.maxDurability;
+            
+            equipment[maintenanceIndex] = {
+              ...maintenance,
+              currentDurability: newDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+            
+            console.log(`Maintenance kit wear from repairs: -${maintenanceWear.toFixed(1)} durability`);
+          }
+          break;
+        }
+      }
+      
+      return { equipment };
+    });
   }
 }));
 

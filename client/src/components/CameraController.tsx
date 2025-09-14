@@ -9,6 +9,7 @@ import { useShipStatus } from "../lib/stores/useShipStatus";
 import { useGame } from "../lib/stores/useGame";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
+import { useEquipment } from "../lib/stores/useEquipment";
 import { planets } from "../lib/planetData";
 
 enum Controls {
@@ -33,7 +34,7 @@ export function CameraController() {
   const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, time } = useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
-  const { fuel, consumeFuel, setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
+  const { setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
@@ -82,6 +83,14 @@ export function CameraController() {
     enterOrbit
   } = useAutopilot();
 
+  // Equipment system for ship degradation and fuel
+  const { 
+    consumeFuel: consumeShipFuel, 
+    applyShipDegradation,
+    getEquipment,
+    getPerformanceMultiplier
+  } = useEquipment();
+
   useFrame((state, delta) => {
     const controls = get();
     const velocity = velocityRef.current;
@@ -98,10 +107,6 @@ export function CameraController() {
     const warpThrustMultiplier = upgrades.warpCapability ? 4 : 2; // Enhanced thrust in warp
     const warpMaxVelocity = upgrades.warpCapability ? 150 : 75; // Much higher max velocity
     const warpFuelConsumption = 8; // Higher fuel consumption in warp
-    
-    // Apply current modifiers
-    const thrustPower = isWarpMode ? baseThrustPower * warpThrustMultiplier : baseThrustPower;
-    const maxVelocity = isWarpMode ? warpMaxVelocity : baseMaxVelocity;
 
     // Reset acceleration each frame
     acceleration.set(0, 0, 0);
@@ -111,9 +116,16 @@ export function CameraController() {
     const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
     const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
 
-    // Check if we have fuel before applying thrusters
-    const hasFuel = fuel > 0;
+    // Check if we have fuel before applying thrusters (from equipment system)
+    const fuelTank = getEquipment('fuel-tank');
+    const hasFuel = fuelTank && fuelTank.currentDurability > 0;
+    const enginePerformance = getPerformanceMultiplier('engine-main');
     let thrusterActive = false;
+
+    // Apply current modifiers including engine performance
+    const baseThrustWithPerformance = baseThrustPower * enginePerformance;
+    const thrustPower = isWarpMode ? baseThrustWithPerformance * warpThrustMultiplier : baseThrustWithPerformance;
+    const maxVelocity = isWarpMode ? warpMaxVelocity * enginePerformance : baseMaxVelocity * enginePerformance;
 
     // Disable movement controls when autopilot is active
     if (!isAutopilotActive) {
@@ -122,7 +134,8 @@ export function CameraController() {
       if (controls.forward && hasFuel) {
         // Check for double-click
         if (currentTime - lastForwardPressRef.current < 300) { // 300ms window for double-click
-          if (upgrades.warpCapability || fuel > 30) { // Need warp upgrade OR sufficient fuel
+          const currentFuel = fuelTank?.currentDurability || 0;
+          if (upgrades.warpCapability || currentFuel > 30) { // Need warp upgrade OR sufficient fuel
             setWarpMode(true);
             forwardDoubleClickRef.current = true;
             console.log("Warp mode activated!");
@@ -173,7 +186,7 @@ export function CameraController() {
       acceleration.add(right.multiplyScalar(mobileThrust.x * mobileThrustPower));
       acceleration.add(up.multiplyScalar(mobileThrust.y * mobileThrustPower));
       thrusterActive = true;
-      console.log("Mobile thrust applied:", mobileThrust, "Fuel:", fuel);
+      console.log("Mobile thrust applied:", mobileThrust, "Fuel:", fuelTank?.currentDurability || 0);
       
       // Visual feedback for thrust
       const thrustIndicator = document.getElementById('thrust-indicator');
@@ -397,6 +410,17 @@ export function CameraController() {
         // Mark as thrusting during autopilot and consume fuel
         setThrusting(true);
         thrusterActive = true;
+
+        // Consume fuel from equipment system during autopilot
+        const autopilotFuelRate = 1.5; // Units per second during autopilot
+        if (!consumeShipFuel(autopilotFuelRate * delta)) {
+          console.warn("Out of fuel! Autopilot deactivated.");
+          deactivateAutopilot();
+        }
+
+        // Apply ship degradation during autopilot travel
+        const travelIntensity = distanceToTarget > landingDistance ? 1.0 : 0.5; // Higher intensity during approach
+        applyShipDegradation('autopilot', travelIntensity, delta);
       }
     }
 
@@ -424,8 +448,17 @@ export function CameraController() {
       const baseFuelConsumption = 2;
       const fuelMultiplier = isWarpMode ? warpFuelConsumption : baseFuelConsumption;
       const efficiencyBonus = upgrades.thrustEfficiency; // Reduces fuel consumption
-      const finalConsumption = (fuelMultiplier * efficiencyBonus) * delta;
-      consumeFuel(finalConsumption);
+      // Degraded engines consume more fuel
+      const engineEfficiency = enginePerformance > 0 ? enginePerformance : 1.0;
+      const engineFuelPenalty = 1 + (1 - engineEfficiency) * 0.5; // Up to 50% more fuel with broken engine
+      const finalConsumption = (fuelMultiplier * efficiencyBonus * engineFuelPenalty) * delta;
+      
+      // Use equipment fuel system
+      if (!consumeShipFuel(finalConsumption)) {
+        console.warn("Out of fuel! Engines shut down.");
+        setThrusting(false);
+        setWarpMode(false);
+      }
     }
   });
 

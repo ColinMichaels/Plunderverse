@@ -131,6 +131,10 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
     if (result.success) {
       spendCredits(result.cost);
       console.log(`Repaired equipment for ${result.cost} credits`);
+      
+      // Apply maintenance kit degradation when repairing
+      const { applyShipDegradation } = useEquipment.getState();
+      applyShipDegradation('repair', 1.0, 1.0); // Fixed intensity and duration for repairs
     } else {
       console.log(`Failed to repair equipment. Need ${result.cost} credits, have ${credits}`);
     }

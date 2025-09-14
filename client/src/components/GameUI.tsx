@@ -10,6 +10,8 @@ import { MobileControls } from "./MobileControls";
 import { MobilePropulsion } from "./MobilePropulsion";
 import { OrbitalInterface } from "./OrbitalInterface";
 import { InventoryDisplay } from "./InventoryDisplay";
+import { EquipmentWarning } from "./EquipmentWarning";
+import { ShipStatus } from "./ShipStatus";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -86,6 +88,9 @@ export function GameUI() {
 
       {/* Equipment Warning - top right under inventory */}
       <EquipmentWarning />
+
+      {/* Ship Status - top left */}
+      <ShipStatus />
 
       {/* Mini Map - Bottom Left */}
       <MiniMap />
