@@ -5,7 +5,7 @@ import { useAudio } from "../lib/stores/useAudio";
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  // Removed mouse tracking for smoother space travel animation
   const { start } = useGame();
   const {
     toggleMute,
@@ -15,18 +15,6 @@ export function SplashScreen() {
     playAmbientMusic,
     stopAmbientMusic,
   } = useAudio();
-
-  // Track mouse movement for parallax effect
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      const x = (e.clientX / window.innerWidth - 0.5) * 2; // -1 to 1
-      const y = (e.clientY / window.innerHeight - 0.5) * 2; // -1 to 1
-      setMousePos({ x, y });
-    };
-
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
 
   // Initialize sounds and start ambient music
   useEffect(() => {
@@ -68,21 +56,23 @@ export function SplashScreen() {
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
       {/* Enhanced photorealistic starfield background */}
       <div className="absolute inset-0">
-        {/* Photorealistic twinkling stars with mouse parallax */}
+        {/* Traveling through space - stars with zoom parallax */}
         <div className="absolute inset-0">
-          {Array.from({ length: 200 }).map((_, i) => {
+          {Array.from({ length: 300 }).map((_, i) => {
             const size = Math.random() * 4 + 0.5;
             const brightness = Math.random() * 0.9 + 0.3;
-            const twinkleSpeed = Math.random() * 6 + 4; // Slower: 4-10 seconds
+            const twinkleSpeed = Math.random() * 6 + 4;
             const color = Math.random() > 0.7 ? 
-              (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF'; // Varied star colors
-            const depth = Math.random() * 3 + 1; // Depth layer for parallax
-            const randomSpeed = Math.random() * 0.5 + 0.75; // Random speed multiplier 0.75-1.25
+              (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF';
+            const depth = Math.random() * 5 + 1; // Deeper parallax layers
+            const travelSpeed = Math.random() * 20 + 15; // Travel animation speed
+            const driftX = (Math.random() - 0.5) * 4; // Random horizontal drift
+            const driftY = (Math.random() - 0.5) * 4; // Random vertical drift
             
             return (
               <div
                 key={i}
-                className="absolute rounded-full star-twinkle"
+                className="absolute rounded-full star-travel"
                 style={{
                   width: `${size}px`,
                   height: `${size}px`,
@@ -91,57 +81,56 @@ export function SplashScreen() {
                   backgroundColor: color,
                   opacity: brightness,
                   boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}40`,
-                  animationDuration: `${twinkleSpeed * randomSpeed}s`,
-                  animationDelay: `${Math.random() * 6}s`,
-                  transform: `translate(${mousePos.x * depth * 2}px, ${mousePos.y * depth * 1.5}px)`,
-                  transition: 'transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                }}
+                  animationDuration: `${twinkleSpeed}s, ${travelSpeed}s`,
+                  animationDelay: `${Math.random() * 6}s, ${Math.random() * 10}s`,
+                  '--drift-x': `${driftX}px`,
+                  '--drift-y': `${driftY}px`,
+                  '--depth': depth,
+                } as React.CSSProperties}
               />
             );
           })}
         </div>
 
-        {/* Distant nebula particles - slower and more subtle with parallax */}
+        {/* Nebula particles with travel effect */}
         <div className="absolute inset-0">
-          {Array.from({ length: 20 }).map((_, i) => {
-            const depth = Math.random() * 2 + 0.5; // Parallax depth
-            const randomSpeed = Math.random() * 0.6 + 0.7; // Random speed 0.7-1.3
+          {Array.from({ length: 30 }).map((_, i) => {
+            const depth = Math.random() * 3 + 1;
+            const glowSpeed = Math.random() * 4 + 6;
+            const travelSpeed = Math.random() * 25 + 20;
+            const driftX = (Math.random() - 0.5) * 6;
+            const driftY = (Math.random() - 0.5) * 6;
             
             return (
               <div
                 key={`particle-${i}`}
-                className="absolute rounded-full nebula-glow"
+                className="absolute rounded-full nebula-travel"
                 style={{
-                  width: '2px',
-                  height: '2px',
+                  width: '3px',
+                  height: '3px',
                   left: `${Math.random() * 100}%`,
                   top: `${Math.random() * 100}%`,
                   backgroundColor: '#4FC3F7',
-                  boxShadow: '0 0 6px #4FC3F7, 0 0 12px #4FC3F760',
-                  animationDuration: `${(Math.random() * 4 + 6) * randomSpeed}s`, // Variable speed: 6-10 seconds
-                  animationDelay: `${Math.random() * 8}s`,
-                  transform: `translate(${mousePos.x * depth * 4}px, ${mousePos.y * depth * 3}px)`,
-                  transition: 'transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-                }}
+                  boxShadow: '0 0 8px #4FC3F7, 0 0 16px #4FC3F760',
+                  animationDuration: `${glowSpeed}s, ${travelSpeed}s`,
+                  animationDelay: `${Math.random() * 8}s, ${Math.random() * 12}s`,
+                  '--drift-x': `${driftX}px`,
+                  '--drift-y': `${driftY}px`,
+                  '--depth': depth,
+                } as React.CSSProperties}
               />
             );
           })}
         </div>
 
-        {/* Subtle moving space dust with mouse interaction */}
-        <div 
-          className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 animate-drift"
-          style={{
-            transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 6}px)`,
-            transition: 'transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-          }}
-        ></div>
+        {/* Space dust with travel effect */}
+        <div className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 space-travel"></div>
       </div>
 
-      {/* Custom CSS animations */}
+      {/* Custom CSS animations for space travel */}
       <style>{`
-        .star-twinkle {
-          animation: starTwinkle linear infinite;
+        .star-travel {
+          animation: starTwinkle linear infinite, spaceTravel linear infinite;
         }
         
         @keyframes starTwinkle {
@@ -149,8 +138,26 @@ export function SplashScreen() {
           50% { opacity: 1; transform: scale(1.2); }
         }
         
-        .nebula-glow {
-          animation: nebulaGlow ease-in-out infinite;
+        @keyframes spaceTravel {
+          0% { 
+            transform: translate(0, 0) scale(1); 
+          }
+          25% { 
+            transform: translate(calc(var(--drift-x) * 0.5), calc(var(--drift-y) * 0.5)) scale(calc(1 + var(--depth) * 0.1)); 
+          }
+          50% { 
+            transform: translate(var(--drift-x), var(--drift-y)) scale(calc(1 + var(--depth) * 0.2)); 
+          }
+          75% { 
+            transform: translate(calc(var(--drift-x) * 0.7), calc(var(--drift-y) * 0.7)) scale(calc(1 + var(--depth) * 0.15)); 
+          }
+          100% { 
+            transform: translate(0, 0) scale(1); 
+          }
+        }
+        
+        .nebula-travel {
+          animation: nebulaGlow ease-in-out infinite, nebulaTravel linear infinite;
         }
         
         @keyframes nebulaGlow {
@@ -158,15 +165,34 @@ export function SplashScreen() {
           50% { opacity: 0.8; }
         }
         
-        .animate-drift {
-          animation: drift 20s ease-in-out infinite;
+        @keyframes nebulaTravel {
+          0% { 
+            transform: translate(0, 0) scale(1); 
+          }
+          33% { 
+            transform: translate(calc(var(--drift-x) * 0.6), calc(var(--drift-y) * 0.6)) scale(calc(1 + var(--depth) * 0.15)); 
+          }
+          66% { 
+            transform: translate(var(--drift-x), var(--drift-y)) scale(calc(1 + var(--depth) * 0.25)); 
+          }
+          100% { 
+            transform: translate(0, 0) scale(1); 
+          }
         }
         
-        @keyframes drift {
-          0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
-          25% { transform: translateX(2px) translateY(-1.5px) rotate(0.15deg); }
-          50% { transform: translateX(-1px) translateY(2px) rotate(-0.2deg); }
-          75% { transform: translateX(1.5px) translateY(1px) rotate(0.1deg); }
+        .space-travel {
+          animation: spaceDust 30s ease-in-out infinite;
+        }
+        
+        @keyframes spaceDust {
+          0%, 100% { 
+            transform: translateX(0) translateY(0) scale(1) rotate(0deg); 
+            opacity: 0.3;
+          }
+          50% { 
+            transform: translateX(3px) translateY(-2px) scale(1.05) rotate(0.5deg); 
+            opacity: 0.6;
+          }
         }
         
         .content-float {
