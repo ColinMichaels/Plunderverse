@@ -9,6 +9,7 @@ import { MiniMap } from "./MiniMap";
 import { MobileControls } from "./MobileControls";
 import { MobilePropulsion } from "./MobilePropulsion";
 import { OrbitalInterface } from "./OrbitalInterface";
+import { InventoryDisplay } from "./InventoryDisplay";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -79,6 +80,9 @@ export function GameUI() {
 
       {/* Orbital Interface - when orbiting a planet */}
       <OrbitalInterface />
+
+      {/* Inventory Display - top right */}
+      <InventoryDisplay />
 
       {/* Mini Map - Bottom Left */}
       <MiniMap />
