@@ -50,9 +50,18 @@ Preferred communication style: Simple, everyday language.
 - **GLSL Shader Support**: Custom shader loading for enhanced graphics
 
 ### Audio System
-- **HTML5 Audio**: Native audio playback with background music and sound effects
+- **HTML5 Audio**: Native audio playbook with background music and sound effects
 - **Mute Controls**: User-controllable audio with persistent state
 - **Audio Stores**: Centralized audio management through Zustand
+- **Autopilot Audio**: Throttled thruster sound effects during automated flight
+
+### Autopilot System
+- **Auto-Orbit Mechanics**: Automatically orbits around moving planets when reaching landing distance
+- **Movement Control Lockout**: Disables manual controls during autopilot for immersive automated flight
+- **Real-time Orbit Tracking**: Uses orbital mechanics to follow planets as they move through their orbits
+- **Warping Visual Effects**: Particle-based "stars streaming past cockpit" effects during autopilot travel
+- **Extended Travel Time**: Reduced autopilot speed (4 units/sec) for more immersive space travel experience
+- **Navigation Integration**: Credit-based system with automatic target selection and UI management
 
 ## External Dependencies
 
