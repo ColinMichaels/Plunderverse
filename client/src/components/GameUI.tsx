@@ -8,6 +8,7 @@ import { CockpitHUD } from "./CockpitHUD";
 import { MiniMap } from "./MiniMap";
 import { MobileControls } from "./MobileControls";
 import { MobilePropulsion } from "./MobilePropulsion";
+import { OrbitalInterface } from "./OrbitalInterface";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -75,6 +76,9 @@ export function GameUI() {
         onClose={hideWarning}
         onAutopilot={handleAutopilot}
       />
+
+      {/* Orbital Interface - when orbiting a planet */}
+      <OrbitalInterface />
 
       {/* Mini Map - Bottom Left */}
       <MiniMap />
