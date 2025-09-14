@@ -6,6 +6,64 @@ export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   // Removed mouse tracking for smoother space travel animation
+  
+  // Pre-calculate star configurations to avoid render inconsistencies
+  const starConfigs = useState(() => 
+    Array.from({ length: 60 }, (_, i) => {
+      const size = Math.random() * 4 + 0.5;
+      const brightness = Math.random() * 0.9 + 0.3;
+      const twinkleSpeed = Math.random() * 8 + 4;
+      const color = Math.random() > 0.6 ? 
+        (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF';
+      
+      // Fish-eye positioning - more stars towards edges
+      const angle = Math.random() * Math.PI * 2; // Random angle
+      const distanceFromCenter = Math.pow(Math.random(), 0.4) * 0.8; // Bias towards edges
+      const centerX = 50; // Center percentage
+      const centerY = 50;
+      const x = centerX + Math.cos(angle) * distanceFromCenter * 50;
+      const y = centerY + Math.sin(angle) * distanceFromCenter * 50;
+      
+      const depth = Math.random() * 6 + 1;
+      const edgeSpeed = distanceFromCenter * 2 + 1; // Faster at edges
+      const travelSpeed = Math.random() * 20 + 10;
+      
+      // Radial movement - outward from center
+      const radialX = Math.cos(angle) * edgeSpeed * (depth + 2);
+      const radialY = Math.sin(angle) * edgeSpeed * (depth + 2);
+
+      return {
+        size, brightness, twinkleSpeed, color, x, y, depth, 
+        edgeSpeed, travelSpeed, radialX, radialY, distanceFromCenter
+      };
+    })
+  )[0];
+
+  // Pre-calculate nebula configurations
+  const nebulaConfigs = useState(() => 
+    Array.from({ length: 12 }, (_, i) => {
+      const angle = Math.random() * Math.PI * 2;
+      const distanceFromCenter = Math.pow(Math.random(), 0.3) * 0.9; // Even more bias towards edges
+      const centerX = 50;
+      const centerY = 50;
+      const x = centerX + Math.cos(angle) * distanceFromCenter * 50;
+      const y = centerY + Math.sin(angle) * distanceFromCenter * 50;
+      
+      const depth = Math.random() * 4 + 2;
+      const edgeSpeed = distanceFromCenter * 3 + 1;
+      const glowSpeed = Math.random() * 6 + 6;
+      const travelSpeed = Math.random() * 25 + 15;
+      
+      const radialX = Math.cos(angle) * edgeSpeed * (depth + 3);
+      const radialY = Math.sin(angle) * edgeSpeed * (depth + 3);
+
+      return {
+        x, y, depth, edgeSpeed, glowSpeed, travelSpeed, 
+        radialX, radialY, distanceFromCenter
+      };
+    })
+  )[0];
+
   const { start } = useGame();
   const {
     toggleMute,
@@ -56,81 +114,65 @@ export function SplashScreen() {
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
       {/* Enhanced photorealistic starfield background */}
       <div className="absolute inset-0">
-        {/* Traveling through space - fewer stars with enhanced parallax */}
+        {/* Fish-eye wide angle lens effect - stars radiating from center */}
         <div className="absolute inset-0">
-          {Array.from({ length: 80 }).map((_, i) => {
-            const size = Math.random() * 5 + 0.3;
-            const brightness = Math.random() * 0.9 + 0.2;
-            const twinkleSpeed = Math.random() * 8 + 4;
-            const color = Math.random() > 0.6 ? 
-              (Math.random() > 0.5 ? '#E6F3FF' : '#FFF8E1') : '#FFFFFF';
-            const depth = Math.random() * 8 + 1; // Much deeper parallax layers (1-9)
-            const travelSpeed = Math.random() * 25 + 10; // Varied travel animation speed
-            const driftX = (Math.random() - 0.5) * (6 + depth); // Depth-based drift distance
-            const driftY = (Math.random() - 0.5) * (6 + depth); // Depth-based drift distance
-            
-            return (
-              <div
-                key={i}
-                className="absolute rounded-full star-travel"
-                style={{
-                  width: `${size}px`,
-                  height: `${size}px`,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  backgroundColor: color,
-                  opacity: brightness,
-                  boxShadow: `0 0 ${size * 2}px ${color}, 0 0 ${size * 4}px ${color}40`,
-                  animationDuration: `${twinkleSpeed}s, ${travelSpeed}s`,
-                  animationDelay: `${Math.random() * 6}s, ${Math.random() * 10}s`,
-                  '--drift-x': `${driftX}px`,
-                  '--drift-y': `${driftY}px`,
-                  '--depth': depth,
-                } as React.CSSProperties}
-              />
-            );
-          })}
+          {starConfigs.map((config, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full star-fisheye"
+              style={{
+                width: `${config.size}px`,
+                height: `${config.size}px`,
+                left: `${config.x}%`,
+                top: `${config.y}%`,
+                backgroundColor: config.color,
+                opacity: config.brightness,
+                boxShadow: `0 0 ${config.size * 3}px ${config.color}, 0 0 ${config.size * 6}px ${config.color}30`,
+                animationDuration: `${config.twinkleSpeed}s, ${config.travelSpeed}s`,
+                animationDelay: `${i * 0.2}s, ${i * 0.5}s`,
+                '--radial-x': `${config.radialX}px`,
+                '--radial-y': `${config.radialY}px`,
+                '--distance': config.distanceFromCenter,
+                '--depth': config.depth,
+                '--edge-speed': config.edgeSpeed,
+              } as React.CSSProperties}
+            />
+          ))}
         </div>
 
-        {/* Nebula particles with enhanced parallax */}
+        {/* Nebula particles with fish-eye radial effect */}
         <div className="absolute inset-0">
-          {Array.from({ length: 15 }).map((_, i) => {
-            const depth = Math.random() * 5 + 2; // Deeper layers (2-7)
-            const glowSpeed = Math.random() * 6 + 6;
-            const travelSpeed = Math.random() * 30 + 15;
-            const driftX = (Math.random() - 0.5) * (8 + depth * 2); // Much more depth-based movement
-            const driftY = (Math.random() - 0.5) * (8 + depth * 2);
-            
-            return (
-              <div
-                key={`particle-${i}`}
-                className="absolute rounded-full nebula-travel"
-                style={{
-                  width: '3px',
-                  height: '3px',
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  backgroundColor: '#4FC3F7',
-                  boxShadow: '0 0 8px #4FC3F7, 0 0 16px #4FC3F760',
-                  animationDuration: `${glowSpeed}s, ${travelSpeed}s`,
-                  animationDelay: `${Math.random() * 8}s, ${Math.random() * 12}s`,
-                  '--drift-x': `${driftX}px`,
-                  '--drift-y': `${driftY}px`,
-                  '--depth': depth,
-                } as React.CSSProperties}
-              />
-            );
-          })}
+          {nebulaConfigs.map((config, i) => (
+            <div
+              key={`particle-${i}`}
+              className="absolute rounded-full nebula-fisheye"
+              style={{
+                width: '4px',
+                height: '4px',
+                left: `${config.x}%`,
+                top: `${config.y}%`,
+                backgroundColor: '#4FC3F7',
+                boxShadow: '0 0 12px #4FC3F7, 0 0 24px #4FC3F740',
+                animationDuration: `${config.glowSpeed}s, ${config.travelSpeed}s`,
+                animationDelay: `${i * 1.2}s, ${i * 1.8}s`,
+                '--radial-x': `${config.radialX}px`,
+                '--radial-y': `${config.radialY}px`,
+                '--distance': config.distanceFromCenter,
+                '--depth': config.depth,
+                '--edge-speed': config.edgeSpeed,
+              } as React.CSSProperties}
+            />
+          ))}
         </div>
 
         {/* Space dust with travel effect */}
         <div className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 space-travel"></div>
       </div>
 
-      {/* Custom CSS animations for space travel */}
+      {/* Custom CSS animations for fish-eye wide angle effect */}
       <style>{`
-        .star-travel {
-          animation: starTwinkle linear infinite, spaceTravel linear infinite;
+        .star-fisheye {
+          animation: starTwinkle linear infinite, fisheyeTravel linear infinite;
         }
         
         @keyframes starTwinkle {
@@ -138,42 +180,42 @@ export function SplashScreen() {
           50% { opacity: 1; transform: scale(1.2); }
         }
         
-        @keyframes spaceTravel {
+        @keyframes fisheyeTravel {
           0% { 
             transform: translate(0, 0) scale(1); 
           }
           25% { 
-            transform: translate(calc(var(--drift-x) * 0.4), calc(var(--drift-y) * 0.4)) scale(calc(1 + var(--depth) * 0.15)); 
+            transform: translate(calc(var(--radial-x) * 0.3), calc(var(--radial-y) * 0.3)) scale(calc(1 + var(--distance) * 0.2)); 
           }
           50% { 
-            transform: translate(calc(var(--drift-x) * 0.8), calc(var(--drift-y) * 0.8)) scale(calc(1 + var(--depth) * 0.3)); 
+            transform: translate(calc(var(--radial-x) * 0.7), calc(var(--radial-y) * 0.7)) scale(calc(1 + var(--distance) * 0.5)); 
           }
           75% { 
-            transform: translate(calc(var(--drift-x) * 0.6), calc(var(--drift-y) * 0.6)) scale(calc(1 + var(--depth) * 0.2)); 
+            transform: translate(calc(var(--radial-x) * 0.5), calc(var(--radial-y) * 0.5)) scale(calc(1 + var(--distance) * 0.3)); 
           }
           100% { 
             transform: translate(0, 0) scale(1); 
           }
         }
         
-        .nebula-travel {
-          animation: nebulaGlow ease-in-out infinite, nebulaTravel linear infinite;
+        .nebula-fisheye {
+          animation: nebulaGlow ease-in-out infinite, nebulaFisheye linear infinite;
         }
         
         @keyframes nebulaGlow {
           0%, 100% { opacity: 0.2; }
-          50% { opacity: 0.8; }
+          50% { opacity: 0.9; }
         }
         
-        @keyframes nebulaTravel {
+        @keyframes nebulaFisheye {
           0% { 
             transform: translate(0, 0) scale(1); 
           }
           33% { 
-            transform: translate(calc(var(--drift-x) * 0.5), calc(var(--drift-y) * 0.5)) scale(calc(1 + var(--depth) * 0.2)); 
+            transform: translate(calc(var(--radial-x) * 0.4), calc(var(--radial-y) * 0.4)) scale(calc(1 + var(--distance) * 0.3)); 
           }
           66% { 
-            transform: translate(calc(var(--drift-x) * 0.9), calc(var(--drift-y) * 0.9)) scale(calc(1 + var(--depth) * 0.4)); 
+            transform: translate(calc(var(--radial-x) * 0.8), calc(var(--radial-y) * 0.8)) scale(calc(1 + var(--distance) * 0.6)); 
           }
           100% { 
             transform: translate(0, 0) scale(1); 
