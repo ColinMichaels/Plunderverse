@@ -6,6 +6,7 @@ import { GameUI } from "./components/GameUI";
 import { SplashScreen } from "./components/SplashScreen";
 import { PlanetSurfaceScene } from "./components/PlanetSurfaceScene";
 import { TakeoffControls } from "./components/TakeoffControls";
+import { UILayoutProvider } from "./components/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
 import "@fontsource/inter";
@@ -62,39 +63,41 @@ function App() {
   }, [setBackgroundMusic]);
 
   return (
-    <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
-      {/* Show splash screen */}
-      {phase === "splash" && <SplashScreen />}
-      
-      {/* Show game when playing */}
-      {phase === "playing" && showCanvas && (
-        <KeyboardControls map={controls}>
-          <Canvas
-            shadows
-            camera={{
-              position: [0, 10, 50],
-              fov: 75,
-              near: 0.1,
-              far: 10000
-            }}
-            gl={{
-              antialias: true,
-              powerPreference: "high-performance"
-            }}
-          >
-            <color attach="background" args={["#000000"]} />
+    <UILayoutProvider>
+      <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+        {/* Show splash screen */}
+        {phase === "splash" && <SplashScreen />}
+        
+        {/* Show game when playing */}
+        {phase === "playing" && showCanvas && (
+          <KeyboardControls map={controls}>
+            <Canvas
+              shadows
+              camera={{
+                position: [0, 10, 50],
+                fov: 75,
+                near: 0.1,
+                far: 10000
+              }}
+              gl={{
+                antialias: true,
+                powerPreference: "high-performance"
+              }}
+            >
+              <color attach="background" args={["#000000"]} />
+              
+              <Suspense fallback={null}>
+                <SolarSystem />
+              </Suspense>
+            </Canvas>
             
-            <Suspense fallback={null}>
-              <SolarSystem />
-            </Suspense>
-          </Canvas>
-          
-          <GameUI />
-          <PlanetSurfaceScene />
-          <TakeoffControls />
-        </KeyboardControls>
-      )}
-    </div>
+            <GameUI />
+            <PlanetSurfaceScene />
+            <TakeoffControls />
+          </KeyboardControls>
+        )}
+      </div>
+    </UILayoutProvider>
   );
 }
 

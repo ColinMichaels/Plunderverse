@@ -98,6 +98,110 @@ canvas {
   @apply bg-cyan-400/20 border-cyan-400;
 }
 
+/* Space UI Panel Styling */
+.space-panel {
+  @apply pointer-events-auto backdrop-blur-md;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.85));
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 8px;
+  box-shadow: 
+    0 0 20px rgba(6, 182, 212, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.space-panel:hover {
+  border-color: rgba(6, 182, 212, 0.5);
+  box-shadow: 
+    0 0 30px rgba(6, 182, 212, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.space-panel-expanded {
+  min-height: 120px;
+}
+
+.space-panel-collapsed {
+  min-height: 40px;
+}
+
+.space-panel-header {
+  @apply flex items-center justify-between p-3 border-b border-slate-600/50;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6));
+}
+
+.space-panel-toggle {
+  @apply text-cyan-400 hover:text-cyan-300 transition-colors p-1 rounded;
+  background: rgba(6, 182, 212, 0.1);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+}
+
+.space-panel-toggle:hover {
+  background: rgba(6, 182, 212, 0.2);
+  border-color: rgba(6, 182, 212, 0.4);
+}
+
+.space-panel-content {
+  @apply overflow-hidden transition-all duration-300 ease-in-out p-3;
+}
+
+.space-panel-indicator {
+  @apply flex items-center justify-center p-2;
+}
+
+/* Metallic button styling */
+.space-button {
+  @apply px-3 py-2 rounded transition-all duration-200 font-mono text-sm;
+  background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 0.9));
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  color: rgb(6, 182, 212);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.space-button:hover {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.1));
+  border-color: rgba(6, 182, 212, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.space-button:active {
+  transform: translateY(0);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Status indicators */
+.space-status-bar {
+  @apply grid gap-2 p-2 rounded;
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6));
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.space-status-item {
+  @apply flex items-center justify-between text-xs font-mono;
+}
+
+.space-progress-bar {
+  @apply h-2 rounded-full overflow-hidden;
+  background: linear-gradient(90deg, rgba(31, 41, 55, 0.8), rgba(55, 65, 81, 0.8));
+  border: 1px inset rgba(6, 182, 212, 0.2);
+}
+
+.space-progress-fill {
+  @apply h-full transition-all duration-300;
+  background: linear-gradient(90deg, rgba(6, 182, 212, 0.8), rgba(14, 165, 233, 0.9));
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
 /* Mobile propulsion controls positioning */
 @media (max-width: 768px) {
   .mobile-propulsion {
