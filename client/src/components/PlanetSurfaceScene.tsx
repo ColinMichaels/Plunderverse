@@ -4,6 +4,8 @@ import { KeyboardControls } from "@react-three/drei";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
+import { useInventory } from "../lib/stores/useInventory";
+import { useCredits } from "../lib/stores/useCredits";
 import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import * as THREE from "three";
@@ -187,14 +189,19 @@ function ResourceNode({ resource, position, onInteract }: {
 
 function ResourceNodes({ planetName }: { planetName: string }) {
   const planet = planets.find(p => p.name === planetName);
-  const { startMining } = useMining();
-  const { playSuccess } = useAudio();
+  const { startMining, performClick, isActive, targetResource } = useMining();
+  const { playSuccess, playHit } = useAudio();
+  const { addResource } = useInventory();
+  const { earnCredits } = useCredits();
+  
+  // Track destroyed resource nodes per planet
+  const [destroyedNodes, setDestroyedNodes] = useState<Set<string>>(new Set());
   
   if (!planet) return null;
   
   // Generate resource node positions
   const resourcePositions = useMemo(() => {
-    const positions: Array<{resource: ResourceData, position: [number, number, number]}> = [];
+    const positions: Array<{resource: ResourceData, position: [number, number, number], id: string}> = [];
     
     planet.resources.forEach((resource, index) => {
       // Create multiple nodes for each resource type
@@ -212,7 +219,8 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         
         positions.push({
           resource,
-          position: [x, y, z]
+          position: [x, y, z],
+          id: `${planetName}-${resource.type}-${i}` // Unique ID for each node
         });
       }
     });
@@ -220,24 +228,50 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     return positions;
   }, [planet, planetName]);
   
-  const handleResourceClick = (resource: ResourceData) => {
+  const handleResourceClick = (resource: ResourceData, nodeId: string) => {
     try {
-      startMining(planetName, resource);
-      playSuccess();
-      console.log(`Starting to mine ${resource.type} on ${planetName}`);
+      if (isActive && targetResource?.type === resource.type) {
+        // If already mining this resource, perform a click
+        const result = performClick();
+        if (result) {
+          // Mining completed, add to inventory
+          const success = addResource(result.resource, result.quantity, result.planet);
+          if (success) {
+            const creditReward = Math.floor(result.resource.value * result.quantity * 0.1);
+            earnCredits(creditReward);
+            console.log(`Mining complete! Earned ${creditReward} credits`);
+            playSuccess();
+            
+            // Destroy the mined resource node
+            setDestroyedNodes(prev => new Set(Array.from(prev).concat(nodeId)));
+            console.log(`Resource node ${nodeId} destroyed after mining completion`);
+          } else {
+            console.log("Inventory full! Mining stopped.");
+          }
+        } else {
+          // Continue mining - play hit sound
+          playHit();
+        }
+      } else {
+        // Start mining a new resource
+        startMining(planetName, resource);
+        console.log(`Starting to mine ${resource.type} on ${planetName}`);
+      }
     } catch (error) {
-      console.error(`Failed to start mining ${resource.type}:`, error);
+      console.error(`Failed to mine ${resource.type}:`, error);
     }
   };
   
   return (
     <>
-      {resourcePositions.map((node, index) => (
+      {resourcePositions
+        .filter(node => !destroyedNodes.has(node.id)) // Only show non-destroyed nodes
+        .map((node, index) => (
         <ResourceNode
-          key={`${node.resource.type}-${index}`}
+          key={node.id}
           resource={node.resource}
           position={node.position}
-          onInteract={() => handleResourceClick(node.resource)}
+          onInteract={() => handleResourceClick(node.resource, node.id)}
         />
       ))}
     </>
@@ -284,7 +318,7 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
 
 function SurfaceControls({ planetName }: { planetName: string }) {
   const planet = planets.find(p => p.name === planetName);
-  const { isActive: isMining, targetResource, progress } = useMining();
+  const { isActive: isMining, targetResource, clicksCompleted, clicksRequired } = useMining();
   
   return (
     <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
@@ -306,9 +340,11 @@ function SurfaceControls({ planetName }: { planetName: string }) {
             ⛏️ Mining: {targetResource?.type}
           </div>
           <div className="w-full bg-gray-700 rounded-full h-2">
-            <div className="bg-yellow-400 h-2 rounded-full transition-all duration-300" style={{ width: `${progress}%` }} />
+            <div className="bg-yellow-400 h-2 rounded-full transition-all duration-300" style={{ width: `${(clicksCompleted / clicksRequired) * 100}%` }} />
           </div>
-          <div className="text-xs text-gray-400 mt-1">{Math.round(progress)}% complete</div>
+          <div className="text-xs text-gray-400 mt-1">
+            {clicksCompleted}/{clicksRequired} clicks - Click to mine!
+          </div>
         </div>
       ) : (
         <div className="mb-3 p-3 bg-green-900/30 border border-green-400 rounded">

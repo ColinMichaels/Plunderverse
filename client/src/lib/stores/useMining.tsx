@@ -7,8 +7,9 @@ interface MiningState {
   isActive: boolean;
   currentPlanet: string | null;
   targetResource: ResourceData | null;
-  progress: number; // 0-100
-  miningSpeed: number; // Resources per second
+  clicksCompleted: number; // Number of clicks made
+  clicksRequired: number; // Total clicks needed based on complexity
+  miningSpeed: number; // Resources per second (legacy)
   miningEfficiency: number; // 0-1, affects yield
   
   // Mining equipment stats
@@ -18,6 +19,7 @@ interface MiningState {
   // Actions
   startMining: (planet: string, resource: ResourceData) => void;
   stopMining: () => void;
+  performClick: () => { resource: ResourceData; quantity: number; planet: string } | null;
   updateProgress: (deltaTime: number) => { resource: ResourceData; quantity: number; planet: string } | null;
   upgradeDrill: () => void;
   upgradeExtractor: () => void;
@@ -27,8 +29,9 @@ export const useMining = create<MiningState>((set, get) => ({
   isActive: false,
   currentPlanet: null,
   targetResource: null,
-  progress: 0,
-  miningSpeed: 0.2, // Much slower base mining speed
+  clicksCompleted: 0,
+  clicksRequired: 0,
+  miningSpeed: 0.2, // Much slower base mining speed (legacy)
   miningEfficiency: 0.4, // Lower base efficiency
   
   // Mining equipment
@@ -47,9 +50,10 @@ export const useMining = create<MiningState>((set, get) => ({
       isActive: true,
       currentPlanet: planet,
       targetResource: resource,
-      progress: 0
+      clicksCompleted: 0,
+      clicksRequired: resource.complexity
     });
-    console.log(`Started mining ${resource.type} on ${planet} surface`);
+    console.log(`Started mining ${resource.type} on ${planet} surface - ${resource.complexity} clicks needed`);
   },
   
   stopMining: () => {
@@ -57,9 +61,80 @@ export const useMining = create<MiningState>((set, get) => ({
       isActive: false,
       currentPlanet: null,
       targetResource: null,
-      progress: 0
+      clicksCompleted: 0,
+      clicksRequired: 0
     });
     console.log("Mining operation stopped");
+  },
+  
+  performClick: () => {
+    const state = get();
+    if (!state.isActive || !state.targetResource) return null;
+    
+    const newClicksCompleted = state.clicksCompleted + 1;
+    set({ clicksCompleted: newClicksCompleted });
+    
+    console.log(`Mining click ${newClicksCompleted}/${state.clicksRequired} on ${state.targetResource!.type}`);
+    
+    // Check if mining is complete
+    if (newClicksCompleted >= state.clicksRequired) {
+      // Get equipment performance multipliers
+      const equipmentStore = useEquipment.getState();
+      const drillPerformance = equipmentStore.getPerformanceMultiplier('drill-mk1');
+      const extractorPerformance = equipmentStore.getPerformanceMultiplier('extractor-basic');
+      
+      // Check if equipment is broken
+      if (drillPerformance === 0) {
+        console.warn("Drill is broken! Mining stopped.");
+        get().stopMining();
+        return null;
+      }
+      
+      // Calculate base extraction - more dependent on equipment levels
+      const equipmentMultiplier = (state.drillPower * state.extractorLevel * drillPerformance * extractorPerformance);
+      const baseExtraction = Math.max(0.1, state.miningEfficiency * equipmentMultiplier);
+      
+      // Apply rarity-based yield reduction and round to reasonable amounts
+      const rarityYieldMultiplier = {
+        common: 1.0,
+        uncommon: 0.8,
+        rare: 0.6,
+        legendary: 0.4
+      }[state.targetResource!.rarity] || 1.0;
+      
+      const extractedAmount = extractorPerformance === 0 ? 0 : Math.max(1, Math.ceil(baseExtraction * rarityYieldMultiplier));
+      
+      // Check if extractor is broken
+      if (extractorPerformance === 0) {
+        console.warn("Extractor is broken! No resources extracted.");
+        get().stopMining();
+        return {
+          resource: state.targetResource!,
+          quantity: 0,
+          planet: state.currentPlanet || "Unknown"
+        };
+      }
+      
+      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} after ${newClicksCompleted} clicks`);
+      
+      // Apply wear to equipment
+      const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
+      equipmentStore.applyWear('drill-mk1', stressFactors, 1.0);
+      equipmentStore.applyWear('extractor-basic', stressFactors, 1.0);
+      equipmentStore.applyShipDegradation('mining', stressFactors.operationIntensity, 1.0);
+      
+      // Reset mining state
+      get().stopMining();
+      
+      // Return the extracted materials for inventory addition
+      return {
+        resource: state.targetResource!,
+        quantity: extractedAmount,
+        planet: state.currentPlanet || "Unknown"
+      };
+    }
+    
+    return null;
   },
   
   updateProgress: (deltaTime) => {
@@ -89,8 +164,8 @@ export const useMining = create<MiningState>((set, get) => ({
     const effectiveSpeed = state.miningSpeed * state.drillPower * rarityMultiplier * drillPerformance;
     const progressIncrease = (effectiveSpeed * deltaTime * 100) / 30; // 30 seconds per resource base (much slower)
     
-    const newProgress = Math.min(100, state.progress + progressIncrease);
-    set({ progress: newProgress });
+    // Click-based mining - no automatic progress
+    // This function is kept for backward compatibility but not used in click-based system
     
     // Apply wear to drill equipment during mining
     const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
@@ -99,8 +174,8 @@ export const useMining = create<MiningState>((set, get) => ({
     // Apply ship degradation during mining operations
     equipmentStore.applyShipDegradation('mining', stressFactors.operationIntensity, deltaTime);
     
-    // Mining complete
-    if (newProgress >= 100) {
+    // Mining complete (legacy time-based code, not used in click system)
+    if (false) {
       // Calculate base extraction - more dependent on equipment levels
       const equipmentMultiplier = (state.drillPower * state.extractorLevel * drillPerformance * extractorPerformance);
       const baseExtraction = Math.max(0.1, state.miningEfficiency * equipmentMultiplier);
@@ -111,22 +186,22 @@ export const useMining = create<MiningState>((set, get) => ({
         uncommon: 0.8,
         rare: 0.6,
         legendary: 0.4
-      }[state.targetResource.rarity] || 1.0;
+      }[state.targetResource!.rarity] || 1.0;
       
       const extractedAmount = extractorPerformance === 0 ? 0 : Math.max(1, Math.ceil(baseExtraction * rarityYieldMultiplier));
       
       // Check if extractor is broken
       if (extractorPerformance === 0) {
         console.warn("Extractor is broken! No resources extracted.");
-        set({ progress: 0 });
+        get().stopMining();
         return {
-          resource: state.targetResource,
+          resource: state.targetResource!,
           quantity: 0,
           planet: state.currentPlanet || "Unknown"
         };
       }
       
-      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource.type} (base: ${baseExtraction}, performance: ${Math.round(extractorPerformance * 100)}%)`);
+      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} (base: ${baseExtraction}, performance: ${Math.round(extractorPerformance * 100)}%)`);
       
       // Debug assert for healthy extractor
       if (extractorPerformance >= 1.0 && extractedAmount <= 0) {
@@ -136,12 +211,11 @@ export const useMining = create<MiningState>((set, get) => ({
       // Apply wear to extractor equipment on completion
       equipmentStore.applyWear('extractor-basic', stressFactors, 1.0); // Full cycle wear
       
-      // Reset for next mining cycle
-      set({ progress: 0 });
+      // Reset for next mining cycle (legacy code removed)
       
       // Return the extracted materials for inventory addition
       return {
-        resource: state.targetResource,
+        resource: state.targetResource!,
         quantity: extractedAmount,
         planet: state.currentPlanet || "Unknown"
       };

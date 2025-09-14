@@ -8,6 +8,7 @@ import { useMissions } from "../lib/stores/useMissions";
 import { useAudio } from "../lib/stores/useAudio";
 import { useGame } from "../lib/stores/useGame";
 import { useAutopilot } from "../lib/stores/useAutopilot";
+import { useLandedState } from "../lib/stores/useLandedState";
 import { planets } from "../lib/planetData";
 import * as THREE from "three";
 
@@ -27,6 +28,7 @@ export function CockpitHUD() {
   const { toggleMute, isMuted } = useAudio();
   const { showSplash } = useGame();
   const { activate: activateAutopilot, isActive: isAutopilotActive } = useAutopilot();
+  const { isLanded } = useLandedState();
 
   const selectedPlanetData = selectedPlanet ? planets.find(p => p.name === selectedPlanet) : null;
 
