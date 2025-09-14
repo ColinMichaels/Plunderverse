@@ -3,6 +3,7 @@ import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAutopilot } from "../lib/stores/useAutopilot";
 import { useCredits } from "../lib/stores/useCredits";
 import { planets, ResourceData } from "../lib/planetData";
+import { MiningInterface } from "./MiningInterface";
 
 export function OrbitalInterface() {
   const { selectedPlanet, setIsLanding } = useSolarSystem();
@@ -11,6 +12,7 @@ export function OrbitalInterface() {
   const [scanResults, setScanResults] = useState<ResourceData[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [bookmarkedPlanets, setBookmarkedPlanets] = useState<string[]>([]);
+  const [showMiningInterface, setShowMiningInterface] = useState(false);
 
   // Only show when orbiting a planet
   if (!isOrbiting || !selectedPlanet) return null;
@@ -207,7 +209,7 @@ export function OrbitalInterface() {
           
           {scanResults.length > 0 && (
             <button
-              onClick={() => console.log('Mining interface coming soon!')}
+              onClick={() => setShowMiningInterface(true)}
               className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold flex items-center space-x-2"
             >
               <span>⛏️</span>
@@ -216,6 +218,16 @@ export function OrbitalInterface() {
           )}
         </div>
       </div>
+
+      {/* Mining Interface */}
+      {showMiningInterface && (
+        <MiningInterface
+          isVisible={showMiningInterface}
+          planetName={planetData.name}
+          resources={scanResults}
+          onClose={() => setShowMiningInterface(false)}
+        />
+      )}
     </div>
   );
 }
