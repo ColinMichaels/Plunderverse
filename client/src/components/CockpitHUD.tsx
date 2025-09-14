@@ -59,6 +59,10 @@ export function CockpitHUD() {
     }
     
     if (spendCredits(autopilotCost)) {
+      // Select the planet as target and close navigation panel
+      setSelectedPlanet(planet.name);
+      setActivePanel('none');
+      
       // Calculate safe approach position near the planet - closer for easier landing
       const approachDirection = cameraPosition.clone().sub(planet.position).normalize();
       const safeDistance = planet.size * 4; // Closer distance for easier landing
@@ -71,13 +75,13 @@ export function CockpitHUD() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
-      {/* Central HUD - smaller and more transparent when thrusting, no pointer events when maneuvering */}
-      <div className={`absolute top-8 left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
+      {/* Central HUD - compact and less intrusive */}
+      <div className={`absolute top-4 left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
         isThrusting ? 'scale-75 opacity-40 pointer-events-none' : 'scale-100 opacity-100 pointer-events-auto'
       }`}>
-        <div className={`border border-cyan-400/50 rounded-xl backdrop-blur-sm transition-all duration-300 ${
-          isThrusting ? 'bg-slate-800/60 p-2' : 'bg-slate-800/90 p-4'
-        }`}>
+        <div className={`border border-cyan-400/50 rounded-lg backdrop-blur-sm transition-all duration-300 ${
+          isThrusting ? 'bg-slate-800/40 p-2' : 'bg-slate-800/70 p-3'
+        } max-w-md`}>
           {/* Targeting Computer Display */}
           {selectedPlanet && selectedPlanetData ? (
             <div className="w-full">
@@ -90,58 +94,32 @@ export function CockpitHUD() {
                 <div className="text-xs text-slate-400">TARGETING COMPUTER ACTIVE</div>
               </div>
 
-              {/* Main Target Info Grid - responsive sizing */}
+              {/* Main Target Info Grid - compact layout */}
               <div className={`grid gap-2 text-xs transition-all duration-300 ${
-                isThrusting ? 'grid-cols-2' : 'grid-cols-4'
+                isThrusting ? 'grid-cols-2' : 'grid-cols-2'
               }`}>
                 {/* Primary Target Data */}
-                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-                  <div className="text-cyan-400 font-mono mb-1">DESIGNATION</div>
+                <div className="bg-slate-700/50 rounded p-2 border border-slate-600">
+                  <div className="text-cyan-400 font-mono text-xs mb-1">TARGET</div>
                   <div className="text-white font-semibold text-sm">{selectedPlanet}</div>
-                  <div className="text-slate-300 mt-1">PLANETARY BODY</div>
+                  <div className="text-slate-300 text-xs">{selectedPlanetData.diameter} km</div>
                 </div>
 
-                {/* Distance & Approach */}
-                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-                  <div className="text-cyan-400 font-mono mb-1">RANGE</div>
+                {/* Distance & Status */}
+                <div className="bg-slate-700/50 rounded p-2 border border-slate-600">
+                  <div className="text-cyan-400 font-mono text-xs mb-1">RANGE</div>
                   <div className="text-white font-semibold text-sm">{Math.round(distanceToTarget * 10) / 10} units</div>
-                  <div className="text-slate-300 mt-1">{selectedPlanetData.realDistance} AU ACTUAL</div>
-                </div>
-
-                {/* Physical Characteristics */}
-                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-                  <div className="text-cyan-400 font-mono mb-1">DIAMETER</div>
-                  <div className="text-white font-semibold text-sm">{selectedPlanetData.diameter} km</div>
-                  <div className="text-slate-300 mt-1">{selectedPlanetData.moons} MOON{selectedPlanetData.moons !== 1 ? 'S' : ''}</div>
-                </div>
-
-                {/* Orbital Data */}
-                <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600">
-                  <div className="text-cyan-400 font-mono mb-1">ORBIT PERIOD</div>
-                  <div className="text-white font-semibold text-sm">{selectedPlanetData.orbitalPeriod}</div>
-                  <div className="text-slate-300 mt-1">DAY: {selectedPlanetData.dayLength}</div>
-                </div>
-              </div>
-
-              {/* Target Description */}
-              <div className="mt-3 p-3 bg-slate-700/30 rounded-lg border border-slate-600">
-                <div className="text-cyan-400 font-mono text-xs mb-1">INTELLIGENCE BRIEFING</div>
-                <div className="text-slate-300 text-xs leading-relaxed">{selectedPlanetData.description}</div>
-              </div>
-
-              {/* Landing Status */}
-              <div className="mt-3 flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                    <span className="text-green-400 text-xs font-mono">LANDING VIABLE</span>
+                  <div className="text-slate-300 text-xs">
+                    {visitedPlanets.has(selectedPlanet) ? '✓ VISITED' : 'UNEXPLORED'}
                   </div>
-                  {visitedPlanets.has(selectedPlanet) && (
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-cyan-400 rounded-full"></div>
-                      <span className="text-cyan-400 text-xs font-mono">PREVIOUSLY VISITED</span>
-                    </div>
-                  )}
+                </div>
+              </div>
+
+              {/* Landing Status - compact */}
+              <div className="mt-2 flex items-center justify-center">
+                <div className="flex items-center space-x-2 bg-slate-700/30 rounded px-3 py-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                  <span className="text-green-400 text-xs font-mono">LANDING VIABLE</span>
                 </div>
                 <div className="text-slate-400 text-xs font-mono">PRESS L TO LAND</div>
               </div>
