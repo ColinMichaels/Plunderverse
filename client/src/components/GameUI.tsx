@@ -1,6 +1,7 @@
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { LandingTransition } from "./LandingTransition";
+import { WarpingEffect } from "./WarpingEffect";
 import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
 import { CockpitHUD } from "./CockpitHUD";

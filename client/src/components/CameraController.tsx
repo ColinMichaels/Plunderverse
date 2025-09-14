@@ -42,6 +42,7 @@ export function CameraController() {
   const lastForwardPressRef = useRef(0);
   const forwardDoubleClickRef = useRef(false);
   const warpSpeedMultiplierRef = useRef(1);
+  const lastThrusterSoundRef = useRef(0);
   
   // Mobile control states
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
@@ -70,7 +71,16 @@ export function CameraController() {
   
   // Warning and autopilot stores
   const { showWarning } = useLandingWarning();
-  const { isActive: isAutopilotActive, target: autopilotTarget, activate: activateAutopilot, deactivate: deactivateAutopilot } = useAutopilot();
+  const { 
+    isActive: isAutopilotActive, 
+    target: autopilotTarget, 
+    activate: activateAutopilot, 
+    deactivate: deactivateAutopilot,
+    isOrbiting,
+    orbitRadius,
+    orbitAngle,
+    enterOrbit
+  } = useAutopilot();
 
   useFrame((state, delta) => {
     const controls = get();
@@ -295,40 +305,92 @@ export function CameraController() {
       }
     }
 
-    // Autopilot system
-    if (isAutopilotActive && autopilotTarget) {
-      const direction = autopilotTarget.clone().sub(camera.position).normalize();
-      const autopilotSpeed = 15;
-      
-      // Disable warp mode during autopilot for consistent behavior
-      if (isWarpMode) {
-        setWarpMode(false);
-      }
-      
-      // Smoothly rotate camera to face target
-      const targetQuaternion = new THREE.Quaternion();
-      const lookAtMatrix = new THREE.Matrix4();
-      lookAtMatrix.lookAt(camera.position, autopilotTarget, new THREE.Vector3(0, 1, 0));
-      targetQuaternion.setFromRotationMatrix(lookAtMatrix);
-      
-      // Smooth interpolation towards target orientation
-      camera.quaternion.slerp(targetQuaternion, delta * 2); // Adjust speed with multiplier
-      
-      // Move towards target with proper speed limiting
-      const autopilotVelocity = direction.multiplyScalar(autopilotSpeed * delta);
-      velocity.add(autopilotVelocity);
-      
-      // Mark as thrusting during autopilot and consume fuel
-      setThrusting(true);
-      thrusterActive = true;
-      
-      // Check if we've reached the target
-      const distanceToTarget = camera.position.distanceTo(autopilotTarget);
-      if (distanceToTarget < 8) {
-        // Dampen velocity on arrival to prevent overshoot
-        velocity.multiplyScalar(0.3);
-        deactivateAutopilot();
-        console.log("Autopilot navigation complete!");
+    // Autopilot system with orbital mechanics
+    if (isAutopilotActive && selectedPlanet) {
+      // Calculate current planet position dynamically
+      const planetData = planets.find(p => p.name === selectedPlanet);
+      if (planetData) {
+        // Calculate planet's current orbital position around the sun
+        const angle = time * planetData.orbitalSpeed;
+        const planetX = Math.cos(angle) * planetData.distance;
+        const planetZ = Math.sin(angle) * planetData.distance;
+        const currentPlanetPosition = new THREE.Vector3(planetX, 0, planetZ);
+        
+        // Update autopilot target to follow moving planet
+        if (autopilotTarget) {
+          autopilotTarget.copy(currentPlanetPosition);
+        }
+        
+        const distanceToTarget = camera.position.distanceTo(currentPlanetPosition);
+        const autopilotSpeed = 4; // Reduced speed for extended travel time
+        const landingDistance = planetData.size * 12; // Use proper landing distance from game logic
+        
+        // Disable warp mode during autopilot for consistent behavior
+        if (isWarpMode) {
+          setWarpMode(false);
+        }
+        
+        // Proper timestamp-based audio throttling (max 1 sound per 2 seconds)
+        const currentTime = state.clock.elapsedTime;
+        const soundInterval = 2; // Play sound every 2 seconds
+        if (currentTime - lastThrusterSoundRef.current >= soundInterval) {
+          playLaser(); // Reuse laser sound as thruster sound
+          lastThrusterSoundRef.current = currentTime;
+        }
+        
+        if (!isOrbiting && distanceToTarget > landingDistance) {
+          // Approach phase - fly towards current planet position
+          const direction = currentPlanetPosition.clone().sub(camera.position).normalize();
+          
+          // Smoothly rotate camera to face target
+          const targetQuaternion = new THREE.Quaternion();
+          const lookAtMatrix = new THREE.Matrix4();
+          lookAtMatrix.lookAt(camera.position, currentPlanetPosition, new THREE.Vector3(0, 1, 0));
+          targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+          
+          // Smooth interpolation towards target orientation
+          camera.quaternion.slerp(targetQuaternion, delta * 1.5);
+          
+          // Move towards target with warping effects
+          const autopilotVelocity = direction.multiplyScalar(autopilotSpeed * delta);
+          velocity.add(autopilotVelocity);
+          
+          // Check if we should enter orbit (within landing distance)
+          if (distanceToTarget <= landingDistance + 5) {
+            enterOrbit(landingDistance);
+            console.log(`Autopilot entering stable orbit around ${selectedPlanet} at ${landingDistance} units`);
+          }
+        } else if (isOrbiting) {
+          // Orbital phase - orbit around the moving planet center
+          const orbitSpeed = 0.3; // Slower orbital rotation for better viewing
+          const currentOrbitAngle = useAutopilot.getState().orbitAngle + (orbitSpeed * delta);
+          
+          // Update orbit angle in store less frequently to reduce performance impact
+          if (Math.floor(currentTime * 5) % 5 === 0) {
+            useAutopilot.setState({ orbitAngle: currentOrbitAngle });
+          }
+          
+          // Calculate orbital position around current planet center
+          const orbitX = Math.cos(currentOrbitAngle) * orbitRadius;
+          const orbitZ = Math.sin(currentOrbitAngle) * orbitRadius;
+          const targetOrbitPosition = currentPlanetPosition.clone().add(new THREE.Vector3(orbitX, 0, orbitZ));
+          
+          // Move towards orbital position with gentle force
+          const orbitDirection = targetOrbitPosition.clone().sub(camera.position).normalize();
+          const orbitVelocity = orbitDirection.multiplyScalar(autopilotSpeed * 0.4 * delta);
+          velocity.add(orbitVelocity);
+          
+          // Always keep camera focused on the moving planet center
+          const planetQuaternion = new THREE.Quaternion();
+          const planetLookMatrix = new THREE.Matrix4();
+          planetLookMatrix.lookAt(camera.position, currentPlanetPosition, new THREE.Vector3(0, 1, 0));
+          planetQuaternion.setFromRotationMatrix(planetLookMatrix);
+          camera.quaternion.slerp(planetQuaternion, delta * 3);
+        }
+        
+        // Mark as thrusting during autopilot and consume fuel
+        setThrusting(true);
+        thrusterActive = true;
       }
     }
 
