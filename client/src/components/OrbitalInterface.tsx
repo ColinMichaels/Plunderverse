@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAutopilot } from "../lib/stores/useAutopilot";
 import { useCredits } from "../lib/stores/useCredits";
@@ -7,15 +7,37 @@ import { MiningInterface } from "./MiningInterface";
 
 export function OrbitalInterface() {
   const { selectedPlanet, setIsLanding } = useSolarSystem();
-  const { isOrbiting, deactivate: deactivateAutopilot } = useAutopilot();
+  const { isOrbiting, isActive: isAutopilotActive, deactivate: deactivateAutopilot } = useAutopilot();
   const { credits, earnCredits } = useCredits();
   const [scanResults, setScanResults] = useState<ResourceData[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [bookmarkedPlanets, setBookmarkedPlanets] = useState<string[]>([]);
   const [showMiningInterface, setShowMiningInterface] = useState(false);
+  const [showInterface, setShowInterface] = useState(false);
 
-  // Only show when orbiting a planet
-  if (!isOrbiting || !selectedPlanet) return null;
+  // Add delay before showing interface after autopilot reaches orbit
+  useEffect(() => {
+    if (isOrbiting && !isAutopilotActive) {
+      // Show interface immediately if autopilot is not active (manual approach)
+      console.log("Orbital UI: Manual approach - showing interface immediately");
+      setShowInterface(true);
+    } else if (isOrbiting && isAutopilotActive) {
+      // Add 3-second delay if we just entered orbit via autopilot
+      console.log("Orbital UI: Autopilot orbit detected - applying 3s delay");
+      const timer = setTimeout(() => {
+        console.log("Orbital UI: Delay complete - showing interface");
+        setShowInterface(true);
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    } else {
+      // Reset when not orbiting
+      setShowInterface(false);
+    }
+  }, [isOrbiting, isAutopilotActive]);
+
+  // Only show when orbiting a planet and after delay
+  if (!isOrbiting || !selectedPlanet || !showInterface) return null;
 
   const planetData = planets.find(p => p.name === selectedPlanet);
   if (!planetData) return null;

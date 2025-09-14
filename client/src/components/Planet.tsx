@@ -97,19 +97,19 @@ export function Planet({ data, time }: PlanetProps) {
           roughness={0.8}
           metalness={0.1}
           emissive={isSelected || hovered ? data.color : "#000000"}
-          emissiveIntensity={isSelected ? 0.3 : hovered ? 0.1 : 0}
+          emissiveIntensity={isSelected ? 0.08 : hovered ? 0.03 : 0}
         />
       </Sphere>
 
-      {/* Selection ring */}
+      {/* Selection ring - reduced opacity */}
       {isSelected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
           <ringGeometry args={[data.size * 1.2, data.size * 1.4, 32]} />
-          <meshBasicMaterial color="#ffffff" transparent opacity={0.6} />
+          <meshBasicMaterial color="#ffffff" transparent opacity={0.25} />
         </mesh>
       )}
 
-      {/* Planet atmosphere glow for gas giants */}
+      {/* Planet atmosphere glow for gas giants - reduced opacity */}
       {(data.name === "Jupiter" ||
         data.name === "Saturn" ||
         data.name === "Uranus" ||
@@ -118,7 +118,7 @@ export function Planet({ data, time }: PlanetProps) {
           <meshBasicMaterial
             color={data.color}
             transparent
-            opacity={0.1}
+            opacity={0.04}
             side={THREE.BackSide}
           />
         </Sphere>
