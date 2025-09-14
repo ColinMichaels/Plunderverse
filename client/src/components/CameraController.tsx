@@ -10,6 +10,7 @@ import { useGame } from "../lib/stores/useGame";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
 import { useEquipment } from "../lib/stores/useEquipment";
+import { useMining } from "../lib/stores/useMining";
 import { planets } from "../lib/planetData";
 
 enum Controls {
@@ -91,6 +92,9 @@ export function CameraController() {
     getPerformanceMultiplier
   } = useEquipment();
 
+  // Mining system - prevent movement when mining
+  const { isActive: isMining } = useMining();
+
   useFrame((state, delta) => {
     const controls = get();
     const velocity = velocityRef.current;
@@ -127,8 +131,8 @@ export function CameraController() {
     const thrustPower = isWarpMode ? baseThrustWithPerformance * warpThrustMultiplier : baseThrustWithPerformance;
     const maxVelocity = isWarpMode ? warpMaxVelocity * enginePerformance : baseMaxVelocity * enginePerformance;
 
-    // Disable movement controls when autopilot is active
-    if (!isAutopilotActive) {
+    // Disable movement controls when autopilot is active, mining, or landed
+    if (!isAutopilotActive && !isMining && !isLanding) {
       // Detect double-click for warp mode
       const currentTime = performance.now();
       if (controls.forward && hasFuel) {
@@ -171,13 +175,13 @@ export function CameraController() {
         acceleration.add(up.multiplyScalar(-thrustPower * 0.6));
         thrusterActive = true;
       }
-    } // End autopilot check
+    } // End movement controls check (autopilot, mining, landing)
 
     // Note: Fuel consumption moved to end of frame after all thrust sources computed
 
-    // Add mobile thrust input (also disabled during autopilot)
+    // Add mobile thrust input (also disabled during autopilot, mining, or landing)
     const mobileThrust = mobileThrustRef.current;
-    if (mobileThrust.length() > 0 && hasFuel && !isAutopilotActive) {
+    if (mobileThrust.length() > 0 && hasFuel && !isAutopilotActive && !isMining && !isLanding) {
       const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
       const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
       const up = new THREE.Vector3(0, 1, 0);
@@ -203,11 +207,18 @@ export function CameraController() {
       }
     }
 
-    // Apply acceleration to velocity
-    velocity.add(acceleration.clone().multiplyScalar(delta));
+    // Stop all movement when mining or landed
+    if (isMining || isLanding) {
+      velocity.set(0, 0, 0);
+      acceleration.set(0, 0, 0);
+      console.log(`Ship movement stopped - ${isMining ? 'mining' : 'landing'} in progress`);
+    } else {
+      // Apply acceleration to velocity
+      velocity.add(acceleration.clone().multiplyScalar(delta));
 
-    // Apply drag/friction
-    velocity.multiplyScalar(dragCoefficient);
+      // Apply drag/friction
+      velocity.multiplyScalar(dragCoefficient);
+    }
 
     // Landing mode - only allow if close to planet and not recently attempted
     if (controls.land && selectedPlanet && !isLanding) {

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useInventory } from "../lib/stores/useInventory";
+import { TradingInterface } from "./TradingInterface";
 
 export function InventoryDisplay() {
   const { items, getStorageUsed, storageCapacity, getTotalValue } = useInventory();
   const [isVisible, setIsVisible] = useState(false);
+  const [showTrading, setShowTrading] = useState(false);
 
   const storageUsed = getStorageUsed();
   const storagePercentage = (storageUsed / storageCapacity) * 100;
@@ -34,12 +36,7 @@ export function InventoryDisplay() {
       {/* Inventory Toggle Button */}
       <button
         onClick={() => setIsVisible(!isVisible)}
-        className={`mb-4 px-4 py-2 rounded-lg font-semibold transition-all ${
-          items.length > 0 
-            ? 'bg-cyan-600 hover:bg-cyan-700 text-white' 
-            : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-        }`}
-        disabled={items.length === 0}
+        className="mb-4 px-4 py-2 rounded-lg font-semibold transition-all bg-cyan-600 hover:bg-cyan-700 text-white"
       >
         📦 Inventory ({items.length})
       </button>
@@ -118,18 +115,22 @@ export function InventoryDisplay() {
           </div>
 
           {/* Quick Actions */}
-          {items.length > 0 && (
-            <div className="mt-4 pt-3 border-t border-gray-700">
-              <button
-                onClick={() => console.log('Trading interface coming soon!')}
-                className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
-              >
-                💰 Trade Resources
-              </button>
-            </div>
-          )}
+          <div className="mt-4 pt-3 border-t border-gray-700">
+            <button
+              onClick={() => setShowTrading(true)}
+              className="w-full px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
+            >
+              💰 Trading Station
+            </button>
+          </div>
         </div>
       )}
+
+      {/* Trading Interface */}
+      <TradingInterface 
+        isVisible={showTrading} 
+        onClose={() => setShowTrading(false)} 
+      />
     </div>
   );
 }

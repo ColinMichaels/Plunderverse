@@ -1,0 +1,419 @@
+import { useState } from "react";
+import { useInventory } from "../lib/stores/useInventory";
+import { useCredits } from "../lib/stores/useCredits";
+import { useEquipment } from "../lib/stores/useEquipment";
+import { useMining } from "../lib/stores/useMining";
+import { useAudio } from "../lib/stores/useAudio";
+
+interface TradingInterfaceProps {
+  isVisible: boolean;
+  onClose: () => void;
+}
+
+export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) {
+  const { items, removeResource, upgradeStorage, storageCapacity } = useInventory();
+  const { credits, spendCredits, earnCredits } = useCredits();
+  const { equipment, repairEquipment, replenishFuel, getConditionStatus, getEquipment } = useEquipment();
+  const { upgradeDrill, upgradeExtractor, drillPower, extractorLevel } = useMining();
+  const { playSuccess, playHit } = useAudio();
+  const [activeTab, setActiveTab] = useState<'sell' | 'fuel' | 'repairs' | 'upgrades'>('sell');
+  const [selectedQuantity, setSelectedQuantity] = useState<{ [key: string]: number }>({});
+
+  if (!isVisible) return null;
+
+  const handleSellResource = (resourceType: string, value: number, maxQuantity: number) => {
+    const quantity = selectedQuantity[resourceType] || 1;
+    const totalValue = value * quantity;
+    
+    if (removeResource(resourceType, quantity)) {
+      earnCredits(totalValue);
+      playSuccess();
+      console.log(`Sold ${quantity} ${resourceType} for ${totalValue} credits`);
+      // Reset quantity selection
+      setSelectedQuantity(prev => ({ ...prev, [resourceType]: 1 }));
+    } else {
+      playHit();
+      console.log("Failed to sell resource");
+    }
+  };
+
+  const handleBuyFuel = (amount: number) => {
+    const fuelTank = equipment.find(e => e.id === 'fuel-tank');
+    if (!fuelTank) return;
+
+    const result = replenishFuel(amount, credits);
+    if (result.success) {
+      spendCredits(result.cost);
+      playSuccess();
+      console.log(`Refueled ${amount} units for ${result.cost} credits`);
+    } else {
+      playHit();
+      console.log("Failed to buy fuel - insufficient credits");
+    }
+  };
+
+  const handleRepairEquipment = (equipmentId: string) => {
+    const equipment = getEquipment(equipmentId);
+    if (!equipment) return;
+
+    const result = repairEquipment(equipmentId, undefined, credits);
+    if (result.success) {
+      spendCredits(result.cost);
+      playSuccess();
+      console.log(`Repaired ${equipment.name} for ${result.cost} credits`);
+    } else {
+      playHit();
+      console.log("Failed to repair - insufficient credits");
+    }
+  };
+
+  const handleUpgradeDrill = () => {
+    const cost = 200 + (drillPower - 1) * 150; // Increasing cost per upgrade
+    if (spendCredits(cost)) {
+      upgradeDrill();
+      playSuccess();
+      console.log(`Upgraded drill for ${cost} credits`);
+    } else {
+      playHit();
+      console.log("Insufficient credits for drill upgrade");
+    }
+  };
+
+  const handleUpgradeExtractor = () => {
+    const cost = 150 + (extractorLevel - 1) * 100; // Increasing cost per upgrade
+    if (spendCredits(cost)) {
+      upgradeExtractor();
+      playSuccess();
+      console.log(`Upgraded extractor for ${cost} credits`);
+    } else {
+      playHit();
+      console.log("Insufficient credits for extractor upgrade");
+    }
+  };
+
+  const handleUpgradeStorage = () => {
+    const cost = 300 + Math.floor(storageCapacity / 100) * 200; // Increasing cost based on current capacity
+    const additionalCapacity = 50;
+    
+    if (spendCredits(cost)) {
+      upgradeStorage(additionalCapacity);
+      playSuccess();
+      console.log(`Upgraded storage by ${additionalCapacity} units for ${cost} credits`);
+    } else {
+      playHit();
+      console.log("Insufficient credits for storage upgrade");
+    }
+  };
+
+  const getQuantityToSell = (resourceType: string, maxQuantity: number) => {
+    return Math.min(selectedQuantity[resourceType] || 1, maxQuantity);
+  };
+
+  const setQuantityToSell = (resourceType: string, quantity: number) => {
+    setSelectedQuantity(prev => ({ ...prev, [resourceType]: quantity }));
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-gray-900 border border-yellow-400 rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-yellow-400">🚀 Trading Station</h2>
+          <button
+            onClick={onClose}
+            className="text-gray-400 hover:text-white text-xl"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Credits Display */}
+        <div className="mb-6 p-3 bg-green-900/30 border border-green-400 rounded">
+          <div className="flex justify-between items-center">
+            <span className="text-green-400 font-semibold">Available Credits:</span>
+            <span className="text-green-400 font-mono text-lg">{credits}</span>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex mb-6 border-b border-gray-700">
+          {[
+            { id: 'sell', label: '💰 Sell Resources' },
+            { id: 'fuel', label: '⛽ Buy Fuel' },
+            { id: 'repairs', label: '🔧 Repairs' },
+            { id: 'upgrades', label: '⚡ Upgrades' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-2 font-semibold transition-colors ${
+                activeTab === tab.id
+                  ? 'text-yellow-400 border-b-2 border-yellow-400'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="space-y-4">
+          {/* Sell Resources Tab */}
+          {activeTab === 'sell' && (
+            <div>
+              <h3 className="text-lg font-semibold text-cyan-400 mb-4">Sell Resources</h3>
+              {items.length === 0 ? (
+                <div className="text-center text-gray-500 py-8">
+                  No resources to sell
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {items.map((item, index) => {
+                    const quantity = getQuantityToSell(item.type, item.quantity);
+                    const totalValue = item.value * quantity;
+                    
+                    return (
+                      <div key={index} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h4 className="font-semibold text-white">{item.type}</h4>
+                            <p className="text-gray-400 text-sm">From {item.planetSource}</p>
+                            <p className="text-gray-300 text-xs">{item.description}</p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-yellow-400 font-mono">{item.value} credits/unit</div>
+                            <div className="text-gray-400 text-sm">Available: {item.quantity}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-gray-400">Quantity:</span>
+                            <input
+                              type="number"
+                              min="1"
+                              max={item.quantity}
+                              value={quantity}
+                              onChange={(e) => setQuantityToSell(item.type, parseInt(e.target.value) || 1)}
+                              className="w-20 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white"
+                            />
+                          </div>
+                          <div className="flex-1 text-right">
+                            <span className="text-yellow-400 font-semibold">Total: {totalValue} credits</span>
+                          </div>
+                          <button
+                            onClick={() => handleSellResource(item.type, item.value, item.quantity)}
+                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
+                          >
+                            Sell
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Buy Fuel Tab */}
+          {activeTab === 'fuel' && (
+            <div>
+              <h3 className="text-lg font-semibold text-cyan-400 mb-4">Fuel Management</h3>
+              {(() => {
+                const fuelTank = equipment.find(e => e.id === 'fuel-tank');
+                if (!fuelTank) return <div className="text-red-400">No fuel tank found!</div>;
+                
+                const fuelPercentage = (fuelTank.currentDurability / fuelTank.maxDurability) * 100;
+                
+                return (
+                  <div className="space-y-4">
+                    <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-gray-300">Fuel Level</span>
+                        <span className="text-white">{fuelTank.currentDurability}/{fuelTank.maxDurability}</span>
+                      </div>
+                      <div className="w-full bg-gray-700 rounded-full h-3">
+                        <div 
+                          className={`h-3 rounded-full transition-all ${
+                            fuelPercentage > 50 ? 'bg-green-500' : fuelPercentage > 25 ? 'bg-yellow-500' : 'bg-red-500'
+                          }`}
+                          style={{ width: `${fuelPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { amount: 25, label: 'Quarter Tank' },
+                        { amount: 50, label: 'Half Tank' },
+                        { amount: 100, label: 'Full Tank' }
+                      ].map(({ amount, label }) => {
+                        const cost = amount * (fuelTank?.replenishmentCost || 2);
+                        const canAfford = credits >= cost;
+                        const spaceAvailable = fuelTank.maxDurability - fuelTank.currentDurability;
+                        const actualAmount = Math.min(amount, spaceAvailable);
+                        const actualCost = actualAmount * (fuelTank?.replenishmentCost || 2);
+                        
+                        return (
+                          <button
+                            key={amount}
+                            onClick={() => handleBuyFuel(actualAmount)}
+                            disabled={!canAfford || actualAmount <= 0}
+                            className={`p-3 rounded-lg font-semibold ${
+                              canAfford && actualAmount > 0
+                                ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                            }`}
+                          >
+                            <div>{label}</div>
+                            <div className="text-sm">{actualCost} credits</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {/* Repairs Tab */}
+          {activeTab === 'repairs' && (
+            <div>
+              <h3 className="text-lg font-semibold text-cyan-400 mb-4">Equipment Repairs</h3>
+              <div className="space-y-3">
+                {equipment.map(item => {
+                  const condition = getConditionStatus(item.id);
+                  const needsRepair = condition !== 'excellent';
+                  const repairCost = Math.round(item.repairCost * (1 - item.currentDurability / item.maxDurability));
+                  
+                  const getConditionColor = (condition: string) => {
+                    switch (condition) {
+                      case 'excellent': return 'text-green-400';
+                      case 'good': return 'text-green-300';
+                      case 'fair': return 'text-yellow-400';
+                      case 'poor': return 'text-orange-400';
+                      case 'critical': return 'text-red-400';
+                      case 'broken': return 'text-red-500';
+                      default: return 'text-gray-400';
+                    }
+                  };
+                  
+                  return (
+                    <div key={item.id} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <h4 className="font-semibold text-white">{item.name}</h4>
+                          <div className="flex items-center space-x-4 mt-1">
+                            <span className={`text-sm font-semibold ${getConditionColor(condition)}`}>
+                              {condition.toUpperCase()}
+                            </span>
+                            <span className="text-gray-400 text-sm">
+                              {item.currentDurability}/{item.maxDurability}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          {needsRepair && repairCost > 0 ? (
+                            <button
+                              onClick={() => handleRepairEquipment(item.id)}
+                              disabled={credits < repairCost}
+                              className={`px-4 py-2 rounded font-semibold ${
+                                credits >= repairCost
+                                  ? 'bg-green-600 hover:bg-green-700 text-white'
+                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              }`}
+                            >
+                              Repair ({repairCost} credits)
+                            </button>
+                          ) : (
+                            <span className="text-green-400 font-semibold">No repair needed</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Upgrades Tab */}
+          {activeTab === 'upgrades' && (
+            <div>
+              <h3 className="text-lg font-semibold text-cyan-400 mb-4">Ship Upgrades</h3>
+              <div className="space-y-3">
+                {/* Drill Upgrade */}
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-white">Mining Drill Upgrade</h4>
+                      <p className="text-gray-400 text-sm">Current Power: {drillPower.toFixed(1)}</p>
+                      <p className="text-gray-300 text-xs">Increases mining speed</p>
+                    </div>
+                    <button
+                      onClick={handleUpgradeDrill}
+                      disabled={credits < (200 + (drillPower - 1) * 150)}
+                      className={`px-4 py-2 rounded font-semibold ${
+                        credits >= (200 + (drillPower - 1) * 150)
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      Upgrade ({200 + (drillPower - 1) * 150} credits)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Extractor Upgrade */}
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-white">Resource Extractor Upgrade</h4>
+                      <p className="text-gray-400 text-sm">Current Level: {extractorLevel}</p>
+                      <p className="text-gray-300 text-xs">Increases resource yield</p>
+                    </div>
+                    <button
+                      onClick={handleUpgradeExtractor}
+                      disabled={credits < (150 + (extractorLevel - 1) * 100)}
+                      className={`px-4 py-2 rounded font-semibold ${
+                        credits >= (150 + (extractorLevel - 1) * 100)
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      Upgrade ({150 + (extractorLevel - 1) * 100} credits)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Storage Upgrade */}
+                <div className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <h4 className="font-semibold text-white">Cargo Storage Upgrade</h4>
+                      <p className="text-gray-400 text-sm">Current Capacity: {storageCapacity}</p>
+                      <p className="text-gray-300 text-xs">Adds +50 storage units</p>
+                    </div>
+                    <button
+                      onClick={handleUpgradeStorage}
+                      disabled={credits < (300 + Math.floor(storageCapacity / 100) * 200)}
+                      className={`px-4 py-2 rounded font-semibold ${
+                        credits >= (300 + Math.floor(storageCapacity / 100) * 200)
+                          ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                          : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      }`}
+                    >
+                      Upgrade ({300 + Math.floor(storageCapacity / 100) * 200} credits)
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
