@@ -45,6 +45,12 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   );
 }
 
+// Function to calculate terrain height (shared with SurfaceMovementController)
+function terrainHeightAt(x: number, z: number): number {
+  return Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 + 
+         Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
+}
+
 function SurfaceRocks({ planetName }: { planetName: string }) {
   const planet = planets.find(p => p.name === planetName);
   const rockColor = planet?.color || "#666666";
@@ -53,10 +59,14 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
   const rockPositions = useMemo(() => {
     const positions = [];
     for (let i = 0; i < 20; i++) {
+      const x = (Math.random() - 0.5) * 100;
+      const z = (Math.random() - 0.5) * 100;
+      const terrainHeight = terrainHeightAt(x, z);
+      
       positions.push({
-        x: (Math.random() - 0.5) * 100,
-        y: 0.2 + Math.random() * 0.5,
-        z: (Math.random() - 0.5) * 100,
+        x,
+        y: terrainHeight + 0.3 + Math.random() * 0.5, // Sit on terrain with clearance
+        z,
         scale: 0.5 + Math.random() * 1.5,
         rotationY: Math.random() * Math.PI * 2
       });
@@ -197,7 +207,8 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         const distance = 15 + Math.random() * 30;
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
-        const y = 0.5 + Math.random() * 1.5;
+        const terrainHeight = terrainHeightAt(x, z);
+        const y = terrainHeight + 0.8 + Math.random() * 1.5; // Sit on terrain with clearance
         
         positions.push({
           resource,
@@ -235,7 +246,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 
 function HelmetOverlay({ planetName }: { planetName: string }) {
   const planet = planets.find(p => p.name === planetName);
-  const needsHelmet = planet?.atmosphere !== "Nitrogen (78%), Oxygen (21%)";
+  const needsHelmet = planetName !== "Earth"; // More robust check
   
   if (!needsHelmet) return null;
   

@@ -12,6 +12,12 @@ enum SurfaceControls {
   turnRight = 'turnRight'
 }
 
+// Function to calculate terrain height at any x,z position (matches terrain generation)
+function terrainHeightAt(x: number, z: number): number {
+  return Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 + 
+         Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
+}
+
 export function SurfaceMovementController() {
   const { camera } = useThree();
   const [subscribe, get] = useKeyboardControls<SurfaceControls>();
@@ -112,7 +118,8 @@ export function SurfaceMovementController() {
     // Keep within reasonable bounds
     newPosition.x = Math.max(-80, Math.min(80, newPosition.x));
     newPosition.z = Math.max(-80, Math.min(80, newPosition.z));
-    newPosition.y = 1.8; // Keep at surface level
+    // Follow terrain height with rover clearance
+    newPosition.y = terrainHeightAt(newPosition.x, newPosition.z) + 1.8;
     
     positionRef.current.copy(newPosition);
     
