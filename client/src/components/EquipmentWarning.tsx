@@ -25,10 +25,10 @@ export function EquipmentWarning() {
       id="equipment-warning"
       title="SYSTEM ALERT"
       icon="⚠️"
-      zone="top-right"
+      zone="right-sidebar"
       priority={2}
-      defaultExpanded={true}
-      canCollapse={false}
+      defaultExpanded={false}
+      canCollapse={true}
     >
       <div className="space-y-2 bg-red-900/30 border border-red-500/50 rounded p-2 animate-pulse">
         <div className="text-xs text-red-200 font-mono">

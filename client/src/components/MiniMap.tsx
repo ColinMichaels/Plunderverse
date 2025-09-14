@@ -23,9 +23,9 @@ export function MiniMap() {
       id="minimap"
       title="NAVIGATION MAP"
       icon="🗺️"
-      zone="bottom-left"
+      zone="left-sidebar"
       priority={2}
-      defaultExpanded={true}
+      defaultExpanded={false}
     >
       <div 
         className="relative border border-cyan-400/30 bg-black rounded"

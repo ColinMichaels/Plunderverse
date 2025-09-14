@@ -1,10 +1,7 @@
 import React, { useState, createContext, useContext, ReactNode } from 'react';
 
-// Define UI zones around the screen edges
-export type UIZone = 
-  | 'top-left' | 'top-center' | 'top-right'
-  | 'center-left' | 'center-right' 
-  | 'bottom-left' | 'bottom-center' | 'bottom-right';
+// Define UI zones for sidebar layout
+export type UIZone = 'left-sidebar' | 'right-sidebar';
 
 export type UIPanel = {
   id: string;
@@ -35,102 +32,71 @@ export function useUILayout() {
   return context;
 }
 
-// Get position styles for each zone
-function getZoneStyles(zone: UIZone, panelIndex: number): React.CSSProperties {
-  const spacing = 8; // Base spacing
-  const offset = panelIndex * 4; // Slight offset for stacked panels
-  
-  const baseStyles: React.CSSProperties = {
-    position: 'fixed',
-    zIndex: 40 + panelIndex,
-  };
-
-  switch (zone) {
-    case 'top-left':
-      return { ...baseStyles, top: spacing + offset, left: spacing + offset };
-    case 'top-center':
-      return { ...baseStyles, top: spacing + offset, left: '50%', transform: 'translateX(-50%)' };
-    case 'top-right':
-      return { ...baseStyles, top: spacing + offset, right: spacing + offset };
-    case 'center-left':
-      return { ...baseStyles, top: '50%', left: spacing + offset, transform: 'translateY(-50%)' };
-    case 'center-right':
-      return { ...baseStyles, top: '50%', right: spacing + offset, transform: 'translateY(-50%)' };
-    case 'bottom-left':
-      return { ...baseStyles, bottom: spacing + offset, left: spacing + offset };
-    case 'bottom-center':
-      return { ...baseStyles, bottom: spacing + offset, left: '50%', transform: 'translateX(-50%)' };
-    case 'bottom-right':
-      return { ...baseStyles, bottom: spacing + offset, right: spacing + offset };
-    default:
-      return baseStyles;
-  }
-}
-
-// Space-like panel styling
-function SpacePanel({ 
+// Sidebar button component for collapsed panels
+function SidebarButton({ 
   panel, 
-  style, 
   onToggle 
 }: { 
   panel: UIPanel; 
-  style: React.CSSProperties; 
   onToggle: () => void;
 }) {
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
-    <div
-      style={style}
-      className={`space-panel transition-all duration-300 pointer-events-auto ${
-        panel.isExpanded ? 'space-panel-expanded' : 'space-panel-collapsed'
-      }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+    <button
+      onClick={onToggle}
+      className="sidebar-panel-button"
+      title={panel.title}
+      aria-label={`Toggle ${panel.title} panel`}
     >
-      {/* Panel header */}
-      <div className="space-panel-header">
-        <div className="flex items-center space-x-2">
-          {panel.icon && <span className="text-cyan-400">{panel.icon}</span>}
-          <span className="text-cyan-400 font-mono text-sm font-semibold">
-            {panel.title}
-          </span>
-        </div>
-        
-        {panel.canCollapse !== false && (
-          <button
-            onClick={onToggle}
-            className="space-panel-toggle"
-            aria-label={panel.isExpanded ? 'Collapse panel' : 'Expand panel'}
-          >
-            <svg 
-              width="12" 
-              height="12" 
-              viewBox="0 0 24 24" 
-              fill="currentColor"
-              className={`transition-transform duration-200 ${
-                panel.isExpanded ? 'rotate-180' : ''
-              }`}
+      {panel.icon && <span className="text-lg">{panel.icon}</span>}
+      <span className="sidebar-panel-label">{panel.title}</span>
+    </button>
+  );
+}
+
+// Expanded panel overlay component
+function ExpandedPanel({ 
+  panel, 
+  onToggle 
+}: { 
+  panel: UIPanel; 
+  onToggle: () => void;
+}) {
+  return (
+    <div className="expanded-panel-overlay">
+      <div className={`expanded-panel ${panel.zone === 'left-sidebar' ? 'expanded-panel-left' : 'expanded-panel-right'}`}>
+        {/* Panel header */}
+        <div className="space-panel-header">
+          <div className="flex items-center space-x-2">
+            {panel.icon && <span className="text-cyan-400">{panel.icon}</span>}
+            <span className="text-cyan-400 font-mono text-sm font-semibold">
+              {panel.title}
+            </span>
+          </div>
+          
+          {panel.canCollapse !== false && (
+            <button
+              onClick={onToggle}
+              className="space-panel-toggle"
+              aria-label="Collapse panel"
             >
-              <path d="M7 14l5-5 5 5z"/>
-            </svg>
-          </button>
-        )}
-      </div>
-
-      {/* Panel content */}
-      <div className={`space-panel-content ${
-        panel.isExpanded ? 'max-h-[70vh] opacity-100' : 'max-h-0 opacity-0'
-      }`}>
-        {panel.children}
-      </div>
-
-      {/* Collapsed indicator */}
-      {!panel.isExpanded && (
-        <div className="space-panel-indicator">
-          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse"></div>
+              <svg 
+                width="12" 
+                height="12" 
+                viewBox="0 0 24 24" 
+                fill="currentColor"
+                className="transition-transform duration-200"
+              >
+                <path d="M19 13H5v-2h14v2z"/>
+              </svg>
+            </button>
+          )}
         </div>
-      )}
+
+        {/* Panel content */}
+        <div className="space-panel-content max-h-[70vh] opacity-100 overflow-y-auto">
+          {panel.children}
+        </div>
+      </div>
     </div>
   );
 }
@@ -152,24 +118,22 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     setPanels(prev => prev.filter(p => p.id !== id));
   };
 
-  const togglePanel = (id: string) => {
-    setPanels(prev => prev.map(p => 
-      p.id === id ? { ...p, isExpanded: !p.isExpanded } : p
-    ));
-  };
-
   const updatePanel = (id: string, updates: Partial<UIPanel>) => {
     setPanels(prev => prev.map(p => 
       p.id === id ? { ...p, ...updates } : p
     ));
   };
 
-  // Group panels by zone
-  const panelsByZone = panels.reduce((acc, panel) => {
-    if (!acc[panel.zone]) acc[panel.zone] = [];
-    acc[panel.zone].push(panel);
-    return acc;
-  }, {} as Record<UIZone, UIPanel[]>);
+  const togglePanel = (id: string) => {
+    setPanels(prev => prev.map(p => 
+      p.id === id ? { ...p, isExpanded: !p.isExpanded } : p
+    ));
+  };
+
+  // Group panels by sidebar
+  const leftSidebarPanels = panels.filter(p => p.zone === 'left-sidebar');
+  const rightSidebarPanels = panels.filter(p => p.zone === 'right-sidebar');
+  const expandedPanel = panels.find(p => p.isExpanded);
 
   return (
     <UILayoutContext.Provider value={{
@@ -181,19 +145,35 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     }}>
       {children}
       
-      {/* Render all registered panels */}
-      <div className="ui-layout-panels pointer-events-none">
-        {Object.entries(panelsByZone).map(([zone, zonePanels]) =>
-          zonePanels.map((panel, index) => (
-            <SpacePanel
-              key={panel.id}
-              panel={panel}
-              style={getZoneStyles(zone as UIZone, index)}
-              onToggle={() => togglePanel(panel.id)}
-            />
-          ))
-        )}
+      {/* Left Sidebar */}
+      <div className="ui-sidebar ui-sidebar-left">
+        {leftSidebarPanels.map((panel) => (
+          <SidebarButton
+            key={panel.id}
+            panel={panel}
+            onToggle={() => togglePanel(panel.id)}
+          />
+        ))}
       </div>
+
+      {/* Right Sidebar */}
+      <div className="ui-sidebar ui-sidebar-right">
+        {rightSidebarPanels.map((panel) => (
+          <SidebarButton
+            key={panel.id}
+            panel={panel}
+            onToggle={() => togglePanel(panel.id)}
+          />
+        ))}
+      </div>
+
+      {/* Expanded Panel Overlay */}
+      {expandedPanel && (
+        <ExpandedPanel
+          panel={expandedPanel}
+          onToggle={() => togglePanel(expandedPanel.id)}
+        />
+      )}
     </UILayoutContext.Provider>
   );
 }

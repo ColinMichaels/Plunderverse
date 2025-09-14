@@ -36,7 +36,7 @@ export function InventoryDisplay() {
       id="inventory"
       title="CARGO BAY"
       icon="📦"
-      zone="top-right"
+      zone="right-sidebar"
       priority={1}
       defaultExpanded={false}
     >

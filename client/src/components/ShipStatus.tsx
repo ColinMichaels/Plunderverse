@@ -87,7 +87,7 @@ export function ShipStatus() {
       id="ship-status"
       title="SHIP STATUS"
       icon="🚢"
-      zone="top-left"
+      zone="left-sidebar"
       priority={1}
       defaultExpanded={false}
     >
