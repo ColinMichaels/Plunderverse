@@ -361,31 +361,37 @@ export function CameraController() {
             console.log(`Autopilot entering stable orbit around ${selectedPlanet} at ${landingDistance} units`);
           }
         } else if (isOrbiting) {
-          // Orbital phase - orbit around the moving planet center
-          const orbitSpeed = 0.3; // Slower orbital rotation for better viewing
+          // Orbital phase - smooth orbit around the moving planet center
+          const orbitSpeed = 0.15; // Much slower orbital rotation for graceful, cinematic viewing
           const currentOrbitAngle = useAutopilot.getState().orbitAngle + (orbitSpeed * delta);
           
-          // Update orbit angle in store less frequently to reduce performance impact
-          if (Math.floor(currentTime * 5) % 5 === 0) {
-            useAutopilot.setState({ orbitAngle: currentOrbitAngle });
-          }
+          // Update orbit angle smoothly without frequent store updates
+          useAutopilot.setState({ orbitAngle: currentOrbitAngle });
           
-          // Calculate orbital position around current planet center
+          // Calculate smooth orbital position around current planet center
           const orbitX = Math.cos(currentOrbitAngle) * orbitRadius;
           const orbitZ = Math.sin(currentOrbitAngle) * orbitRadius;
           const targetOrbitPosition = currentPlanetPosition.clone().add(new THREE.Vector3(orbitX, 0, orbitZ));
           
-          // Move towards orbital position with gentle force
-          const orbitDirection = targetOrbitPosition.clone().sub(camera.position).normalize();
-          const orbitVelocity = orbitDirection.multiplyScalar(autopilotSpeed * 0.4 * delta);
-          velocity.add(orbitVelocity);
+          // Smooth orbital movement using gentle interpolation
+          const currentPosition = camera.position.clone();
+          const smoothFactor = delta * 2.0; // Gentle movement factor
+          const newPosition = currentPosition.lerp(targetOrbitPosition, smoothFactor);
           
-          // Always keep camera focused on the moving planet center
-          const planetQuaternion = new THREE.Quaternion();
-          const planetLookMatrix = new THREE.Matrix4();
-          planetLookMatrix.lookAt(camera.position, currentPlanetPosition, new THREE.Vector3(0, 1, 0));
-          planetQuaternion.setFromRotationMatrix(planetLookMatrix);
-          camera.quaternion.slerp(planetQuaternion, delta * 3);
+          // Apply the smooth position directly to camera
+          camera.position.copy(newPosition);
+          
+          // Smoothly orient camera toward planet with very gentle rotation
+          const planetDirection = currentPlanetPosition.clone().sub(camera.position).normalize();
+          const targetQuaternion = new THREE.Quaternion();
+          const lookAtMatrix = new THREE.Matrix4();
+          const upVector = new THREE.Vector3(0, 1, 0);
+          
+          lookAtMatrix.lookAt(camera.position, currentPlanetPosition, upVector);
+          targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+          
+          // Very smooth camera rotation for cinematic feel
+          camera.quaternion.slerp(targetQuaternion, delta * 1.2);
         }
         
         // Mark as thrusting during autopilot and consume fuel

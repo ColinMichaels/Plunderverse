@@ -7,7 +7,6 @@ import { Starfield } from "./Starfield";
 import { CameraController } from "./CameraController";
 import { ShootingSystem } from "./ShootingSystem";
 import { AsteroidField } from "./AsteroidField";
-import { WarpingEffect } from "./WarpingEffect";
 import { planets } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 
@@ -48,9 +47,6 @@ export function SolarSystem() {
       
       {/* Asteroid field */}
       <AsteroidField />
-      
-      {/* Warping effect during autopilot */}
-      <WarpingEffect />
     </group>
   );
 }
