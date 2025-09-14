@@ -94,7 +94,7 @@ export function SplashScreen() {
                   animationDuration: `${twinkleSpeed * randomSpeed}s`,
                   animationDelay: `${Math.random() * 6}s`,
                   transform: `translate(${mousePos.x * depth * 2}px, ${mousePos.y * depth * 1.5}px)`,
-                  transition: 'transform 0.1s ease-out',
+                  transition: 'transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 }}
               />
             );
@@ -121,7 +121,7 @@ export function SplashScreen() {
                   animationDuration: `${(Math.random() * 4 + 6) * randomSpeed}s`, // Variable speed: 6-10 seconds
                   animationDelay: `${Math.random() * 8}s`,
                   transform: `translate(${mousePos.x * depth * 4}px, ${mousePos.y * depth * 3}px)`,
-                  transition: 'transform 0.2s ease-out',
+                  transition: 'transform 2s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 }}
               />
             );
@@ -133,7 +133,7 @@ export function SplashScreen() {
           className="absolute inset-0 bg-gradient-radial from-transparent via-gray-900/10 to-gray-950/20 animate-drift"
           style={{
             transform: `translate(${mousePos.x * 8}px, ${mousePos.y * 6}px)`,
-            transition: 'transform 0.3s ease-out',
+            transition: 'transform 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
           }}
         ></div>
       </div>
