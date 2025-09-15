@@ -26,7 +26,7 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
       scale = 1,
       color = "#666666",
       roughness = 0.8,
-      metalness = 0.1,
+      metalness = 0.01,
       emissive = "#000000",
       emissiveIntensity = 0,
       castShadow = true,
@@ -35,15 +35,15 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
       onPointerOver,
       onPointerOut,
     },
-    ref
+    ref,
   ) => {
     // Load the FBX model
     const fbxModel = useFBX("/geometries/Asteroid_1b.fbx");
-    
+
     // Clone and configure the model for reuse
     const configuredModel = useMemo(() => {
       const clone = fbxModel.clone();
-      
+
       // Traverse and apply materials to all meshes
       clone.traverse((child) => {
         if (child instanceof THREE.Mesh) {
@@ -55,15 +55,24 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
             emissive: new THREE.Color(emissive),
             emissiveIntensity,
           });
-          
+
           // Configure shadows
           child.castShadow = castShadow;
           child.receiveShadow = receiveShadow;
         }
       });
-      
+
       return clone;
-    }, [fbxModel, color, roughness, metalness, emissive, emissiveIntensity, castShadow, receiveShadow]);
+    }, [
+      fbxModel,
+      color,
+      roughness,
+      metalness,
+      emissive,
+      emissiveIntensity,
+      castShadow,
+      receiveShadow,
+    ]);
 
     return (
       <group
@@ -78,7 +87,7 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
         <primitive object={configuredModel} />
       </group>
     );
-  }
+  },
 );
 
 FBXAsteroid.displayName = "FBXAsteroid";

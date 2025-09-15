@@ -111,7 +111,7 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
         <FBXAsteroid
           key={index}
           position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale * 2.5} // Scale up the FBX model to match original size
+          scale={rock.scale * 0.4} // Scale down to make small rock-like size (couple feet)
           rotation={[0, rock.rotationY, 0]}
           color={rockColor}
           roughness={0.8}

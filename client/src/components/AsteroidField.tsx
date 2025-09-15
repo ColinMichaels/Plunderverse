@@ -4,24 +4,36 @@ import { useAsteroids } from "../lib/stores/useAsteroids";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
 import { useShipStatus } from "../lib/stores/useShipStatus";
+import { useAutopilot } from "../lib/stores/useAutopilot";
 import { Asteroid } from "./Asteroid";
 
 export function AsteroidField() {
-  const { asteroids, updateAsteroids, spawnRandomAsteroid, damageAsteroid } = useAsteroids();
+  const { asteroids, updateAsteroids, spawnRandomAsteroid, damageAsteroid, clearAsteroids } = useAsteroids();
   const { cameraPosition } = useSolarSystem();
   const { projectiles, removeProjectile } = useShooting();
   const { takeDamage } = useShipStatus();
+  const { isActive: isAutopilotActive } = useAutopilot();
   const lastSpawnTime = useRef(0);
+  const previousAutopilotState = useRef(false);
 
   useFrame((state, delta) => {
+    // Check if autopilot just activated - clear asteroids for clean warp effect
+    if (isAutopilotActive && !previousAutopilotState.current) {
+      clearAsteroids();
+      console.log("Autopilot activated - clearing asteroids for clean travel");
+    }
+    previousAutopilotState.current = isAutopilotActive;
+
     // Update asteroid positions
     updateAsteroids(delta, cameraPosition);
 
-    // Spawn new asteroids periodically
-    const currentTime = state.clock.elapsedTime;
-    if (currentTime - lastSpawnTime.current > 5 && asteroids.length < 8) { // Max 8 asteroids, spawn every 5 seconds
-      spawnRandomAsteroid(cameraPosition);
-      lastSpawnTime.current = currentTime;
+    // Spawn new asteroids periodically (but NOT during autopilot)
+    if (!isAutopilotActive) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastSpawnTime.current > 5 && asteroids.length < 8) { // Max 8 asteroids, spawn every 5 seconds
+        spawnRandomAsteroid(cameraPosition);
+        lastSpawnTime.current = currentTime;
+      }
     }
 
     // Check collisions between projectiles and asteroids

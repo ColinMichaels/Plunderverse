@@ -15,7 +15,7 @@ export function Asteroid({ asteroid }: AsteroidProps) {
     if (meshRef.current) {
       // Update position
       meshRef.current.position.copy(asteroid.position);
-      
+
       // Apply rotation
       meshRef.current.rotation.x += asteroid.rotation.x;
       meshRef.current.rotation.y += asteroid.rotation.y;
@@ -26,13 +26,17 @@ export function Asteroid({ asteroid }: AsteroidProps) {
   // Calculate damage color (red tint based on damage taken)
   const healthPercent = asteroid.health / asteroid.maxHealth;
   const damageRed = 1 - healthPercent;
-  const damageColor = new THREE.Color(0.4 + damageRed * 0.6, 0.3, 0.2).getHexString();
+  const damageColor = new THREE.Color(
+    0.4 + damageRed * 0.6,
+    0.3,
+    0.2,
+  ).getHexString();
   const emissiveColor = new THREE.Color(damageRed * 0.3, 0, 0).getHexString();
 
   return (
     <FBXAsteroid
       ref={meshRef}
-      scale={asteroid.size * 2.5} // Scale up the FBX model to match original size
+      scale={asteroid.size * 0.3} // Scale down to make small rock-like asteroids (couple feet size)
       color={`#${damageColor}`}
       roughness={0.9}
       metalness={0.1}
