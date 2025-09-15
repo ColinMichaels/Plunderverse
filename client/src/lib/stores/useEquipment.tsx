@@ -224,6 +224,26 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
           else if (conditionRatio > 0) performanceLevel = 0.25;
           else performanceLevel = 0;
           
+          // Bidirectional sync: update useShipStatus hull when hull equipment is repaired
+          if (eq.id === 'hull-primary') {
+            // Import here to avoid circular dependency
+            import('./useShipStatus').then(({ useShipStatus }) => {
+              const hullPercentage = (newDurability / eq.maxDurability) * 100;
+              const shipStatusStore = useShipStatus.getState();
+              
+              // Only update if there's a significant difference to avoid constant updates
+              const currentHull = shipStatusStore.hull;
+              if (Math.abs(currentHull - hullPercentage) > 0.1) {
+                useShipStatus.setState(state => ({
+                  ...state,
+                  hull: hullPercentage,
+                  isCritical: state.shield < 20 || hullPercentage < 20
+                }));
+                console.log(`[HULL-SYNC] Updated useShipStatus hull to ${hullPercentage.toFixed(1)}% from equipment repair`);
+              }
+            });
+          }
+          
           return {
             ...eq,
             currentDurability: newDurability,

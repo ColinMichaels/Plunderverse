@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useCredits } from "./useCredits";
+import { useEquipment } from "./useEquipment";
 
 interface ShipStatusState {
   // Ship resources (0-100) - fuel moved to equipment system
@@ -50,6 +51,7 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
     set(state => {
       let newShield = state.shield;
       let newHull = state.hull;
+      let hullDamageAmount = 0;
       
       // Shield absorbs damage first
       if (newShield > 0) {
@@ -57,11 +59,43 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
         // If shield breaks, remaining damage goes to hull
         if (newShield === 0 && amount > state.shield) {
           const remainingDamage = amount - state.shield;
+          hullDamageAmount = remainingDamage;
           newHull = Math.max(0, newHull - remainingDamage);
         }
       } else {
         // No shield, direct hull damage
+        hullDamageAmount = amount;
         newHull = Math.max(0, newHull - amount);
+      }
+      
+      // Sync hull damage with equipment system
+      if (hullDamageAmount > 0) {
+        const equipmentStore = useEquipment.getState();
+        const hullEquipment = equipmentStore.getEquipment('hull-primary');
+        
+        if (hullEquipment) {
+          // Convert percentage damage to equipment durability damage
+          // Hull equipment has 200 max durability, so 1% = 2 durability points
+          const durabilityDamage = (hullDamageAmount / 100) * hullEquipment.maxDurability;
+          
+          // Update equipment store with hull damage
+          equipmentStore.equipment = equipmentStore.equipment.map(eq => {
+            if (eq.id === 'hull-primary') {
+              const newDurability = Math.max(0, eq.currentDurability - durabilityDamage);
+              const conditionRatio = newDurability / eq.maxDurability;
+              return {
+                ...eq,
+                currentDurability: newDurability,
+                performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+              };
+            }
+            return eq;
+          });
+          
+          // Force equipment store update to notify components
+          useEquipment.setState({ equipment: [...equipmentStore.equipment] });
+          console.log(`[HULL-SYNC] Applied ${durabilityDamage.toFixed(1)} durability damage to hull equipment`);
+        }
       }
       
       const isDestroyed = newHull <= 0;
@@ -87,14 +121,65 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   },
   
   repairHull: (amount) => {
-    set(state => ({
-      hull: Math.min(100, state.hull + amount),
-      isCritical: state.shield < 20 || Math.min(100, state.hull + amount) < 20
-    }));
+    set(state => {
+      const newHull = Math.min(100, state.hull + amount);
+      
+      // Sync hull repair with equipment system
+      const equipmentStore = useEquipment.getState();
+      const hullEquipment = equipmentStore.getEquipment('hull-primary');
+      
+      if (hullEquipment) {
+        // Convert percentage repair to equipment durability repair
+        const durabilityRepair = (amount / 100) * hullEquipment.maxDurability;
+        
+        equipmentStore.equipment = equipmentStore.equipment.map(eq => {
+          if (eq.id === 'hull-primary') {
+            const repairedDurability = Math.min(eq.maxDurability, eq.currentDurability + durabilityRepair);
+            const conditionRatio = repairedDurability / eq.maxDurability;
+            return {
+              ...eq,
+              currentDurability: repairedDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+          }
+          return eq;
+        });
+        
+        // Force equipment store update
+        useEquipment.setState({ equipment: [...equipmentStore.equipment] });
+        console.log(`[HULL-SYNC] Repaired ${durabilityRepair.toFixed(1)} durability to hull equipment`);
+      }
+      
+      return {
+        hull: newHull,
+        isCritical: state.shield < 20 || newHull < 20
+      };
+    });
   },
   
   
   resetShip: () => {
+    // Sync hull reset with equipment system
+    const equipmentStore = useEquipment.getState();
+    const hullEquipment = equipmentStore.getEquipment('hull-primary');
+    
+    if (hullEquipment) {
+      equipmentStore.equipment = equipmentStore.equipment.map(eq => {
+        if (eq.id === 'hull-primary') {
+          return {
+            ...eq,
+            currentDurability: eq.maxDurability,
+            performanceLevel: 1.0
+          };
+        }
+        return eq;
+      });
+      
+      // Force equipment store update
+      useEquipment.setState({ equipment: [...equipmentStore.equipment] });
+      console.log(`[HULL-SYNC] Reset hull equipment to full durability`);
+    }
+    
     set({
       shield: 100,
       hull: 100,
