@@ -778,6 +778,7 @@ function SurfaceControls({ planetName }: { planetName: string }) {
     clicksCompleted,
     clicksRequired,
   } = useMining();
+  const { isOn, batteryLevel, getBatteryStatus, isCharging, toggle: toggleFlashlight, startCharging, stopCharging } = useFlashlight();
 
   return (
     <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
@@ -790,11 +791,35 @@ function SurfaceControls({ planetName }: { planetName: string }) {
         <h4 className="text-sm font-semibold text-gray-300 mb-2">
           Rover Controls:
         </h4>
-        <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
+        <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mb-3">
           <div>WASD: Move</div>
           <div>Q/E: Turn</div>
           <div>F: Flashlight</div>
           <div>C: Charge</div>
+        </div>
+
+        {/* Flashlight controls */}
+        <div className="flex gap-2">
+          <button
+            onClick={toggleFlashlight}
+            className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-colors ${
+              isOn 
+                ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
+                : "bg-gray-600 hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            💡 {isOn ? "ON" : "OFF"} ({Math.round(batteryLevel)}%)
+          </button>
+          <button
+            onClick={() => isCharging ? stopCharging() : startCharging()}
+            className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
+              isCharging 
+                ? "bg-cyan-600 hover:bg-cyan-700 text-white" 
+                : "bg-gray-600 hover:bg-gray-700 text-gray-300"
+            }`}
+          >
+            {isCharging ? "⚡ STOP" : "🔋 CHARGE"}
+          </button>
         </div>
       </div>
 

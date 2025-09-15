@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Play, Pause, SkipForward, SkipBack, Volume2, List, Shuffle, RotateCcw } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Volume2, List, Shuffle, RotateCcw, Minimize2, Maximize2 } from "lucide-react";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
 import { useMusicPlayer, initializeMusicPlayer } from "../lib/stores/useMusicPlayer";
@@ -33,6 +33,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
 
   const { isMuted } = useAudio();
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
+  const [isMinimized, setIsMinimized] = useState(false);
 
   // Initialize music player on mount
   useEffect(() => {
@@ -79,140 +80,172 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
           <Volume2 size={16} />
           Music Player
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={togglePlaylist}
-          className="h-6 w-6 text-cyan-400 hover:text-cyan-300"
-        >
-          <List size={14} />
-        </Button>
+        <div className="flex items-center gap-1">
+          {!isMinimized && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlaylist}
+              className="h-6 w-6 text-cyan-400 hover:text-cyan-300"
+            >
+              <List size={14} />
+            </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMinimized(!isMinimized)}
+            className="h-6 w-6 text-cyan-400 hover:text-cyan-300"
+          >
+            {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
+          </Button>
+        </div>
       </div>
 
-      {isLoading ? (
-        <div className="text-center text-cyan-300 py-4">
-          Loading tracks...
-        </div>
-      ) : (
-        <>
-          {/* Current Track Info */}
-          <div className="mb-4">
-            <div className="text-white text-sm font-medium truncate">
-              {currentTrack ? currentTrack.name : "No track selected"}
-            </div>
-            {!isPlaying && !isMuted && timeUntilNext && (
-              <div className="text-cyan-300 text-xs mt-1">
-                {timeUntilNext}
-              </div>
-            )}
-            {isMuted && (
-              <div className="text-red-400 text-xs mt-1">
-                Audio muted
-              </div>
-            )}
+      {!isMinimized && (
+        isLoading ? (
+          <div className="text-center text-cyan-300 py-4">
+            Loading tracks...
           </div>
-
-          {/* Main Controls */}
-          <div className="flex items-center gap-2 mb-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={skipPrevious}
-              disabled={tracks.length === 0}
-              className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
-            >
-              <SkipBack size={16} />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={togglePlayPause}
-              disabled={tracks.length === 0 || isMuted}
-              className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
-            >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={skipNext}
-              disabled={tracks.length === 0}
-              className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
-            >
-              <SkipForward size={16} />
-            </Button>
-
-            <div className="mx-2 h-4 w-px bg-white/20" />
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setPlaybackMode(playbackMode === 'random' ? 'sequential' : 'random')}
-              className={cn(
-                "h-8 w-8 hover:text-cyan-300",
-                playbackMode === 'random' ? "text-cyan-400" : "text-gray-500"
+        ) : (
+          <>
+            {/* Current Track Info */}
+            <div className="mb-4">
+              <div className="text-white text-sm font-medium truncate">
+                {currentTrack ? currentTrack.name : "No track selected"}
+              </div>
+              {!isPlaying && !isMuted && timeUntilNext && (
+                <div className="text-cyan-300 text-xs mt-1">
+                  {timeUntilNext}
+                </div>
               )}
-              title={`Mode: ${playbackMode}`}
-            >
-              {playbackMode === 'random' ? <Shuffle size={16} /> : <RotateCcw size={16} />}
-            </Button>
-          </div>
-
-          {/* Volume Control */}
-          <div className="flex items-center gap-3 mb-4">
-            <Volume2 size={14} className="text-cyan-400 flex-shrink-0" />
-            <Slider
-              value={[volume * 100]}
-              onValueChange={(value) => setVolume(value[0] / 100)}
-              max={100}
-              step={1}
-              className="flex-1"
-            />
-            <span className="text-cyan-300 text-xs min-w-[2rem] text-right">
-              {Math.round(volume * 100)}%
-            </span>
-          </div>
-
-          {/* Playlist */}
-          {showPlaylist && (
-            <div className="border-t border-white/20 pt-3">
-              <div className="text-cyan-400 text-xs font-medium mb-2">
-                Playlist ({tracks.length} tracks)
-              </div>
-              <div className="space-y-1 max-h-32 overflow-y-auto">
-                {tracks.map((track, index) => (
-                  <button
-                    key={track.id}
-                    onClick={() => selectTrack(index)}
-                    className={cn(
-                      "w-full text-left text-xs p-2 rounded hover:bg-white/10 transition-colors",
-                      index === currentTrackIndex 
-                        ? "bg-cyan-500/20 text-cyan-300" 
-                        : "text-gray-300"
-                    )}
-                  >
-                    <div className="flex items-center gap-2">
-                      {index === currentTrackIndex && isPlaying && (
-                        <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
-                      )}
-                      <span className="truncate">{track.name}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              {isMuted && (
+                <div className="text-red-400 text-xs mt-1">
+                  Audio muted
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Info Text */}
-          <div className="text-xs text-gray-400 mt-3 text-center">
-            {playbackMode === 'random' 
-              ? "Minecraft-style random playback" 
-              : "Sequential playback"
-            }
+            {/* Main Controls */}
+            <div className="flex items-center gap-2 mb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={skipPrevious}
+                disabled={tracks.length === 0}
+                className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+              >
+                <SkipBack size={16} />
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePlayPause}
+                disabled={tracks.length === 0 || isMuted}
+                className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+              >
+                {isPlaying ? <Pause size={16} /> : <Play size={16} />}
+              </Button>
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={skipNext}
+                disabled={tracks.length === 0}
+                className="h-8 w-8 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+              >
+                <SkipForward size={16} />
+              </Button>
+
+              <div className="mx-2 h-4 w-px bg-white/20" />
+
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPlaybackMode(playbackMode === 'random' ? 'sequential' : 'random')}
+                className={cn(
+                  "h-8 w-8 hover:text-cyan-300",
+                  playbackMode === 'random' ? "text-cyan-400" : "text-gray-500"
+                )}
+                title={`Mode: ${playbackMode}`}
+              >
+                {playbackMode === 'random' ? <Shuffle size={16} /> : <RotateCcw size={16} />}
+              </Button>
+            </div>
+
+            {/* Volume Control */}
+            <div className="flex items-center gap-3 mb-4">
+              <Volume2 size={14} className="text-cyan-400 flex-shrink-0" />
+              <Slider
+                value={[volume * 100]}
+                onValueChange={(value) => setVolume(value[0] / 100)}
+                max={100}
+                step={1}
+                className="flex-1"
+              />
+              <span className="text-cyan-300 text-xs min-w-[2rem] text-right">
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+
+            {/* Playlist */}
+            {showPlaylist && (
+              <div className="border-t border-white/20 pt-3">
+                <div className="text-cyan-400 text-xs font-medium mb-2">
+                  Playlist ({tracks.length} tracks)
+                </div>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {tracks.map((track, index) => (
+                    <button
+                      key={track.id}
+                      onClick={() => selectTrack(index)}
+                      className={cn(
+                        "w-full text-left text-xs p-2 rounded hover:bg-white/10 transition-colors",
+                        index === currentTrackIndex 
+                          ? "bg-cyan-500/20 text-cyan-300" 
+                          : "text-gray-300"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        {index === currentTrackIndex && isPlaying && (
+                          <div className="w-2 h-2 bg-cyan-400 rounded-full animate-pulse" />
+                        )}
+                        <span className="truncate">{track.name}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Info Text */}
+            <div className="text-xs text-gray-400 mt-3 text-center">
+              {playbackMode === 'random' 
+                ? "Minecraft-style random playback" 
+                : "Sequential playback"
+              }
+            </div>
+          </>
+        )
+      )}
+
+      {/* Minimized view - show current track and basic controls */}
+      {isMinimized && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={togglePlayPause}
+            disabled={tracks.length === 0 || isMuted}
+            className="h-6 w-6 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
+          >
+            {isPlaying ? <Pause size={12} /> : <Play size={12} />}
+          </Button>
+          <div className="flex-1 text-xs text-white truncate">
+            {currentTrack ? currentTrack.name : "No track"}
           </div>
-        </>
+        </div>
       )}
     </div>
   );
