@@ -21,7 +21,7 @@ export function FlashlightSystem() {
       .add(forward.multiplyScalar(0.3));
 
     // Position the light slightly below camera center to simulate chest/helmet mounting
-    flashlightPosition.y -= 0.2;
+    flashlightPosition.y -= 0.4;
 
     spotLightRef.current.position.copy(flashlightPosition);
 
@@ -33,22 +33,23 @@ export function FlashlightSystem() {
     // Adjust intensity based on battery level
     const batteryStatus = getBatteryStatus();
     let intensity = 1.5; // Base intensity for full battery
+    const intensityMultiplier = 2;
 
     switch (batteryStatus) {
       case "critical":
-        intensity = 0.3; // Very dim when battery is critical
+        intensity = 1 * intensityMultiplier; // Very dim when battery is critical
         break;
       case "low":
-        intensity = 0.7; // Dimmer when battery is low
+        intensity = 2.5 * intensityMultiplier; // Dimmer when battery is low
         break;
       case "good":
-        intensity = 1.2; // Good brightness
+        intensity = 5 * intensityMultiplier; // Good brightness
         break;
       case "full":
-        intensity = 1.5; // Maximum brightness
+        intensity = 10 * intensityMultiplier; // Maximum brightness
         break;
       default:
-        intensity = 0; // Dead battery
+        intensity = 0 * intensityMultiplier; // Dead battery
     }
 
     spotLightRef.current.intensity = intensity;
@@ -70,16 +71,16 @@ export function FlashlightSystem() {
       <spotLight
         ref={spotLightRef}
         color="#ffffff"
-        intensity={1.5}
-        distance={50} // Effective range of the flashlight
+        intensity={100}
+        distance={1000} // Effective range of the flashlight
         angle={Math.PI / 6} // 30-degree cone (typical flashlight beam)
         penumbra={0.3} // Soft edge falloff
-        decay={4} // Realistic light falloff
+        decay={0.05} // Realistic light falloff
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
         shadow-camera-near={0.1}
-        shadow-camera-far={25}
+        shadow-camera-far={125}
         shadow-bias={-0.0001}
       />
 

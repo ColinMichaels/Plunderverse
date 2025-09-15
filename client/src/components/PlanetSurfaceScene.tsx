@@ -455,16 +455,20 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 function SurfaceLighting() {
   const { landedPlanet } = useLandedState();
   const { time } = useSolarSystem();
-  
+
   const planet = useMemo(() => {
     return planets.find((p) => p.name === landedPlanet);
   }, [landedPlanet]);
-  
+
   const surfaceColor = planet?.color || "#8C7853";
 
-  // Calculate sun position based on orbital mechanics (same as SurfaceSky component)
-  const sunPosition = useMemo(() => {
-    if (!planet) return new THREE.Vector3(50, 100, 50);
+  // Calculate realistic sun position and intensity based on orbital mechanics and planet rotation
+  const lightingData = useMemo(() => {
+    if (!planet) return { 
+      sunPosition: new THREE.Vector3(50, 200, 50), 
+      sunIntensity: 0.9,
+      distanceBasedIntensity: 1.0
+    };
     
     const calculateOrbitPosition = (distance: number, speed: number, time: number) => {
       const angle = speed * time;
@@ -479,60 +483,96 @@ function SurfaceLighting() {
       return calculateOrbitPosition(planet.distance, planet.orbitalSpeed, time);
     };
 
+    // Get planet's orbital position
     const currentPlanetPosition = calculatePlanetPosition(planet, time);
     
-    // Sun is at origin (0,0,0), so sun direction from planet is the negative of planet position
+    // Calculate distance-based intensity using inverse square law
+    // Base intensity on Earth's distance (75 units) as reference (30 * 2.5 from planetData)
+    const earthDistance = 75;
+    const distanceFromSun = currentPlanetPosition.length();
+    const distanceBasedIntensity = Math.pow(earthDistance / distanceFromSun, 2);
+    
+    // Add planet rotation for local day/night cycle
+    const rotationAngle = time * planet.rotationSpeed * 15; // Scale rotation for visible effect
+    const localTimeOfDay = (rotationAngle % (2 * Math.PI));
+    
+    // Sun direction from planet (sun is at origin)
     const sunDirection = currentPlanetPosition.clone().negate().normalize();
     
-    // Position the directional light at distance from the surface, in direction of sun
-    const sunLightPosition = sunDirection.clone().multiplyScalar(200);
-    sunLightPosition.y = Math.max(sunLightPosition.y, 20); // Keep sun above horizon for lighting
+    // Apply planet rotation to determine local sun position
+    // Rotate around planet's Y-axis to simulate planet rotation
+    const rotatedSunDirection = sunDirection.clone();
+    rotatedSunDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), localTimeOfDay);
     
-    return sunLightPosition;
+    // Position the directional light further away for better shadows
+    const sunLightPosition = rotatedSunDirection.clone().multiplyScalar(400);
+    
+    // Calculate sun elevation based on rotated position
+    const sunElevation = Math.asin(Math.max(-1, Math.min(1, rotatedSunDirection.y)));
+    
+    // Calculate intensity based on sun elevation and distance
+    let sunIntensity = 0;
+    
+    if (sunElevation < -0.4) {
+      // Deep night - complete darkness
+      sunIntensity = 0.0;
+    } else if (sunElevation < -0.1) {
+      // Dawn/dusk transition
+      const transitionFactor = (sunElevation + 0.4) / 0.3;
+      sunIntensity = Math.max(0, transitionFactor * 0.1);
+    } else if (sunElevation < 0.2) {
+      // Early morning/late evening
+      const dawnFactor = (sunElevation + 0.1) / 0.3;
+      sunIntensity = 0.1 + dawnFactor * 0.4;
+    } else {
+      // Full daylight
+      sunIntensity = 0.5 + Math.sin(sunElevation) * 0.9;
+    }
+    
+    // Apply distance-based scaling with realistic intensity differences
+    const finalIntensity = sunIntensity * distanceBasedIntensity;
+    
+    return {
+      sunPosition: sunLightPosition,
+      sunIntensity: Math.max(0, Math.min(4.0, finalIntensity)), // Higher cap for closer planets
+      distanceBasedIntensity,
+      sunElevation,
+      planetName: planet.name
+    };
   }, [planet, time]);
 
-  // Calculate sun intensity based on angle (day/night cycle)
-  const sunIntensity = useMemo(() => {
-    if (!planet) return 0.9;
-    
-    // Calculate sun elevation angle
-    const sunElevation = Math.asin(sunPosition.y / sunPosition.length());
-    
-    // Full intensity when sun is directly overhead, very dim when below horizon
-    if (sunElevation < -0.2) {
-      // Night time - sun is significantly below horizon
-      return 0.0;
-    } else if (sunElevation < 0) {
-      // Dawn/dusk - sun is just below horizon
-      return Math.max(0, (sunElevation + 0.2) / 0.2) * 0.1;
-    } else {
-      // Day time - sun is above horizon
-      return Math.min(1.2, 0.2 + Math.sin(sunElevation) * 1.0);
+  const { sunPosition, sunIntensity } = lightingData;
+
+  // Add debug logging for lighting changes
+  useEffect(() => {
+    if (planet && lightingData && typeof lightingData.sunElevation === 'number') {
+      console.log(`[LIGHTING-${planet.name}] Distance-based intensity: ${lightingData.distanceBasedIntensity.toFixed(2)}x, Sun intensity: ${sunIntensity.toFixed(2)}, Elevation: ${(lightingData.sunElevation * 180 / Math.PI).toFixed(1)}°`);
     }
-  }, [sunPosition, planet]);
+  }, [planet?.name, sunIntensity, lightingData]);
 
   return (
     <>
-      {/* Minimal ambient light - only enough to prevent complete pitch black for distant shadows */}
-      <ambientLight intensity={0.01} color={surfaceColor} />
+      {/* Extremely minimal ambient light - shadows should be very dark */}
+      <ambientLight intensity={0.02} color={surfaceColor} />
 
-      {/* Dynamic sun based on orbital mechanics */}
+      {/* Dynamic sun based on orbital mechanics and planet rotation */}
       <directionalLight
         position={[sunPosition.x, sunPosition.y, sunPosition.z]}
         intensity={sunIntensity}
         color="#FDB813"
         castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-left={-100}
-        shadow-camera-right={100}
-        shadow-camera-top={100}
-        shadow-camera-bottom={-100}
+        shadow-mapSize-width={4096}
+        shadow-mapSize-height={4096}
+        shadow-camera-left={-150}
+        shadow-camera-right={150}
+        shadow-camera-top={150}
+        shadow-camera-bottom={-150}
         shadow-camera-near={0.1}
-        shadow-camera-far={400}
+        shadow-camera-far={800}
+        shadow-bias={-0.0005}
       />
 
-      {/* Removed point lights to enable proper darkness - flashlight is now essential! */}
+      {/* Removed all secondary lights - flashlight is essential for navigation in shadows! */}
     </>
   );
 }
@@ -806,13 +846,19 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
         <div>O₂: {player.oxygenPercentage}</div>
         <div>SUIT: {player.suitStatus} </div>
         <div>TEMP: {planet?.surfaceTemperature}</div>
-        <div className={`${
-          getBatteryStatus() === "critical" ? "text-red-400" : 
-          getBatteryStatus() === "low" ? "text-yellow-400" : 
-          isCharging ? "text-cyan-400" :
-          "text-green-400"
-        }`}>
-          💡: {isOn ? "ON" : "OFF"} {Math.round(batteryLevel)}% {isCharging ? "⚡" : ""}
+        <div
+          className={`${
+            getBatteryStatus() === "critical"
+              ? "text-red-400"
+              : getBatteryStatus() === "low"
+                ? "text-yellow-400"
+                : isCharging
+                  ? "text-cyan-400"
+                  : "text-green-400"
+          }`}
+        >
+          💡: {isOn ? "ON" : "OFF"} {Math.round(batteryLevel)}%{" "}
+          {isCharging ? "⚡" : ""}
         </div>
       </div>
 
@@ -832,7 +878,15 @@ function SurfaceControls({ planetName }: { planetName: string }) {
     clicksCompleted,
     clicksRequired,
   } = useMining();
-  const { isOn, batteryLevel, getBatteryStatus, isCharging, toggle: toggleFlashlight, startCharging, stopCharging } = useFlashlight();
+  const {
+    isOn,
+    batteryLevel,
+    getBatteryStatus,
+    isCharging,
+    toggle: toggleFlashlight,
+    startCharging,
+    stopCharging,
+  } = useFlashlight();
 
   return (
     <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
@@ -857,18 +911,18 @@ function SurfaceControls({ planetName }: { planetName: string }) {
           <button
             onClick={toggleFlashlight}
             className={`flex-1 px-3 py-2 rounded text-xs font-semibold transition-colors ${
-              isOn 
-                ? "bg-yellow-600 hover:bg-yellow-700 text-white" 
+              isOn
+                ? "bg-yellow-600 hover:bg-yellow-700 text-white"
                 : "bg-gray-600 hover:bg-gray-700 text-gray-300"
             }`}
           >
             💡 {isOn ? "ON" : "OFF"} ({Math.round(batteryLevel)}%)
           </button>
           <button
-            onClick={() => isCharging ? stopCharging() : startCharging()}
+            onClick={() => (isCharging ? stopCharging() : startCharging())}
             className={`px-3 py-2 rounded text-xs font-semibold transition-colors ${
-              isCharging 
-                ? "bg-cyan-600 hover:bg-cyan-700 text-white" 
+              isCharging
+                ? "bg-cyan-600 hover:bg-cyan-700 text-white"
                 : "bg-gray-600 hover:bg-gray-700 text-gray-300"
             }`}
           >
