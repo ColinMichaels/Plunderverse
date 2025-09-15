@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import * as THREE from "three";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
@@ -101,6 +101,9 @@ export function CameraController() {
 
   // Landed state - prevent movement when landed on surface
   const { isLanded } = useLandedState();
+
+  // Proximity camera state for manual planet approach
+  const [isProximityCameraActive, setProximityCameraActive] = useState(false);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -514,6 +517,48 @@ export function CameraController() {
         const travelIntensity = distanceToTarget > landingDistance ? 1.0 : 0.5; // Higher intensity during approach
         applyShipDegradation("autopilot", travelIntensity, delta);
       }
+    }
+
+    // Proximity-based camera behavior for manual planet approach (not autopilot)
+    if (!isAutopilotActive && selectedPlanet && !isMining && !isLanding && !isLanded) {
+      const planetData = planets.find((p) => p.name === selectedPlanet);
+      if (planetData) {
+        // Calculate planet's current orbital position
+        const angle = time * planetData.orbitalSpeed;
+        const planetX = Math.cos(angle) * planetData.distance;
+        const planetZ = Math.sin(angle) * planetData.distance;
+        const currentPlanetPosition = new THREE.Vector3(planetX, 0, planetZ);
+
+        const distanceToPlanet = camera.position.distanceTo(currentPlanetPosition);
+        const proximityEnterDistance = planetData.size * 15; // Enter proximity mode a bit further out
+        const proximityExitDistance = planetData.size * 18; // Hysteresis to prevent jitter
+
+        // Check proximity with hysteresis
+        if (!isProximityCameraActive && distanceToPlanet < proximityEnterDistance) {
+          setProximityCameraActive(true);
+          console.log(`[PROXIMITY] Entering proximity camera mode for ${selectedPlanet} (distance: ${Math.round(distanceToPlanet)})`);
+        } else if (isProximityCameraActive && distanceToPlanet > proximityExitDistance) {
+          setProximityCameraActive(false);
+          console.log(`[PROXIMITY] Exiting proximity camera mode for ${selectedPlanet} (distance: ${Math.round(distanceToPlanet)})`);
+        }
+
+        // Apply gentle camera look-at behavior when in proximity mode
+        if (isProximityCameraActive) {
+          const planetDirection = currentPlanetPosition.clone().sub(camera.position).normalize();
+          const targetQuaternion = new THREE.Quaternion();
+          const lookAtMatrix = new THREE.Matrix4();
+          
+          lookAtMatrix.lookAt(camera.position, currentPlanetPosition, new THREE.Vector3(0, 1, 0));
+          targetQuaternion.setFromRotationMatrix(lookAtMatrix);
+
+          // Very gentle camera rotation to look at planet (much slower than autopilot)
+          camera.quaternion.slerp(targetQuaternion, delta * 0.8);
+        }
+      }
+    } else if (isProximityCameraActive) {
+      // Deactivate proximity camera if any blocking state is active
+      setProximityCameraActive(false);
+      console.log(`[PROXIMITY] Proximity camera deactivated due to state change`);
     }
 
     // Clamp maximum velocity (after all thrust sources computed)
