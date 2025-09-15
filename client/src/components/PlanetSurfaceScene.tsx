@@ -10,6 +10,7 @@ import { useEquipment } from "../lib/stores/useEquipment";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
+import { FBXAsteroid } from "./FBXAsteroid";
 import * as THREE from "three";
 
 import { usePlayer } from "../lib/stores/usePlayer";
@@ -107,15 +108,17 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
   return (
     <>
       {rockPositions.map((rock, index) => (
-        <mesh
+        <FBXAsteroid
           key={index}
           position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale}
+          scale={rock.scale * 2.5} // Scale up the FBX model to match original size
           rotation={[0, rock.rotationY, 0]}
-        >
-          <boxGeometry args={[1, 1, 1]} />
-          <meshStandardMaterial color={rockColor} roughness={0.8} />
-        </mesh>
+          color={rockColor}
+          roughness={0.8}
+          metalness={0.1}
+          castShadow
+          receiveShadow
+        />
       ))}
     </>
   );

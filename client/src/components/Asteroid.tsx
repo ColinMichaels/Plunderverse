@@ -2,13 +2,14 @@ import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { Asteroid as AsteroidType } from "../lib/stores/useAsteroids";
+import { FBXAsteroid } from "./FBXAsteroid";
 
 interface AsteroidProps {
   asteroid: AsteroidType;
 }
 
 export function Asteroid({ asteroid }: AsteroidProps) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const meshRef = useRef<THREE.Group>(null);
 
   useFrame(() => {
     if (meshRef.current) {
@@ -25,17 +26,20 @@ export function Asteroid({ asteroid }: AsteroidProps) {
   // Calculate damage color (red tint based on damage taken)
   const healthPercent = asteroid.health / asteroid.maxHealth;
   const damageRed = 1 - healthPercent;
+  const damageColor = new THREE.Color(0.4 + damageRed * 0.6, 0.3, 0.2).getHexString();
+  const emissiveColor = new THREE.Color(damageRed * 0.3, 0, 0).getHexString();
 
   return (
-    <mesh ref={meshRef} castShadow receiveShadow>
-      {/* Irregular asteroid shape using dodecahedron */}
-      <dodecahedronGeometry args={[asteroid.size, 1]} />
-      <meshStandardMaterial
-        color={new THREE.Color(0.4 + damageRed * 0.6, 0.3, 0.2)}
-        roughness={0.9}
-        metalness={0.1}
-        emissive={new THREE.Color(damageRed * 0.3, 0, 0)}
-      />
-    </mesh>
+    <FBXAsteroid
+      ref={meshRef}
+      scale={asteroid.size * 2.5} // Scale up the FBX model to match original size
+      color={`#${damageColor}`}
+      roughness={0.9}
+      metalness={0.1}
+      emissive={`#${emissiveColor}`}
+      emissiveIntensity={damageRed * 0.5}
+      castShadow
+      receiveShadow
+    />
   );
 }
