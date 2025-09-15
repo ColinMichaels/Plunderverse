@@ -29,9 +29,13 @@ export const useInventory = create<InventoryState>((set, get) => ({
     const state = get();
     const spaceNeeded = quantity;
     
+    console.log(`[INVENTORY] Attempting to add ${quantity} ${resource.type} from ${planetSource}`);
+    console.log(`[INVENTORY] Current items count:`, state.items.length);
+    console.log(`[INVENTORY] Current storage: ${state.currentStorage}/${state.storageCapacity}`);
+    
     // Check storage capacity
     if (state.currentStorage + spaceNeeded > state.storageCapacity) {
-      console.log(`Insufficient storage space! Need ${spaceNeeded}, available: ${state.storageCapacity - state.currentStorage}`);
+      console.log(`[INVENTORY] Insufficient storage space! Need ${spaceNeeded}, available: ${state.storageCapacity - state.currentStorage}`);
       return false;
     }
     
@@ -64,7 +68,9 @@ export const useInventory = create<InventoryState>((set, get) => ({
       });
     }
     
-    console.log(`Added ${quantity} ${resource.type} to inventory from ${planetSource}`);
+    console.log(`[INVENTORY] Successfully added ${quantity} ${resource.type} to inventory from ${planetSource}`);
+    console.log(`[INVENTORY] New items count:`, get().items.length);
+    console.log(`[INVENTORY] New storage used:`, get().currentStorage);
     return true;
   },
   

@@ -12,6 +12,7 @@ import { OrbitalInterface } from "./OrbitalInterface";
 import { InventoryDisplay } from "./InventoryDisplay";
 import { EquipmentWarning } from "./EquipmentWarning";
 import { ShipStatus } from "./ShipStatus";
+import { FixedMiniMap } from "./FixedMiniMap";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -87,6 +88,11 @@ export function GameUI() {
 
       {/* Mobile Propulsion Controls */}
       <MobilePropulsion onThrust={() => {}} />
+      
+      {/* Fixed minimap in bottom left corner */}
+      <div className="fixed bottom-4 left-4 z-30">
+        <FixedMiniMap />
+      </div>
     </>
   );
 }
