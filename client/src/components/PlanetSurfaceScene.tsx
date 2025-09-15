@@ -11,9 +11,11 @@ import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import { FBXAsteroid } from "./FBXAsteroid";
+import { FlashlightSystem } from "./FlashlightSystem";
 import * as THREE from "three";
 
 import { usePlayer } from "../lib/stores/usePlayer";
+import { useFlashlight } from "../lib/stores/useFlashlight";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -698,6 +700,7 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
   const needsHelmet = planetName !== "Earth"; // More robust check
   const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(null);
   const { isMuted } = useAudio(); // Respect global audio settings
+  const { isOn, batteryLevel, getBatteryStatus, isCharging } = useFlashlight(); // Flashlight status
 
   // Initialize and manage helmet breathing audio
   useEffect(() => {
@@ -749,6 +752,14 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
         <div>O₂: {player.oxygenPercentage}</div>
         <div>SUIT: {player.suitStatus} </div>
         <div>TEMP: {planet?.surfaceTemperature}</div>
+        <div className={`${
+          getBatteryStatus() === "critical" ? "text-red-400" : 
+          getBatteryStatus() === "low" ? "text-yellow-400" : 
+          isCharging ? "text-cyan-400" :
+          "text-green-400"
+        }`}>
+          💡: {isOn ? "ON" : "OFF"} {Math.round(batteryLevel)}% {isCharging ? "⚡" : ""}
+        </div>
       </div>
 
       {/* Atmosphere warning */}
@@ -782,6 +793,8 @@ function SurfaceControls({ planetName }: { planetName: string }) {
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-400">
           <div>WASD: Move</div>
           <div>Q/E: Turn</div>
+          <div>F: Flashlight</div>
+          <div>C: Charge</div>
         </div>
       </div>
 
@@ -907,6 +920,8 @@ export function PlanetSurfaceScene() {
     { name: "right", keys: ["KeyD", "ArrowRight"] },
     { name: "turnLeft", keys: ["KeyQ"] },
     { name: "turnRight", keys: ["KeyE"] },
+    { name: "flashlight", keys: ["KeyF"] },
+    { name: "charge", keys: ["KeyC"] },
   ];
 
   return (
@@ -914,6 +929,7 @@ export function PlanetSurfaceScene() {
       <KeyboardControls map={surfaceControls}>
         <Canvas camera={{ position: [0, 1.8, 5], fov: 75 }}>
           <SurfaceLighting />
+          <FlashlightSystem />
           <SurfaceSky planetName={landedPlanet} />
           <SurfaceTerrain planetName={landedPlanet} />
           <SurfaceRocks planetName={landedPlanet} />

@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
+import { useFlashlight } from "../lib/stores/useFlashlight";
 
 enum SurfaceControls {
   forward = "forward",
@@ -10,6 +11,8 @@ enum SurfaceControls {
   right = "right",
   turnLeft = "turnLeft",
   turnRight = "turnRight",
+  flashlight = "flashlight",
+  charge = "charge",
 }
 
 // Function to calculate terrain height at any x,z position (matches terrain generation)
@@ -26,6 +29,11 @@ export function SurfaceMovementController() {
   const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
   const rotationRef = useRef(0);
   const velocityRef = useRef(new THREE.Vector3());
+
+  // Flashlight system
+  const { toggle: toggleFlashlight, updateBattery, startCharging, stopCharging, isCharging } = useFlashlight();
+  const lastFlashlightPressRef = useRef(0);
+  const lastChargePressRef = useRef(0);
 
   // Debug logging for controls
   useEffect(() => {
@@ -92,6 +100,26 @@ export function SurfaceMovementController() {
     if (controls.turnRight) {
       rotationRef.current -= turnSpeed * delta;
     }
+
+    // Flashlight control - toggle with debounce
+    const currentTime = performance.now();
+    if (controls.flashlight && (currentTime - lastFlashlightPressRef.current > 300)) {
+      toggleFlashlight();
+      lastFlashlightPressRef.current = currentTime;
+    }
+
+    // Battery charging control - toggle with debounce
+    if (controls.charge && (currentTime - lastChargePressRef.current > 300)) {
+      if (isCharging) {
+        stopCharging();
+      } else {
+        startCharging();
+      }
+      lastChargePressRef.current = currentTime;
+    }
+
+    // Update flashlight battery (drain/charge based on state)
+    updateBattery(delta);
 
     // Clamp velocity to prevent runaway acceleration
     velocity.clampLength(0, maxVelocity);
