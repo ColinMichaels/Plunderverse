@@ -82,7 +82,7 @@ function App() {
               shadows
               camera={{
                 position: [0, 10, 50],
-                fov: 120,
+                fov: 90,
                 near: 0.1,
                 far: 10000,
               }}
