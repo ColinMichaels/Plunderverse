@@ -111,7 +111,7 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
         <FBXAsteroid
           key={index}
           position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale * 0.4} // Scale down to make small rock-like size (couple feet)
+          scale={rock.scale * 0.025 * Math.random()} // Scale down to make small rock-like size (couple feet)
           rotation={[0, rock.rotationY, 0]}
           color={rockColor}
           roughness={0.8}
@@ -131,12 +131,16 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   const planetsRef = useRef<THREE.Group>(null);
 
   // Orbital calculation utilities
-  const calculateOrbitPosition = (distance: number, speed: number, time: number) => {
+  const calculateOrbitPosition = (
+    distance: number,
+    speed: number,
+    time: number,
+  ) => {
     const angle = speed * time;
     return new THREE.Vector3(
       Math.cos(angle) * distance,
       0,
-      Math.sin(angle) * distance
+      Math.sin(angle) * distance,
     );
   };
 
@@ -146,7 +150,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
   // Calculate visible planets for current time
   const visiblePlanets = useMemo(() => {
-    const currentPlanet = planets.find(p => p.name === planetName);
+    const currentPlanet = planets.find((p) => p.name === planetName);
     if (!currentPlanet) return [];
 
     const currentPosition = calculatePlanetPosition(currentPlanet, time);
@@ -162,32 +166,35 @@ function SurfaceSky({ planetName }: { planetName: string }) {
     const sunDirection = currentPosition.clone().negate().normalize();
     const sunSkyPosition = sunDirection.clone().multiplyScalar(400);
     const sunApparentSize = Math.min(40, Math.max(8, 15 * (30 / sunDistance)));
-    
+
     visibleObjects.push({
       planet: { name: "Sun", size: 15, color: "#FDB813" },
       skyPosition: sunSkyPosition,
       apparentSize: sunApparentSize,
-      distance: sunDistance
+      distance: sunDistance,
     });
 
     // Add other planets
-    planets.forEach(planet => {
+    planets.forEach((planet) => {
       if (planet.name === planetName) return;
 
       const planetPosition = calculatePlanetPosition(planet, time);
       const relativePosition = planetPosition.clone().sub(currentPosition);
       const distance = relativePosition.length();
-      
+
       if (distance > 5) {
         const direction = relativePosition.normalize();
         const skyPosition = direction.clone().multiplyScalar(400);
-        const apparentSize = Math.max(0.8, Math.log(planet.size + 1) * (50 / Math.sqrt(distance)));
-        
+        const apparentSize = Math.max(
+          0.8,
+          Math.log(planet.size + 1) * (50 / Math.sqrt(distance)),
+        );
+
         visibleObjects.push({
           planet,
           skyPosition,
           apparentSize,
-          distance
+          distance,
         });
       }
     });
@@ -199,43 +206,82 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   const getAtmosphericGradient = (planetName: string) => {
     switch (planetName) {
       case "Earth":
-        return { horizonColor: "#87CEEB", zenithColor: "#191970", atmosphereIntensity: 0.8 };
+        return {
+          horizonColor: "#87CEEB",
+          zenithColor: "#191970",
+          atmosphereIntensity: 0.8,
+        };
       case "Mars":
-        return { horizonColor: "#CD5C5C", zenithColor: "#2F1B14", atmosphereIntensity: 0.6 };
+        return {
+          horizonColor: "#CD5C5C",
+          zenithColor: "#2F1B14",
+          atmosphereIntensity: 0.6,
+        };
       case "Venus":
-        return { horizonColor: "#FFA500", zenithColor: "#8B4513", atmosphereIntensity: 0.9 };
+        return {
+          horizonColor: "#FFA500",
+          zenithColor: "#8B4513",
+          atmosphereIntensity: 0.9,
+        };
       case "Mercury":
-        return { horizonColor: "#2F2F2F", zenithColor: "#000000", atmosphereIntensity: 0.1 };
+        return {
+          horizonColor: "#2F2F2F",
+          zenithColor: "#000000",
+          atmosphereIntensity: 0.1,
+        };
       case "Jupiter":
-        return { horizonColor: "#D8CA9D", zenithColor: "#8B7355", atmosphereIntensity: 0.7 };
+        return {
+          horizonColor: "#D8CA9D",
+          zenithColor: "#8B7355",
+          atmosphereIntensity: 0.7,
+        };
       case "Saturn":
-        return { horizonColor: "#FAD5A5", zenithColor: "#CD853F", atmosphereIntensity: 0.7 };
+        return {
+          horizonColor: "#FAD5A5",
+          zenithColor: "#CD853F",
+          atmosphereIntensity: 0.7,
+        };
       case "Uranus":
-        return { horizonColor: "#4FD0E7", zenithColor: "#2F4F4F", atmosphereIntensity: 0.5 };
+        return {
+          horizonColor: "#4FD0E7",
+          zenithColor: "#2F4F4F",
+          atmosphereIntensity: 0.5,
+        };
       case "Neptune":
-        return { horizonColor: "#4B70DD", zenithColor: "#191970", atmosphereIntensity: 0.6 };
+        return {
+          horizonColor: "#4B70DD",
+          zenithColor: "#191970",
+          atmosphereIntensity: 0.6,
+        };
       default:
-        return { horizonColor: "#1a1a2e", zenithColor: "#000000", atmosphereIntensity: 0.3 };
+        return {
+          horizonColor: "#1a1a2e",
+          zenithColor: "#000000",
+          atmosphereIntensity: 0.3,
+        };
     }
   };
 
-  const atmosphericData = useMemo(() => getAtmosphericGradient(planetName), [planetName]);
+  const atmosphericData = useMemo(
+    () => getAtmosphericGradient(planetName),
+    [planetName],
+  );
 
   // Generate starfield data
   const starData = useMemo(() => {
     const starCount = 3000;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
-    
+
     for (let i = 0; i < starCount; i++) {
       const radius = 450 + Math.random() * 100;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      
+
       positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
-      
+
       // Star color variations - different stellar types
       const starType = Math.random();
       if (starType < 0.4) {
@@ -260,27 +306,27 @@ function SurfaceSky({ planetName }: { planetName: string }) {
         colors[i * 3 + 2] = 0.6 + Math.random() * 0.2;
       }
     }
-    
+
     return { positions, colors };
   }, []);
 
   // Create atmospheric gradient texture
   const gradientTexture = useMemo(() => {
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = 256;
     canvas.height = 256;
-    const context = canvas.getContext('2d');
-    
+    const context = canvas.getContext("2d");
+
     if (context) {
       const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
       gradient.addColorStop(0, atmosphericData.zenithColor);
       gradient.addColorStop(0.7, atmosphericData.horizonColor);
-      gradient.addColorStop(1, '#000000');
-      
+      gradient.addColorStop(1, "#000000");
+
       context.fillStyle = gradient;
       context.fillRect(0, 0, 256, 256);
     }
-    
+
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
     return texture;
@@ -290,7 +336,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   useFrame((state) => {
     if (starfieldRef.current) {
       starfieldRef.current.rotation.y += 0.00005;
-      
+
       const material = starfieldRef.current.material as THREE.PointsMaterial;
       material.opacity = 0.6 + Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
     }
@@ -353,7 +399,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
             position={[
               celestialObject.skyPosition.x,
               celestialObject.skyPosition.y,
-              celestialObject.skyPosition.z
+              celestialObject.skyPosition.z,
             ]}
           >
             <sphereGeometry args={[celestialObject.apparentSize, 8, 8]} />
@@ -364,9 +410,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
                 emissiveIntensity={0.8}
               />
             ) : (
-              <meshBasicMaterial
-                color={celestialObject.planet.color}
-              />
+              <meshBasicMaterial color={celestialObject.planet.color} />
             )}
           </mesh>
         ))}
@@ -384,7 +428,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
                 const radius = 520 + Math.random() * 80;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.random() * Math.PI;
-                
+
                 positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
                 positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
                 positions[i * 3 + 2] = radius * Math.cos(phi);
@@ -413,21 +457,13 @@ function SurfaceLighting() {
   const surfaceColor = planet?.color || "#8C7853";
   return (
     <>
-      {/* Hemisphere light for ambient sky lighting */}
-
-      <hemisphereLight
-        position={[0, 50, 0]}
-        intensity={0.5}
-        color="#ffffff"
-        groundColor="#1a1a2e"
-      />
       {/* Ambient light for general illumination */}
-      <ambientLight intensity={0.4} color={surfaceColor} />
+      <ambientLight intensity={0.1} color={surfaceColor} />
 
       {/* Directional light as main sun */}
       <directionalLight
         position={[50, 100, 50]}
-        intensity={1}
+        intensity={0.9}
         color="#FDB813"
         castShadow
         shadow-mapSize-width={2048}
@@ -439,8 +475,8 @@ function SurfaceLighting() {
       />
 
       {/* Point lights for resource highlighting */}
-      <pointLight position={[10, 10, 10]} intensity={0.5} color="#ffffff" />
-      <pointLight position={[-10, 10, -10]} intensity={0.5} color="#ffffff" />
+      <pointLight position={[10, 10, 10]} intensity={0.1} color="#ffffff" />
+      <pointLight position={[-10, 10, -10]} intensity={0.1} color="#ffffff" />
     </>
   );
 }
@@ -560,40 +596,54 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   }, [planet, planetName]);
 
   const handleResourceClick = (resource: ResourceData, nodeId: string) => {
-    console.log(`[MINING-DEBUG] Resource click detected: ${resource.type} on ${planetName}`);
-    console.log(`[MINING-DEBUG] Current mining state: isActive=${isActive}, targetResource=${targetResource?.type}`);
-    
+    console.log(
+      `[MINING-DEBUG] Resource click detected: ${resource.type} on ${planetName}`,
+    );
+    console.log(
+      `[MINING-DEBUG] Current mining state: isActive=${isActive}, targetResource=${targetResource?.type}`,
+    );
+
     try {
       if (isActive && targetResource?.type === resource.type) {
         // If already mining this resource, perform a click
-        console.log(`[MINING-DEBUG] Performing mining click for ${resource.type}`);
+        console.log(
+          `[MINING-DEBUG] Performing mining click for ${resource.type}`,
+        );
         const result = performClick();
         console.log(`[MINING-DEBUG] performClick result:`, result);
-        
+
         if (result) {
           // Mining completed, add to inventory - but first check quantity
-          console.log(`[MINING-DEBUG] Mining completed! Attempting to add ${result.quantity} ${result.resource.type} to inventory`);
-          
+          console.log(
+            `[MINING-DEBUG] Mining completed! Attempting to add ${result.quantity} ${result.resource.type} to inventory`,
+          );
+
           // CRITICAL FIX: Guard against adding zero or negative quantity
           if (result.quantity <= 0) {
-            console.warn(`[MINING-DEBUG] ⚠️ Attempted to add invalid quantity: ${result.quantity}. Skipping inventory addition.`);
-            console.warn(`[MINING-DEBUG] This indicates broken equipment or calculation error.`);
+            console.warn(
+              `[MINING-DEBUG] ⚠️ Attempted to add invalid quantity: ${result.quantity}. Skipping inventory addition.`,
+            );
+            console.warn(
+              `[MINING-DEBUG] This indicates broken equipment or calculation error.`,
+            );
             return;
           }
-          
+
           const success = addResource(
             result.resource,
             result.quantity,
             result.planet,
           );
           console.log(`[MINING-DEBUG] addResource result: ${success}`);
-          
+
           if (success) {
             const creditReward = Math.floor(
               result.resource.value * result.quantity * 0.1,
             );
             earnCredits(creditReward);
-            console.log(`[MINING-DEBUG] Mining complete! Earned ${creditReward} credits`);
+            console.log(
+              `[MINING-DEBUG] Mining complete! Earned ${creditReward} credits`,
+            );
             playSuccess();
 
             // Destroy the mined resource node
@@ -613,9 +663,13 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         }
       } else {
         // Start mining a new resource
-        console.log(`[MINING-DEBUG] Starting new mining operation for ${resource.type} on ${planetName}`);
+        console.log(
+          `[MINING-DEBUG] Starting new mining operation for ${resource.type} on ${planetName}`,
+        );
         startMining(planetName, resource);
-        console.log(`[MINING-DEBUG] startMining called for ${resource.type} on ${planetName}`);
+        console.log(
+          `[MINING-DEBUG] startMining called for ${resource.type} on ${planetName}`,
+        );
       }
     } catch (error) {
       console.error(`[MINING-DEBUG] Failed to mine ${resource.type}:`, error);
@@ -788,35 +842,50 @@ function SurfaceControls({ planetName }: { planetName: string }) {
 
 function MiningDebugDisplay() {
   const { isLanded, landedPlanet } = useLandedState();
-  const { isActive, targetResource, clicksCompleted, clicksRequired } = useMining();
+  const { isActive, targetResource, clicksCompleted, clicksRequired } =
+    useMining();
   const { items, getStorageUsed, storageCapacity } = useInventory();
   const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
 
   // Calculate total units and find last changed item
   const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
   const lastChangedItem = items.length > 0 ? items[items.length - 1] : null;
-  
+
   // Get equipment performance data
-  const drillPerformance = getPerformanceMultiplier('drill-mk1');
-  const extractorPerformance = getPerformanceMultiplier('extractor-basic');
-  const drillStatus = getConditionStatus('drill-mk1');
-  const extractorStatus = getConditionStatus('extractor-basic');
+  const drillPerformance = getPerformanceMultiplier("drill-mk1");
+  const extractorPerformance = getPerformanceMultiplier("extractor-basic");
+  const drillStatus = getConditionStatus("drill-mk1");
+  const extractorStatus = getConditionStatus("extractor-basic");
 
   return (
     <div className="fixed top-4 right-4 bg-black/80 border border-cyan-400/50 rounded p-3 text-cyan-400 font-mono text-xs z-50">
       <div className="space-y-1">
-        <div>LANDING: {isLanded ? `✓ ${landedPlanet}` : '✗ Not landed'}</div>
-        <div>MINING: {isActive ? `✓ ${targetResource?.type}` : '✗ Inactive'}</div>
-        <div>PROGRESS: {clicksCompleted}/{clicksRequired}</div>
-        <div>CARGO: {totalUnits} units ({items.length} types)</div>
-        <div>STORAGE: {getStorageUsed()}/{storageCapacity}</div>
+        <div>LANDING: {isLanded ? `✓ ${landedPlanet}` : "✗ Not landed"}</div>
+        <div>
+          MINING: {isActive ? `✓ ${targetResource?.type}` : "✗ Inactive"}
+        </div>
+        <div>
+          PROGRESS: {clicksCompleted}/{clicksRequired}
+        </div>
+        <div>
+          CARGO: {totalUnits} units ({items.length} types)
+        </div>
+        <div>
+          STORAGE: {getStorageUsed()}/{storageCapacity}
+        </div>
         {lastChangedItem && (
-          <div>LAST: {lastChangedItem.quantity}x {lastChangedItem.type}</div>
+          <div>
+            LAST: {lastChangedItem.quantity}x {lastChangedItem.type}
+          </div>
         )}
         <div className="border-t border-cyan-600 pt-1 mt-1">
-          <div>DRILL: {(drillPerformance * 100).toFixed(0)}% ({drillStatus})</div>
-          <div>EXTR: {(extractorPerformance * 100).toFixed(0)}% ({extractorStatus})</div>
-          {(drillStatus === 'broken' || extractorStatus === 'broken') && (
+          <div>
+            DRILL: {(drillPerformance * 100).toFixed(0)}% ({drillStatus})
+          </div>
+          <div>
+            EXTR: {(extractorPerformance * 100).toFixed(0)}% ({extractorStatus})
+          </div>
+          {(drillStatus === "broken" || extractorStatus === "broken") && (
             <div className="text-red-400">⚠️ EQUIPMENT BROKEN</div>
           )}
         </div>

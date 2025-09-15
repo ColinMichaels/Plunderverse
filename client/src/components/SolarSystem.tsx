@@ -23,30 +23,25 @@ export function SolarSystem() {
     <group ref={systemRef}>
       {/* Minimal ambient lighting - sun is primary light source */}
       <ambientLight intensity={0.05} />
-      
+
       {/* Starfield background */}
       <Starfield />
-      
+
       {/* Sun at the center */}
       <Sun />
-      
+
       {/* Planets */}
       {planets.map((planetData: any, index: number) => (
-        <Planet
-          key={planetData.name}
-          data={planetData}
-          time={time}
-        />
+        <Planet key={planetData.name} data={planetData} time={time} />
       ))}
-      
+
       {/* Camera controller */}
       <CameraController />
-      
+
       {/* Shooting system */}
       <ShootingSystem />
-      
+
       {/* Asteroid field */}
-      <AsteroidField />
     </group>
   );
 }
