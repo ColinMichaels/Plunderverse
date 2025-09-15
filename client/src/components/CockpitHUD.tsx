@@ -105,6 +105,11 @@ export function CockpitHUD() {
     }
   };
 
+  // Hide entire HUD when landed on surface
+  if (isLanded) {
+    return null;
+  }
+
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
       {/* Central HUD - compact and less intrusive */}
