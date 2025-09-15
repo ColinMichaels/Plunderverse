@@ -41,8 +41,11 @@ export const useMining = create<MiningState>((set, get) => ({
   startMining: (planet, resource) => {
     // Check if ship is actually landed on the planet
     const landedState = useLandedState.getState();
+    console.log(`[MINING-DEBUG] Checking landing status: isLanded=${landedState.isLanded}, landedPlanet=${landedState.landedPlanet}, targetPlanet=${planet}`);
+    
     if (!landedState.isLanded || landedState.landedPlanet !== planet) {
-      console.warn(`Cannot start mining on ${planet} - ship not landed on surface!`);
+      console.warn(`[MINING-DEBUG] Cannot start mining on ${planet} - ship not landed on surface!`);
+      console.warn(`[MINING-DEBUG] Landing state: isLanded=${landedState.isLanded}, landedPlanet=${landedState.landedPlanet}`);
       return;
     }
     
@@ -53,7 +56,7 @@ export const useMining = create<MiningState>((set, get) => ({
       clicksCompleted: 0,
       clicksRequired: resource.complexity
     });
-    console.log(`Started mining ${resource.type} on ${planet} surface - ${resource.complexity} clicks needed`);
+    console.log(`[MINING-DEBUG] Started mining ${resource.type} on ${planet} surface - ${resource.complexity} clicks needed`);
   },
   
   stopMining: () => {

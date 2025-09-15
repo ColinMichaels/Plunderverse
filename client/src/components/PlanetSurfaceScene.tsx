@@ -6,10 +6,12 @@ import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
 import { useInventory } from "../lib/stores/useInventory";
 import { useCredits } from "../lib/stores/useCredits";
-import { usePlayer } from "../lib/stores/usePlayer";
+import { useEquipment } from "../lib/stores/useEquipment";
 import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import * as THREE from "three";
+
+import { usePlayer } from "../lib/stores/usePlayer";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -147,10 +149,22 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 }
 
 function SurfaceLighting() {
+  //get the planet color to use for the lighting
+  const { landedPlanet } = useLandedState();
+  const planet = planets.find((p) => p.name === landedPlanet);
+  const surfaceColor = planet?.color || "#8C7853";
   return (
     <>
+      {/* Hemisphere light for ambient sky lighting */}
+
+      <hemisphereLight
+        position={[0, 50, 0]}
+        intensity={0.5}
+        color="#ffffff"
+        groundColor="#1a1a2e"
+      />
       {/* Ambient light for general illumination */}
-      <ambientLight intensity={0.4} color="#ffffff" />
+      <ambientLight intensity={0.4} color={surfaceColor} />
 
       {/* Directional light as main sun */}
       <directionalLight
@@ -288,23 +302,40 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   }, [planet, planetName]);
 
   const handleResourceClick = (resource: ResourceData, nodeId: string) => {
+    console.log(`[MINING-DEBUG] Resource click detected: ${resource.type} on ${planetName}`);
+    console.log(`[MINING-DEBUG] Current mining state: isActive=${isActive}, targetResource=${targetResource?.type}`);
+    
     try {
       if (isActive && targetResource?.type === resource.type) {
         // If already mining this resource, perform a click
+        console.log(`[MINING-DEBUG] Performing mining click for ${resource.type}`);
         const result = performClick();
+        console.log(`[MINING-DEBUG] performClick result:`, result);
+        
         if (result) {
-          // Mining completed, add to inventory
+          // Mining completed, add to inventory - but first check quantity
+          console.log(`[MINING-DEBUG] Mining completed! Attempting to add ${result.quantity} ${result.resource.type} to inventory`);
+          
+          // CRITICAL FIX: Guard against adding zero or negative quantity
+          if (result.quantity <= 0) {
+            console.warn(`[MINING-DEBUG] ⚠️ Attempted to add invalid quantity: ${result.quantity}. Skipping inventory addition.`);
+            console.warn(`[MINING-DEBUG] This indicates broken equipment or calculation error.`);
+            return;
+          }
+          
           const success = addResource(
             result.resource,
             result.quantity,
             result.planet,
           );
+          console.log(`[MINING-DEBUG] addResource result: ${success}`);
+          
           if (success) {
             const creditReward = Math.floor(
               result.resource.value * result.quantity * 0.1,
             );
             earnCredits(creditReward);
-            console.log(`Mining complete! Earned ${creditReward} credits`);
+            console.log(`[MINING-DEBUG] Mining complete! Earned ${creditReward} credits`);
             playSuccess();
 
             // Destroy the mined resource node
@@ -312,22 +343,24 @@ function ResourceNodes({ planetName }: { planetName: string }) {
               (prev) => new Set(Array.from(prev).concat(nodeId)),
             );
             console.log(
-              `Resource node ${nodeId} destroyed after mining completion`,
+              `[MINING-DEBUG] Resource node ${nodeId} destroyed after mining completion`,
             );
           } else {
-            console.log("Inventory full! Mining stopped.");
+            console.log("[MINING-DEBUG] Inventory full! Mining stopped.");
           }
         } else {
           // Continue mining - play hit sound
+          console.log(`[MINING-DEBUG] Mining click registered, continuing...`);
           playHit();
         }
       } else {
         // Start mining a new resource
+        console.log(`[MINING-DEBUG] Starting new mining operation for ${resource.type} on ${planetName}`);
         startMining(planetName, resource);
-        console.log(`Starting to mine ${resource.type} on ${planetName}`);
+        console.log(`[MINING-DEBUG] startMining called for ${resource.type} on ${planetName}`);
       }
     } catch (error) {
-      console.error(`Failed to mine ${resource.type}:`, error);
+      console.error(`[MINING-DEBUG] Failed to mine ${resource.type}:`, error);
     }
   };
 
@@ -348,11 +381,11 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 }
 
 function HelmetOverlay({ planetName }: { planetName: string }) {
+  const player = usePlayer.getState();
   const planet = planets.find((p) => p.name === planetName);
   const needsHelmet = planetName !== "Earth"; // More robust check
   const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(null);
   const { isMuted } = useAudio(); // Respect global audio settings
-  const { oxygenPercentage, suitStatus } = usePlayer(); // Get player stats
 
   // Initialize and manage helmet breathing audio
   useEffect(() => {
@@ -401,8 +434,8 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
 
       {/* HUD elements */}
       <div className="absolute top-4 right-4 bg-gray-900/70 border border-green-400 rounded p-2 text-green-400 text-xs font-mono">
-        <div>O₂: {oxygenPercentage}%</div>
-        <div>SUIT: {suitStatus}</div>
+        <div>O₂: {player.oxygenPercentage}</div>
+        <div>SUIT: {player.suitStatus} </div>
         <div>TEMP: {planet?.surfaceTemperature}</div>
       </div>
 
@@ -495,6 +528,45 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   );
 }
 
+function MiningDebugDisplay() {
+  const { isLanded, landedPlanet } = useLandedState();
+  const { isActive, targetResource, clicksCompleted, clicksRequired } = useMining();
+  const { items, getStorageUsed, storageCapacity } = useInventory();
+  const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
+
+  // Calculate total units and find last changed item
+  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
+  const lastChangedItem = items.length > 0 ? items[items.length - 1] : null;
+  
+  // Get equipment performance data
+  const drillPerformance = getPerformanceMultiplier('drill-mk1');
+  const extractorPerformance = getPerformanceMultiplier('extractor-basic');
+  const drillStatus = getConditionStatus('drill-mk1');
+  const extractorStatus = getConditionStatus('extractor-basic');
+
+  return (
+    <div className="fixed top-4 right-4 bg-black/80 border border-cyan-400/50 rounded p-3 text-cyan-400 font-mono text-xs z-50">
+      <div className="space-y-1">
+        <div>LANDING: {isLanded ? `✓ ${landedPlanet}` : '✗ Not landed'}</div>
+        <div>MINING: {isActive ? `✓ ${targetResource?.type}` : '✗ Inactive'}</div>
+        <div>PROGRESS: {clicksCompleted}/{clicksRequired}</div>
+        <div>CARGO: {totalUnits} units ({items.length} types)</div>
+        <div>STORAGE: {getStorageUsed()}/{storageCapacity}</div>
+        {lastChangedItem && (
+          <div>LAST: {lastChangedItem.quantity}x {lastChangedItem.type}</div>
+        )}
+        <div className="border-t border-cyan-600 pt-1 mt-1">
+          <div>DRILL: {(drillPerformance * 100).toFixed(0)}% ({drillStatus})</div>
+          <div>EXTR: {(extractorPerformance * 100).toFixed(0)}% ({extractorStatus})</div>
+          {(drillStatus === 'broken' || extractorStatus === 'broken') && (
+            <div className="text-red-400">⚠️ EQUIPMENT BROKEN</div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
 
@@ -522,6 +594,9 @@ export function PlanetSurfaceScene() {
           <SurfaceMovementController />
         </Canvas>
       </KeyboardControls>
+
+      {/* Mining debug display */}
+      <MiningDebugDisplay />
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />

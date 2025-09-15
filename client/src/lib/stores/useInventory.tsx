@@ -29,33 +29,52 @@ export const useInventory = create<InventoryState>((set, get) => ({
     const state = get();
     const spaceNeeded = quantity;
     
-    console.log(`[INVENTORY] Attempting to add ${quantity} ${resource.type} from ${planetSource}`);
-    console.log(`[INVENTORY] Current items count:`, state.items.length);
-    console.log(`[INVENTORY] Current storage: ${state.currentStorage}/${state.storageCapacity}`);
+    console.log(`\n[INVENTORY-DEBUG] === ADD RESOURCE OPERATION START ===`);
+    console.log(`[INVENTORY-DEBUG] INPUT: resource=${resource.type}, quantity=${quantity}, planetSource=${planetSource}`);
+    console.log(`[INVENTORY-DEBUG] RESOURCE DETAILS: rarity=${resource.rarity}, value=${resource.value}`);
+    console.log(`[INVENTORY-DEBUG] CURRENT STATE: items=${state.items.length}, storage=${state.currentStorage}/${state.storageCapacity}`);
+    
+    // Input validation
+    if (quantity <= 0) {
+      console.error(`[INVENTORY-DEBUG] ⚠️ INVALID QUANTITY: ${quantity} - must be positive!`);
+      console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION FAILED ===\n`);
+      return false;
+    }
     
     // Check storage capacity
+    const availableSpace = state.storageCapacity - state.currentStorage;
+    console.log(`[INVENTORY-DEBUG] CAPACITY CHECK: need=${spaceNeeded}, available=${availableSpace}`);
     if (state.currentStorage + spaceNeeded > state.storageCapacity) {
-      console.log(`[INVENTORY] Insufficient storage space! Need ${spaceNeeded}, available: ${state.storageCapacity - state.currentStorage}`);
+      console.error(`[INVENTORY-DEBUG] ⚠️ STORAGE FULL! Need ${spaceNeeded}, available: ${availableSpace}`);
+      console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION FAILED ===\n`);
       return false;
     }
     
     // Find existing item or create new
     const existingItemIndex = state.items.findIndex(item => item.type === resource.type);
+    console.log(`[INVENTORY-DEBUG] STACKING CHECK: existingItemIndex=${existingItemIndex}`);
     
     if (existingItemIndex >= 0) {
-      // Update existing item
+      // Update existing item (stacking)
+      const existingItem = state.items[existingItemIndex];
+      console.log(`[INVENTORY-DEBUG] STACKING: Found existing ${existingItem.type} with ${existingItem.quantity} units`);
+      const newQuantity = existingItem.quantity + quantity;
+      
       const updatedItems = [...state.items];
       updatedItems[existingItemIndex] = {
         ...updatedItems[existingItemIndex],
-        quantity: updatedItems[existingItemIndex].quantity + quantity
+        quantity: newQuantity
       };
       
       set({
         items: updatedItems,
         currentStorage: state.currentStorage + spaceNeeded
       });
+      
+      console.log(`[INVENTORY-DEBUG] STACKING SUCCESS: ${existingItem.type} now has ${newQuantity} units (added ${quantity})`);
     } else {
       // Add new item
+      console.log(`[INVENTORY-DEBUG] NEW ITEM: Creating new inventory slot for ${resource.type}`);
       const newItem: InventoryItem = {
         ...resource,
         quantity,
@@ -66,11 +85,17 @@ export const useInventory = create<InventoryState>((set, get) => ({
         items: [...state.items, newItem],
         currentStorage: state.currentStorage + spaceNeeded
       });
+      
+      console.log(`[INVENTORY-DEBUG] NEW ITEM SUCCESS: Created slot with ${quantity} ${resource.type}`);
     }
     
-    console.log(`[INVENTORY] Successfully added ${quantity} ${resource.type} to inventory from ${planetSource}`);
-    console.log(`[INVENTORY] New items count:`, get().items.length);
-    console.log(`[INVENTORY] New storage used:`, get().currentStorage);
+    // Final state verification
+    const finalState = get();
+    const totalUnits = finalState.items.reduce((sum, item) => sum + item.quantity, 0);
+    console.log(`[INVENTORY-DEBUG] FINAL STATE: items=${finalState.items.length}, storage=${finalState.currentStorage}/${finalState.storageCapacity}`);
+    console.log(`[INVENTORY-DEBUG] TOTAL UNITS: ${totalUnits}`);
+    console.log(`[INVENTORY-DEBUG] LAST ITEM: ${finalState.items.length > 0 ? finalState.items[finalState.items.length - 1].type : 'none'}`);
+    console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION SUCCESS ===\n`);
     return true;
   },
   

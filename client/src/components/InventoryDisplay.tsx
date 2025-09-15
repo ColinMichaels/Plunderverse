@@ -68,18 +68,54 @@ export function InventoryDisplay() {
 
         {/* Trading Button */}
         <button
-          onClick={() => setShowTrading(!showTrading)}
+          onClick={() => {
+            console.log(`[TRADING-DEBUG] Trading button clicked: showTrading=${showTrading}`);
+            console.log(`[TRADING-DEBUG] Current inventory items:`, items.length);
+            console.log(`[TRADING-DEBUG] Total value:`, totalValue);
+            
+            // Check for trading prerequisites
+            if (items.length === 0) {
+              console.warn(`[TRADING-DEBUG] ⚠️ No items to trade!`);
+            }
+            
+            if (totalValue === 0) {
+              console.warn(`[TRADING-DEBUG] ⚠️ No valuable items to trade!`);
+            }
+            
+            const newShowTrading = !showTrading;
+            console.log(`[TRADING-DEBUG] Setting showTrading to: ${newShowTrading}`);
+            setShowTrading(newShowTrading);
+            
+            if (newShowTrading) {
+              console.log(`[TRADING-DEBUG] ✓ Trading panel opened successfully`);
+            } else {
+              console.log(`[TRADING-DEBUG] ✓ Trading panel closed`);
+            }
+          }}
           className="space-button w-full"
         >
           💰 {showTrading ? 'CLOSE' : 'OPEN'} TRADING
         </button>
 
         {/* Trading Interface */}
-        {showTrading && (
-          <TradingInterface 
-            isVisible={showTrading} 
-            onClose={() => setShowTrading(false)} 
-          />
+        {showTrading ? (
+          <div>
+            <div className="text-xs text-cyan-400 font-mono mb-2">
+              [DEBUG] Trading interface rendered: visible={showTrading.toString()}
+            </div>
+            <TradingInterface 
+              isVisible={showTrading} 
+              onClose={() => {
+                console.log(`[TRADING-DEBUG] Trading interface close requested`);
+                setShowTrading(false);
+                console.log(`[TRADING-DEBUG] Trading interface closed`);
+              }} 
+            />
+          </div>
+        ) : (
+          <div className="text-xs text-gray-500 font-mono">
+            [DEBUG] Trading interface hidden: showTrading={showTrading.toString()}
+          </div>
         )}
 
         {/* Items List */}
