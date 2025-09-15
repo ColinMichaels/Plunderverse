@@ -227,3 +227,44 @@ export const planets: PlanetData[] = [
     ]
   },
 ];
+
+// Moon data (Earth's satellite)
+export interface MoonData {
+  name: string;
+  size: number;
+  distance: number; // Distance from Earth
+  color: string;
+  orbitalSpeed: number;
+  rotationSpeed: number;
+  realDistance: string;
+  diameter: string;
+  orbitalPeriod: string;
+  dayLength: string;
+  description: string;
+  atmosphere: string;
+  surfaceTemperature: string;
+  gravity: string;
+  resources: ResourceData[];
+}
+
+export const moonData: MoonData = {
+  name: "Moon",
+  size: 0.3,
+  distance: 4, // Distance from Earth in game units
+  color: "#C0C0C0",
+  orbitalSpeed: 0.08,
+  rotationSpeed: 0.001,
+  realDistance: "384,400 km from Earth",
+  diameter: "3,474",
+  orbitalPeriod: "27.3 Earth days",
+  dayLength: "27.3 Earth days (tidally locked)",
+  description: "Earth's only natural satellite, tidally locked and crucial for Earth's tides.",
+  atmosphere: "None (Exosphere)",
+  surfaceTemperature: "127°C (Day), -173°C (Night)",
+  gravity: "0.166g",
+  resources: [
+    { type: "Lunar Rock", rarity: "common", value: 12, description: "Basic lunar regolith and rock samples", complexity: 1 },
+    { type: "Helium-3", rarity: "rare", value: 300, description: "Rare isotope deposited by solar wind", complexity: 8 },
+    { type: "Water Ice", rarity: "uncommon", value: 45, description: "Ice deposits in polar craters", complexity: 3 }
+  ]
+};

@@ -27,7 +27,7 @@ export function OrbitalInterface() {
       const timer = setTimeout(() => {
         console.log("Orbital UI: Delay complete - showing interface");
         setShowInterface(true);
-      }, 3000);
+      }, 2000);
       
       return () => clearTimeout(timer);
     } else {

@@ -20,6 +20,8 @@ export function Planet({ data, time }: PlanetProps) {
   // Planet texture mapping - only for textures that exist
   const getTextureForPlanet = (planetName: string) => {
     const textureMap: { [key: string]: string } = {
+      Mercury: "/textures/planets/2k_mercury.jpg",
+      Venus: "/textures/planets/2k_venus_surface.jpg",
       Earth: "/textures/planets/2k_earth_daymap.jpg",
       Mars: "/textures/planets/2k_mars.jpg",
       Jupiter: "/textures/planets/2k_jupiter.jpg",
