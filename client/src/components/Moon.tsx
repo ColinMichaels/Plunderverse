@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
-import { planets } from "../lib/planetData";
+import { planets, moonData } from "../lib/planetData";
 
 export function Moon() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -16,14 +16,14 @@ export function Moon() {
   const earth = planets.find(p => p.name === "Earth");
   if (!earth) return null;
 
-  // Moon texture
-  const moonTexture = useTexture("/textures/planets/2k_moon.jpg");
+  // Moon texture from moonData
+  const moonTexture = moonData.texture ? useTexture(moonData.texture) : null;
 
-  // Moon properties (realistic scale relative to Earth)
-  const moonSize = 0.3; // About 1/4 of Earth's size
-  const moonDistance = 4; // Distance from Earth
-  const orbitalSpeed = 0.08; // Slower than planets
-  const rotationSpeed = 0.001;
+  // Moon properties from moonData
+  const moonSize = moonData.size;
+  const moonDistance = moonData.distance;
+  const orbitalSpeed = moonData.orbitalSpeed;
+  const rotationSpeed = moonData.rotationSpeed;
 
   // Calculate orbital position around Earth
   useFrame(({ clock }) => {

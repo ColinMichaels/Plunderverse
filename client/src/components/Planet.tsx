@@ -14,27 +14,12 @@ export function Planet({ data, time }: PlanetProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const { setSelectedPlanet, selectedPlanet, setDistanceToTarget } = useSolarSystem();
+  const { setSelectedPlanet, selectedPlanet, setDistanceToTarget } =
+    useSolarSystem();
   const [hovered, setHovered] = useState(false);
 
-  // Planet texture mapping - only for textures that exist
-  const getTextureForPlanet = (planetName: string) => {
-    const textureMap: { [key: string]: string } = {
-      Mercury: "/textures/planets/2k_mercury.jpg",
-      Venus: "/textures/planets/2k_venus_surface.jpg",
-      Earth: "/textures/planets/2k_earth_daymap.jpg",
-      Mars: "/textures/planets/2k_mars.jpg",
-      Jupiter: "/textures/planets/2k_jupiter.jpg",
-      Saturn: "/textures/planets/2k_saturn.jpg",
-      Uranus: "/textures/planets/2k_uranus.jpg",
-      Neptune: "/textures/planets/2k_neptune.jpg",
-      Ceres: "/textures/planets/2k_ceres_fictional.jpg",
-    };
-    return textureMap[planetName] || null;
-  };
-
-  const textureUrl = getTextureForPlanet(data.name);
-  const planetTexture = textureUrl ? useTexture(textureUrl) : null;
+  // Load planet texture from data
+  const planetTexture = data.texture ? useTexture(data.texture) : null;
 
   // Calculate orbital position
   useFrame(() => {
@@ -53,12 +38,12 @@ export function Planet({ data, time }: PlanetProps) {
     // Check distance to camera for auto-selection and update real-time distance
     if (groupRef.current) {
       const distance = camera.position.distanceTo(groupRef.current.position);
-      
+
       // Auto-select nearby planets
       if (distance < data.size * 3 && selectedPlanet !== data.name) {
         setSelectedPlanet(data.name);
       }
-      
+
       // Update real-time distance if this is the selected planet
       if (selectedPlanet === data.name) {
         setDistanceToTarget(distance);
@@ -78,7 +63,7 @@ export function Planet({ data, time }: PlanetProps) {
   return (
     <group ref={groupRef}>
       {/* Orbital path visualization */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
+      <mesh rotation={[-Math.PI / 16, 0, 0]}>
         <ringGeometry args={[data.distance - 0.1, data.distance + 0.1, 64]} />
         <meshBasicMaterial color="#333333" transparent opacity={0.3} />
       </mesh>
@@ -105,7 +90,7 @@ export function Planet({ data, time }: PlanetProps) {
 
       {/* Selection ring - reduced opacity */}
       {isSelected && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
+        <mesh rotation={[-Math.PI / 16, 0, 0]} position={[0, 0.1, 0]}>
           <ringGeometry args={[data.size * 1.2, data.size * 1.4, 32]} />
           <meshBasicMaterial color="#ffffff" transparent opacity={0.25} />
         </mesh>

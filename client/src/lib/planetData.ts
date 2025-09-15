@@ -22,6 +22,7 @@ export interface PlanetData {
   atmosphere: string;
   surfaceTemperature: string;
   gravity: string;
+  texture?: string; // Path to planet texture
   resources: ResourceData[];
 }
 
@@ -44,6 +45,7 @@ export const planets: PlanetData[] = [
     atmosphere: "None (Exosphere)",
     surfaceTemperature: "427°C (Day), -173°C (Night)",
     gravity: "0.38g",
+    texture: "/textures/planets/2k_mercury.jpg",
     resources: [
       { type: "Iron Ore", rarity: "common", value: 15, description: "Abundant metallic ore from exposed core", complexity: 2 },
       { type: "Platinum", rarity: "uncommon", value: 85, description: "Precious metal deposits", complexity: 4 },
@@ -66,6 +68,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Dense CO2 (96%)",
     surfaceTemperature: "462°C",
     gravity: "0.91g",
+    texture: "/textures/planets/2k_venus_surface.jpg",
     resources: [
       { type: "Sulfur Compounds", rarity: "common", value: 25, description: "Volcanic sulfur deposits", complexity: 2 },
       { type: "Carbon Fiber", rarity: "uncommon", value: 75, description: "High-pressure carbon formations", complexity: 4 },
@@ -88,6 +91,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Nitrogen (78%), Oxygen (21%)",
     surfaceTemperature: "15°C Average",
     gravity: "1.0g",
+    texture: "/textures/planets/2k_earth_daymap.jpg",
     resources: [
       { type: "Water", rarity: "common", value: 10, description: "Essential for life support systems", complexity: 1 },
       { type: "Biomass", rarity: "uncommon", value: 45, description: "Organic compounds and materials", complexity: 3 },
@@ -110,6 +114,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Thin CO2 (95%)",
     surfaceTemperature: "-65°C Average",
     gravity: "0.38g",
+    texture: "/textures/planets/2k_mars.jpg",
     resources: [
       { type: "Iron Oxide", rarity: "common", value: 20, description: "The source of Mars' red color", complexity: 2 },
       { type: "Ice Water", rarity: "uncommon", value: 40, description: "Frozen water at polar caps", complexity: 4 },
@@ -132,6 +137,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Hydrogen (89%), Helium (10%)",
     surfaceTemperature: "-110°C",
     gravity: "2.36g",
+    texture: "/textures/planets/2k_jupiter.jpg",
     resources: [
       { type: "Helium-3", rarity: "uncommon", value: 95, description: "Fusion reactor fuel", complexity: 4 },
       { type: "Hydrogen", rarity: "common", value: 30, description: "Abundant atmospheric gas", complexity: 1 },
@@ -154,6 +160,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Hydrogen (96%), Helium (3%)",
     surfaceTemperature: "-140°C",
     gravity: "0.92g",
+    texture: "/textures/planets/2k_saturn.jpg",
     resources: [
       { type: "Ring Particles", rarity: "common", value: 35, description: "Ice and rock fragments from rings", complexity: 2 },
       { type: "Titan Methane", rarity: "rare", value: 160, description: "Liquid hydrocarbon from moon Titan", complexity: 7 },
@@ -176,6 +183,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Hydrogen (83%), Helium (15%)",
     surfaceTemperature: "-195°C",
     gravity: "0.89g",
+    texture: "/textures/planets/2k_uranus.jpg",
     resources: [
       { type: "Methane Ice", rarity: "uncommon", value: 65, description: "Frozen atmospheric methane", complexity: 4 },
       { type: "Ammonia Crystals", rarity: "rare", value: 140, description: "Crystallized ammonia compounds", complexity: 6 },
@@ -198,6 +206,7 @@ export const planets: PlanetData[] = [
     atmosphere: "Hydrogen (80%), Helium (19%)",
     surfaceTemperature: "-200°C",
     gravity: "1.13g",
+    texture: "/textures/planets/2k_neptune.jpg",
     resources: [
       { type: "Storm Energy", rarity: "rare", value: 175, description: "Harness powerful atmospheric storms", complexity: 7 },
       { type: "Tritium", rarity: "uncommon", value: 90, description: "Heavy hydrogen isotope", complexity: 4 },
@@ -220,6 +229,7 @@ export const planets: PlanetData[] = [
     atmosphere: "None (Tenuous water vapor)",
     surfaceTemperature: "-38°C Average",
     gravity: "0.03g",
+    texture: "/textures/planets/2k_ceres_fictional.jpg",
     resources: [
       { type: "Asteroid Ore", rarity: "common", value: 22, description: "Rich metallic asteroid materials", complexity: 2 },
       { type: "Water Ice", rarity: "uncommon", value: 50, description: "Subsurface ice deposits", complexity: 3 },
@@ -244,6 +254,7 @@ export interface MoonData {
   atmosphere: string;
   surfaceTemperature: string;
   gravity: string;
+  texture?: string; // Path to moon texture
   resources: ResourceData[];
 }
 
@@ -262,6 +273,7 @@ export const moonData: MoonData = {
   atmosphere: "None (Exosphere)",
   surfaceTemperature: "127°C (Day), -173°C (Night)",
   gravity: "0.166g",
+  texture: "/textures/planets/2k_moon.jpg",
   resources: [
     { type: "Lunar Rock", rarity: "common", value: 12, description: "Basic lunar regolith and rock samples", complexity: 1 },
     { type: "Helium-3", rarity: "rare", value: 300, description: "Rare isotope deposited by solar wind", complexity: 8 },
