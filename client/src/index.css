@@ -38,34 +38,34 @@ canvas {
     transform: translateX(-50%) !important;
     right: auto !important;
   }
-  
+
   .status-bar {
     @apply flex-wrap gap-1 p-2 text-xs;
     bottom: 80px !important;
   }
-  
+
   .status-item {
     @apply min-w-0 flex-1;
   }
-  
+
   .minimap {
     @apply w-20 h-20;
     bottom: 140px !important;
     left: 8px !important;
     z-index: 50;
   }
-  
+
   .flight-controls {
     @apply text-xs p-2;
   }
-  
+
   /* Mobile navigation buttons */
   .mobile-nav-left {
     left: 4px !important;
     top: 80px !important;
     transform: none !important;
   }
-  
+
   .mobile-nav-right {
     right: 4px !important;
     top: 80px !important;
@@ -79,12 +79,12 @@ canvas {
     max-height: 50vh !important;
     padding: 8px !important;
   }
-  
+
   .status-bar {
     @apply text-xs;
     bottom: 70px !important;
   }
-  
+
   .minimap {
     @apply w-16 h-16;
     bottom: 130px !important;
@@ -104,7 +104,7 @@ canvas {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.85));
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 8px;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(6, 182, 212, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -114,7 +114,7 @@ canvas {
 
 .space-panel:hover {
   border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 30px rgba(6, 182, 212, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -158,7 +158,7 @@ canvas {
   background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 0.9));
   border: 1px solid rgba(6, 182, 212, 0.3);
   color: rgb(6, 182, 212);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
@@ -167,21 +167,21 @@ canvas {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.1));
   border-color: rgba(6, 182, 212, 0.5);
   transform: translateY(-1px);
-  box-shadow: 
+  box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
 .space-button:active {
   transform: translateY(0);
-  box-shadow: 
+  box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Status indicators */
 .space-status-bar {
-  @apply grid gap-2 p-2 rounded;
+  @apply grid gap-2 p-2 rounded text-white;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6));
   border: 1px solid rgba(75, 85, 99, 0.3);
 }
@@ -223,10 +223,10 @@ canvas {
 }
 
 .sidebar-panel-button {
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.95) 0%, 
-    rgba(51, 65, 85, 0.95) 50%, 
-    rgba(30, 41, 59, 0.95) 100%);
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.95) 0%,
+      rgba(51, 65, 85, 0.95) 50%,
+      rgba(30, 41, 59, 0.95) 100%);
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 6px;
   backdrop-filter: blur(10px);
@@ -243,14 +243,14 @@ canvas {
 }
 
 .sidebar-panel-button:hover {
-  background: linear-gradient(135deg, 
-    rgba(51, 65, 85, 0.95) 0%, 
-    rgba(71, 85, 105, 0.95) 50%, 
-    rgba(51, 65, 85, 0.95) 100%);
+  background: linear-gradient(135deg,
+      rgba(51, 65, 85, 0.95) 0%,
+      rgba(71, 85, 105, 0.95) 50%,
+      rgba(51, 65, 85, 0.95) 100%);
   border-color: rgba(6, 182, 212, 0.6);
   color: rgb(6, 182, 212);
   transform: scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(0, 0, 0, 0.4),
     0 0 10px rgba(6, 182, 212, 0.2);
 }
@@ -280,14 +280,14 @@ canvas {
 }
 
 .expanded-panel {
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.98) 0%, 
-    rgba(51, 65, 85, 0.98) 50%, 
-    rgba(30, 41, 59, 0.98) 100%);
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.98) 0%,
+      rgba(51, 65, 85, 0.98) 50%,
+      rgba(30, 41, 59, 0.98) 100%);
   border: 1px solid rgba(6, 182, 212, 0.4);
   border-radius: 12px;
   backdrop-filter: blur(15px);
-  box-shadow: 
+  box-shadow:
     0 8px 30px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(6, 182, 212, 0.2),
     0 0 20px rgba(6, 182, 212, 0.1);
@@ -311,6 +311,7 @@ canvas {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -323,7 +324,7 @@ canvas {
     bottom: 100px !important;
     right: 8px !important;
   }
-  
+
   .ui-sidebar-left {
     left: 4px;
   }
@@ -331,12 +332,12 @@ canvas {
   .ui-sidebar-right {
     right: 4px;
   }
-  
+
   .sidebar-panel-button {
     min-width: 48px;
     padding: 6px;
   }
-  
+
   .sidebar-panel-label {
     font-size: 9px;
   }
@@ -348,16 +349,16 @@ canvas {
     right: 4px !important;
     transform: scale(0.9);
   }
-  
+
   .sidebar-panel-button {
     min-width: 44px;
     padding: 4px;
   }
-  
+
   .sidebar-panel-label {
     font-size: 8px;
   }
-  
+
   .expanded-panel {
     max-width: calc(100vw - 100px);
     margin: 10px;

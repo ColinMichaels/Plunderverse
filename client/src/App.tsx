@@ -13,17 +13,17 @@ import "@fontsource/inter";
 
 // Define control keys for space flight
 enum Controls {
-  forward = 'forward',
-  backward = 'backward',
-  left = 'left',
-  right = 'right',
-  up = 'up',
-  down = 'down',
-  shoot = 'shoot',
-  land = 'land',
-  info = 'info',
-  menu = 'menu',
-  center = 'center'
+  forward = "forward",
+  backward = "backward",
+  left = "left",
+  right = "right",
+  up = "up",
+  down = "down",
+  shoot = "shoot",
+  land = "land",
+  info = "info",
+  menu = "menu",
+  center = "center",
 }
 
 const controls = [
@@ -53,21 +53,28 @@ function App() {
     music.loop = true;
     music.volume = 0.3;
     setBackgroundMusic(music);
-    
+
     // Load laser sound (using hit.mp3)
-    const laser = new Audio("/sounds/hit.mp3");
+    const laser = new Audio("/sounds/space-lazer.mp3");
     laser.volume = 0.4;
     useAudio.getState().setLaserSound(laser);
-    
+
     setShowCanvas(true);
   }, [setBackgroundMusic]);
 
   return (
     <UILayoutProvider>
-      <div style={{ width: '100vw', height: '100vh', position: 'relative', overflow: 'hidden' }}>
+      <div
+        style={{
+          width: "100vw",
+          height: "100vh",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
         {/* Show splash screen */}
         {phase === "splash" && <SplashScreen />}
-        
+
         {/* Show game when playing */}
         {phase === "playing" && showCanvas && (
           <KeyboardControls map={controls}>
@@ -75,22 +82,22 @@ function App() {
               shadows
               camera={{
                 position: [0, 10, 50],
-                fov: 75,
+                fov: 120,
                 near: 0.1,
-                far: 10000
+                far: 10000,
               }}
               gl={{
                 antialias: true,
-                powerPreference: "high-performance"
+                powerPreference: "high-performance",
               }}
             >
               <color attach="background" args={["#000000"]} />
-              
+
               <Suspense fallback={null}>
                 <SolarSystem />
               </Suspense>
             </Canvas>
-            
+
             <GameUI />
             <PlanetSurfaceScene />
             <TakeoffControls />

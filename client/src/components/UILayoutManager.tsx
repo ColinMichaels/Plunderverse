@@ -1,7 +1,13 @@
-import React, { useState, createContext, useContext, ReactNode, useCallback } from 'react';
+import React, {
+  useState,
+  createContext,
+  useContext,
+  ReactNode,
+  useCallback,
+} from "react";
 
 // Define UI zones for sidebar layout
-export type UIZone = 'left-sidebar' | 'right-sidebar';
+export type UIZone = "left-sidebar" | "right-sidebar";
 
 export type UIPanel = {
   id: string;
@@ -27,17 +33,17 @@ const UILayoutContext = createContext<UILayoutContextType | null>(null);
 export function useUILayout() {
   const context = useContext(UILayoutContext);
   if (!context) {
-    throw new Error('useUILayout must be used within a UILayoutProvider');
+    throw new Error("useUILayout must be used within a UILayoutProvider");
   }
   return context;
 }
 
 // Sidebar button component for collapsed panels
-function SidebarButton({ 
-  panel, 
-  onToggle 
-}: { 
-  panel: UIPanel; 
+function SidebarButton({
+  panel,
+  onToggle,
+}: {
+  panel: UIPanel;
   onToggle: () => void;
 }) {
   return (
@@ -47,23 +53,28 @@ function SidebarButton({
       title={panel.title}
       aria-label={`Toggle ${panel.title} panel`}
     >
-      {panel.icon && <span className="text-lg">{panel.icon}</span>}
-      <span className="sidebar-panel-label">{panel.title}</span>
+      {panel.icon && (
+        <span className="text-lg" title={panel.title}>
+          {panel.icon}
+        </span>
+      )}
     </button>
   );
 }
 
 // Expanded panel overlay component
-function ExpandedPanel({ 
-  panel, 
-  onToggle 
-}: { 
-  panel: UIPanel; 
+function ExpandedPanel({
+  panel,
+  onToggle,
+}: {
+  panel: UIPanel;
   onToggle: () => void;
 }) {
   return (
     <div className="expanded-panel-overlay">
-      <div className={`expanded-panel ${panel.zone === 'left-sidebar' ? 'expanded-panel-left' : 'expanded-panel-right'}`}>
+      <div
+        className={`expanded-panel ${panel.zone === "left-sidebar" ? "expanded-panel-left" : "expanded-panel-right"}`}
+      >
         {/* Panel header */}
         <div className="space-panel-header">
           <div className="flex items-center space-x-2">
@@ -72,21 +83,21 @@ function ExpandedPanel({
               {panel.title}
             </span>
           </div>
-          
+
           {panel.canCollapse !== false && (
             <button
               onClick={onToggle}
               className="space-panel-toggle"
               aria-label="Collapse panel"
             >
-              <svg 
-                width="12" 
-                height="12" 
-                viewBox="0 0 24 24" 
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
                 fill="currentColor"
                 className="transition-transform duration-200"
               >
-                <path d="M19 13H5v-2h14v2z"/>
+                <path d="M19 13H5v-2h14v2z" />
               </svg>
             </button>
           )}
@@ -105,46 +116,50 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
   const [panels, setPanels] = useState<UIPanel[]>([]);
 
   const registerPanel = useCallback((panel: UIPanel) => {
-    setPanels(prev => {
-      const existing = prev.find(p => p.id === panel.id);
+    setPanels((prev) => {
+      const existing = prev.find((p) => p.id === panel.id);
       if (existing) {
-        return prev.map(p => p.id === panel.id ? { ...p, ...panel, isExpanded: p.isExpanded } : p);
+        return prev.map((p) =>
+          p.id === panel.id ? { ...p, ...panel, isExpanded: p.isExpanded } : p,
+        );
       }
       return [...prev, panel].sort((a, b) => a.priority - b.priority);
     });
   }, []);
 
   const unregisterPanel = useCallback((id: string) => {
-    setPanels(prev => prev.filter(p => p.id !== id));
+    setPanels((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
   const updatePanel = useCallback((id: string, updates: Partial<UIPanel>) => {
-    setPanels(prev => prev.map(p => 
-      p.id === id ? { ...p, ...updates } : p
-    ));
+    setPanels((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, ...updates } : p)),
+    );
   }, []);
 
   const togglePanel = useCallback((id: string) => {
-    setPanels(prev => prev.map(p => 
-      p.id === id ? { ...p, isExpanded: !p.isExpanded } : p
-    ));
+    setPanels((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, isExpanded: !p.isExpanded } : p)),
+    );
   }, []);
 
   // Group panels by sidebar
-  const leftSidebarPanels = panels.filter(p => p.zone === 'left-sidebar');
-  const rightSidebarPanels = panels.filter(p => p.zone === 'right-sidebar');
-  const expandedPanel = panels.find(p => p.isExpanded);
+  const leftSidebarPanels = panels.filter((p) => p.zone === "left-sidebar");
+  const rightSidebarPanels = panels.filter((p) => p.zone === "right-sidebar");
+  const expandedPanel = panels.find((p) => p.isExpanded);
 
   return (
-    <UILayoutContext.Provider value={{
-      panels,
-      registerPanel,
-      unregisterPanel,
-      togglePanel,
-      updatePanel
-    }}>
+    <UILayoutContext.Provider
+      value={{
+        panels,
+        registerPanel,
+        unregisterPanel,
+        togglePanel,
+        updatePanel,
+      }}
+    >
       {children}
-      
+
       {/* Left Sidebar */}
       <div className="ui-sidebar ui-sidebar-left">
         {leftSidebarPanels.map((panel) => (

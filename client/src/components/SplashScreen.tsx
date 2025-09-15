@@ -322,7 +322,7 @@ export function SplashScreen() {
 
         {/* Version/Credits */}
         <p className="text-slate-500 text-sm">
-          Built with React Three Fiber • Press any key for controls
+          Version 1.0.0 - Built with React, Three.js, and Tailwind CSS by{" "}
         </p>
       </div>
 

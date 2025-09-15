@@ -203,7 +203,7 @@ export function CockpitHUD() {
       </div>
 
       {/* Left Navigation Panel */}
-      <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-auto mobile-nav-left">
+      <div className="absolute left-6 top-64 transform -translate-y-1/2 pointer-events-auto mobile-nav-left">
         <button
           onClick={() => setActivePanel(activePanel === "nav" ? "none" : "nav")}
           className={`mb-2 w-12 h-12 rounded-xl border transition-all ${
