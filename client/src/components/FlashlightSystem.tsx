@@ -13,14 +13,18 @@ export function FlashlightSystem() {
     if (!spotLightRef.current || !isOn) return;
 
     // Position the flashlight slightly in front of the camera
-    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
-    const flashlightPosition = camera.position.clone().add(forward.multiplyScalar(0.3));
-    
+    const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(
+      camera.quaternion,
+    );
+    const flashlightPosition = camera.position
+      .clone()
+      .add(forward.multiplyScalar(0.3));
+
     // Position the light slightly below camera center to simulate chest/helmet mounting
     flashlightPosition.y -= 0.2;
-    
+
     spotLightRef.current.position.copy(flashlightPosition);
-    
+
     // Point the flashlight in the same direction as the camera
     const target = camera.position.clone().add(forward.multiplyScalar(10));
     spotLightRef.current.target.position.copy(target);
@@ -29,7 +33,7 @@ export function FlashlightSystem() {
     // Adjust intensity based on battery level
     const batteryStatus = getBatteryStatus();
     let intensity = 1.5; // Base intensity for full battery
-    
+
     switch (batteryStatus) {
       case "critical":
         intensity = 0.3; // Very dim when battery is critical
@@ -67,10 +71,10 @@ export function FlashlightSystem() {
         ref={spotLightRef}
         color="#ffffff"
         intensity={1.5}
-        distance={25} // Effective range of the flashlight
+        distance={50} // Effective range of the flashlight
         angle={Math.PI / 6} // 30-degree cone (typical flashlight beam)
         penumbra={0.3} // Soft edge falloff
-        decay={2} // Realistic light falloff
+        decay={4} // Realistic light falloff
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}
@@ -78,9 +82,9 @@ export function FlashlightSystem() {
         shadow-camera-far={25}
         shadow-bias={-0.0001}
       />
-      
+
       {/* Helper to show the target (invisible in production) */}
-      <object3D 
+      <object3D
         ref={(ref) => {
           if (ref && spotLightRef.current) {
             spotLightRef.current.target = ref;

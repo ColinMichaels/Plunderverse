@@ -453,19 +453,73 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 }
 
 function SurfaceLighting() {
-  //get the planet color to use for the lighting
   const { landedPlanet } = useLandedState();
-  const planet = planets.find((p) => p.name === landedPlanet);
+  const { time } = useSolarSystem();
+  
+  const planet = useMemo(() => {
+    return planets.find((p) => p.name === landedPlanet);
+  }, [landedPlanet]);
+  
   const surfaceColor = planet?.color || "#8C7853";
+
+  // Calculate sun position based on orbital mechanics (same as SurfaceSky component)
+  const sunPosition = useMemo(() => {
+    if (!planet) return new THREE.Vector3(50, 100, 50);
+    
+    const calculateOrbitPosition = (distance: number, speed: number, time: number) => {
+      const angle = speed * time;
+      return new THREE.Vector3(
+        Math.cos(angle) * distance,
+        0,
+        Math.sin(angle) * distance,
+      );
+    };
+
+    const calculatePlanetPosition = (planet: any, time: number) => {
+      return calculateOrbitPosition(planet.distance, planet.orbitalSpeed, time);
+    };
+
+    const currentPlanetPosition = calculatePlanetPosition(planet, time);
+    
+    // Sun is at origin (0,0,0), so sun direction from planet is the negative of planet position
+    const sunDirection = currentPlanetPosition.clone().negate().normalize();
+    
+    // Position the directional light at distance from the surface, in direction of sun
+    const sunLightPosition = sunDirection.clone().multiplyScalar(200);
+    sunLightPosition.y = Math.max(sunLightPosition.y, 20); // Keep sun above horizon for lighting
+    
+    return sunLightPosition;
+  }, [planet, time]);
+
+  // Calculate sun intensity based on angle (day/night cycle)
+  const sunIntensity = useMemo(() => {
+    if (!planet) return 0.9;
+    
+    // Calculate sun elevation angle
+    const sunElevation = Math.asin(sunPosition.y / sunPosition.length());
+    
+    // Full intensity when sun is directly overhead, very dim when below horizon
+    if (sunElevation < -0.2) {
+      // Night time - sun is significantly below horizon
+      return 0.0;
+    } else if (sunElevation < 0) {
+      // Dawn/dusk - sun is just below horizon
+      return Math.max(0, (sunElevation + 0.2) / 0.2) * 0.1;
+    } else {
+      // Day time - sun is above horizon
+      return Math.min(1.2, 0.2 + Math.sin(sunElevation) * 1.0);
+    }
+  }, [sunPosition, planet]);
+
   return (
     <>
-      {/* Ambient light for general illumination */}
-      <ambientLight intensity={0.1} color={surfaceColor} />
+      {/* Minimal ambient light - only enough to prevent complete pitch black for distant shadows */}
+      <ambientLight intensity={0.01} color={surfaceColor} />
 
-      {/* Directional light as main sun */}
+      {/* Dynamic sun based on orbital mechanics */}
       <directionalLight
-        position={[50, 100, 50]}
-        intensity={0.9}
+        position={[sunPosition.x, sunPosition.y, sunPosition.z]}
+        intensity={sunIntensity}
         color="#FDB813"
         castShadow
         shadow-mapSize-width={2048}
@@ -474,11 +528,11 @@ function SurfaceLighting() {
         shadow-camera-right={100}
         shadow-camera-top={100}
         shadow-camera-bottom={-100}
+        shadow-camera-near={0.1}
+        shadow-camera-far={400}
       />
 
-      {/* Point lights for resource highlighting */}
-      <pointLight position={[10, 10, 10]} intensity={0.1} color="#ffffff" />
-      <pointLight position={[-10, 10, -10]} intensity={0.1} color="#ffffff" />
+      {/* Removed point lights to enable proper darkness - flashlight is now essential! */}
     </>
   );
 }
