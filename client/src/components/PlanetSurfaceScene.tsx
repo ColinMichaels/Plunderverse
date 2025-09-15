@@ -7,6 +7,7 @@ import { useAudio } from "../lib/stores/useAudio";
 import { useInventory } from "../lib/stores/useInventory";
 import { useCredits } from "../lib/stores/useCredits";
 import { useEquipment } from "../lib/stores/useEquipment";
+import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import * as THREE from "three";
@@ -121,30 +122,284 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
 }
 
 function SurfaceSky({ planetName }: { planetName: string }) {
-  // Different sky colors based on planet
-  const getSkyColor = (name: string) => {
-    switch (name) {
-      case "Mars":
-        return "#CD5C5C";
-      case "Venus":
-        return "#FFA500";
+  const { time } = useSolarSystem();
+  const meshRef = useRef<THREE.Mesh>(null);
+  const starfieldRef = useRef<THREE.Points>(null);
+  const planetsRef = useRef<THREE.Group>(null);
+
+  // Orbital calculation utilities
+  const calculateOrbitPosition = (distance: number, speed: number, time: number) => {
+    const angle = speed * time;
+    return new THREE.Vector3(
+      Math.cos(angle) * distance,
+      0,
+      Math.sin(angle) * distance
+    );
+  };
+
+  const calculatePlanetPosition = (planet: any, time: number) => {
+    return calculateOrbitPosition(planet.distance, planet.orbitalSpeed, time);
+  };
+
+  // Calculate visible planets for current time
+  const visiblePlanets = useMemo(() => {
+    const currentPlanet = planets.find(p => p.name === planetName);
+    if (!currentPlanet) return [];
+
+    const currentPosition = calculatePlanetPosition(currentPlanet, time);
+    const visibleObjects: Array<{
+      planet: any;
+      skyPosition: THREE.Vector3;
+      apparentSize: number;
+      distance: number;
+    }> = [];
+
+    // Add the Sun as a visible object
+    const sunDistance = currentPosition.length();
+    const sunDirection = currentPosition.clone().negate().normalize();
+    const sunSkyPosition = sunDirection.clone().multiplyScalar(400);
+    const sunApparentSize = Math.min(40, Math.max(8, 15 * (30 / sunDistance)));
+    
+    visibleObjects.push({
+      planet: { name: "Sun", size: 15, color: "#FDB813" },
+      skyPosition: sunSkyPosition,
+      apparentSize: sunApparentSize,
+      distance: sunDistance
+    });
+
+    // Add other planets
+    planets.forEach(planet => {
+      if (planet.name === planetName) return;
+
+      const planetPosition = calculatePlanetPosition(planet, time);
+      const relativePosition = planetPosition.clone().sub(currentPosition);
+      const distance = relativePosition.length();
+      
+      if (distance > 5) {
+        const direction = relativePosition.normalize();
+        const skyPosition = direction.clone().multiplyScalar(400);
+        const apparentSize = Math.max(0.8, Math.log(planet.size + 1) * (50 / Math.sqrt(distance)));
+        
+        visibleObjects.push({
+          planet,
+          skyPosition,
+          apparentSize,
+          distance
+        });
+      }
+    });
+
+    return visibleObjects;
+  }, [planetName, time]);
+
+  // Get atmospheric gradient colors
+  const getAtmosphericGradient = (planetName: string) => {
+    switch (planetName) {
       case "Earth":
-        return "#87CEEB";
+        return { horizonColor: "#87CEEB", zenithColor: "#191970", atmosphereIntensity: 0.8 };
+      case "Mars":
+        return { horizonColor: "#CD5C5C", zenithColor: "#2F1B14", atmosphereIntensity: 0.6 };
+      case "Venus":
+        return { horizonColor: "#FFA500", zenithColor: "#8B4513", atmosphereIntensity: 0.9 };
       case "Mercury":
-        return "#2F2F2F";
+        return { horizonColor: "#2F2F2F", zenithColor: "#000000", atmosphereIntensity: 0.1 };
+      case "Jupiter":
+        return { horizonColor: "#D8CA9D", zenithColor: "#8B7355", atmosphereIntensity: 0.7 };
+      case "Saturn":
+        return { horizonColor: "#FAD5A5", zenithColor: "#CD853F", atmosphereIntensity: 0.7 };
+      case "Uranus":
+        return { horizonColor: "#4FD0E7", zenithColor: "#2F4F4F", atmosphereIntensity: 0.5 };
+      case "Neptune":
+        return { horizonColor: "#4B70DD", zenithColor: "#191970", atmosphereIntensity: 0.6 };
       default:
-        return "#1a1a2e";
+        return { horizonColor: "#1a1a2e", zenithColor: "#000000", atmosphereIntensity: 0.3 };
     }
   };
 
+  const atmosphericData = useMemo(() => getAtmosphericGradient(planetName), [planetName]);
+
+  // Generate starfield data
+  const starData = useMemo(() => {
+    const starCount = 3000;
+    const positions = new Float32Array(starCount * 3);
+    const colors = new Float32Array(starCount * 3);
+    
+    for (let i = 0; i < starCount; i++) {
+      const radius = 450 + Math.random() * 100;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i * 3 + 2] = radius * Math.cos(phi);
+      
+      // Star color variations - different stellar types
+      const starType = Math.random();
+      if (starType < 0.4) {
+        // Orange/red stars (most common)
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.7 + Math.random() * 0.2;
+        colors[i * 3 + 2] = 0.5 + Math.random() * 0.2;
+      } else if (starType < 0.7) {
+        // White stars
+        colors[i * 3] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 2] = 0.9 + Math.random() * 0.1;
+      } else if (starType < 0.9) {
+        // Blue-white stars
+        colors[i * 3] = 0.8 + Math.random() * 0.2;
+        colors[i * 3 + 1] = 0.85 + Math.random() * 0.15;
+        colors[i * 3 + 2] = 1.0;
+      } else {
+        // Yellow stars (like our sun)
+        colors[i * 3] = 1.0;
+        colors[i * 3 + 1] = 0.9 + Math.random() * 0.1;
+        colors[i * 3 + 2] = 0.6 + Math.random() * 0.2;
+      }
+    }
+    
+    return { positions, colors };
+  }, []);
+
+  // Create atmospheric gradient texture
+  const gradientTexture = useMemo(() => {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const context = canvas.getContext('2d');
+    
+    if (context) {
+      const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+      gradient.addColorStop(0, atmosphericData.zenithColor);
+      gradient.addColorStop(0.7, atmosphericData.horizonColor);
+      gradient.addColorStop(1, '#000000');
+      
+      context.fillStyle = gradient;
+      context.fillRect(0, 0, 256, 256);
+    }
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    return texture;
+  }, [atmosphericData]);
+
+  // Subtle animation for stars
+  useFrame((state) => {
+    if (starfieldRef.current) {
+      starfieldRef.current.rotation.y += 0.00005;
+      
+      const material = starfieldRef.current.material as THREE.PointsMaterial;
+      material.opacity = 0.6 + Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+    }
+  });
+
   return (
-    <mesh>
-      <sphereGeometry args={[500, 32, 32]} />
-      <meshBasicMaterial
-        color={getSkyColor(planetName)}
-        side={THREE.BackSide}
-      />
-    </mesh>
+    <group>
+      {/* Deep space background */}
+      <mesh>
+        <sphereGeometry args={[490, 32, 32]} />
+        <meshBasicMaterial
+          color="#000011"
+          side={THREE.BackSide}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Atmospheric sky dome with gradient */}
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[480, 32, 32]} />
+        <meshBasicMaterial
+          map={gradientTexture}
+          side={THREE.BackSide}
+          transparent
+          opacity={atmosphericData.atmosphereIntensity}
+          depthWrite={false}
+        />
+      </mesh>
+
+      {/* Starfield */}
+      <points ref={starfieldRef}>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={starData.positions.length / 3}
+            array={starData.positions}
+            itemSize={3}
+          />
+          <bufferAttribute
+            attach="attributes-color"
+            count={starData.colors.length / 3}
+            array={starData.colors}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={1.2}
+          transparent
+          opacity={0.7}
+          sizeAttenuation={false}
+          vertexColors
+        />
+      </points>
+
+      {/* Distant planets and celestial objects */}
+      <group ref={planetsRef}>
+        {visiblePlanets.map((celestialObject, index) => (
+          <mesh
+            key={`${celestialObject.planet.name}-${index}`}
+            position={[
+              celestialObject.skyPosition.x,
+              celestialObject.skyPosition.y,
+              celestialObject.skyPosition.z
+            ]}
+          >
+            <sphereGeometry args={[celestialObject.apparentSize, 8, 8]} />
+            {celestialObject.planet.name === "Sun" ? (
+              <meshStandardMaterial
+                color={celestialObject.planet.color}
+                emissive={celestialObject.planet.color}
+                emissiveIntensity={0.8}
+              />
+            ) : (
+              <meshBasicMaterial
+                color={celestialObject.planet.color}
+              />
+            )}
+          </mesh>
+        ))}
+      </group>
+
+      {/* Additional dim background stars for depth */}
+      <points>
+        <bufferGeometry>
+          <bufferAttribute
+            attach="attributes-position"
+            count={1500}
+            array={useMemo(() => {
+              const positions = new Float32Array(1500 * 3);
+              for (let i = 0; i < 1500; i++) {
+                const radius = 520 + Math.random() * 80;
+                const theta = Math.random() * Math.PI * 2;
+                const phi = Math.random() * Math.PI;
+                
+                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                positions[i * 3 + 2] = radius * Math.cos(phi);
+              }
+              return positions;
+            }, [])}
+            itemSize={3}
+          />
+        </bufferGeometry>
+        <pointsMaterial
+          size={0.6}
+          color="#ffffff"
+          transparent
+          opacity={0.3}
+          sizeAttenuation={false}
+        />
+      </points>
+    </group>
   );
 }
 
