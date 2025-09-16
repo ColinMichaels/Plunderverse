@@ -37,13 +37,55 @@ export function Planet({ data, time }: PlanetProps) {
   const textureUrl = getTextureForPlanet(data.name);
   const planetTexture = textureUrl ? useTexture(textureUrl) : null;
 
-  // Calculate orbital position
+  // Enhanced material properties based on planet type
+  const getPlanetMaterialProperties = (planetName: string) => {
+    const materialMap: { [key: string]: { roughness: number; metalness: number; emissiveIntensity: number; atmosphericGlow: boolean } } = {
+      Mercury: { roughness: 0.95, metalness: 0.05, emissiveIntensity: 0.02, atmosphericGlow: false }, // Very rough, rocky
+      Venus: { roughness: 0.3, metalness: 0.1, emissiveIntensity: 0.15, atmosphericGlow: true }, // Smooth due to thick atmosphere
+      Earth: { roughness: 0.7, metalness: 0.1, emissiveIntensity: 0.05, atmosphericGlow: true }, // Moderate roughness
+      Mars: { roughness: 0.9, metalness: 0.05, emissiveIntensity: 0.03, atmosphericGlow: false }, // Very rough, dusty
+      Jupiter: { roughness: 0.2, metalness: 0.0, emissiveIntensity: 0.08, atmosphericGlow: true }, // Smooth gas giant
+      Saturn: { roughness: 0.25, metalness: 0.0, emissiveIntensity: 0.06, atmosphericGlow: true }, // Smooth gas giant
+      Uranus: { roughness: 0.3, metalness: 0.0, emissiveIntensity: 0.04, atmosphericGlow: true }, // Ice giant
+      Neptune: { roughness: 0.3, metalness: 0.0, emissiveIntensity: 0.06, atmosphericGlow: true }, // Ice giant
+      Ceres: { roughness: 0.95, metalness: 0.02, emissiveIntensity: 0.01, atmosphericGlow: false }, // Very rough asteroid
+    };
+    return materialMap[planetName] || { roughness: 0.8, metalness: 0.1, emissiveIntensity: 0.05, atmosphericGlow: false };
+  };
+
+  const materialProps = getPlanetMaterialProperties(data.name);
+
+  // Material refs for direct property updates and distance-based atmospheric effects
+  const lightIntensity = useRef(1.0);
+  const atmosphereRef = useRef<THREE.MeshBasicMaterial>(null);
+  const atmosphereOuterRef = useRef<THREE.MeshBasicMaterial>(null);
+
+  // Calculate orbital position and sun-based lighting
   useFrame(() => {
     if (groupRef.current) {
       const angle = time * data.orbitalSpeed;
       const x = Math.cos(angle) * data.distance;
       const z = Math.sin(angle) * data.distance;
       groupRef.current.position.set(x, 0, z);
+
+      // Calculate distance-based atmospheric intensity for enhanced realism
+      const planetPosition = new THREE.Vector3(x, 0, z);
+      const distanceFromSun = planetPosition.length();
+      const earthDistance = 75; // Reference distance (Earth's distance)
+      const baseIntensity = Math.pow(earthDistance / distanceFromSun, 2);
+      
+      // Clamp intensity to reasonable values for atmospheric effects
+      const clampedIntensity = Math.max(0.1, Math.min(4.0, baseIntensity));
+      lightIntensity.current = clampedIntensity;
+
+      // Update atmospheric material properties directly for performance
+      if (atmosphereRef.current) {
+        const baseOpacity = data.name === "Venus" ? 0.15 : data.name === "Earth" ? 0.08 : 0.06;
+        atmosphereRef.current.opacity = baseOpacity * Math.sqrt(clampedIntensity);
+      }
+      if (atmosphereOuterRef.current) {
+        atmosphereOuterRef.current.opacity = 0.03 * Math.sqrt(clampedIntensity);
+      }
     }
 
     // Rotate the planet
@@ -97,10 +139,10 @@ export function Planet({ data, time }: PlanetProps) {
         <meshStandardMaterial
           color={planetTexture ? "#ffffff" : data.color}
           map={planetTexture}
-          roughness={0.8}
-          metalness={0.1}
+          roughness={materialProps.roughness}
+          metalness={materialProps.metalness}
           emissive={isSelected || hovered ? data.color : "#000000"}
-          emissiveIntensity={isSelected ? 0.08 : hovered ? 0.03 : 0}
+          emissiveIntensity={isSelected ? 0.12 : hovered ? 0.06 : 0}
         />
       </Sphere>
 
@@ -112,32 +154,62 @@ export function Planet({ data, time }: PlanetProps) {
         </mesh>
       )}
 
-      {/* Planet atmosphere glow for gas giants - reduced opacity */}
-      {(data.name === "Jupiter" ||
-        data.name === "Saturn" ||
-        data.name === "Uranus" ||
-        data.name === "Neptune") && (
-        <Sphere args={[data.size * 1.1, 32, 32]}>
-          <meshBasicMaterial
-            color={data.color}
-            transparent
-            opacity={0.04}
-            side={THREE.BackSide}
-          />
-        </Sphere>
+      {/* Enhanced atmospheric glow for planets with atmospheres */}
+      {materialProps.atmosphericGlow && (
+        <>
+          {/* Primary atmospheric layer */}
+          <Sphere args={[data.size * 1.08, 32, 32]}>
+            <meshBasicMaterial
+              color={data.color}
+              transparent
+              opacity={data.name === "Venus" ? 0.15 : data.name === "Earth" ? 0.08 : 0.06}
+              ref={atmosphereRef}
+              side={THREE.BackSide}
+            />
+          </Sphere>
+          {/* Outer atmospheric layer for gas giants */}
+          {(data.name === "Jupiter" || data.name === "Saturn" || data.name === "Uranus" || data.name === "Neptune") && (
+            <Sphere args={[data.size * 1.15, 32, 32]}>
+              <meshBasicMaterial
+                color={data.color}
+                transparent
+                opacity={0.03}
+                ref={atmosphereOuterRef}
+                side={THREE.BackSide}
+              />
+            </Sphere>
+          )}
+        </>
       )}
 
-      {/* Saturn's rings */}
+      {/* Enhanced Saturn's rings with realistic lighting */}
       {data.name === "Saturn" && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]}>
-          <ringGeometry args={[data.size * 1.2, data.size * 2, 64]} />
-          <meshStandardMaterial
-            color="#D4AF37"
-            transparent
-            opacity={0.7}
-            side={THREE.DoubleSide}
-          />
-        </mesh>
+        <>
+          {/* Main ring structure */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[data.size * 1.15, data.size * 1.8, 64]} />
+            <meshStandardMaterial
+              color="#D4AF37"
+              transparent
+              opacity={0.8}
+              side={THREE.DoubleSide}
+              roughness={0.6}
+              metalness={0.1}
+            />
+          </mesh>
+          {/* Outer ring layer */}
+          <mesh rotation={[-Math.PI / 2, 0, 0]}>
+            <ringGeometry args={[data.size * 1.9, data.size * 2.2, 64]} />
+            <meshStandardMaterial
+              color="#C4A037"
+              transparent
+              opacity={0.4}
+              side={THREE.DoubleSide}
+              roughness={0.7}
+              metalness={0.05}
+            />
+          </mesh>
+        </>
       )}
     </group>
   );
