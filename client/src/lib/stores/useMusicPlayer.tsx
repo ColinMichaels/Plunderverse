@@ -20,6 +20,7 @@ interface MusicPlayerState {
   crossfadeTimeout: NodeJS.Timeout | null;
   playbackMode: "random" | "sequential";
   lastPlayedTracks: number[];
+  hasPlayedInitialTrack: boolean;
 
   // Actions
   loadTracks: () => Promise<void>;
@@ -69,14 +70,17 @@ const MUSIC_FILES = [
   },
 ];
 
+// first load play random track from the array after 30 seconds of inactivity at low volume
 // Random delay between tracks (2-10 minutes in milliseconds)
-const getRandomDelay = () => Math.random() * (300000 - 600000) + 120000;
+
+
+const getRandomDelay = () => Math.random() * (600000 - 120000) + 120000;
 
 export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   tracks: [],
   currentTrackIndex: 0,
   isPlaying: false,
-  volume: 0.15, // Low background volume like Minecraft
+  volume: 0.1, // Lower volume for first auto-play
   isLoaded: false,
   isLoading: false,
   nextPlayTime: null,
@@ -84,6 +88,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   crossfadeTimeout: null,
   playbackMode: "random",
   lastPlayedTracks: [],
+  hasPlayedInitialTrack: false,
 
   loadTracks: async () => {
     if (get().isLoaded || get().isLoading) return;
@@ -250,15 +255,15 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   },
 
   scheduleNextTrack: () => {
-    const { crossfadeTimeout } = get();
+    const { crossfadeTimeout, hasPlayedInitialTrack } = get();
 
     // Clear existing timeout
     if (crossfadeTimeout) {
       clearTimeout(crossfadeTimeout);
     }
 
-    // Schedule next track with random delay (Minecraft-style)
-    const delay = getRandomDelay();
+    // For first track: 30 seconds of inactivity, then longer delays
+    const delay = hasPlayedInitialTrack ? getRandomDelay() : 30000; // 30 seconds for first track
     const nextPlayTime = Date.now() + delay;
 
     const timeout = setTimeout(() => {
@@ -271,11 +276,14 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       nextPlayTime,
     });
 
-    console.log(`Next track scheduled in ${Math.round(delay / 1000)} seconds`);
+    const timeDesc = hasPlayedInitialTrack 
+      ? `${Math.round(delay / 1000)} seconds (random)` 
+      : "30 seconds (initial auto-play)";
+    console.log(`Next track scheduled in ${timeDesc}`);
   },
 
   crossfadeToTrack: (trackIndex: number) => {
-    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks } =
+    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks, hasPlayedInitialTrack } =
       get();
     const { isMuted } = useAudio.getState();
 
@@ -288,7 +296,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     // Update last played tracks history
     const updatedHistory = [...lastPlayedTracks, currentTrackIndex].slice(-5); // Keep last 5 tracks
 
-    // Fade out current track
+    // Fade out current track completely before starting next (prevents overlap)
     if (currentTrack?.audio && isPlaying) {
       const fadeOutInterval = setInterval(() => {
         if (currentTrack.audio!.volume > 0.01) {
@@ -300,49 +308,62 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
           currentTrack.audio!.pause();
           currentTrack.audio!.currentTime = 0;
           clearInterval(fadeOutInterval);
+          
+          // Add a gap before starting next track (500ms silence)
+          setTimeout(() => {
+            startNextTrack();
+          }, 500);
         }
       }, 50);
     } else if (currentTrack?.audio) {
       currentTrack.audio.pause();
       currentTrack.audio.currentTime = 0;
+      // Start next track immediately if no current track is playing
+      startNextTrack();
+    } else {
+      // No current track, start next immediately
+      startNextTrack();
     }
 
-    // Switch to next track
-    set({
-      currentTrackIndex: trackIndex,
-      lastPlayedTracks: updatedHistory,
-    });
+    function startNextTrack() {
+      // Switch to next track
+      set({
+        currentTrackIndex: trackIndex,
+        lastPlayedTracks: updatedHistory,
+        hasPlayedInitialTrack: true, // Mark that we've played the initial track
+      });
 
-    // Fade in next track
-    if (nextTrack?.audio && !isMuted) {
-      nextTrack.audio.volume = 0;
-      nextTrack.audio.currentTime = 0;
+      // Fade in next track
+      if (nextTrack?.audio && !isMuted) {
+        nextTrack.audio.volume = 0;
+        nextTrack.audio.currentTime = 0;
 
-      nextTrack.audio
-        .play()
-        .then(() => {
-          const fadeInInterval = setInterval(() => {
-            if (nextTrack.audio!.volume < volume - 0.01) {
-              nextTrack.audio!.volume = Math.min(
-                volume,
-                nextTrack.audio!.volume + 0.02,
-              );
-            } else {
-              nextTrack.audio!.volume = volume;
-              clearInterval(fadeInInterval);
-            }
-          }, 100);
+        nextTrack.audio
+          .play()
+          .then(() => {
+            const fadeInInterval = setInterval(() => {
+              if (nextTrack.audio!.volume < volume - 0.01) {
+                nextTrack.audio!.volume = Math.min(
+                  volume,
+                  nextTrack.audio!.volume + 0.02,
+                );
+              } else {
+                nextTrack.audio!.volume = volume;
+                clearInterval(fadeInInterval);
+              }
+            }, 100);
 
-          set({ isPlaying: true });
-          console.log(`Crossfaded to: ${nextTrack.name}`);
-        })
-        .catch((error) => {
-          console.log("Music crossfade prevented:", error);
-        });
+            set({ isPlaying: true });
+            console.log(`Crossfaded to: ${nextTrack.name} ${!hasPlayedInitialTrack ? "(initial auto-play)" : ""}`);
+          })
+          .catch((error) => {
+            console.log("Music crossfade prevented:", error);
+          });
+      }
+
+      // Schedule the next track (now with proper timing based on hasPlayedInitialTrack)
+      get().scheduleNextTrack();
     }
-
-    // Schedule the next track
-    get().scheduleNextTrack();
   },
 
   getCurrentTrack: () => {
