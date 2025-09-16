@@ -147,7 +147,26 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   };
 
   const calculatePlanetPosition = (planet: any, time: number) => {
-    return calculateOrbitPosition(planet.distance, planet.orbitalSpeed, time);
+    return calculateOrbitPosition(planet.distance, planet.orbita
+
+  // map planet textures appropriately and shade them according to the sun position to make them appear more realistic in the sky
+  const planetTextures = useMemo(() =>
+    planets.map((planet) => ({
+      name: planet.name,
+      texture: useTexture(planet.texture || "/textures/planets/2k_earth_daymap.jpg"),
+    }))
+                                  , [])
+  );
+  // Get planet texture by name
+  const getPlanetTexture = (planetName: string) =>
+    planetTextures.find((p) => p.name === planetName)?.texture || null
+  ;
+  // Update planet textures when planetName changes
+  useEffect(() =>
+
+
+
+      lSpeed, time);
   };
 
   // Calculate visible planets for current time
@@ -892,16 +911,10 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   } = useMining();
   const {
     isOn,
-    batteryLevel,
-    getBatteryStatus,
+    batteryLe right    getBatteryStatus,
     isCharging,
-    toggle: toggleFlashlight,
-    startCharging,
-    stopCharging,
-  } = useFlashlight();
-
-  return (
-    <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
+    toggle: toggleFlashlight
+bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
       <h3 className="text-lg font-bold text-cyan-400 mb-3">
         🚀 Surface Operations
       </h3>
@@ -913,7 +926,8 @@ function SurfaceControls({ planetName }: { planetName: string }) {
         </h4>
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mb-3">
           <div>WASD: Move</div>
-          <div>Q/E: Turn</div>
+   
+          <h3 className="text-lg font-bold text-cyan-400 mb-3">Flashlight:</h3>       <div>Q/E: Turn</div>
           <div>F: Flashlight</div>
           <div>C: Charge</div>
         </div>
