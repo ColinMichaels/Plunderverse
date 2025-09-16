@@ -13,6 +13,8 @@ import { EquipmentWarning } from "./EquipmentWarning";
 import { ShipStatus } from "./ShipStatus";
 import { FixedMiniMap } from "./FixedMiniMap";
 import { MusicPlayer } from "./MusicPlayer";
+import { CryptoWallet } from "./CryptoWallet";
+import { CryptoMarketplace } from "./CryptoMarketplace";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -82,6 +84,10 @@ export function GameUI() {
 
       <InventoryDisplay />
       <EquipmentWarning />
+
+      {/* Cryptocurrency Components */}
+      <CryptoWallet />
+      <CryptoMarketplace />
 
       {/* Mobile Controls - New Unified System */}
       <MobileHUD />
