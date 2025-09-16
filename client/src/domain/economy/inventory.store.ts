@@ -17,7 +17,6 @@ type InventoryStore = InventoryState & InventoryActions;
 export const useInventoryStore = create<InventoryStore>((set, get) => ({
   items: [],
   storageCapacity: 100,
-  currentStorage: 0,
   
   addResource: (resource, quantity, planetSource) => {
     const state = get();
@@ -28,8 +27,9 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       return false;
     }
     
-    const availableSpace = state.storageCapacity - state.currentStorage;
-    if (state.currentStorage + spaceNeeded > state.storageCapacity) {
+    const currentStorageUsed = state.items.reduce((total, item) => total + item.quantity, 0);
+    const availableSpace = state.storageCapacity - currentStorageUsed;
+    if (currentStorageUsed + spaceNeeded > state.storageCapacity) {
       console.error(`Storage full! Need ${spaceNeeded}, available: ${availableSpace}`);
       return false;
     }
@@ -48,8 +48,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       };
       
       set({
-        items: updatedItems,
-        currentStorage: state.currentStorage + spaceNeeded
+        items: updatedItems
       });
     } else {
       // Add new item
@@ -60,8 +59,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
       };
       
       set({
-        items: [...state.items, newItem],
-        currentStorage: state.currentStorage + spaceNeeded
+        items: [...state.items, newItem]
       });
     }
     
@@ -100,8 +98,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     }
     
     set({
-      items: updatedItems,
-      currentStorage: state.currentStorage - quantity
+      items: updatedItems
     });
     
     economyEvents.emit({
@@ -126,7 +123,7 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
   
   getStorageUsed: () => {
     const state = get();
-    return state.currentStorage;
+    return state.items.reduce((total, item) => total + item.quantity, 0);
   },
   
   upgradeStorage: (additionalCapacity) => {

@@ -6,13 +6,14 @@ export const useEconomySelectors = (): EconomySelectors => {
   const credits = useCreditsStore(state => state.credits);
   const inventory = useInventoryStore(state => ({
     items: state.items,
-    currentStorage: state.currentStorage,
     storageCapacity: state.storageCapacity
   }));
 
+  const currentStorage = inventory.items.reduce((total, item) => total + item.quantity, 0);
+
   return {
     totalInventoryValue: inventory.items.reduce((total, item) => total + (item.value * item.quantity), 0),
-    storageUsed: inventory.currentStorage,
+    storageUsed: currentStorage,
     canAfford: (amount: number) => credits >= amount,
     hasResource: (resourceType: string, quantity: number) => {
       const item = inventory.items.find(item => item.type === resourceType);
@@ -29,12 +30,15 @@ export const useTotalInventoryValue = () => {
 };
 
 export const useStorageInfo = () => {
-  return useInventoryStore(state => ({
-    used: state.currentStorage,
-    capacity: state.storageCapacity,
-    available: state.storageCapacity - state.currentStorage,
-    percentage: (state.currentStorage / state.storageCapacity) * 100
-  }));
+  return useInventoryStore(state => {
+    const used = state.items.reduce((total, item) => total + item.quantity, 0);
+    return {
+      used,
+      capacity: state.storageCapacity,
+      available: state.storageCapacity - used,
+      percentage: (used / state.storageCapacity) * 100
+    };
+  });
 };
 
 export const useCanAfford = (amount: number) => {

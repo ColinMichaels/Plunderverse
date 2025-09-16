@@ -10,7 +10,6 @@ export interface InventoryItem extends ResourceData {
 interface InventoryState {
   items: InventoryItem[];
   storageCapacity: number;
-  currentStorage: number;
   
   // Actions
   addResource: (resource: ResourceData, quantity: number, planetSource: string) => boolean;
@@ -28,8 +27,7 @@ export const useInventory = create<InventoryState>((set, get) => {
   useInventoryStore.subscribe((domainState) => {
     set({
       items: domainState.items,
-      storageCapacity: domainState.storageCapacity,
-      currentStorage: domainState.currentStorage
+      storageCapacity: domainState.storageCapacity
     });
   });
 
@@ -39,7 +37,6 @@ export const useInventory = create<InventoryState>((set, get) => {
   return {
     items: domainState.items,
     storageCapacity: domainState.storageCapacity,
-    currentStorage: domainState.currentStorage,
     
     // Delegate all operations to domain store
     addResource: (resource, quantity, planetSource) => {
@@ -62,7 +59,7 @@ export const useInventory = create<InventoryState>((set, get) => {
     },
     
     getStorageUsed: () => {
-      return useInventoryStore.getState().currentStorage;
+      return useInventoryStore.getState().getStorageUsed();
     },
     
     upgradeStorage: (additionalCapacity) => {

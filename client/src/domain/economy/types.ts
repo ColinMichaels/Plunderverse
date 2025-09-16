@@ -12,7 +12,6 @@ export interface CreditsState {
 export interface InventoryState {
   items: InventoryItem[];
   storageCapacity: number;
-  currentStorage: number;
 }
 
 export interface TransactionEvent {
