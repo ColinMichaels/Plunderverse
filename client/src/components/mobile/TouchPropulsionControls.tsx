@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import { useInput } from '../../stores/useInput';
 import { useMobileLayout } from '../../stores/useMobileLayout';
 
@@ -18,6 +18,7 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
   const isDraggingLook = useRef(false);
   const lastTouchTime = useRef(0);
   const thrustAnimationRef = useRef<number>();
+  const [showInstructions, setShowInstructions] = useState(true);
   
   // Convert screen position to thrust direction
   const screenToThrustDirection = useCallback((clientX: number, clientY: number) => {
@@ -67,7 +68,6 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     if (!isThrusting.current) return;
     
     const direction = screenToThrustDirection(currentTouchRef.current.x, currentTouchRef.current.y);
-    console.log('[TOUCH-PROPULSION] Applying thrust direction:', direction);
     move(direction);
     
     thrustAnimationRef.current = requestAnimationFrame(updateThrust);
@@ -78,6 +78,11 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     
     const target = e.target as Element;
     if (target.closest('[data-ui]')) return; // Skip UI elements
+    
+    // Hide instructions on first touch
+    if (showInstructions) {
+      setShowInstructions(false);
+    }
     
     const currentTime = performance.now();
     const timeSinceLastTouch = currentTime - lastTouchTime.current;
@@ -188,15 +193,17 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
       
       {/* Visual feedback overlay */}
       <div className="absolute inset-0 pointer-events-none" style={{ zIndex: config.zIndex.hud - 10 }}>
-        {/* Touch instruction overlay */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.radius} px-4 py-2 ${config.text.label} opacity-70`}>
-            <div className="text-center text-sm">
-              <div>Touch & hold anywhere to thrust in that direction</div>
-              <div className="text-xs mt-1">Double tap for quick thrust • Drag to look around</div>
+        {/* Touch instruction overlay - hides on first touch */}
+        {showInstructions && (
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.radius} px-4 py-2 ${config.text.label} opacity-70 transition-opacity duration-300`}>
+              <div className="text-center text-sm">
+                <div>Touch & hold anywhere to thrust in that direction</div>
+                <div className="text-xs mt-1">Double tap for quick thrust • Drag to look around</div>
+              </div>
             </div>
           </div>
-        </div>
+        )}
         
         {/* Center crosshair for reference */}
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
