@@ -28,8 +28,7 @@ export class CryptoApiClient {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.config.apiKey}`,
-          'X-Network': this.config.network,
+          // Note: No API key in headers - server proxy handles authentication
         },
         body: body ? JSON.stringify(body) : undefined,
       });

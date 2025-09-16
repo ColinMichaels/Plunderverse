@@ -75,8 +75,8 @@ export const useCrypto = create<CryptoState>()(
       try {
         const config = {
           apiKey,
-          baseUrl: process.env.CRYPTO_API_URL || 'https://api.spacecrypto.example.com',
-          network: (process.env.CRYPTO_NETWORK as 'testnet' | 'mainnet') || 'testnet',
+          baseUrl: import.meta.env.VITE_CRYPTO_API_URL || '/api/crypto',
+          network: (import.meta.env.VITE_CRYPTO_NETWORK as 'testnet' | 'mainnet') || 'testnet',
           currency: 'SPACE'
         };
 
