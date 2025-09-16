@@ -1,6 +1,7 @@
 import { useCreditsStore } from './credits.store';
 import { useInventoryStore } from './inventory.store';
 import { useEquipment } from '../../lib/stores/useEquipment';
+import { useMining } from '../../lib/stores/useMining';
 import { useAudio } from '../../lib/stores/useAudio';
 import { ResourceData } from '../../lib/planetData';
 import { economyEvents } from './events';
@@ -101,46 +102,65 @@ class EconomyService {
       };
     }
     
-    // Calculate fuel cost (assuming 10 credits per unit)
-    const fuelCostPerUnit = 10;
-    const totalCost = fuelAmount * fuelCostPerUnit;
+    // Calculate actual fuel cost using equipment's replenishmentCost
+    const maxRefill = fuelTank.maxDurability - fuelTank.currentDurability;
+    const actualRefill = Math.min(fuelAmount, maxRefill);
+    const fuelCostPerUnit = fuelTank.replenishmentCost || 2;
+    const actualCost = Math.ceil(actualRefill * fuelCostPerUnit);
     
-    // Check credits
-    if (credits.credits < totalCost) {
+    // Check credits first
+    if (credits.credits < actualCost) {
       return {
         success: false,
-        message: `Insufficient credits! Need ${totalCost}, have ${credits.credits}`
+        message: `Insufficient credits! Need ${actualCost}, have ${credits.credits}`
       };
     }
     
-    // Perform refueling transaction
-    const refuelResult = equipment.replenishFuel(fuelAmount, credits.credits);
-    if (refuelResult.success) {
-      const actualCost = refuelResult.cost;
-      credits.spendCredits(actualCost);
-      audio.playSuccess();
-      
-      // Emit event
-      economyEvents.emit({
-        type: 'credits_spent',
-        payload: { amount: actualCost },
-        timestamp: Date.now()
-      });
-      
-      console.log(`[ECONOMY-SERVICE] Refueled ${fuelAmount} units for ${actualCost} credits`);
+    // Check if refuel is needed
+    if (actualRefill <= 0) {
       return {
-        success: true,
-        message: `Refueled ${fuelAmount} units for ${actualCost} credits`,
-        details: {
-          creditsSpent: actualCost,
-          fuelAdded: fuelAmount
-        }
+        success: false,
+        message: 'Fuel tank is already full'
       };
+    }
+    
+    // ATOMIC TRANSACTION: Spend credits first, then apply fuel only if successful
+    const spendSuccess = credits.spendCredits(actualCost);
+    if (spendSuccess) {
+      // Apply fuel after successful credit spending
+      const refuelResult = equipment.replenishFuel(actualRefill, actualCost + 1); // Pass sufficient credits
+      if (refuelResult.success) {
+        audio.playSuccess();
+        
+        // Emit event
+        economyEvents.emit({
+          type: 'credits_spent',
+          payload: { amount: actualCost },
+          timestamp: Date.now()
+        });
+        
+        console.log(`[ECONOMY-SERVICE] Refueled ${actualRefill} units for ${actualCost} credits`);
+        return {
+          success: true,
+          message: `Refueled ${actualRefill} units for ${actualCost} credits`,
+          details: {
+            creditsSpent: actualCost,
+            fuelAdded: actualRefill
+          }
+        };
+      } else {
+        // Rollback - refund credits if fuel application failed
+        credits.earnCredits(actualCost);
+        return {
+          success: false,
+          message: 'Failed to apply fuel after payment - credits refunded'
+        };
+      }
     }
     
     return {
       success: false,
-      message: 'Failed to refuel - operation unsuccessful'
+      message: 'Failed to spend credits for fuel purchase'
     };
   }
   
@@ -163,34 +183,64 @@ class EconomyService {
       };
     }
     
-    // Perform repair transaction
-    const repairResult = equipment.repairEquipment(equipmentId, repairAmount, credits.credits);
-    if (repairResult.success) {
-      const actualCost = repairResult.cost;
-      credits.spendCredits(actualCost);
-      audio.playSuccess();
-      
-      // Emit event
-      economyEvents.emit({
-        type: 'credits_spent',
-        payload: { amount: actualCost },
-        timestamp: Date.now()
-      });
-      
-      console.log(`[ECONOMY-SERVICE] Repaired ${equipmentItem.name} for ${actualCost} credits`);
+    // Calculate repair cost first without applying the repair
+    const damageAmount = equipmentItem.maxDurability - equipmentItem.currentDurability;
+    const actualRepairAmount = repairAmount ? Math.min(repairAmount, damageAmount) : damageAmount;
+    const repairCost = Math.round(equipmentItem.repairCost * (actualRepairAmount / equipmentItem.maxDurability));
+    
+    // Check if repair is needed
+    if (actualRepairAmount <= 0) {
       return {
-        success: true,
-        message: `Repaired ${equipmentItem.name} for ${actualCost} credits`,
-        details: {
-          creditsSpent: actualCost,
-          durabilityRestored: [{ equipmentId, amount: repairAmount || (equipmentItem.maxDurability - equipmentItem.currentDurability) }]
-        }
+        success: false,
+        message: `${equipmentItem.name} does not need repair`
       };
+    }
+    
+    // Check credits first
+    if (credits.credits < repairCost) {
+      return {
+        success: false,
+        message: `Insufficient credits! Need ${repairCost}, have ${credits.credits}`
+      };
+    }
+    
+    // ATOMIC TRANSACTION: Spend credits first, then apply repair only if successful
+    const spendSuccess = credits.spendCredits(repairCost);
+    if (spendSuccess) {
+      // Apply repair after successful credit spending
+      const repairResult = equipment.repairEquipment(equipmentId, repairAmount, repairCost + 1); // Pass sufficient credits
+      if (repairResult.success) {
+        audio.playSuccess();
+        
+        // Emit event
+        economyEvents.emit({
+          type: 'credits_spent',
+          payload: { amount: repairCost },
+          timestamp: Date.now()
+        });
+        
+        console.log(`[ECONOMY-SERVICE] Repaired ${equipmentItem.name} for ${repairCost} credits`);
+        return {
+          success: true,
+          message: `Repaired ${equipmentItem.name} for ${repairCost} credits`,
+          details: {
+            creditsSpent: repairCost,
+            durabilityRestored: [{ equipmentId, amount: actualRepairAmount }]
+          }
+        };
+      } else {
+        // Rollback - refund credits if repair application failed
+        credits.earnCredits(repairCost);
+        return {
+          success: false,
+          message: `Failed to apply repair to ${equipmentItem.name} after payment - credits refunded`
+        };
+      }
     }
     
     return {
       success: false,
-      message: `Failed to repair ${equipmentItem.name}. Need ${repairResult.cost} credits, have ${credits.credits}`
+      message: `Failed to spend credits for ${equipmentItem.name} repair`
     };
   }
   
@@ -383,6 +433,108 @@ class EconomyService {
     return {
       success: false,
       message: 'Failed to spend credits for purchase'
+    };
+  }
+  
+  /**
+   * Upgrade mining drill for increased mining power
+   */
+  upgradeDrill(): TransactionResult {
+    console.log(`[ECONOMY-SERVICE] Starting upgradeDrill`);
+    
+    const credits = useCreditsStore.getState();
+    const mining = useMining.getState();
+    const audio = useAudio.getState();
+    
+    // Calculate upgrade cost based on current drill power
+    const upgradeCost = 200 + (mining.drillPower - 1) * 150;
+    
+    // Check credits
+    if (credits.credits < upgradeCost) {
+      audio.playHit();
+      return {
+        success: false,
+        message: `Insufficient credits! Need ${upgradeCost}, have ${credits.credits}`
+      };
+    }
+    
+    // Perform atomic transaction
+    const spendSuccess = credits.spendCredits(upgradeCost);
+    if (spendSuccess) {
+      mining.upgradeDrill();
+      audio.playSuccess();
+      
+      // Emit event
+      economyEvents.emit({
+        type: 'credits_spent',
+        payload: { amount: upgradeCost },
+        timestamp: Date.now()
+      });
+      
+      console.log(`[ECONOMY-SERVICE] Upgraded drill for ${upgradeCost} credits. New power: ${mining.drillPower}`);
+      return {
+        success: true,
+        message: `Upgraded mining drill for ${upgradeCost} credits`,
+        details: {
+          creditsSpent: upgradeCost
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Failed to spend credits for drill upgrade'
+    };
+  }
+  
+  /**
+   * Upgrade resource extractor for increased mining efficiency
+   */
+  upgradeExtractor(): TransactionResult {
+    console.log(`[ECONOMY-SERVICE] Starting upgradeExtractor`);
+    
+    const credits = useCreditsStore.getState();
+    const mining = useMining.getState();
+    const audio = useAudio.getState();
+    
+    // Calculate upgrade cost based on current extractor level
+    const upgradeCost = 150 + (mining.extractorLevel - 1) * 100;
+    
+    // Check credits
+    if (credits.credits < upgradeCost) {
+      audio.playHit();
+      return {
+        success: false,
+        message: `Insufficient credits! Need ${upgradeCost}, have ${credits.credits}`
+      };
+    }
+    
+    // Perform atomic transaction
+    const spendSuccess = credits.spendCredits(upgradeCost);
+    if (spendSuccess) {
+      mining.upgradeExtractor();
+      audio.playSuccess();
+      
+      // Emit event
+      economyEvents.emit({
+        type: 'credits_spent',
+        payload: { amount: upgradeCost },
+        timestamp: Date.now()
+      });
+      
+      console.log(`[ECONOMY-SERVICE] Upgraded extractor for ${upgradeCost} credits. New level: ${mining.extractorLevel}`);
+      return {
+        success: true,
+        message: `Upgraded resource extractor for ${upgradeCost} credits`,
+        details: {
+          creditsSpent: upgradeCost
+        }
+      };
+    }
+    
+    return {
+      success: false,
+      message: 'Failed to spend credits for extractor upgrade'
     };
   }
   

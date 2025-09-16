@@ -3,7 +3,7 @@ import { useInventory } from "../lib/stores/useInventory";
 import { useCredits } from "../lib/stores/useCredits";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useMining } from "../lib/stores/useMining";
-import { useAudio } from "../lib/stores/useAudio";
+import { economyService } from "../domain/economy/economy.service";
 
 interface TradingInterfaceProps {
   isVisible: boolean;
@@ -11,11 +11,10 @@ interface TradingInterfaceProps {
 }
 
 export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) {
-  const { items, removeResource, upgradeStorage, storageCapacity } = useInventory();
-  const { credits, spendCredits, earnCredits } = useCredits();
-  const { equipment, repairEquipment, replenishFuel, getConditionStatus, getEquipment } = useEquipment();
-  const { upgradeDrill, upgradeExtractor, drillPower, extractorLevel } = useMining();
-  const { playSuccess, playHit } = useAudio();
+  const { items, storageCapacity } = useInventory();
+  const { credits } = useCredits();
+  const { equipment, getConditionStatus, getEquipment } = useEquipment();
+  const { drillPower, extractorLevel } = useMining();
   const [activeTab, setActiveTab] = useState<'sell' | 'fuel' | 'repairs' | 'upgrades'>('sell');
   const [selectedQuantity, setSelectedQuantity] = useState<{ [key: string]: number }>({});
 
@@ -23,85 +22,60 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
 
   const handleSellResource = (resourceType: string, value: number, maxQuantity: number) => {
     const quantity = selectedQuantity[resourceType] || 1;
-    const totalValue = value * quantity;
     
-    if (removeResource(resourceType, quantity)) {
-      earnCredits(totalValue);
-      playSuccess();
-      console.log(`Sold ${quantity} ${resourceType} for ${totalValue} credits`);
+    const result = economyService.sellResource(resourceType, quantity);
+    if (result.success) {
+      console.log(result.message);
       // Reset quantity selection
       setSelectedQuantity(prev => ({ ...prev, [resourceType]: 1 }));
     } else {
-      playHit();
-      console.log("Failed to sell resource");
+      console.log(result.message);
     }
   };
 
   const handleBuyFuel = (amount: number) => {
-    const fuelTank = equipment.find(e => e.id === 'fuel-tank');
-    if (!fuelTank) return;
-
-    const result = replenishFuel(amount, credits);
+    const result = economyService.buyFuel(amount);
     if (result.success) {
-      spendCredits(result.cost);
-      playSuccess();
-      console.log(`Refueled ${amount} units for ${result.cost} credits`);
+      console.log(result.message);
     } else {
-      playHit();
-      console.log("Failed to buy fuel - insufficient credits");
+      console.log(result.message);
     }
   };
 
   const handleRepairEquipment = (equipmentId: string) => {
-    const equipment = getEquipment(equipmentId);
-    if (!equipment) return;
-
-    const result = repairEquipment(equipmentId, undefined, credits);
+    const result = economyService.repairEquipment(equipmentId);
     if (result.success) {
-      spendCredits(result.cost);
-      playSuccess();
-      console.log(`Repaired ${equipment.name} for ${result.cost} credits`);
+      console.log(result.message);
     } else {
-      playHit();
-      console.log("Failed to repair - insufficient credits");
+      console.log(result.message);
     }
   };
 
   const handleUpgradeDrill = () => {
-    const cost = 200 + (drillPower - 1) * 150; // Increasing cost per upgrade
-    if (spendCredits(cost)) {
-      upgradeDrill();
-      playSuccess();
-      console.log(`Upgraded drill for ${cost} credits`);
+    const result = economyService.upgradeDrill();
+    if (result.success) {
+      console.log(result.message);
     } else {
-      playHit();
-      console.log("Insufficient credits for drill upgrade");
+      console.log(result.message);
     }
   };
 
   const handleUpgradeExtractor = () => {
-    const cost = 150 + (extractorLevel - 1) * 100; // Increasing cost per upgrade
-    if (spendCredits(cost)) {
-      upgradeExtractor();
-      playSuccess();
-      console.log(`Upgraded extractor for ${cost} credits`);
+    const result = economyService.upgradeExtractor();
+    if (result.success) {
+      console.log(result.message);
     } else {
-      playHit();
-      console.log("Insufficient credits for extractor upgrade");
+      console.log(result.message);
     }
   };
 
   const handleUpgradeStorage = () => {
-    const cost = 300 + Math.floor(storageCapacity / 100) * 200; // Increasing cost based on current capacity
     const additionalCapacity = 50;
-    
-    if (spendCredits(cost)) {
-      upgradeStorage(additionalCapacity);
-      playSuccess();
-      console.log(`Upgraded storage by ${additionalCapacity} units for ${cost} credits`);
+    const result = economyService.upgradeStorage(additionalCapacity);
+    if (result.success) {
+      console.log(result.message);
     } else {
-      playHit();
-      console.log("Insufficient credits for storage upgrade");
+      console.log(result.message);
     }
   };
 
