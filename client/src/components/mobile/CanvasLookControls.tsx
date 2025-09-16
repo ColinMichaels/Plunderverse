@@ -28,9 +28,11 @@ export function CanvasLookControls({ children }: CanvasLookControlsProps) {
       return;
     }
     
-    // Smooth interpolation
+    // Smooth interpolation - Fix orientation to be intuitive
     const smoothingFactor = 0.7;
-    smoothedLookRef.current.x = smoothedLookRef.current.x * smoothingFactor + (-deltaY) * (1 - smoothingFactor);
+    // Drag up = look up (positive pitch), Drag down = look down (negative pitch)
+    smoothedLookRef.current.x = smoothedLookRef.current.x * smoothingFactor + deltaY * (1 - smoothingFactor);
+    // Drag right = look right (positive yaw), Drag left = look left (negative yaw)  
     smoothedLookRef.current.y = smoothedLookRef.current.y * smoothingFactor + deltaX * (1 - smoothingFactor);
     
     look(smoothedLookRef.current);
