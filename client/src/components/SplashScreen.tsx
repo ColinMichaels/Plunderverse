@@ -323,6 +323,14 @@ export function SplashScreen() {
         {/* Version/Credits */}
         <p className="text-slate-500 text-sm">
           Version 1.0.0 - Built with React, Three.js, and Tailwind CSS by{" "}
+          <a 
+            href="https://colinmichaels.com" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-slate-400 hover:text-cyan-400 transition-colors duration-300 underline decoration-slate-600 hover:decoration-cyan-400"
+          >
+            Colin Michaels
+          </a>
         </p>
       </div>
 
