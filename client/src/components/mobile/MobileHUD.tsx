@@ -31,18 +31,12 @@ export function MobileHUD() {
         <ActionBar />
       </div>
 
-      {/* Bottom Right - Virtual Joystick */}
-      <div 
-        className="absolute bottom-4 right-4 pointer-events-auto"
-        data-ui
-      >
-        <VirtualJoystick />
-      </div>
+      {/* Virtual Joystick removed - replaced by touch-hold propulsion */}
 
       {/* Instructions */}
       <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 pointer-events-none">
         <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.radius} px-3 py-2 ${config.text.label}`}>
-          Drag anywhere to look around
+          Touch & hold anywhere to thrust • Double tap for quick thrust
         </div>
       </div>
     </div>

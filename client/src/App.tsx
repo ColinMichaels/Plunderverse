@@ -9,7 +9,7 @@ import { TakeoffControls } from "./components/TakeoffControls";
 import { UILayoutProvider } from "./components/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
-import { CanvasLookControls } from "./components/mobile/CanvasLookControls";
+import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import "@fontsource/inter";
 
 // Define control keys for space flight
@@ -79,7 +79,7 @@ function App() {
         {/* Show game when playing */}
         {phase === "playing" && showCanvas && (
           <KeyboardControls map={controls}>
-            <CanvasLookControls>
+            <TouchPropulsionControls>
               <Canvas
                 shadows
                 camera={{
@@ -99,7 +99,7 @@ function App() {
                   <SolarSystem />
                 </Suspense>
               </Canvas>
-            </CanvasLookControls>
+            </TouchPropulsionControls>
 
             <GameUI />
             <PlanetSurfaceScene />
