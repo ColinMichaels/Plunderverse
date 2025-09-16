@@ -6,7 +6,66 @@ import { MusicPlayer } from "./MusicPlayer";
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
   // Removed mouse tracking for smoother space travel animation
+
+  // Slideshow content for game features, reasons to play, and player quotes
+  const slideContent = [
+    {
+      type: "feature",
+      text: "🚀 Realistic Physics-Based Space Flight",
+      subtext: "Experience authentic rocket propulsion and momentum"
+    },
+    {
+      type: "feature", 
+      text: "🪐 Explore Our Solar System",
+      subtext: "Visit Mercury, Venus, Earth, Mars and beyond"
+    },
+    {
+      type: "feature",
+      text: "⛏️ Mine Resources & Manage Inventory", 
+      subtext: "Discover rare materials on alien worlds"
+    },
+    {
+      type: "reason",
+      text: "🎓 Educational & Entertaining",
+      subtext: "Learn real astronomy while having fun"
+    },
+    {
+      type: "reason",
+      text: "🌌 Beautiful Cosmic Environments",
+      subtext: "Stunning 3D graphics powered by Three.js"
+    },
+    {
+      type: "reason", 
+      text: "😌 Relaxing Space Exploration",
+      subtext: "Peaceful journey through the cosmos"
+    },
+    {
+      type: "quote",
+      text: '"Like Kerbal Space Program meets No Man\'s Sky!"',
+      subtext: "- Steam Player Review"
+    },
+    {
+      type: "quote",
+      text: '"The most realistic space physics I\'ve experienced"',
+      subtext: "- SpaceGamer2024"
+    },
+    {
+      type: "quote",
+      text: '"I lost hours just exploring the planets"',
+      subtext: "- AstronautDreamer"
+    }
+  ];
+
+  // Auto-advance slideshow
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % slideContent.length);
+    }, 3000); // Change slide every 3 seconds
+
+    return () => clearInterval(interval);
+  }, [slideContent.length]);
 
   // Pre-calculate star configurations to avoid render inconsistencies
   const starConfigs = useState(() =>
@@ -271,6 +330,55 @@ export function SplashScreen() {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-5px); }
         }
+        
+        .slideshow-enter {
+          animation: slideZoomIn 0.8s ease-out forwards;
+          opacity: 0;
+          transform: scale(0.3) translateY(20px);
+        }
+        
+        .slideshow-exit {
+          animation: slideZoomOut 0.5s ease-in forwards;
+        }
+        
+        @keyframes slideZoomIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.3) translateY(20px);
+          }
+          60% {
+            opacity: 0.8;
+            transform: scale(1.1) translateY(-5px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+        
+        @keyframes slideZoomOut {
+          0% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.8) translateY(-10px);
+          }
+        }
+        
+        .slide-feature {
+          color: #22d3ee;
+        }
+        
+        .slide-reason {
+          color: #a3e635;
+        }
+        
+        .slide-quote {
+          color: #fbbf24;
+          font-style: italic;
+        }
       `}</style>
 
       <div className="relative z-10 text-center max-w-4xl px-8 content-float">
@@ -287,11 +395,20 @@ export function SplashScreen() {
           </h2>
         </div>
 
-        {/* Subtitle */}
-        <p className="text-xl text-slate-300 mb-12 max-w-2xl mx-auto leading-relaxed">
-          Pilot your spacecraft through the vastness of space. Explore planets,
-          engage targets, and experience realistic rocket propulsion physics.
-        </p>
+        {/* Animated Slideshow */}
+        <div className="mb-12 h-24 flex flex-col items-center justify-center">
+          <div 
+            key={currentSlide}
+            className={`slideshow-enter slide-${slideContent[currentSlide].type} max-w-3xl mx-auto text-center`}
+          >
+            <p className="text-2xl md:text-3xl font-semibold mb-2 leading-relaxed">
+              {slideContent[currentSlide].text}
+            </p>
+            <p className="text-lg text-slate-400 leading-relaxed">
+              {slideContent[currentSlide].subtext}
+            </p>
+          </div>
+        </div>
 
         {/* Main Action Button */}
         <button
