@@ -1002,8 +1002,9 @@ function MiningDebugDisplay() {
   const { isLanded, landedPlanet } = useLandedState();
   const { isActive, targetResource, clicksCompleted, clicksRequired } =
     useMining();
-  const { items } = useInventoryStore(state => ({ items: state.items }));
-  const { used: storageUsed, capacity: storageCapacity } = useStorageInfo();
+  const items = useInventoryStore(state => state.items);
+  const storageInfo = useStorageInfo();
+  const { used: storageUsed, capacity: storageCapacity } = storageInfo;
   const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
 
   // Calculate total units and find last changed item
