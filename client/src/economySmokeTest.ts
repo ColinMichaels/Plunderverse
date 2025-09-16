@@ -57,7 +57,7 @@ class EconomySmokeTest {
     console.log('Credits:', state.credits);
     console.log('Storage Used:', state.storageUsed, '/', state.storageCapacity);
     console.log('Inventory Value:', state.totalInventoryValue);
-    console.log('Items:', state.inventoryItems.map(item => `${item.type}: ${item.quantity}`));
+    console.log('Items:', state.inventoryItems.map((item: any) => `${item.type}: ${item.quantity}`));
     console.groupEnd();
   }
 
