@@ -1,8 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { Play, Pause, SkipForward, SkipBack, Volume2, List, Shuffle, RotateCcw, Minimize2, Maximize2 } from "lucide-react";
+import {
+  Play,
+  Pause,
+  SkipForward,
+  SkipBack,
+  Volume2,
+  List,
+  Shuffle,
+  RotateCcw,
+  Minimize2,
+  Maximize2,
+} from "lucide-react";
 import { Button } from "./ui/button";
 import { Slider } from "./ui/slider";
-import { useMusicPlayer, initializeMusicPlayer } from "../lib/stores/useMusicPlayer";
+import {
+  useMusicPlayer,
+  initializeMusicPlayer,
+} from "../lib/stores/useMusicPlayer";
 import { useAudio } from "../lib/stores/useAudio";
 import { cn } from "../lib/utils";
 
@@ -33,7 +47,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
 
   const { isMuted } = useAudio();
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
-  const [isMinimized, setIsMinimized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(true);
 
   // Initialize music player on mount
   useEffect(() => {
@@ -47,7 +61,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
     const updateTimer = () => {
       const now = Date.now();
       const timeLeft = nextPlayTime - now;
-      
+
       if (timeLeft <= 0) {
         setTimeUntilNext("");
         return;
@@ -55,7 +69,9 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
 
       const minutes = Math.floor(timeLeft / 60000);
       const seconds = Math.floor((timeLeft % 60000) / 1000);
-      setTimeUntilNext(`Next in ${minutes}:${seconds.toString().padStart(2, '0')}`);
+      setTimeUntilNext(
+        `Next in ${minutes}:${seconds.toString().padStart(2, "0")}`,
+      );
     };
 
     updateTimer();
@@ -70,17 +86,18 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
   }
 
   return (
-    <div className={cn(
-      "bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[300px]",
-      className
-    )}>
+    <div
+      className={cn(
+        "bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[250px]",
+        className,
+      )}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="text-cyan-400 text-sm font-semibold flex items-center gap-2">
-          <Volume2 size={16} />
-          Music Player
-        </div>
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-1">
+          <div className="text-cyan-400 text-sm font-semibold flex items-center gap-2">
+            <Volume2 size={16} />
+          </div>
           {!isMinimized && (
             <Button
               variant="ghost"
@@ -102,8 +119,8 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
         </div>
       </div>
 
-      {!isMinimized && (
-        isLoading ? (
+      {!isMinimized &&
+        (isLoading ? (
           <div className="text-center text-cyan-300 py-4">
             Loading tracks...
           </div>
@@ -120,9 +137,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
                 </div>
               )}
               {isMuted && (
-                <div className="text-red-400 text-xs mt-1">
-                  Audio muted
-                </div>
+                <div className="text-red-400 text-xs mt-1">Audio muted</div>
               )}
             </div>
 
@@ -163,14 +178,22 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setPlaybackMode(playbackMode === 'random' ? 'sequential' : 'random')}
+                onClick={() =>
+                  setPlaybackMode(
+                    playbackMode === "random" ? "sequential" : "random",
+                  )
+                }
                 className={cn(
                   "h-8 w-8 hover:text-cyan-300",
-                  playbackMode === 'random' ? "text-cyan-400" : "text-gray-500"
+                  playbackMode === "random" ? "text-cyan-400" : "text-gray-500",
                 )}
                 title={`Mode: ${playbackMode}`}
               >
-                {playbackMode === 'random' ? <Shuffle size={16} /> : <RotateCcw size={16} />}
+                {playbackMode === "random" ? (
+                  <Shuffle size={16} />
+                ) : (
+                  <RotateCcw size={16} />
+                )}
               </Button>
             </div>
 
@@ -202,9 +225,9 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
                       onClick={() => selectTrack(index)}
                       className={cn(
                         "w-full text-left text-xs p-2 rounded hover:bg-white/10 transition-colors",
-                        index === currentTrackIndex 
-                          ? "bg-cyan-500/20 text-cyan-300" 
-                          : "text-gray-300"
+                        index === currentTrackIndex
+                          ? "bg-cyan-500/20 text-cyan-300"
+                          : "text-gray-300",
                       )}
                     >
                       <div className="flex items-center gap-2">
@@ -221,14 +244,12 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
 
             {/* Info Text */}
             <div className="text-xs text-gray-400 mt-3 text-center">
-              {playbackMode === 'random' 
-                ? "Minecraft-style random playback" 
-                : "Sequential playback"
-              }
+              {playbackMode === "random"
+                ? "random playback"
+                : "Sequential playback"}
             </div>
           </>
-        )
-      )}
+        ))}
 
       {/* Minimized view - show current track and basic controls */}
       {isMinimized && (

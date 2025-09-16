@@ -31,7 +31,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
 
   // Generate terrain vertices using useMemo to avoid recreating on every render
   const terrainGeometry = useMemo(() => {
-    const geometry = new THREE.PlaneGeometry(200, 200, 50, 50);
+    const geometry = new THREE.PlaneGeometry(400, 400, 50, 50);
     const vertices = geometry.attributes.position.array as Float32Array;
 
     // Add some height variation to make it look like terrain
@@ -464,13 +464,18 @@ function SurfaceLighting() {
 
   // Calculate realistic sun position and intensity based on orbital mechanics and planet rotation
   const lightingData = useMemo(() => {
-    if (!planet) return { 
-      sunPosition: new THREE.Vector3(50, 200, 50), 
-      sunIntensity: 0.9,
-      distanceBasedIntensity: 1.0
-    };
-    
-    const calculateOrbitPosition = (distance: number, speed: number, time: number) => {
+    if (!planet)
+      return {
+        sunPosition: new THREE.Vector3(50, 200, 50),
+        sunIntensity: 0.9,
+        distanceBasedIntensity: 1.0,
+      };
+
+    const calculateOrbitPosition = (
+      distance: number,
+      speed: number,
+      time: number,
+    ) => {
       const angle = speed * time;
       return new THREE.Vector3(
         Math.cos(angle) * distance,
@@ -485,34 +490,39 @@ function SurfaceLighting() {
 
     // Get planet's orbital position
     const currentPlanetPosition = calculatePlanetPosition(planet, time);
-    
+
     // Calculate distance-based intensity using inverse square law
     // Base intensity on Earth's distance (75 units) as reference (30 * 2.5 from planetData)
     const earthDistance = 75;
     const distanceFromSun = currentPlanetPosition.length();
     const distanceBasedIntensity = Math.pow(earthDistance / distanceFromSun, 2);
-    
+
     // Add planet rotation for local day/night cycle
     const rotationAngle = time * planet.rotationSpeed * 15; // Scale rotation for visible effect
-    const localTimeOfDay = (rotationAngle % (2 * Math.PI));
-    
+    const localTimeOfDay = rotationAngle % (2 * Math.PI);
+
     // Sun direction from planet (sun is at origin)
     const sunDirection = currentPlanetPosition.clone().negate().normalize();
-    
+
     // Apply planet rotation to determine local sun position
     // Rotate around planet's Y-axis to simulate planet rotation
     const rotatedSunDirection = sunDirection.clone();
-    rotatedSunDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), localTimeOfDay);
-    
+    rotatedSunDirection.applyAxisAngle(
+      new THREE.Vector3(0, 1, 0),
+      localTimeOfDay,
+    );
+
     // Position the directional light further away for better shadows
     const sunLightPosition = rotatedSunDirection.clone().multiplyScalar(400);
-    
+
     // Calculate sun elevation based on rotated position
-    const sunElevation = Math.asin(Math.max(-1, Math.min(1, rotatedSunDirection.y)));
-    
+    const sunElevation = Math.asin(
+      Math.max(-1, Math.min(1, rotatedSunDirection.y)),
+    );
+
     // Calculate intensity based on sun elevation and distance
     let sunIntensity = 0;
-    
+
     if (sunElevation < -0.4) {
       // Deep night - complete darkness
       sunIntensity = 0.0;
@@ -528,16 +538,16 @@ function SurfaceLighting() {
       // Full daylight
       sunIntensity = 0.5 + Math.sin(sunElevation) * 0.9;
     }
-    
+
     // Apply distance-based scaling with realistic intensity differences
     const finalIntensity = sunIntensity * distanceBasedIntensity;
-    
+
     return {
       sunPosition: sunLightPosition,
       sunIntensity: Math.max(0, Math.min(4.0, finalIntensity)), // Higher cap for closer planets
       distanceBasedIntensity,
       sunElevation,
-      planetName: planet.name
+      planetName: planet.name,
     };
   }, [planet, time]);
 
@@ -545,8 +555,14 @@ function SurfaceLighting() {
 
   // Add debug logging for lighting changes
   useEffect(() => {
-    if (planet && lightingData && typeof lightingData.sunElevation === 'number') {
-      console.log(`[LIGHTING-${planet.name}] Distance-based intensity: ${lightingData.distanceBasedIntensity.toFixed(2)}x, Sun intensity: ${sunIntensity.toFixed(2)}, Elevation: ${(lightingData.sunElevation * 180 / Math.PI).toFixed(1)}°`);
+    if (
+      planet &&
+      lightingData &&
+      typeof lightingData.sunElevation === "number"
+    ) {
+      console.log(
+        `[LIGHTING-${planet.name}] Distance-based intensity: ${lightingData.distanceBasedIntensity.toFixed(2)}x, Sun intensity: ${sunIntensity.toFixed(2)}, Elevation: ${((lightingData.sunElevation * 180) / Math.PI).toFixed(1)}°`,
+      );
     }
   }, [planet?.name, sunIntensity, lightingData]);
 

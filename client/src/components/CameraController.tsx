@@ -75,6 +75,54 @@ export function CameraController() {
     console.log("Mobile move input:", movement);
   };
 
+  const handleMobileLand = () => {
+    const currentTime = performance.now() / 1000;
+    
+    // Debounce landing attempts to prevent spam
+    if (currentTime - lastLandingAttemptRef.current < 2) return;
+    lastLandingAttemptRef.current = currentTime;
+
+    console.log("[MOBILE-CONTROLS] Landing button pressed");
+
+    // Check if already landing or landed
+    if (isLanding || isLanded) {
+      console.log("[MOBILE-CONTROLS] Already landing or landed - ignoring");
+      return;
+    }
+
+    // Same landing logic as keyboard controls
+    if (selectedPlanet && !isMining && !isAutopilotActive) {
+      // Get the target planet data
+      const targetPlanet = planets.find(p => p.name === selectedPlanet);
+      if (!targetPlanet) {
+        console.log("[MOBILE-CONTROLS] Invalid planet selected");
+        return;
+      }
+
+      // Calculate planet position and distance
+      const angle = time * targetPlanet.orbitalSpeed;
+      const planetX = Math.cos(angle) * targetPlanet.distance;
+      const planetZ = Math.sin(angle) * targetPlanet.distance;
+      const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
+      const distance = camera.position.distanceTo(planetPosition);
+
+      console.log(`[MOBILE-CONTROLS] Attempting to land on ${selectedPlanet} at distance ${distance.toFixed(1)}`);
+
+      const requiredDistance = targetPlanet.size * 8; // Same as keyboard controls
+
+      if (distance <= requiredDistance) {
+        setIsLanding(true);
+        console.log(`[MOBILE-CONTROLS] Landing initiated on ${selectedPlanet}!`);
+      } else {
+        // Show landing warning with autopilot option
+        showWarning(selectedPlanet, distance, requiredDistance);
+        console.log(`[MOBILE-CONTROLS] Too far to land (${distance.toFixed(1)} > ${requiredDistance.toFixed(1)})`);
+      }
+    } else {
+      console.log("[MOBILE-CONTROLS] Cannot land - no planet selected or other operation in progress");
+    }
+  };
+
   // Warning and autopilot stores
   const { showWarning } = useLandingWarning();
   const {
@@ -613,6 +661,7 @@ export function CameraController() {
     onShoot: handleMobileShoot,
     onLook: handleMobileLook,
     onMove: handleMobileMove,
+    onLand: handleMobileLand,
   };
 
   return null;

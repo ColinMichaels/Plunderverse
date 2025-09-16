@@ -118,22 +118,41 @@ export function MobileControls() {
             </div>
           </button>
 
-          {/* Fire Button - Bottom Center */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto">
-            <button
-              className={`w-16 h-16 rounded-full border-2 backdrop-blur-sm transition-all ${
-                isShooting 
-                  ? 'bg-red-600/80 border-red-400 text-white scale-95' 
-                  : 'bg-slate-800/80 border-slate-600 text-slate-300 hover:border-red-400 hover:text-red-400'
-              }`}
-              onTouchStart={handleTouchStart}
-              onTouchEnd={handleTouchEnd}
-              onMouseDown={handleTouchStart}
-              onMouseUp={handleTouchEnd}
-            >
-              <div className="text-xl">🔥</div>
-            </button>
-            <div className="text-center mt-1 text-xs text-slate-400">FIRE</div>
+          {/* Mobile Action Buttons - Bottom */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto flex space-x-4">
+            {/* Fire Button */}
+            <div className="text-center">
+              <button
+                className={`w-12 h-12 rounded-full border-2 backdrop-blur-sm transition-all ${
+                  isShooting 
+                    ? 'bg-red-600/80 border-red-400 text-white scale-95' 
+                    : 'bg-slate-800/80 border-slate-600 text-slate-300 hover:border-red-400 hover:text-red-400'
+                }`}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={handleTouchStart}
+                onMouseUp={handleTouchEnd}
+              >
+                <div className="text-lg">🔥</div>
+              </button>
+              <div className="text-xs text-slate-400 mt-1">FIRE</div>
+            </div>
+
+            {/* Landing Button */}
+            <div className="text-center">
+              <button
+                className="w-12 h-12 rounded-full border-2 bg-slate-800/80 border-slate-600 text-slate-300 hover:border-orange-400 hover:text-orange-400 backdrop-blur-sm transition-all"
+                onTouchStart={() => {
+                  const callbacks = (window as any).mobileControlCallbacks;
+                  if (callbacks && callbacks.onLand) {
+                    callbacks.onLand();
+                  }
+                }}
+              >
+                <div className="text-lg">🛬</div>
+              </button>
+              <div className="text-xs text-slate-400 mt-1">LAND</div>
+            </div>
           </div>
 
           {/* Controls indicator - Only show briefly on first load */}
