@@ -135,6 +135,7 @@ export function CameraController() {
     orbitRadius,
     orbitAngle,
     enterOrbit,
+    updateThrusterVolume,
   } = useAutopilot();
 
   // Equipment system for ship degradation and fuel
@@ -571,6 +572,9 @@ export function CameraController() {
         if (!consumeShipFuel(finalAutopilotConsumption)) {
           console.warn("Out of fuel! Autopilot deactivated.");
           deactivateAutopilot();
+        } else {
+          // Update thruster volume based on current fuel level
+          updateThrusterVolume();
         }
 
         // Apply ship degradation during autopilot travel

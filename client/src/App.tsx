@@ -60,6 +60,10 @@ function App() {
     laser.volume = 0.4;
     useAudio.getState().setLaserSound(laser);
 
+    // Load thruster sound for autopilot
+    const thruster = new Audio("/sounds/thruster.mp3");
+    useAudio.getState().setThrusterSound(thruster);
+
     setShowCanvas(true);
   }, [setBackgroundMusic]);
 

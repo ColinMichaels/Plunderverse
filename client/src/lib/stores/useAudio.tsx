@@ -6,6 +6,7 @@ interface AudioState {
   hitSound: HTMLAudioElement | null;
   successSound: HTMLAudioElement | null;
   laserSound: HTMLAudioElement | null;
+  thrusterSound: HTMLAudioElement | null;
   isMuted: boolean;
 
   // Setter functions
@@ -14,6 +15,7 @@ interface AudioState {
   setHitSound: (sound: HTMLAudioElement) => void;
   setSuccessSound: (sound: HTMLAudioElement) => void;
   setLaserSound: (sound: HTMLAudioElement) => void;
+  setThrusterSound: (sound: HTMLAudioElement) => void;
 
   // Control functions
   toggleMute: () => void;
@@ -22,6 +24,8 @@ interface AudioState {
   playLaser: () => void;
   playAmbientMusic: () => void;
   stopAmbientMusic: () => void;
+  playThruster: (fuelLevel: number) => void;
+  stopThruster: () => void;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
@@ -30,6 +34,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   hitSound: null,
   successSound: null,
   laserSound: null,
+  thrusterSound: null,
   isMuted: false, // Start muted by default
 
   setBackgroundMusic: (music) => set({ backgroundMusic: music }),
@@ -37,6 +42,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   setHitSound: (sound) => set({ hitSound: sound }),
   setSuccessSound: (sound) => set({ successSound: sound }),
   setLaserSound: (sound) => set({ laserSound: sound }),
+  setThrusterSound: (sound) => set({ thrusterSound: sound }),
 
   toggleMute: () => {
     const { isMuted } = get();
@@ -127,6 +133,33 @@ export const useAudio = create<AudioState>((set, get) => ({
     if (ambientMusic) {
       ambientMusic.pause();
       ambientMusic.currentTime = 0;
+    }
+  },
+
+  playThruster: (fuelLevel) => {
+    const { thrusterSound, isMuted } = get();
+    if (thrusterSound && !isMuted) {
+      // Calculate volume based on fuel level (0-1)
+      const baseVolume = 0.15; // Low ambient volume
+      const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100)); // Normalize fuel to 0-1
+      const volume = baseVolume * fuelRatio;
+      
+      thrusterSound.volume = volume;
+      thrusterSound.loop = true;
+      thrusterSound.play().catch((error) => {
+        console.log("Thruster sound play prevented:", error);
+      });
+      
+      console.log(`Thruster sound started - Volume: ${volume.toFixed(2)} (Fuel: ${fuelLevel}%)`);
+    }
+  },
+
+  stopThruster: () => {
+    const { thrusterSound } = get();
+    if (thrusterSound) {
+      thrusterSound.pause();
+      thrusterSound.currentTime = 0;
+      console.log("Thruster sound stopped");
     }
   },
 }));
