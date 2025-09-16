@@ -67,6 +67,7 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     if (!isThrusting.current) return;
     
     const direction = screenToThrustDirection(currentTouchRef.current.x, currentTouchRef.current.y);
+    console.log('[TOUCH-PROPULSION] Applying thrust direction:', direction);
     move(direction);
     
     thrustAnimationRef.current = requestAnimationFrame(updateThrust);

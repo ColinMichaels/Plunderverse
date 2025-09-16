@@ -73,6 +73,7 @@ export function CameraController() {
   };
 
   const handleMobileMove = (movement: { x: number; y: number; z: number }) => {
+    console.log('[CAMERA-CONTROLLER] Mobile move received:', movement);
     mobileThrustRef.current.set(movement.x, movement.y, movement.z);
   };
 
