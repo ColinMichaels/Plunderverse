@@ -9,6 +9,7 @@ import { TakeoffControls } from "./components/TakeoffControls";
 import { UILayoutProvider } from "./components/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
+import { CanvasLookControls } from "./components/mobile/CanvasLookControls";
 import "@fontsource/inter";
 
 // Define control keys for space flight
@@ -78,25 +79,27 @@ function App() {
         {/* Show game when playing */}
         {phase === "playing" && showCanvas && (
           <KeyboardControls map={controls}>
-            <Canvas
-              shadows
-              camera={{
-                position: [0, 10, 50],
-                fov: 90,
-                near: 0.1,
-                far: 10000,
-              }}
-              gl={{
-                antialias: true,
-                powerPreference: "high-performance",
-              }}
-            >
-              <color attach="background" args={["#000000"]} />
+            <CanvasLookControls>
+              <Canvas
+                shadows
+                camera={{
+                  position: [0, 10, 50],
+                  fov: 90,
+                  near: 0.1,
+                  far: 10000,
+                }}
+                gl={{
+                  antialias: true,
+                  powerPreference: "high-performance",
+                }}
+              >
+                <color attach="background" args={["#000000"]} />
 
-              <Suspense fallback={null}>
-                <SolarSystem />
-              </Suspense>
-            </Canvas>
+                <Suspense fallback={null}>
+                  <SolarSystem />
+                </Suspense>
+              </Canvas>
+            </CanvasLookControls>
 
             <GameUI />
             <PlanetSurfaceScene />

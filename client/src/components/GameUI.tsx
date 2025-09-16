@@ -6,8 +6,7 @@ import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
 import { CockpitHUD } from "./CockpitHUD";
 import { MiniMap } from "./MiniMap";
-import { MobileControls } from "./MobileControls";
-import { MobilePropulsion } from "./MobilePropulsion";
+import { MobileHUD } from "./mobile/MobileHUD";
 import { OrbitalInterface } from "./OrbitalInterface";
 import { InventoryDisplay } from "./InventoryDisplay";
 import { EquipmentWarning } from "./EquipmentWarning";
@@ -84,11 +83,8 @@ export function GameUI() {
       <InventoryDisplay />
       <EquipmentWarning />
 
-      {/* Mobile Controls */}
-      <MobileControls />
-
-      {/* Mobile Propulsion Controls */}
-      <MobilePropulsion onThrust={() => {}} />
+      {/* Mobile Controls - New Unified System */}
+      <MobileHUD />
       
       {/* Fixed minimap in bottom left corner */}
       <div className="fixed bottom-4 left-4 z-30">

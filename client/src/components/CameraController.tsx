@@ -1,6 +1,6 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useShooting } from "../lib/stores/useShooting";
@@ -13,6 +13,7 @@ import { useEquipment } from "../lib/stores/useEquipment";
 import { useMining } from "../lib/stores/useMining";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { planets } from "../lib/planetData";
+import { bindInputHandlers, useInput } from "../stores/useInput";
 
 enum Controls {
   forward = "forward",
@@ -39,6 +40,7 @@ export function CameraController() {
   const { playLaser } = useAudio();
   const { setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
+  const { setGyroEnabled, setDragging } = useInput();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
   const lastMenuPressRef = useRef(0);
@@ -52,7 +54,7 @@ export function CameraController() {
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
   const mobileThrustRef = useRef(new THREE.Vector3(0, 0, 0));
 
-  // Mobile control callbacks
+  // Mobile control handlers for InputBus
   const handleMobileShoot = () => {
     const currentTime = performance.now() / 1000;
     if (currentTime - lastShotTimeRef.current > 0.2) {
@@ -72,7 +74,6 @@ export function CameraController() {
 
   const handleMobileMove = (movement: { x: number; y: number; z: number }) => {
     mobileThrustRef.current.set(movement.x, movement.y, movement.z);
-    console.log("Mobile move input:", movement);
   };
 
   const handleMobileLand = () => {
@@ -656,13 +657,25 @@ export function CameraController() {
     }
   });
 
-  // Expose mobile control callbacks for MobileControls component
-  (window as any).mobileControlCallbacks = {
-    onShoot: handleMobileShoot,
-    onLook: handleMobileLook,
-    onMove: handleMobileMove,
-    onLand: handleMobileLand,
-  };
+  // Bind mobile controls to InputBus
+  useEffect(() => {
+    bindInputHandlers({
+      onLook: handleMobileLook,
+      onMove: handleMobileMove,
+      onShoot: handleMobileShoot,
+      onLand: handleMobileLand,
+    });
+
+    return () => {
+      // Reset to no-ops on unmount
+      bindInputHandlers({
+        onLook: () => {},
+        onMove: () => {},
+        onShoot: () => {},
+        onLand: () => {},
+      });
+    };
+  }, []);
 
   return null;
 }
