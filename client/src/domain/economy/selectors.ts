@@ -159,12 +159,12 @@ export const useCreditsData = () => {
   const earnCredits = useCreditsStore(state => state.earnCredits);
   const setCredits = useCreditsStore(state => state.setCredits);
   
-  return useMemo(() => ({
+  return {
     credits,
     spendCredits,
     earnCredits,
     setCredits
-  }), [credits, spendCredits, earnCredits, setCredits]);
+  };
 };
 
 // Selector for trading interface specific data
