@@ -114,7 +114,7 @@ export function CockpitHUD() {
     <div className="fixed inset-0 pointer-events-none z-30">
       {/* Central HUD - compact and less intrusive */}
       <div
-        className={`absolute top-16 left-0 transform translate-x-1/2 transition-all duration-300 ${
+        className={`absolute top-16 left-0 transform translate-x-1/2 transition-all duration-300 central-hud ${
           isThrusting
             ? "scale-75 opacity-40 pointer-events-none"
             : "scale-100 opacity-100 pointer-events-auto"
@@ -122,8 +122,8 @@ export function CockpitHUD() {
       >
         <div
           className={`border border-cyan-400/50 rounded-lg backdrop-blur-sm transition-all duration-300 ${
-            isThrusting ? "bg-slate-800/40 p-2" : "bg-slate-800/70 p-3"
-          } max-w-md`}
+            isThrusting ? "bg-slate-800/40 p-1 sm:p-2" : "bg-slate-800/70 p-2 sm:p-3"
+          } max-w-xs sm:max-w-md text-xs sm:text-sm`}
         >
           {/* Targeting Computer Display */}
           {selectedPlanet && selectedPlanetData && !isLanded ? (
@@ -211,7 +211,7 @@ export function CockpitHUD() {
       <div className="absolute left-6 top-64 transform -translate-y-1/2 pointer-events-auto mobile-nav-left">
         <button
           onClick={() => setActivePanel(activePanel === "nav" ? "none" : "nav")}
-          className={`mb-2 w-12 h-12 rounded-xl border transition-all ${
+          className={`mb-1 sm:mb-2 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl border transition-all text-xs sm:text-base ${
             activePanel === "nav"
               ? "bg-cyan-500 border-cyan-400 text-slate-900"
               : "bg-slate-800/90 border-slate-600 text-slate-400 hover:text-white"
@@ -221,8 +221,8 @@ export function CockpitHUD() {
         </button>
 
         {activePanel === "nav" && (
-          <div className="bg-slate-800/95 border border-cyan-400/50 rounded-xl p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
-            <h3 className="text-cyan-400 font-semibold mb-3">🗺️ NAV</h3>
+          <div className="bg-slate-800/95 border border-cyan-400/50 rounded-lg sm:rounded-xl p-2 sm:p-4 w-64 sm:w-80 max-h-72 sm:max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
+            <h3 className="text-cyan-400 font-semibold mb-2 sm:mb-3 text-xs sm:text-sm">🗺️ NAV</h3>
 
             {/* Coordinates */}
             <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
@@ -352,7 +352,7 @@ export function CockpitHUD() {
           onClick={() =>
             setActivePanel(activePanel === "missions" ? "none" : "missions")
           }
-          className={`mb-2 w-12 h-12 rounded-xl border transition-all ${
+          className={`mb-1 sm:mb-2 w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl border transition-all text-xs sm:text-base ${
             activePanel === "missions"
               ? "bg-cyan-500 border-cyan-400 text-slate-900"
               : "bg-slate-800/90 border-slate-600 text-slate-400 hover:text-white"
@@ -362,7 +362,7 @@ export function CockpitHUD() {
         </button>
 
         {activePanel === "missions" && (
-          <div className="bg-slate-800/95 border border-cyan-400/50 rounded-xl p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
+          <div className="bg-slate-800/95 border border-cyan-400/50 rounded-lg sm:rounded-xl p-2 sm:p-4 w-64 sm:w-80 max-h-72 sm:max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
             <h3 className="text-cyan-400 font-semibold mb-3">
               MISSION CONTROL
             </h3>
@@ -423,13 +423,13 @@ export function CockpitHUD() {
         }`}
       >
         <div
-          className={`border border-slate-600 rounded-xl backdrop-blur-sm status-bar transition-all duration-300 ${
-            isThrusting ? "bg-slate-800/60 p-2" : "bg-slate-800/90 p-4"
+          className={`border border-slate-600 rounded-lg sm:rounded-xl backdrop-blur-sm status-bar transition-all duration-300 ${
+            isThrusting ? "bg-slate-800/60 p-1 sm:p-2" : "bg-slate-800/90 p-2 sm:p-4"
           }`}
         >
-          <div className="flex items-center space-x-8">
+          <div className="flex items-center space-x-2 sm:space-x-8">
             {/* Ship Systems */}
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-2 sm:space-x-6">
               {/* Fuel */}
               <div className="text-center">
                 <div className="text-xs text-slate-400 mb-1">FUEL</div>
@@ -518,10 +518,10 @@ export function CockpitHUD() {
             <div className="w-px h-8 bg-slate-600"></div>
 
             {/* Controls */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <button
                 onClick={toggleMute}
-                className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors"
+                className="w-6 h-6 sm:w-8 sm:h-8 bg-slate-700 hover:bg-slate-600 rounded border sm:rounded-lg border-slate-600 transition-colors"
                 title={isMuted ? "Unmute Audio" : "Mute Audio"}
               >
                 <span className="text-xs">{isMuted ? "🔇" : "🔊"}</span>
@@ -529,7 +529,7 @@ export function CockpitHUD() {
 
               <button
                 onClick={showSplash}
-                className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 transition-colors text-xs"
+                className="px-2 sm:px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded border sm:rounded-lg border-slate-600 transition-colors text-xs"
                 title="Main Menu (ESC)"
               >
                 MENU

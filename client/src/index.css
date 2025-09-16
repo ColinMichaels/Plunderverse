@@ -32,16 +32,18 @@ canvas {
 /* Mobile responsive adjustments */
 @media (max-width: 768px) {
   .cockpit-panel {
-    @apply w-full max-w-sm p-2 text-sm;
-    max-height: 60vh !important;
+    @apply w-full max-w-xs p-1 text-xs;
+    max-height: 40vh !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     right: auto !important;
+    font-size: 0.65rem !important;
   }
 
   .status-bar {
-    @apply flex-wrap gap-1 p-2 text-xs;
-    bottom: 80px !important;
+    @apply flex-wrap gap-1 p-1 text-xs;
+    bottom: 60px !important;
+    font-size: 0.6rem !important;
   }
 
   .status-item {
@@ -49,47 +51,85 @@ canvas {
   }
 
   .minimap {
-    @apply w-20 h-20;
-    bottom: 140px !important;
-    left: 8px !important;
+    @apply w-14 h-14;
+    bottom: 100px !important;
+    left: 4px !important;
     z-index: 50;
   }
 
   .flight-controls {
-    @apply text-xs p-2;
+    @apply text-xs p-1;
+    font-size: 0.6rem !important;
   }
 
-  /* Mobile navigation buttons */
+  /* Mobile navigation buttons - much smaller */
   .mobile-nav-left {
-    left: 4px !important;
-    top: 80px !important;
+    left: 2px !important;
+    top: 60px !important;
     transform: none !important;
   }
 
   .mobile-nav-right {
-    right: 4px !important;
-    top: 80px !important;
+    right: 2px !important;
+    top: 60px !important;
     transform: none !important;
+  }
+
+  /* Make mobile nav buttons smaller */
+  .mobile-nav-left button,
+  .mobile-nav-right button {
+    @apply w-8 h-8 text-xs !important;
+    font-size: 0.7rem !important;
+  }
+
+  /* Compact mobile panels */
+  .mobile-nav-left .cockpit-panel,
+  .mobile-nav-right .cockpit-panel {
+    @apply w-72 max-h-80 p-2 text-xs !important;
+    font-size: 0.65rem !important;
   }
 }
 
 @media (max-width: 480px) {
   .cockpit-panel {
     @apply max-w-xs text-xs;
-    max-height: 50vh !important;
-    padding: 8px !important;
+    max-height: 35vh !important;
+    padding: 4px !important;
+    font-size: 0.6rem !important;
   }
 
   .status-bar {
     @apply text-xs;
-    bottom: 70px !important;
+    bottom: 50px !important;
+    font-size: 0.55rem !important;
+    padding: 4px !important;
   }
 
   .minimap {
-    @apply w-16 h-16;
-    bottom: 130px !important;
-    left: 4px !important;
+    @apply w-12 h-12;
+    bottom: 90px !important;
+    left: 2px !important;
     z-index: 50;
+  }
+
+  /* Even smaller nav buttons for very small screens */
+  .mobile-nav-left button,
+  .mobile-nav-right button {
+    @apply w-6 h-6 text-xs !important;
+    font-size: 0.6rem !important;
+  }
+
+  /* Ultra compact panels for small phones */
+  .mobile-nav-left .cockpit-panel,
+  .mobile-nav-right .cockpit-panel {
+    @apply w-64 max-h-72 p-1 text-xs !important;
+    font-size: 0.55rem !important;
+  }
+
+  /* Compact central HUD for small screens */
+  .central-hud {
+    @apply scale-75 !important;
+    transform-origin: top left !important;
   }
 }
 
