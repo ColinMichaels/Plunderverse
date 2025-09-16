@@ -5,6 +5,7 @@ import {
   SkipForward,
   SkipBack,
   Volume2,
+  VolumeX,
   List,
   Shuffle,
   RotateCcw,
@@ -45,10 +46,9 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
     getCurrentTrack,
   } = useMusicPlayer();
 
-  const { isMuted } = useAudio();
+  const { isMuted, toggleMute } = useAudio();
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
   const [isMinimized, setIsMinimized] = useState(true);
-  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Initialize music player on mount
   useEffect(() => {
@@ -276,10 +276,12 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowVolumeSlider(!showVolumeSlider)}
-              className="h-5 w-5 text-cyan-400 hover:text-cyan-300 p-0"
+              onClick={toggleMute}
+              className={`h-5 w-5 hover:text-cyan-300 p-0 ${
+                isMuted ? "text-red-400" : "text-cyan-400"
+              }`}
             >
-              <Volume2 size={10} />
+              {isMuted ? <VolumeX size={10} /> : <Volume2 size={10} />}
             </Button>
             <Button
               variant="ghost"
@@ -290,19 +292,6 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               <Maximize2 size={8} />
             </Button>
           </div>
-
-          {/* Volume slider popup */}
-          {showVolumeSlider && (
-            <div className="absolute -top-10 right-0 bg-black/90 border border-white/20 rounded px-2 py-1 flex items-center gap-2 w-20">
-              <Slider
-                value={[volume * 100]}
-                onValueChange={(value) => setVolume(value[0] / 100)}
-                max={100}
-                step={5}
-                className="flex-1"
-              />
-            </div>
-          )}
         </div>
       )}
     </div>
