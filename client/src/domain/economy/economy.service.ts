@@ -5,6 +5,16 @@ import { useMining } from '../../lib/stores/useMining';
 import { useAudio } from '../../lib/stores/useAudio';
 import { ResourceData } from '../../lib/planetData';
 import { economyEvents } from './events';
+import {
+  createTransactionContext,
+  completeTransactionContext,
+  createStateSnapshot,
+  validateEconomyState,
+  logStateDiff,
+  checkpoint,
+  assert,
+  DEBUG_PREFIXES
+} from './debug';
 
 export interface TransactionResult {
   success: boolean;
@@ -27,36 +37,84 @@ class EconomyService {
    * Sell resources from inventory for credits
    */
   sellResource(resourceType: string, quantity: number): TransactionResult {
-    console.log(`[ECONOMY-SERVICE] Starting sellResource: ${resourceType} x${quantity}`);
+    // Create transaction context for debugging
+    const txContext = createTransactionContext('sellResource', { resourceType, quantity });
+    checkpoint(`Starting sellResource: ${resourceType} x${quantity}`, { transactionId: txContext.id });
     
     const inventory = useInventoryStore.getState();
     const credits = useCreditsStore.getState();
     const audio = useAudio.getState();
     
+    // Capture initial state for debugging
+    const initialState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+    checkpoint('Initial state captured', { credits: credits.credits, storageUsed: initialState.storageUsed });
+    
+    // Validate initial state consistency
+    validateEconomyState(credits.credits, inventory.items, inventory.storageCapacity, 'sellResource-start');
+    
     // Find the resource item
     const item = inventory.items.find(item => item.type === resourceType);
     if (!item) {
-      return {
+      const result: TransactionResult = {
         success: false,
         message: `Resource ${resourceType} not found in inventory`
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} sellResource failed - resource not found:`, {
+        resourceType,
+        availableResources: inventory.items.map(i => i.type),
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, false, result);
+      return result;
     }
     
     // Check quantity
     if (item.quantity < quantity) {
-      return {
+      const result: TransactionResult = {
         success: false,
         message: `Insufficient ${resourceType}! Have ${item.quantity}, need ${quantity}`
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} sellResource failed - insufficient quantity:`, {
+        resourceType,
+        available: item.quantity,
+        requested: quantity,
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, false, result);
+      return result;
     }
     
     // Calculate total value
     const totalValue = item.value * quantity;
+    checkpoint('Transaction calculations', { 
+      totalValue, 
+      itemValue: item.value, 
+      quantity,
+      transactionId: txContext.id
+    });
     
-    // Perform atomic transaction
+    // Perform atomic transaction with detailed logging
+    console.log(`${DEBUG_PREFIXES.TRANSACTION} Executing atomic sellResource transaction:`, {
+      resourceType,
+      quantity,
+      totalValue,
+      creditsBefore: credits.credits,
+      storageUsedBefore: initialState.storageUsed,
+      transactionId: txContext.id
+    });
+    
     const removeSuccess = inventory.removeResource(resourceType, quantity);
     if (removeSuccess) {
+      // Log successful resource removal
+      checkpoint('Resource removal successful', { resourceType, quantity, transactionId: txContext.id });
+      
       credits.earnCredits(totalValue);
+      checkpoint('Credits earned', { totalValue, newCredits: credits.credits, transactionId: txContext.id });
+      
       audio.playSuccess();
       
       // Emit event
@@ -65,9 +123,29 @@ class EconomyService {
         payload: { amount: totalValue },
         timestamp: Date.now()
       });
+      checkpoint('Event emitted', { type: 'credits_earned', amount: totalValue, transactionId: txContext.id });
       
-      console.log(`[ECONOMY-SERVICE] Sold ${quantity} ${resourceType} for ${totalValue} credits`);
-      return {
+      // Capture final state and log diff
+      const finalState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+      logStateDiff(initialState, finalState, `sellResource-${resourceType}`);
+      
+      // Validate final state consistency
+      validateEconomyState(credits.credits, inventory.items, inventory.storageCapacity, 'sellResource-end');
+      
+      // Assert expected changes
+      assert(
+        finalState.credits === initialState.credits + totalValue,
+        `Credits change assertion failed in sellResource: expected ${initialState.credits + totalValue}, got ${finalState.credits}`,
+        { initialState, finalState, totalValue, transactionId: txContext.id }
+      );
+      
+      assert(
+        finalState.storageUsed === initialState.storageUsed - quantity,
+        `Storage change assertion failed in sellResource: expected ${initialState.storageUsed - quantity}, got ${finalState.storageUsed}`,
+        { initialState, finalState, quantity, transactionId: txContext.id }
+      );
+      
+      const result: TransactionResult = {
         success: true,
         message: `Sold ${quantity} ${resourceType} for ${totalValue} credits`,
         details: {
@@ -75,31 +153,81 @@ class EconomyService {
           resourcesRemoved: [{ type: resourceType, quantity }]
         }
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} sellResource completed successfully:`, {
+        resourceType,
+        quantity,
+        totalValue,
+        creditsAfter: finalState.credits,
+        storageUsedAfter: finalState.storageUsed,
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, true, result);
+      return result;
     }
     
-    return {
+    // Transaction failed - log failure details
+    const result: TransactionResult = {
       success: false,
       message: `Failed to remove ${resourceType} from inventory`
     };
+    
+    console.error(`${DEBUG_PREFIXES.TRANSACTION} sellResource failed - atomic transaction failure:`, {
+      resourceType,
+      quantity,
+      removeSuccess,
+      inventoryState: inventory.items,
+      transactionId: txContext.id
+    });
+    
+    // Validate state hasn't changed after failure
+    const failureState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+    assert(
+      failureState.checksum === initialState.checksum,
+      `State changed after failed sellResource transaction`,
+      { initialState, failureState, transactionId: txContext.id }
+    );
+    
+    completeTransactionContext(txContext, false, result);
+    return result;
   }
   
   /**
    * Buy and refuel ship with fuel
    */
   buyFuel(fuelAmount: number): TransactionResult {
-    console.log(`[ECONOMY-SERVICE] Starting buyFuel: ${fuelAmount} units`);
+    // Create transaction context for debugging
+    const txContext = createTransactionContext('buyFuel', { fuelAmount });
+    checkpoint(`Starting buyFuel: ${fuelAmount} units`, { transactionId: txContext.id });
     
     const credits = useCreditsStore.getState();
     const equipment = useEquipment.getState();
     const audio = useAudio.getState();
+    const inventory = useInventoryStore.getState();
+    
+    // Capture initial state for debugging
+    const initialState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+    checkpoint('Initial state captured', { credits: credits.credits, transactionId: txContext.id });
+    
+    // Validate initial state consistency
+    validateEconomyState(credits.credits, inventory.items, inventory.storageCapacity, 'buyFuel-start');
     
     // Find fuel tank
     const fuelTank = equipment.equipment.find(e => e.id === 'fuel-tank');
     if (!fuelTank) {
-      return {
+      const result: TransactionResult = {
         success: false,
         message: 'Fuel tank not found'
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} buyFuel failed - fuel tank not found:`, {
+        equipmentList: equipment.equipment.map(e => e.id),
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, false, result);
+      return result;
     }
     
     // Calculate actual fuel cost using equipment's replenishmentCost
@@ -108,28 +236,74 @@ class EconomyService {
     const fuelCostPerUnit = fuelTank.replenishmentCost || 2;
     const actualCost = Math.ceil(actualRefill * fuelCostPerUnit);
     
+    checkpoint('Fuel calculations', {
+      maxRefill,
+      actualRefill,
+      fuelCostPerUnit,
+      actualCost,
+      fuelTankState: {
+        currentDurability: fuelTank.currentDurability,
+        maxDurability: fuelTank.maxDurability
+      },
+      transactionId: txContext.id
+    });
+    
     // Check credits first
     if (credits.credits < actualCost) {
-      return {
+      const result: TransactionResult = {
         success: false,
         message: `Insufficient credits! Need ${actualCost}, have ${credits.credits}`
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} buyFuel failed - insufficient credits:`, {
+        required: actualCost,
+        available: credits.credits,
+        deficit: actualCost - credits.credits,
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, false, result);
+      return result;
     }
     
     // Check if refuel is needed
     if (actualRefill <= 0) {
-      return {
+      const result: TransactionResult = {
         success: false,
         message: 'Fuel tank is already full'
       };
+      
+      console.log(`${DEBUG_PREFIXES.TRANSACTION} buyFuel failed - tank already full:`, {
+        fuelTankState: {
+          currentDurability: fuelTank.currentDurability,
+          maxDurability: fuelTank.maxDurability,
+          percentFull: (fuelTank.currentDurability / fuelTank.maxDurability) * 100
+        },
+        transactionId: txContext.id
+      });
+      
+      completeTransactionContext(txContext, false, result);
+      return result;
     }
     
     // ATOMIC TRANSACTION: Spend credits first, then apply fuel only if successful
+    console.log(`${DEBUG_PREFIXES.TRANSACTION} Executing atomic buyFuel transaction:`, {
+      actualCost,
+      actualRefill,
+      creditsBefore: credits.credits,
+      fuelBefore: fuelTank.currentDurability,
+      transactionId: txContext.id
+    });
+    
     const spendSuccess = credits.spendCredits(actualCost);
     if (spendSuccess) {
+      checkpoint('Credits spent successfully', { actualCost, newCredits: credits.credits, transactionId: txContext.id });
+      
       // Apply fuel after successful credit spending
       const refuelResult = equipment.replenishFuel(actualRefill, actualCost + 1); // Pass sufficient credits
       if (refuelResult.success) {
+        checkpoint('Fuel replenishment successful', { actualRefill, transactionId: txContext.id });
+        
         audio.playSuccess();
         
         // Emit event
@@ -138,9 +312,23 @@ class EconomyService {
           payload: { amount: actualCost },
           timestamp: Date.now()
         });
+        checkpoint('Event emitted', { type: 'credits_spent', amount: actualCost, transactionId: txContext.id });
         
-        console.log(`[ECONOMY-SERVICE] Refueled ${actualRefill} units for ${actualCost} credits`);
-        return {
+        // Capture final state and log diff
+        const finalState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+        logStateDiff(initialState, finalState, 'buyFuel');
+        
+        // Validate final state consistency
+        validateEconomyState(credits.credits, inventory.items, inventory.storageCapacity, 'buyFuel-end');
+        
+        // Assert expected changes
+        assert(
+          finalState.credits === initialState.credits - actualCost,
+          `Credits change assertion failed in buyFuel: expected ${initialState.credits - actualCost}, got ${finalState.credits}`,
+          { initialState, finalState, actualCost, transactionId: txContext.id }
+        );
+        
+        const result: TransactionResult = {
           success: true,
           message: `Refueled ${actualRefill} units for ${actualCost} credits`,
           details: {
@@ -148,20 +336,68 @@ class EconomyService {
             fuelAdded: actualRefill
           }
         };
+        
+        console.log(`${DEBUG_PREFIXES.TRANSACTION} buyFuel completed successfully:`, {
+          actualRefill,
+          actualCost,
+          creditsAfter: finalState.credits,
+          transactionId: txContext.id
+        });
+        
+        completeTransactionContext(txContext, true, result);
+        return result;
       } else {
         // Rollback - refund credits if fuel application failed
+        console.error(`${DEBUG_PREFIXES.TRANSACTION} buyFuel fuel application failed - rolling back:`, {
+          refuelResult,
+          creditsToRefund: actualCost,
+          transactionId: txContext.id
+        });
+        
         credits.earnCredits(actualCost);
-        return {
+        checkpoint('Credits refunded after fuel failure', { actualCost, transactionId: txContext.id });
+        
+        // Validate rollback state matches initial state
+        const rollbackState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+        assert(
+          rollbackState.credits === initialState.credits,
+          `Rollback credits assertion failed in buyFuel: expected ${initialState.credits}, got ${rollbackState.credits}`,
+          { initialState, rollbackState, transactionId: txContext.id }
+        );
+        
+        const result: TransactionResult = {
           success: false,
           message: 'Failed to apply fuel after payment - credits refunded'
         };
+        
+        completeTransactionContext(txContext, false, result);
+        return result;
       }
     }
     
-    return {
+    // Credit spending failed
+    const result: TransactionResult = {
       success: false,
       message: 'Failed to spend credits for fuel purchase'
     };
+    
+    console.error(`${DEBUG_PREFIXES.TRANSACTION} buyFuel failed - credit spending failure:`, {
+      actualCost,
+      availableCredits: credits.credits,
+      spendSuccess,
+      transactionId: txContext.id
+    });
+    
+    // Validate state hasn't changed after failure
+    const failureState = createStateSnapshot(credits.credits, inventory.items, inventory.storageCapacity);
+    assert(
+      failureState.checksum === initialState.checksum,
+      `State changed after failed buyFuel transaction`,
+      { initialState, failureState, transactionId: txContext.id }
+    );
+    
+    completeTransactionContext(txContext, false, result);
+    return result;
   }
   
   /**

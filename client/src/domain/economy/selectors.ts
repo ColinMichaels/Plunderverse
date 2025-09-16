@@ -1,44 +1,132 @@
+import { useMemo } from 'react';
 import { useCreditsStore } from './credits.store';
 import { useInventoryStore } from './inventory.store';
 import { EconomySelectors } from './types';
+import {
+  validateEconomyState,
+  assert,
+  checkpoint,
+  DEBUG_PREFIXES,
+  getDebugConfig
+} from './debug';
 
 export const useEconomySelectors = (): EconomySelectors => {
+  const config = getDebugConfig();
+  
+  if (config.enabled && config.consistencyChecks) {
+    checkpoint('useEconomySelectors called');
+  }
+  
   const credits = useCreditsStore(state => state.credits);
-  const inventory = useInventoryStore(state => ({
-    items: state.items,
-    storageCapacity: state.storageCapacity
-  }));
+  const items = useInventoryStore(state => state.items);
+  const storageCapacity = useInventoryStore(state => state.storageCapacity);
 
-  const currentStorage = inventory.items.reduce((total, item) => total + item.quantity, 0);
+  // Memoize calculations to prevent infinite loops
+  const calculations = useMemo(() => {
+    const currentStorage = items.reduce((total, item) => total + item.quantity, 0);
+    const totalInventoryValue = items.reduce((total, item) => total + (item.value * item.quantity), 0);
 
-  return {
-    totalInventoryValue: inventory.items.reduce((total, item) => total + (item.value * item.quantity), 0),
-    storageUsed: currentStorage,
-    canAfford: (amount: number) => credits >= amount,
-    hasResource: (resourceType: string, quantity: number) => {
-      const item = inventory.items.find(item => item.type === resourceType);
-      return item ? item.quantity >= quantity : false;
+    // Validate state consistency
+    if (config.enabled && config.consistencyChecks) {
+      validateEconomyState(credits, items, storageCapacity, 'useEconomySelectors');
+      
+      assert(
+        currentStorage >= 0,
+        `Negative storage calculated in useEconomySelectors: ${currentStorage}`,
+        { inventory: items, currentStorage }
+      );
+      
+      assert(
+        currentStorage <= storageCapacity,
+        `Storage overflow detected in useEconomySelectors: ${currentStorage} > ${storageCapacity}`,
+        { currentStorage, storageCapacity }
+      );
+      
+      assert(
+        totalInventoryValue >= 0,
+        `Negative inventory value calculated in useEconomySelectors: ${totalInventoryValue}`,
+        { inventory: items, totalInventoryValue }
+      );
+      
+      console.log(`${DEBUG_PREFIXES.CONSISTENCY} useEconomySelectors calculations:`, {
+        credits,
+        storageUsed: currentStorage,
+        storageCapacity,
+        totalInventoryValue,
+        itemCount: items.length
+      });
     }
-  };
+
+    return {
+      totalInventoryValue,
+      storageUsed: currentStorage
+    };
+  }, [items, storageCapacity, credits, config.enabled, config.consistencyChecks]);
+
+  // Memoize functions to prevent recreation on every render
+  const canAfford = useMemo(() => (amount: number) => {
+    const result = credits >= amount;
+    if (config.enabled && config.consistencyChecks) {
+      assert(
+        typeof amount === 'number' && amount >= 0,
+        `Invalid amount passed to canAfford: ${amount}`,
+        { amount, credits }
+      );
+      console.log(`${DEBUG_PREFIXES.CONSISTENCY} canAfford(${amount}): ${result} (credits: ${credits})`);
+    }
+    return result;
+  }, [credits, config.enabled, config.consistencyChecks]);
+
+  const hasResource = useMemo(() => (resourceType: string, quantity: number) => {
+    const item = items.find(item => item.type === resourceType);
+    const result = item ? item.quantity >= quantity : false;
+    
+    if (config.enabled && config.consistencyChecks) {
+      assert(
+        typeof quantity === 'number' && quantity >= 0,
+        `Invalid quantity passed to hasResource: ${quantity}`,
+        { resourceType, quantity }
+      );
+      
+      console.log(`${DEBUG_PREFIXES.CONSISTENCY} hasResource(${resourceType}, ${quantity}): ${result}`, {
+        available: item?.quantity || 0,
+        requested: quantity
+      });
+    }
+    
+    return result;
+  }, [items, config.enabled, config.consistencyChecks]);
+
+  return useMemo(() => ({
+    totalInventoryValue: calculations.totalInventoryValue,
+    storageUsed: calculations.storageUsed,
+    canAfford,
+    hasResource
+  }), [calculations.totalInventoryValue, calculations.storageUsed, canAfford, hasResource]);
 };
 
 // Individual selectors for specific use cases
 export const useTotalInventoryValue = () => {
-  return useInventoryStore(state => 
-    state.items.reduce((total, item) => total + (item.value * item.quantity), 0)
+  const items = useInventoryStore(state => state.items);
+  return useMemo(() => 
+    items.reduce((total, item) => total + (item.value * item.quantity), 0),
+    [items]
   );
 };
 
 export const useStorageInfo = () => {
-  return useInventoryStore(state => {
-    const used = state.items.reduce((total, item) => total + item.quantity, 0);
+  const items = useInventoryStore(state => state.items);
+  const capacity = useInventoryStore(state => state.storageCapacity);
+  
+  return useMemo(() => {
+    const used = items.reduce((total, item) => total + item.quantity, 0);
     return {
       used,
-      capacity: state.storageCapacity,
-      available: state.storageCapacity - used,
-      percentage: (used / state.storageCapacity) * 100
+      capacity,
+      available: capacity - used,
+      percentage: (used / capacity) * 100
     };
-  });
+  }, [items, capacity]);
 };
 
 export const useCanAfford = (amount: number) => {
@@ -47,52 +135,64 @@ export const useCanAfford = (amount: number) => {
 
 // Comprehensive selector for InventoryDisplay component
 export const useInventoryDisplayData = () => {
-  return useInventoryStore(state => {
-    const storageUsed = state.items.reduce((total, item) => total + item.quantity, 0);
-    const totalValue = state.items.reduce((total, item) => total + (item.value * item.quantity), 0);
+  const items = useInventoryStore(state => state.items);
+  const storageCapacity = useInventoryStore(state => state.storageCapacity);
+  
+  return useMemo(() => {
+    const storageUsed = items.reduce((total, item) => total + item.quantity, 0);
+    const totalValue = items.reduce((total, item) => total + (item.value * item.quantity), 0);
     
     return {
-      items: state.items,
-      storageCapacity: state.storageCapacity,
+      items,
+      storageCapacity,
       storageUsed,
       totalValue,
-      storagePercentage: (storageUsed / state.storageCapacity) * 100
+      storagePercentage: (storageUsed / storageCapacity) * 100
     };
-  });
+  }, [items, storageCapacity]);
 };
 
 // Selector for components that only need credits information
 export const useCreditsData = () => {
-  return useCreditsStore(state => ({
-    credits: state.credits,
-    spendCredits: state.spendCredits,
-    earnCredits: state.earnCredits,
-    setCredits: state.setCredits
-  }));
+  const credits = useCreditsStore(state => state.credits);
+  const spendCredits = useCreditsStore(state => state.spendCredits);
+  const earnCredits = useCreditsStore(state => state.earnCredits);
+  const setCredits = useCreditsStore(state => state.setCredits);
+  
+  return useMemo(() => ({
+    credits,
+    spendCredits,
+    earnCredits,
+    setCredits
+  }), [credits, spendCredits, earnCredits, setCredits]);
 };
 
 // Selector for trading interface specific data
 export const useTradingData = () => {
   const credits = useCreditsStore(state => state.credits);
-  const inventory = useInventoryStore(state => ({
-    items: state.items,
-    storageCapacity: state.storageCapacity
-  }));
+  const items = useInventoryStore(state => state.items);
+  const storageCapacity = useInventoryStore(state => state.storageCapacity);
   
-  return {
+  return useMemo(() => ({
     credits,
-    items: inventory.items,
-    storageCapacity: inventory.storageCapacity
-  };
+    items,
+    storageCapacity
+  }), [credits, items, storageCapacity]);
 };
 
 // Selector for components that need inventory actions (like mining)
 export const useInventoryActions = () => {
-  return useInventoryStore(state => ({
-    addResource: state.addResource,
-    removeResource: state.removeResource,
-    getResourceQuantity: state.getResourceQuantity,
-    getStorageUsed: state.getStorageUsed,
-    upgradeStorage: state.upgradeStorage
-  }));
+  const addResource = useInventoryStore(state => state.addResource);
+  const removeResource = useInventoryStore(state => state.removeResource);
+  const getResourceQuantity = useInventoryStore(state => state.getResourceQuantity);
+  const getStorageUsed = useInventoryStore(state => state.getStorageUsed);
+  const upgradeStorage = useInventoryStore(state => state.upgradeStorage);
+  
+  return useMemo(() => ({
+    addResource,
+    removeResource,
+    getResourceQuantity,
+    getStorageUsed,
+    upgradeStorage
+  }), [addResource, removeResource, getResourceQuantity, getStorageUsed, upgradeStorage]);
 };
