@@ -17,7 +17,8 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   const { 
     isActive, 
     targetResource, 
-    progress, 
+    clicksCompleted,
+    clicksRequired,
     miningSpeed,
     miningEfficiency,
     drillPower,
@@ -28,6 +29,9 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
     upgradeDrill,
     upgradeExtractor
   } = useMining();
+  
+  // Calculate progress from clicks
+  const progress = clicksRequired > 0 ? (clicksCompleted / clicksRequired) * 100 : 0;
   
   const { addResource, getStorageUsed, storageCapacity } = useInventory();
   const { earnCredits, spendCredits, credits } = useCredits();
