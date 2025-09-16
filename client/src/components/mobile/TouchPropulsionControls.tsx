@@ -34,12 +34,13 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     const normalizedY = (clientY - rect.top - centerY) / centerY;
     
     // Invert Y so up = forward, down = backward
-    const speed = -normalizedY * 0.8;
+    const speed = -normalizedY;
     
-    // Apply deadzone in center
-    if (Math.abs(speed) < 0.15) return 0;
+    // Apply smaller deadzone in center for better responsiveness
+    if (Math.abs(speed) < 0.1) return 0;
     
-    return speed;
+    // Increase thrust power
+    return speed * 1.5;
   }, []);
   
   // Handle look controls (drag without thrust)
@@ -66,6 +67,9 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     // Always thrust forward (Z-axis), speed controlled by Y position
     const thrustVector = { x: 0, y: 0, z: speed };
     move(thrustVector);
+    
+    // Debug logging
+    console.log('[MOBILE-THRUST] Y:', currentTouchRef.current.y, 'Speed:', speed.toFixed(3), 'Vector:', thrustVector);
     
     thrustAnimationRef.current = requestAnimationFrame(updateThrust);
   }, [move, screenToThrustSpeed]);

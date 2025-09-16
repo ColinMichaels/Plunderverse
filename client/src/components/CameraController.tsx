@@ -248,6 +248,17 @@ export function CameraController() {
 
     // Add mobile thrust input (also disabled during autopilot, mining, landing, or landed)
     const mobileThrust = mobileThrustRef.current;
+    
+    // Debug logging for mobile thrust blocking conditions
+    if (mobileThrust.length() > 0) {
+      console.log('[MOBILE-DEBUG] Thrust requested:', mobileThrust, 
+                 'HasFuel:', hasFuel, 
+                 'Autopilot:', isAutopilotActive, 
+                 'Mining:', isMining, 
+                 'Landing:', isLanding, 
+                 'Landed:', isLanded);
+    }
+    
     if (
       mobileThrust.length() > 0 &&
       hasFuel &&
