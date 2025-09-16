@@ -304,24 +304,43 @@ export function MobileControls() {
             </div>
           </div>
 
-          {/* Touch Drag Area for Camera Control - safe zone that doesn't block other controls */}
+          {/* Touch Drag Areas for Camera Control - specific safe zones that don't block UI */}
           {!isGyroEnabled && (
-            <div 
-              ref={touchAreaRef}
-              className="absolute inset-0 bottom-32 pointer-events-auto z-10"
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-              onMouseDown={handleMouseDown}
-              style={{ touchAction: 'none' }} // Prevent default touch behaviors
-            >
-              {/* Touch indicator */}
-              {isDragging && (
-                <div className="absolute top-4 right-4 bg-cyan-500/80 text-white text-xs px-2 py-1 rounded">
-                  👆 Look Around
-                </div>
-              )}
-            </div>
+            <>
+              {/* Central top area - safe for camera look */}
+              <div 
+                ref={touchAreaRef}
+                className="absolute top-20 left-20 right-20 bottom-40 pointer-events-auto z-5"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                onMouseDown={handleMouseDown}
+                style={{ touchAction: 'none' }}
+              >
+                {/* Touch indicator */}
+                {isDragging && (
+                  <div className="absolute top-4 right-4 bg-cyan-500/80 text-white text-xs px-2 py-1 rounded pointer-events-none">
+                    👆 Look Around
+                  </div>
+                )}
+              </div>
+              
+              {/* Additional touch zones - left and right edges for easier access */}
+              <div 
+                className="absolute top-32 left-0 w-16 bottom-40 pointer-events-auto z-5"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: 'none' }}
+              />
+              <div 
+                className="absolute top-32 right-0 w-16 bottom-40 pointer-events-auto z-5"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
+                style={{ touchAction: 'none' }}
+              />
+            </>
           )}
 
           {/* Controls indicator */}
