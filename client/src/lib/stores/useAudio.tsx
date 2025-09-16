@@ -58,6 +58,16 @@ export const useAudio = create<AudioState>((set, get) => ({
         return;
       }
 
+      // PLACEHOLDER: Prevent rapid hit sound spam - limit to once per 200ms  
+      // TODO: Future sound design work will revisit this debouncing implementation
+      const now = Date.now();
+      const lastHitTime = (hitSound as any).lastPlayTime || 0;
+      if (now - lastHitTime < 200) {
+        console.log("Hit sound throttled (preventing spam)");
+        return;
+      }
+      (hitSound as any).lastPlayTime = now;
+
       // Clone the sound to allow overlapping playback
       const soundClone = hitSound.cloneNode() as HTMLAudioElement;
       soundClone.volume = 0.3;
