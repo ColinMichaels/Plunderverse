@@ -1,7 +1,6 @@
 import { useInput } from '../../stores/useInput';
 import { useMobileLayout } from '../../stores/useMobileLayout';
 import { ActionBar } from './ActionBar';
-import { VirtualJoystick } from './VirtualJoystick';
 import { ControlPanel } from './ControlPanel';
 
 export function MobileHUD() {
