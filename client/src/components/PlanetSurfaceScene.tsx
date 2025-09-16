@@ -924,10 +924,16 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   } = useMining();
   const {
     isOn,
-    batteryLe right    getBatteryStatus,
+    batteryLevel,
+    getBatteryStatus,
     isCharging,
-    toggle: toggleFlashlight
-bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
+    toggle: toggleFlashlight,
+    startCharging,
+    stopCharging,
+  } = useFlashlight();
+
+  return (
+    <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
       <h3 className="text-lg font-bold text-cyan-400 mb-3">
         🚀 Surface Operations
       </h3>
