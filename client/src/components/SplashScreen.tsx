@@ -14,48 +14,48 @@ export function SplashScreen() {
     {
       type: "feature",
       text: "🚀 Realistic Physics-Based Space Flight",
-      subtext: "Experience authentic rocket propulsion and momentum"
-    },
-    {
-      type: "feature", 
-      text: "🪐 Explore Our Solar System",
-      subtext: "Visit Mercury, Venus, Earth, Mars and beyond"
+      subtext: "Experience authentic rocket propulsion and momentum",
     },
     {
       type: "feature",
-      text: "⛏️ Mine Resources & Manage Inventory", 
-      subtext: "Discover rare materials on alien worlds"
+      text: "🪐 Explore Our Solar System",
+      subtext: "Visit Mercury, Venus, Earth, Mars and beyond",
+    },
+    {
+      type: "feature",
+      text: "⛏️ Mine Resources & Manage Inventory",
+      subtext: "Discover rare materials on alien worlds",
     },
     {
       type: "reason",
       text: "🎓 Educational & Entertaining",
-      subtext: "Learn real astronomy while having fun"
+      subtext: "Learn real astronomy while having fun",
     },
     {
       type: "reason",
       text: "🌌 Beautiful Cosmic Environments",
-      subtext: "Stunning 3D graphics powered by Three.js"
+      subtext: "Stunning 3D graphics powered by Three.js",
     },
     {
-      type: "reason", 
+      type: "reason",
       text: "😌 Relaxing Space Exploration",
-      subtext: "Peaceful journey through the cosmos"
+      subtext: "Peaceful journey through the cosmos",
     },
     {
       type: "quote",
       text: '"Like Kerbal Space Program meets No Man\'s Sky!"',
-      subtext: "- Steam Player Review"
+      subtext: "- Steam Player Review",
     },
     {
       type: "quote",
       text: '"The most realistic space physics I\'ve experienced"',
-      subtext: "- SpaceGamer2024"
+      subtext: "- SpaceGamer2024",
     },
     {
       type: "quote",
       text: '"I lost hours just exploring the planets"',
-      subtext: "- AstronautDreamer"
-    }
+      subtext: "- AstronautDreamer",
+    },
   ];
 
   // Auto-advance slideshow
@@ -308,7 +308,7 @@ export function SplashScreen() {
         }
         
         .space-travel {
-          animation: spaceDust 30s ease-in-out infinite;
+          animation: spaceDust 20s ease-in-out infinite;
         }
         
         @keyframes spaceDust {
@@ -332,13 +332,13 @@ export function SplashScreen() {
         }
         
         .slideshow-enter {
-          animation: slideZoomIn 0.8s ease-out forwards;
+          animation: slideZoomIn 1.8s ease-out forwards;
           opacity: 0;
           transform: scale(0.3) translateY(20px);
         }
         
         .slideshow-exit {
-          animation: slideZoomOut 0.5s ease-in forwards;
+          animation: slideZoomOut 1.5s ease-in forwards;
         }
         
         @keyframes slideZoomIn {
@@ -397,7 +397,7 @@ export function SplashScreen() {
 
         {/* Animated Slideshow */}
         <div className="mb-12 h-24 flex flex-col items-center justify-center">
-          <div 
+          <div
             key={currentSlide}
             className={`slideshow-enter slide-${slideContent[currentSlide].type} max-w-3xl mx-auto text-center`}
           >

@@ -31,7 +31,13 @@ export function SurfaceMovementController() {
   const velocityRef = useRef(new THREE.Vector3());
 
   // Flashlight system
-  const { toggle: toggleFlashlight, updateBattery, startCharging, stopCharging, isCharging } = useFlashlight();
+  const {
+    toggle: toggleFlashlight,
+    updateBattery,
+    startCharging,
+    stopCharging,
+    isCharging,
+  } = useFlashlight();
   const lastFlashlightPressRef = useRef(0);
   const lastChargePressRef = useRef(0);
 
@@ -60,8 +66,8 @@ export function SurfaceMovementController() {
     const rotation = rotationRef.current;
     const velocity = velocityRef.current;
 
-    const moveSpeed = 12; // Rover movement speed
-    const turnSpeed = 3; // Turning speed
+    const moveSpeed = 6; // Rover movement speed
+    const turnSpeed = 0.9; // Turning speed
     const maxVelocity = 15; // Cap velocity to prevent runaway acceleration
 
     // Reset velocity for this frame
@@ -103,13 +109,16 @@ export function SurfaceMovementController() {
 
     // Flashlight control - toggle with debounce
     const currentTime = performance.now();
-    if (controls.flashlight && (currentTime - lastFlashlightPressRef.current > 300)) {
+    if (
+      controls.flashlight &&
+      currentTime - lastFlashlightPressRef.current > 300
+    ) {
       toggleFlashlight();
       lastFlashlightPressRef.current = currentTime;
     }
 
     // Battery charging control - toggle with debounce
-    if (controls.charge && (currentTime - lastChargePressRef.current > 300)) {
+    if (controls.charge && currentTime - lastChargePressRef.current > 300) {
       if (isCharging) {
         stopCharging();
       } else {

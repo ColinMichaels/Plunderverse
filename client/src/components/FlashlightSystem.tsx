@@ -21,7 +21,7 @@ export function FlashlightSystem() {
       .add(forward.multiplyScalar(0.3));
 
     // Position the light slightly below camera center to simulate chest/helmet mounting
-    flashlightPosition.y -= 0.4;
+    flashlightPosition.y -= 0.04;
 
     spotLightRef.current.position.copy(flashlightPosition);
 
@@ -33,7 +33,7 @@ export function FlashlightSystem() {
     // Adjust intensity based on battery level
     const batteryStatus = getBatteryStatus();
     let intensity = 1.5; // Base intensity for full battery
-    const intensityMultiplier = 2;
+    const intensityMultiplier = 1.35;
 
     switch (batteryStatus) {
       case "critical":
@@ -73,9 +73,9 @@ export function FlashlightSystem() {
         color="#ffffff"
         intensity={100}
         distance={1000} // Effective range of the flashlight
-        angle={Math.PI / 6} // 30-degree cone (typical flashlight beam)
+        angle={Math.PI / 4.5} // 30-degree cone (typical flashlight beam)
         penumbra={0.3} // Soft edge falloff
-        decay={0.05} // Realistic light falloff
+        decay={0.1} // Realistic light falloff
         castShadow
         shadow-mapSize-width={1024}
         shadow-mapSize-height={1024}

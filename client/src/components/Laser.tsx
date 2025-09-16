@@ -21,10 +21,10 @@ export function Laser({ projectile }: LaserProps) {
       <cylinderGeometry args={[0.05, 0.05, 2, 8]} />
       <meshStandardMaterial
         color="#00ffff"
-        emissive="#00ffff"
+        emissive="#ff0000"
         emissiveIntensity={1.8}
         transparent
-        opacity={0.9}
+        opacity={0.6}
       />
     </mesh>
   );
