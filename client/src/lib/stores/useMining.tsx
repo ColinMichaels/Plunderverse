@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { ResourceData } from "../planetData";
 import { useEquipment } from "./useEquipment";
 import { useLandedState } from "./useLandedState";
+import { economyService, TransactionResult } from "../../domain/economy/economy.service";
 
 interface MiningState {
   isActive: boolean;
@@ -19,8 +20,8 @@ interface MiningState {
   // Actions
   startMining: (planet: string, resource: ResourceData) => void;
   stopMining: () => void;
-  performClick: () => { resource: ResourceData; quantity: number; planet: string } | null;
-  updateProgress: (deltaTime: number) => { resource: ResourceData; quantity: number; planet: string } | null;
+  performClick: () => TransactionResult | null;
+  updateProgress: (deltaTime: number) => TransactionResult | null;
   upgradeDrill: () => void;
   upgradeExtractor: () => void;
 }
@@ -90,7 +91,10 @@ export const useMining = create<MiningState>((set, get) => ({
       if (drillPerformance === 0) {
         console.warn("Drill is broken! Mining stopped.");
         get().stopMining();
-        return null;
+        return {
+          success: false,
+          message: "Drill is broken! Mining operation stopped."
+        };
       }
       
       // Calculate base extraction - more dependent on equipment levels
@@ -112,29 +116,24 @@ export const useMining = create<MiningState>((set, get) => ({
         console.warn("Extractor is broken! No resources extracted.");
         get().stopMining();
         return {
-          resource: state.targetResource!,
-          quantity: 0,
-          planet: state.currentPlanet || "Unknown"
+          success: false,
+          message: "Extractor is broken! No resources extracted."
         };
       }
       
       console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} after ${newClicksCompleted} clicks`);
       
-      // Apply wear to equipment
-      const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
-      equipmentStore.applyWear('drill-mk1', stressFactors, 1.0);
-      equipmentStore.applyWear('extractor-basic', stressFactors, 1.0);
-      equipmentStore.applyShipDegradation('mining', stressFactors.operationIntensity, 1.0);
-      
       // Reset mining state
       get().stopMining();
       
-      // Return the extracted materials for inventory addition
-      return {
-        resource: state.targetResource!,
-        quantity: extractedAmount,
-        planet: state.currentPlanet || "Unknown"
-      };
+      // Use EconomyService to handle all mining yield processing (resources, credits, equipment wear, sounds, events)
+      const result = economyService.applyMiningYield(
+        state.targetResource!,
+        extractedAmount,
+        state.currentPlanet || "Unknown"
+      );
+      
+      return result;
     }
     
     return null;
@@ -169,13 +168,7 @@ export const useMining = create<MiningState>((set, get) => ({
     
     // Click-based mining - no automatic progress
     // This function is kept for backward compatibility but not used in click-based system
-    
-    // Apply wear to drill equipment during mining
-    const stressFactors = equipmentStore.calculateStressFactor(state.targetResource, state.currentPlanet || "Unknown");
-    equipmentStore.applyWear('drill-mk1', stressFactors, deltaTime);
-    
-    // Apply ship degradation during mining operations
-    equipmentStore.applyShipDegradation('mining', stressFactors.operationIntensity, deltaTime);
+    // Equipment wear is now handled by EconomyService.applyMiningYield()
     
     // Mining complete (legacy time-based code, not used in click system)
     if (false) {

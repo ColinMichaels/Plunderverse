@@ -67,26 +67,19 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
       const result = updateProgress(0.1); // Update every 100ms
       
       if (result) {
-        // Mining completed, add to inventory
-        const success = addResource(result.resource, result.quantity, result.planet || planetName);
-        
-        if (success) {
-          // Award credits for successful mining
-          const creditReward = Math.floor(result.resource.value * result.quantity * 0.1);
-          earnCredits(creditReward);
-          console.log(`Mining reward: ${creditReward} credits`);
-
-          // Play success sound
-          playSuccess();
+        // Mining completed - EconomyService has already processed everything
+        if (result.success) {
+          console.log(`Mining successful: ${result.message}`);
+          // Success sound and other processing already handled by EconomyService
         } else {
-          console.log("Inventory full! Mining stopped.");
+          console.log(`Mining failed: ${result.message}`);
           stopMining();
         }
       }
     }, 100);
 
     return () => clearInterval(interval);
-  }, [isActive, updateProgress, addResource, planetName, earnCredits, stopMining]);
+  }, [isActive, updateProgress, stopMining]);
 
   if (!isVisible) return null;
 
