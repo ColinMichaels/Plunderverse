@@ -11,6 +11,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
   const joystickRef = useRef<HTMLDivElement>(null);
   const knobRef = useRef<HTMLDivElement>(null);
   const animationFrameRef = useRef<number>();
+  const smoothedThrustRef = useRef({ x: 0, y: 0, z: 0 });
 
   // Detect if we're on mobile
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -27,14 +28,15 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
     onThrust(direction); // Also call the prop function
   }, [onThrust]);
 
-  // Calculate joystick input from knob position
+  // Calculate joystick input from knob position with smoothing
   const updateThrustFromPosition = useCallback((x: number, y: number) => {
     const joystickRadius = 50; // Half of the 100px radius
     const distance = Math.sqrt(x * x + y * y);
     const normalizedDistance = Math.min(distance / joystickRadius, 1);
     
-    if (normalizedDistance < 0.1) {
-      // Dead zone - no movement
+    if (normalizedDistance < 0.15) {
+      // Dead zone - no movement, reset smoothed values
+      smoothedThrustRef.current = { x: 0, y: 0, z: 0 };
       handleDirectionalThrust({ x: 0, y: 0, z: 0 });
       return;
     }
@@ -43,11 +45,22 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
     const normalizedX = (x / joystickRadius) * normalizedDistance;
     const normalizedY = (y / joystickRadius) * normalizedDistance;
     
-    // Map to 3D movement: x = strafe, y = vertical, -y = forward/backward
-    handleDirectionalThrust({ 
+    // Apply smoothing
+    const smoothingFactor = 0.8;
+    const targetThrust = { 
       x: normalizedX, 
       y: 0, // We'll handle vertical separately
       z: -normalizedY  // Negative because up on screen = forward in 3D
+    };
+    
+    smoothedThrustRef.current.x = smoothedThrustRef.current.x * smoothingFactor + targetThrust.x * (1 - smoothingFactor);
+    smoothedThrustRef.current.z = smoothedThrustRef.current.z * smoothingFactor + targetThrust.z * (1 - smoothingFactor);
+    
+    // Map to 3D movement with smoothed values
+    handleDirectionalThrust({ 
+      x: smoothedThrustRef.current.x, 
+      y: 0,
+      z: smoothedThrustRef.current.z
     });
   }, [handleDirectionalThrust]);
 
@@ -108,6 +121,7 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
         const newY = prev.y * 0.8;
         
         if (Math.abs(newX) < 1 && Math.abs(newY) < 1) {
+          smoothedThrustRef.current = { x: 0, y: 0, z: 0 };
           handleDirectionalThrust({ x: 0, y: 0, z: 0 });
           return { x: 0, y: 0 };
         }

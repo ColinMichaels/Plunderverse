@@ -9,6 +9,8 @@ export function MobileControls() {
   const lastGyroRef = useRef({ alpha: 0, beta: 0, gamma: 0 });
   const lastTouchRef = useRef({ x: 0, y: 0 });
   const touchAreaRef = useRef<HTMLDivElement>(null);
+  const smoothedLookRef = useRef({ x: 0, y: 0 });
+  const lookAnimationRef = useRef<number>();
 
   // Request device orientation permission
   const requestPermission = async () => {
@@ -71,25 +73,79 @@ export function MobileControls() {
   const handleTouchDragStart = useCallback((clientX: number, clientY: number) => {
     setIsDragging(true);
     lastTouchRef.current = { x: clientX, y: clientY };
+    
+    // Cancel any active look animation to avoid conflicts
+    if (lookAnimationRef.current) {
+      cancelAnimationFrame(lookAnimationRef.current);
+      lookAnimationRef.current = undefined;
+    }
   }, []);
 
   const handleTouchDragMove = useCallback((clientX: number, clientY: number) => {
     if (!isDragging) return;
     
-    const deltaX = (clientX - lastTouchRef.current.x) * 0.003; // Sensitivity adjustment
-    const deltaY = (clientY - lastTouchRef.current.y) * 0.003;
+    const deltaX = (clientX - lastTouchRef.current.x) * 0.002; // Reduced sensitivity for smoother control
+    const deltaY = (clientY - lastTouchRef.current.y) * 0.002;
     
-    // Send rotation changes via global callback (similar to gyro)
-    const callbacks = (window as any).mobileControlCallbacks;
-    if (callbacks && callbacks.onLook) {
-      callbacks.onLook({ x: -deltaY, y: deltaX }); // Inverted Y for intuitive control
+    // Always update lastTouchRef to prevent coordinate accumulation
+    lastTouchRef.current = { x: clientX, y: clientY };
+    
+    // Dead zone for tiny movements - increased threshold for real devices
+    if (Math.abs(deltaX) < 0.002 && Math.abs(deltaY) < 0.002) {
+      // Send zeros but don't return early to avoid coordinate accumulation
+      const callbacks = (window as any).mobileControlCallbacks;
+      if (callbacks && callbacks.onLook) {
+        callbacks.onLook({ x: 0, y: 0 });
+      }
+      return;
     }
     
-    lastTouchRef.current = { x: clientX, y: clientY };
+    // Smooth interpolation
+    const smoothingFactor = 0.7;
+    smoothedLookRef.current.x = smoothedLookRef.current.x * smoothingFactor + (-deltaY) * (1 - smoothingFactor);
+    smoothedLookRef.current.y = smoothedLookRef.current.y * smoothingFactor + deltaX * (1 - smoothingFactor);
+    
+    // Send smoothed rotation changes via global callback
+    const callbacks = (window as any).mobileControlCallbacks;
+    if (callbacks && callbacks.onLook) {
+      callbacks.onLook({ 
+        x: smoothedLookRef.current.x, 
+        y: smoothedLookRef.current.y 
+      });
+    }
   }, [isDragging]);
 
   const handleTouchDragEnd = useCallback(() => {
     setIsDragging(false);
+    
+    // Gradually reduce the smoothed look values to zero
+    const dampLook = () => {
+      smoothedLookRef.current.x *= 0.9;
+      smoothedLookRef.current.y *= 0.9;
+      
+      if (Math.abs(smoothedLookRef.current.x) > 0.001 || Math.abs(smoothedLookRef.current.y) > 0.001) {
+        const callbacks = (window as any).mobileControlCallbacks;
+        if (callbacks && callbacks.onLook) {
+          callbacks.onLook({ 
+            x: smoothedLookRef.current.x, 
+            y: smoothedLookRef.current.y 
+          });
+        }
+        lookAnimationRef.current = requestAnimationFrame(dampLook);
+      } else {
+        smoothedLookRef.current = { x: 0, y: 0 };
+        // Send final zero to ensure movement stops completely
+        const callbacks = (window as any).mobileControlCallbacks;
+        if (callbacks && callbacks.onLook) {
+          callbacks.onLook({ x: 0, y: 0 });
+        }
+      }
+    };
+    
+    if (lookAnimationRef.current) {
+      cancelAnimationFrame(lookAnimationRef.current);
+    }
+    lookAnimationRef.current = requestAnimationFrame(dampLook);
   }, []);
 
   // Touch event handlers for the touch area
@@ -132,6 +188,15 @@ export function MobileControls() {
       };
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Cleanup look animation frame on unmount
+  useEffect(() => {
+    return () => {
+      if (lookAnimationRef.current) {
+        cancelAnimationFrame(lookAnimationRef.current);
+      }
+    };
+  }, []);
 
   // Touch shooting for action buttons
   const handleShootTouchStart = () => {
