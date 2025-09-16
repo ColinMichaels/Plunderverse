@@ -7,20 +7,20 @@ export function Starfield() {
 
   // Generate enhanced star data with varied colors and sizes
   const starData = useMemo(() => {
-    const starCount = 4000;
+    const starCount = 1000;
     const positions = new Float32Array(starCount * 3);
     const colors = new Float32Array(starCount * 3);
-    
+
     for (let i = 0; i < starCount; i++) {
       // Create stars in a large sphere around the solar system
       const radius = 600 + Math.random() * 800;
       const theta = Math.random() * Math.PI * 2;
       const phi = Math.random() * Math.PI;
-      
+
       positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
       positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
       positions[i * 3 + 2] = radius * Math.cos(phi);
-      
+
       // Star color variations - different stellar types
       const starType = Math.random();
       if (starType < 0.4) {
@@ -45,7 +45,7 @@ export function Starfield() {
         colors[i * 3 + 2] = 0.6 + Math.random() * 0.2;
       }
     }
-    
+
     return { positions, colors };
   }, []);
 
@@ -53,7 +53,7 @@ export function Starfield() {
   useFrame((state) => {
     if (meshRef.current) {
       meshRef.current.rotation.y += 0.00008;
-      
+
       // Subtle twinkling effect on material opacity
       const material = meshRef.current.material as THREE.PointsMaterial;
       material.opacity = 0.7 + Math.sin(state.clock.elapsedTime * 0.5) * 0.1;
@@ -99,7 +99,7 @@ export function Starfield() {
                 const radius = 1200 + Math.random() * 600;
                 const theta = Math.random() * Math.PI * 2;
                 const phi = Math.random() * Math.PI;
-                
+
                 positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
                 positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
                 positions[i * 3 + 2] = radius * Math.cos(phi);
