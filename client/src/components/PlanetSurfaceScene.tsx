@@ -4,8 +4,8 @@ import { KeyboardControls, useTexture } from "@react-three/drei";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
-import { useInventory } from "../lib/stores/useInventory";
-import { useCredits } from "../lib/stores/useCredits";
+import { useStorageInfo } from "../domain/economy/selectors";
+import { useInventoryStore } from "../domain/economy/inventory.store";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets, ResourceData } from "../lib/planetData";
@@ -658,9 +658,7 @@ function ResourceNode({
 function ResourceNodes({ planetName }: { planetName: string }) {
   const planet = planets.find((p) => p.name === planetName);
   const { startMining, performClick, isActive, targetResource } = useMining();
-  const { playSuccess, playHit } = useAudio();
-  const { addResource } = useInventory();
-  const { earnCredits } = useCredits();
+  const { playHit } = useAudio();
 
   // Track destroyed resource nodes per planet
   const [destroyedNodes, setDestroyedNodes] = useState<Set<string>>(new Set());
@@ -725,48 +723,46 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         console.log(`[MINING-DEBUG] performClick result:`, result);
 
         if (result) {
-          // Mining completed, add to inventory - but first check quantity
+          // Mining completed - check if transaction was successful
           console.log(
-            `[MINING-DEBUG] Mining completed! Attempting to add ${result.quantity} ${result.resource.type} to inventory`,
+            `[MINING-DEBUG] Mining completed! Transaction result:`,
+            result,
           );
 
-          // CRITICAL FIX: Guard against adding zero or negative quantity
-          if (result.quantity <= 0) {
-            console.warn(
-              `[MINING-DEBUG] ⚠️ Attempted to add invalid quantity: ${result.quantity}. Skipping inventory addition.`,
-            );
-            console.warn(
-              `[MINING-DEBUG] This indicates broken equipment or calculation error.`,
-            );
-            return;
-          }
+          if (result.success) {
+            // Transaction successful - resources, credits, equipment wear, and sounds already handled by economy service
+            console.log(`[MINING-DEBUG] Mining transaction successful: ${result.message}`);
+            
+            // Extract details for logging if available
+            if (result.details?.resourcesAdded && result.details.resourcesAdded.length > 0) {
+              const addedResource = result.details.resourcesAdded[0];
+              console.log(
+                `[MINING-DEBUG] Successfully mined ${addedResource.quantity} ${addedResource.type}`,
+              );
+            }
 
-          const success = addResource(
-            result.resource,
-            result.quantity,
-            result.planet,
-          );
-          console.log(`[MINING-DEBUG] addResource result: ${success}`);
+            if (result.details?.creditsEarned) {
+              console.log(
+                `[MINING-DEBUG] Earned ${result.details.creditsEarned} credits from mining`,
+              );
+            }
 
-          if (success) {
-            const creditReward = Math.floor(
-              result.resource.value * result.quantity * 0.1,
-            );
-            earnCredits(creditReward);
-            console.log(
-              `[MINING-DEBUG] Mining complete! Earned ${creditReward} credits`,
-            );
-            playSuccess();
-
-            // Destroy the mined resource node
+            // Destroy the mined resource node since mining was successful
             setDestroyedNodes(
               (prev) => new Set(Array.from(prev).concat(nodeId)),
             );
             console.log(
-              `[MINING-DEBUG] Resource node ${nodeId} destroyed after mining completion`,
+              `[MINING-DEBUG] Resource node ${nodeId} destroyed after successful mining`,
             );
           } else {
-            console.log("[MINING-DEBUG] Inventory full! Mining stopped.");
+            // Transaction failed - handle failure case
+            console.warn(`[MINING-DEBUG] Mining transaction failed: ${result.message}`);
+            
+            // Check for specific equipment failure cases
+            if (result.message.includes('broken') || result.message.includes('full')) {
+              console.warn(`[MINING-DEBUG] ${result.message}`);
+              // Note: Equipment failure sounds and UI feedback are handled by the economy service
+            }
           }
         } else {
           // Continue mining - play hit sound
@@ -1006,7 +1002,8 @@ function MiningDebugDisplay() {
   const { isLanded, landedPlanet } = useLandedState();
   const { isActive, targetResource, clicksCompleted, clicksRequired } =
     useMining();
-  const { items, getStorageUsed, storageCapacity } = useInventory();
+  const { items } = useInventoryStore(state => ({ items: state.items }));
+  const { used: storageUsed, capacity: storageCapacity } = useStorageInfo();
   const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
 
   // Calculate total units and find last changed item
@@ -1033,7 +1030,7 @@ function MiningDebugDisplay() {
           CARGO: {totalUnits} units ({items.length} types)
         </div>
         <div>
-          STORAGE: {getStorageUsed()}/{storageCapacity}
+          STORAGE: {storageUsed}/{storageCapacity}
         </div>
         {lastChangedItem && (
           <div>

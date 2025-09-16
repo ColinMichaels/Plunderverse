@@ -1,7 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { useMining } from "../lib/stores/useMining";
-import { useInventory } from "../lib/stores/useInventory";
-import { useCredits } from "../lib/stores/useCredits";
+import { useStorageInfo, useCreditsData } from "../domain/economy/selectors";
 import { useAudio } from "../lib/stores/useAudio";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { ResourceData } from "../lib/planetData";
@@ -33,8 +32,8 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   // Calculate progress from clicks
   const progress = clicksRequired > 0 ? (clicksCompleted / clicksRequired) * 100 : 0;
   
-  const { addResource, getStorageUsed, storageCapacity } = useInventory();
-  const { earnCredits, spendCredits, credits } = useCredits();
+  const { used: storageUsed, capacity: storageCapacity } = useStorageInfo();
+  const { earnCredits, spendCredits, credits } = useCreditsData();
   const { playHit, playSuccess } = useAudio();
   const { equipment, repairEquipment, getConditionStatus } = useEquipment();
   const [selectedResource, setSelectedResource] = useState<ResourceData | null>(null);
@@ -103,7 +102,7 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
     }
   };
 
-  const storageUsed = getStorageUsed();
+  // storageUsed is now obtained from useStorageInfo selector
   const storagePercentage = (storageUsed / storageCapacity) * 100;
 
   // Equipment condition helpers

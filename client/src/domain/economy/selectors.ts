@@ -44,3 +44,55 @@ export const useStorageInfo = () => {
 export const useCanAfford = (amount: number) => {
   return useCreditsStore(state => state.credits >= amount);
 };
+
+// Comprehensive selector for InventoryDisplay component
+export const useInventoryDisplayData = () => {
+  return useInventoryStore(state => {
+    const storageUsed = state.items.reduce((total, item) => total + item.quantity, 0);
+    const totalValue = state.items.reduce((total, item) => total + (item.value * item.quantity), 0);
+    
+    return {
+      items: state.items,
+      storageCapacity: state.storageCapacity,
+      storageUsed,
+      totalValue,
+      storagePercentage: (storageUsed / state.storageCapacity) * 100
+    };
+  });
+};
+
+// Selector for components that only need credits information
+export const useCreditsData = () => {
+  return useCreditsStore(state => ({
+    credits: state.credits,
+    spendCredits: state.spendCredits,
+    earnCredits: state.earnCredits,
+    setCredits: state.setCredits
+  }));
+};
+
+// Selector for trading interface specific data
+export const useTradingData = () => {
+  const credits = useCreditsStore(state => state.credits);
+  const inventory = useInventoryStore(state => ({
+    items: state.items,
+    storageCapacity: state.storageCapacity
+  }));
+  
+  return {
+    credits,
+    items: inventory.items,
+    storageCapacity: inventory.storageCapacity
+  };
+};
+
+// Selector for components that need inventory actions (like mining)
+export const useInventoryActions = () => {
+  return useInventoryStore(state => ({
+    addResource: state.addResource,
+    removeResource: state.removeResource,
+    getResourceQuantity: state.getResourceQuantity,
+    getStorageUsed: state.getStorageUsed,
+    upgradeStorage: state.upgradeStorage
+  }));
+};

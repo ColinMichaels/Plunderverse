@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCredits } from "../lib/stores/useCredits";
+import { useCreditsData } from "../domain/economy/selectors";
 
 interface LandingWarningProps {
   isVisible: boolean;
@@ -18,7 +18,7 @@ export function LandingWarning({
   onClose,
   onAutopilot
 }: LandingWarningProps) {
-  const { credits, spendCredits } = useCredits();
+  const { credits, spendCredits } = useCreditsData();
   const [isActivatingAutopilot, setIsActivatingAutopilot] = useState(false);
   
   const autopilotCost = 50; // Credits required for autopilot

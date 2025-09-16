@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
-import { useCredits } from "../lib/stores/useCredits";
+import { useCreditsData } from "../domain/economy/selectors";
 import { useShipStatus } from "../lib/stores/useShipStatus";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useRewards } from "../lib/stores/useRewards";
@@ -24,7 +24,7 @@ export function CockpitHUD() {
     time,
     setSelectedPlanet,
   } = useSolarSystem();
-  const { credits, spendCredits } = useCredits();
+  const { credits, spendCredits } = useCreditsData();
   const { shield, hull, isThrusting, isWarpMode } = useShipStatus();
   const { getEquipment } = useEquipment();
 

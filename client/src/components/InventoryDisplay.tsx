@@ -1,15 +1,11 @@
 import { useState } from "react";
-import { useInventory } from "../lib/stores/useInventory";
+import { useInventoryDisplayData } from "../domain/economy/selectors";
 import { TradingInterface } from "./TradingInterface";
 import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function InventoryDisplay() {
-  const { items, getStorageUsed, storageCapacity, getTotalValue } = useInventory();
+  const { items, storageCapacity, storageUsed, totalValue, storagePercentage } = useInventoryDisplayData();
   const [showTrading, setShowTrading] = useState(false);
-
-  const storageUsed = getStorageUsed();
-  const storagePercentage = (storageUsed / storageCapacity) * 100;
-  const totalValue = getTotalValue();
 
   const getRarityColor = (rarity: string) => {
     switch (rarity) {

@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useAutopilot } from "../lib/stores/useAutopilot";
-import { useCredits } from "../lib/stores/useCredits";
+import { useCreditsData } from "../domain/economy/selectors";
 import { planets, ResourceData } from "../lib/planetData";
 import { MiningInterface } from "./MiningInterface";
 
 export function OrbitalInterface() {
   const { selectedPlanet, setIsLanding } = useSolarSystem();
   const { isOrbiting, isActive: isAutopilotActive, deactivate: deactivateAutopilot } = useAutopilot();
-  const { credits, earnCredits } = useCredits();
+  const { credits, earnCredits } = useCreditsData();
   const [scanResults, setScanResults] = useState<ResourceData[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [bookmarkedPlanets, setBookmarkedPlanets] = useState<string[]>([]);

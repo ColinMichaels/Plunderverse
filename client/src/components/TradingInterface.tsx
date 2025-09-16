@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { useInventory } from "../lib/stores/useInventory";
-import { useCredits } from "../lib/stores/useCredits";
+import { useTradingData } from "../domain/economy/selectors";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useMining } from "../lib/stores/useMining";
 import { economyService } from "../domain/economy/economy.service";
@@ -11,8 +10,7 @@ interface TradingInterfaceProps {
 }
 
 export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) {
-  const { items, storageCapacity } = useInventory();
-  const { credits } = useCredits();
+  const { items, storageCapacity, credits } = useTradingData();
   const { equipment, getConditionStatus, getEquipment } = useEquipment();
   const { drillPower, extractorLevel } = useMining();
   const [activeTab, setActiveTab] = useState<'sell' | 'fuel' | 'repairs' | 'upgrades'>('sell');

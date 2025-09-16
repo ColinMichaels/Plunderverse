@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMissions, Mission, Bounty } from "../lib/stores/useMissions";
-import { useCredits } from "../lib/stores/useCredits";
+import { useCreditsData } from "../domain/economy/selectors";
 import { useRewards } from "../lib/stores/useRewards";
 
 interface MissionsPanelProps {
@@ -10,7 +10,7 @@ interface MissionsPanelProps {
 
 export function MissionsPanel({ isVisible, onToggle }: MissionsPanelProps) {
   const { missions, bounties, completedMissions, completedBounties, generateNewMissions } = useMissions();
-  const { credits } = useCredits();
+  const { credits } = useCreditsData();
   const { totalEarnings, landingCount, visitedPlanets } = useRewards();
   const [activeTab, setActiveTab] = useState<'missions' | 'bounties' | 'stats'>('missions');
 

@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useEquipment } from "../lib/stores/useEquipment";
-import { useCredits } from "../lib/stores/useCredits";
+import { useCreditsData } from "../domain/economy/selectors";
 import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function ShipStatus() {
   const { equipment, repairEquipment, replenishFuel, getConditionStatus, getPerformanceMultiplier } = useEquipment();
-  const { credits, spendCredits } = useCredits();
+  const { credits, spendCredits } = useCreditsData();
 
   // Get ship components only
   const shipComponents = equipment.filter(eq => 
