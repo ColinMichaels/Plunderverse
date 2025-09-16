@@ -70,7 +70,7 @@ const MUSIC_FILES = [
 ];
 
 // Random delay between tracks (2-10 minutes in milliseconds)
-const getRandomDelay = () => Math.random() * (600000 - 120000) + 120000;
+const getRandomDelay = () => Math.random() * (300000 - 600000) + 120000;
 
 export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   tracks: [],
