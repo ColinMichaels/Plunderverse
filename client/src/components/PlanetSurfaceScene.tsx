@@ -146,6 +146,8 @@ function SurfaceSky({ planetName }: { planetName: string }) {
     );
   };
 
+  // TEMPORARY: Commenting out corrupted code to fix syntax errors
+  /*
   const calculatePlanetPosition = (planet: any, time: number) => {
     return calculateOrbitPosition(planet.distance, planet.orbita
 
@@ -167,6 +169,17 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
 
       lSpeed, time);
+  };
+  */
+  
+  // Temporary minimal implementation to get app running
+  const calculatePlanetPosition = (planet: any, time: number) => {
+    const angle = planet.orbitalSpeed * time;
+    return new THREE.Vector3(
+      Math.cos(angle) * planet.distance,
+      0,
+      Math.sin(angle) * planet.distance,
+    );
   };
 
   // Calculate visible planets for current time
