@@ -319,7 +319,6 @@ export function SplashScreen() {
           >
             ❓ HELP
           </button>
-          <MusicPlayer className="absolute bottom-4 right-4" />
         </div>
 
         {/* Version/Credits */}
@@ -439,6 +438,7 @@ export function SplashScreen() {
           </div>
         </div>
       )}
+      <MusicPlayer className="absolute bottom-4 right-4" />
     </div>
   );
 }
