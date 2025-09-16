@@ -48,6 +48,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
   const { isMuted } = useAudio();
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
   const [isMinimized, setIsMinimized] = useState(true);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
 
   // Initialize music player on mount
   useEffect(() => {
@@ -88,17 +89,19 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
   return (
     <div
       className={cn(
-        "bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[250px]",
+        isMinimized
+          ? "bg-black/40 backdrop-blur-sm border border-white/10 rounded-lg px-2 py-1 w-[150px] h-[36px]"
+          : "bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[250px]",
         className,
       )}
     >
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <div className="text-cyan-400 text-sm font-semibold flex items-center gap-2">
-            <Volume2 size={16} />
-          </div>
-          {!isMinimized && (
+      {/* Header - only show when not minimized */}
+      {!isMinimized && (
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            <div className="text-cyan-400 text-sm font-semibold flex items-center gap-2">
+              <Volume2 size={16} />
+            </div>
             <Button
               variant="ghost"
               size="icon"
@@ -107,17 +110,17 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
             >
               <List size={14} />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsMinimized(!isMinimized)}
-            className="h-6 w-6 text-cyan-400 hover:text-cyan-300"
-          >
-            {isMinimized ? <Maximize2 size={14} /> : <Minimize2 size={14} />}
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMinimized(true)}
+              className="h-6 w-6 text-cyan-400 hover:text-cyan-300"
+            >
+              <Minimize2 size={14} />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {!isMinimized &&
         (isLoading ? (
@@ -251,21 +254,55 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
           </>
         ))}
 
-      {/* Minimized view - show current track and basic controls */}
+      {/* Minimized view - compact single line */}
       {isMinimized && (
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={togglePlayPause}
-            disabled={tracks.length === 0 || isMuted}
-            className="h-6 w-6 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
-          >
-            {isPlaying ? <Pause size={12} /> : <Play size={12} />}
-          </Button>
-          <div className="flex-1 text-xs text-white truncate">
-            {currentTrack ? currentTrack.name : "No track"}
+        <div className="relative flex items-center justify-between h-full">
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePlayPause}
+              disabled={tracks.length === 0 || isMuted}
+              className="h-5 w-5 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 p-0"
+            >
+              {isPlaying ? <Pause size={10} /> : <Play size={10} />}
+            </Button>
+            <div className="text-[10px] text-white/70 truncate max-w-[70px]">
+              {currentTrack ? currentTrack.name : "No track"}
+            </div>
           </div>
+          
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowVolumeSlider(!showVolumeSlider)}
+              className="h-5 w-5 text-cyan-400 hover:text-cyan-300 p-0"
+            >
+              <Volume2 size={10} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsMinimized(false)}
+              className="h-5 w-5 text-cyan-400 hover:text-cyan-300 p-0"
+            >
+              <Maximize2 size={8} />
+            </Button>
+          </div>
+
+          {/* Volume slider popup */}
+          {showVolumeSlider && (
+            <div className="absolute -top-10 right-0 bg-black/90 border border-white/20 rounded px-2 py-1 flex items-center gap-2 w-20">
+              <Slider
+                value={[volume * 100]}
+                onValueChange={(value) => setVolume(value[0] / 100)}
+                max={100}
+                step={5}
+                className="flex-1"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

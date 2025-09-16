@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useGame } from "../lib/stores/useGame";
 import { useAudio } from "../lib/stores/useAudio";
+import { MusicPlayer } from "./MusicPlayer";
 
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
@@ -28,9 +29,9 @@ export function SplashScreen() {
       const x = centerX + Math.cos(angle) * distanceFromCenter * 50;
       const y = centerY + Math.sin(angle) * distanceFromCenter * 50;
 
-      const depth = Math.random() * 6 + 1;
-      const edgeSpeed = distanceFromCenter * 2 + 1; // Faster at edges
-      const travelSpeed = Math.random() * 20 + 10;
+      const depth = Math.random() * 10 + 1;
+      const edgeSpeed = distanceFromCenter * 10 + 1; // Faster at edges
+      const travelSpeed = Math.random() * 2000 + 10;
 
       // Radial movement - outward from center
       const radialX = Math.cos(angle) * edgeSpeed * (depth + 2);
@@ -202,7 +203,7 @@ export function SplashScreen() {
         
         @keyframes starTwinkle {
           0%, 100% { opacity: 0.3; transform: scale(0.8); blur:0.5px; } }
-          50% { opacity: 1; transform: scale(1.2); blur:3px; }
+          50% { opacity: 1; transform: scale(1.8); blur:3px; }
         }
         
         @keyframes fisheyeTravel {
@@ -318,14 +319,15 @@ export function SplashScreen() {
           >
             ❓ HELP
           </button>
+          <MusicPlayer className="absolute bottom-4 right-4" />
         </div>
 
         {/* Version/Credits */}
         <p className="text-slate-500 text-sm">
           Version 1.0.0 - Built with React, Three.js, and Tailwind CSS by{" "}
-          <a 
-            href="https://colinmichaels.com" 
-            target="_blank" 
+          <a
+            href="https://colinmichaels.com"
+            target="_blank"
             rel="noopener noreferrer"
             className="text-slate-400 hover:text-cyan-400 transition-colors duration-300 underline decoration-slate-600 hover:decoration-cyan-400"
           >
