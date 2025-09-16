@@ -128,16 +128,16 @@ export function CockpitHUD() {
           {/* Targeting Computer Display */}
           {selectedPlanet && selectedPlanetData && !isLanded ? (
             <div className="w-full">
-              {/* Target Header */}
+              {/* Target Header - Simplified for Mobile */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-cyan-400 rounded-full animate-pulse"></div>
                   <span className="text-cyan-400 font-mono font-semibold">
-                    TARGET ACQUIRED
+                    🎯 TARGET
                   </span>
                 </div>
                 <div className="text-xs text-slate-400">
-                  TARGETING COMPUTER ACTIVE
+                  📡 ACTIVE
                 </div>
               </div>
 
@@ -147,45 +147,45 @@ export function CockpitHUD() {
                   isThrusting ? "grid-cols-2" : "grid-cols-2"
                 }`}
               >
-                {/* Primary Target Data */}
+                {/* Primary Target Data - Simplified Icons */}
                 <div className="bg-slate-700/50 rounded p-2 border border-slate-600">
                   <div className="text-cyan-400 font-mono text-xs mb-1">
-                    TARGET
+                    🌍
                   </div>
                   <div className="text-white font-semibold text-sm">
                     {selectedPlanet}
                   </div>
                   <div className="text-slate-300 text-xs">
-                    {selectedPlanetData.diameter} km
+                    📏 {selectedPlanetData.diameter} km
                   </div>
                 </div>
 
-                {/* Distance & Status */}
+                {/* Distance & Status - Simplified Icons */}
                 <div className="bg-slate-700/50 rounded p-2 border border-slate-600">
                   <div className="text-cyan-400 font-mono text-xs mb-1">
-                    RANGE
+                    📐
                   </div>
                   <div className="text-white font-semibold text-sm">
-                    {Math.round(distanceToTarget * 10) / 10} units
+                    {Math.round(distanceToTarget * 10) / 10}
                   </div>
                   <div className="text-slate-300 text-xs">
                     {visitedPlanets.has(selectedPlanet)
-                      ? "✓ VISITED"
-                      : "UNEXPLORED"}
+                      ? "✅"
+                      : "🆕"}
                   </div>
                 </div>
               </div>
 
-              {/* Landing Status - compact */}
-              <div className="mt-2 flex items-center justify-center">
-                <div className="flex items-center space-x-2 bg-slate-700/30 rounded px-3 py-1">
+              {/* Landing Status - Mobile Friendly */}
+              <div className="mt-2 flex items-center justify-center space-x-2">
+                <div className="flex items-center space-x-1 bg-slate-700/30 rounded px-2 py-1">
                   <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                   <span className="text-green-400 text-xs font-mono">
-                    LANDING VIABLE
+                    🛬 OK
                   </span>
                 </div>
-                <div className="text-slate-400 text-xs font-mono">
-                  PRESS L TO LAND
+                <div className="text-slate-400 text-xs font-mono bg-slate-700/30 rounded px-2 py-1">
+                  L or 🛬 
                 </div>
               </div>
             </div>
@@ -196,10 +196,10 @@ export function CockpitHUD() {
                   <div className="w-2 h-2 bg-slate-600 rounded-full"></div>
                 </div>
                 <div className="text-slate-400 font-mono text-sm">
-                  NO TARGET SELECTED
+                  🎯 NO TARGET
                 </div>
                 <div className="text-slate-500 text-xs mt-1">
-                  Click on a planet to target
+                  👆 Tap planet
                 </div>
               </div>
             </div>
@@ -222,11 +222,11 @@ export function CockpitHUD() {
 
         {activePanel === "nav" && (
           <div className="bg-slate-800/95 border border-cyan-400/50 rounded-xl p-4 w-80 max-h-96 overflow-y-auto backdrop-blur-sm cockpit-panel">
-            <h3 className="text-cyan-400 font-semibold mb-3">NAVIGATION</h3>
+            <h3 className="text-cyan-400 font-semibold mb-3">🗺️ NAV</h3>
 
             {/* Coordinates */}
             <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
-              <div className="text-xs text-slate-400 mb-1">COORDINATES</div>
+              <div className="text-xs text-slate-400 mb-1">📍</div>
               <div className="font-mono text-sm text-white">
                 X: {Math.round(cameraPosition.x)} | Y:{" "}
                 {Math.round(cameraPosition.y)} | Z:{" "}
@@ -238,7 +238,7 @@ export function CockpitHUD() {
             {selectedPlanet && selectedPlanetData && (
               <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
                 <div className="text-xs text-slate-400 mb-1">
-                  PLANETARY DATA
+                  🌌 DATA
                 </div>
                 <div className="text-white">
                   <div className="font-semibold">{selectedPlanet}</div>
@@ -259,9 +259,9 @@ export function CockpitHUD() {
 
             {/* Navigation Log */}
             <div className="mb-4 p-3 bg-slate-700/50 rounded-lg border border-slate-600">
-              <div className="text-xs text-slate-400 mb-2">NAVIGATION LOG</div>
+              <div className="text-xs text-slate-400 mb-2">📊 LOG</div>
               <div className="text-xs text-slate-500 mb-3">
-                Planets within range • Autopilot: 100 credits
+                🌍 In range • 🤖 Auto: 100 💰
               </div>
 
               <div className="space-y-2 max-h-48 overflow-y-auto">

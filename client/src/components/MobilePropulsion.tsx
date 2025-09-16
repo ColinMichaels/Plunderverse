@@ -96,9 +96,9 @@ export function MobilePropulsion({ onThrust }: MobilePropulsionProps) {
         </button>
       </div>
 
-      {/* Control Label */}
+      {/* Control Label - Simplified */}
       <div className="text-center mt-2 text-xs text-slate-300">
-        THRUST
+        🚀
       </div>
     </div>
   );
