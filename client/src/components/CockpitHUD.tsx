@@ -112,14 +112,15 @@ export function CockpitHUD() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
-      {/* Central HUD - compact and less intrusive */}
-      <div
-        className={`absolute top-16 left-0 transform translate-x-1/2 transition-all duration-300 central-hud ${
-          isThrusting
-            ? "scale-75 opacity-40 pointer-events-none"
-            : "scale-100 opacity-100 pointer-events-auto"
-        }`}
-      >
+      {/* Mobile: Hide large central HUD, Desktop: Show central HUD */}
+      <div className="hidden md:block">
+        <div
+          className={`absolute top-16 left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
+            isThrusting
+              ? "scale-75 opacity-40 pointer-events-none"
+              : "scale-100 opacity-100 pointer-events-auto"
+          }`}
+        >
         <div
           className={`border border-cyan-400/50 rounded-lg backdrop-blur-sm transition-all duration-300 ${
             isThrusting ? "bg-slate-800/40 p-1 sm:p-2" : "bg-slate-800/70 p-2 sm:p-3"
@@ -202,6 +203,22 @@ export function CockpitHUD() {
                   👆 Tap planet
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+        </div>
+      </div>
+
+      {/* Mobile: Minimal target indicator - top edge */}
+      <div className="md:hidden absolute top-4 left-1/2 transform -translate-x-1/2 pointer-events-none">
+        <div className="pointer-events-auto">
+          {selectedPlanet && selectedPlanetData && !isLanded ? (
+            <div className="bg-slate-900/80 border border-cyan-400/30 rounded px-3 py-1 text-xs text-cyan-400 font-mono">
+              🎯 {selectedPlanet} • {Math.round(distanceToTarget)} units
+            </div>
+          ) : (
+            <div className="bg-slate-900/80 border border-slate-600/30 rounded px-3 py-1 text-xs text-slate-400 font-mono">
+              🎯 NO TARGET
             </div>
           )}
         </div>
@@ -416,124 +433,90 @@ export function CockpitHUD() {
         )}
       </div>
 
-      {/* Bottom Status Bar - more transparent when thrusting */}
-      <div
-        className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto transition-all duration-300 ${
-          isThrusting ? "opacity-60" : "opacity-100"
-        }`}
-      >
+      {/* Mobile: Compact bottom status bar - edge positioned */}
+      <div className="md:hidden absolute bottom-1 left-1/2 transform -translate-x-1/2 pointer-events-auto">
+        <div className="bg-slate-900/80 border border-slate-600/30 rounded px-2 py-1">
+          <div className="flex items-center space-x-3 text-xs">
+            {/* Compact fuel indicator */}
+            <div className="flex items-center space-x-1">
+              <div className="w-1 h-4 bg-slate-700 rounded-full relative overflow-hidden">
+                <div className={`w-full absolute bottom-0 ${fuel > 30 ? "bg-green-400" : fuel > 15 ? "bg-yellow-400" : "bg-red-400"}`} style={{ height: `${fuel}%` }} />
+              </div>
+              <span className="text-cyan-400 font-mono">⛽{Math.round(fuel)}%</span>
+            </div>
+            {/* Credits */}
+            <div className="text-cyan-400 font-mono">{credits.toLocaleString()}💰</div>
+            {/* Menu button */}
+            <button onClick={showSplash} className="bg-slate-700 text-slate-300 px-2 py-1 rounded text-xs" title="Menu">
+              ☰
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Desktop: Full bottom status bar */}
+      <div className="hidden md:block">
         <div
-          className={`border border-slate-600 rounded-lg sm:rounded-xl backdrop-blur-sm status-bar transition-all duration-300 ${
-            isThrusting ? "bg-slate-800/60 p-1 sm:p-2" : "bg-slate-800/90 p-2 sm:p-4"
+          className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto transition-all duration-300 ${
+            isThrusting ? "opacity-60" : "opacity-100"
           }`}
         >
-          <div className="flex items-center space-x-2 sm:space-x-8">
-            {/* Ship Systems */}
-            <div className="flex items-center space-x-2 sm:space-x-6">
-              {/* Fuel */}
-              <div className="text-center">
-                <div className="text-xs text-slate-400 mb-1">FUEL</div>
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
-                    <div
-                      className={`w-full transition-all absolute bottom-0 ${fuel > 30 ? "bg-green-400" : fuel > 15 ? "bg-yellow-400" : "bg-red-400"}`}
-                      style={{ height: `${fuel}%` }}
-                    />
+          <div
+            className={`border border-slate-600 rounded-xl backdrop-blur-sm status-bar transition-all duration-300 ${
+              isThrusting ? "bg-slate-800/60 p-2" : "bg-slate-800/90 p-4"
+            }`}
+          >
+            <div className="flex items-center space-x-8">
+              <div className="flex items-center space-x-6">
+                {/* Desktop fuel, shields, hull - keep existing layout */}
+                <div className="text-center">
+                  <div className="text-xs text-slate-400 mb-1">FUEL</div>
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
+                      <div className={`w-full transition-all absolute bottom-0 ${fuel > 30 ? "bg-green-400" : fuel > 15 ? "bg-yellow-400" : "bg-red-400"}`} style={{ height: `${fuel}%` }} />
+                    </div>
+                    <span className="text-cyan-400 text-sm font-mono font-bold">{Math.round(fuel)}%</span>
                   </div>
-                  <span className="text-cyan-400 text-sm font-mono font-bold">
-                    {Math.round(fuel)}%
-                  </span>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-slate-400 mb-1">SHIELDS</div>
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
+                      <div className={`w-full transition-all absolute bottom-0 ${shield > 50 ? "bg-cyan-400" : shield > 25 ? "bg-yellow-400" : "bg-red-400"}`} style={{ height: `${shield}%` }} />
+                    </div>
+                    <span className="text-cyan-400 text-sm font-mono font-bold">{Math.round(shield)}%</span>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <div className="text-xs text-slate-400 mb-1">HULL</div>
+                  <div className="flex flex-col items-center space-y-1">
+                    <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
+                      <div className={`w-full transition-all absolute bottom-0 ${hull > 60 ? "bg-green-400" : hull > 30 ? "bg-yellow-400" : "bg-red-400"}`} style={{ height: `${hull}%` }} />
+                    </div>
+                    <span className="text-orange-400 text-sm font-mono font-bold">{Math.round(hull)}%</span>
+                  </div>
                 </div>
               </div>
-
-              {/* Shields */}
+              <div className="w-px h-8 bg-slate-600"></div>
               <div className="text-center">
-                <div className="text-xs text-slate-400 mb-1">SHIELDS</div>
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
-                    <div
-                      className={`w-full transition-all absolute bottom-0 ${shield > 50 ? "bg-cyan-400" : shield > 25 ? "bg-yellow-400" : "bg-red-400"}`}
-                      style={{ height: `${shield}%` }}
-                    />
-                  </div>
-                  <span className="text-cyan-400 text-sm font-mono font-bold">
-                    {Math.round(shield)}%
-                  </span>
+                <div className="text-xs text-slate-400">CREDITS</div>
+                <div className="text-cyan-400 font-mono font-semibold">{credits.toLocaleString()}</div>
+              </div>
+              <div className="w-px h-8 bg-slate-600"></div>
+              <div className="text-center">
+                <div className="text-xs text-slate-400">THRUST</div>
+                <div className="flex items-center space-x-1">
+                  <div className={`w-2 h-2 rounded-full animate-pulse ${isWarpMode ? "bg-cyan-400" : "bg-orange-400"}`} id="thrust-indicator" style={{ opacity: 0 }}></div>
+                  <span className={`text-xs font-mono ${isWarpMode ? "text-cyan-400" : "text-orange-400"}`}>{isWarpMode ? "WARP" : "IDLE"}</span>
                 </div>
               </div>
-
-              {/* Hull */}
-              <div className="text-center">
-                <div className="text-xs text-slate-400 mb-1">HULL</div>
-                <div className="flex flex-col items-center space-y-1">
-                  <div className="w-2 h-8 bg-slate-700 rounded-full overflow-hidden relative">
-                    <div
-                      className={`w-full transition-all absolute bottom-0 ${hull > 60 ? "bg-green-400" : hull > 30 ? "bg-yellow-400" : "bg-red-400"}`}
-                      style={{ height: `${hull}%` }}
-                    />
-                  </div>
-                  <span className="text-orange-400 text-sm font-mono font-bold">
-                    {Math.round(hull)}%
-                  </span>
-                </div>
+              <div className="w-px h-8 bg-slate-600"></div>
+              <div className="flex items-center space-x-2">
+                <button onClick={toggleMute} className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors" title={isMuted ? "Unmute Audio" : "Mute Audio"}>
+                  <span className="text-xs">{isMuted ? "🔇" : "🔊"}</span>
+                </button>
+                <button onClick={showSplash} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 transition-colors text-xs" title="Main Menu (ESC)">MENU</button>
               </div>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-8 bg-slate-600"></div>
-
-            {/* Credits */}
-            <div className="text-center">
-              <div className="text-xs text-slate-400">CREDITS</div>
-              <div className="text-cyan-400 font-mono font-semibold">
-                {credits.toLocaleString()}
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-8 bg-slate-600"></div>
-
-            {/* Thrust Indicator */}
-            <div className="text-center">
-              <div className="text-xs text-slate-400">THRUST</div>
-              <div className="flex items-center space-x-1">
-                <div
-                  className={`w-2 h-2 rounded-full animate-pulse ${
-                    isWarpMode ? "bg-cyan-400" : "bg-orange-400"
-                  }`}
-                  id="thrust-indicator"
-                  style={{ opacity: 0 }}
-                ></div>
-                <span
-                  className={`text-xs font-mono ${
-                    isWarpMode ? "text-cyan-400" : "text-orange-400"
-                  }`}
-                >
-                  {isWarpMode ? "WARP" : "IDLE"}
-                </span>
-              </div>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-8 bg-slate-600"></div>
-
-            {/* Controls */}
-            <div className="flex items-center space-x-1 sm:space-x-2">
-              <button
-                onClick={toggleMute}
-                className="w-6 h-6 sm:w-8 sm:h-8 bg-slate-700 hover:bg-slate-600 rounded border sm:rounded-lg border-slate-600 transition-colors"
-                title={isMuted ? "Unmute Audio" : "Mute Audio"}
-              >
-                <span className="text-xs">{isMuted ? "🔇" : "🔊"}</span>
-              </button>
-
-              <button
-                onClick={showSplash}
-                className="px-2 sm:px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded border sm:rounded-lg border-slate-600 transition-colors text-xs"
-                title="Main Menu (ESC)"
-              >
-                MENU
-              </button>
             </div>
           </div>
         </div>

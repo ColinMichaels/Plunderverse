@@ -126,11 +126,7 @@ canvas {
     font-size: 0.55rem !important;
   }
 
-  /* Compact central HUD for small screens */
-  .central-hud {
-    @apply scale-75 !important;
-    transform-origin: top left !important;
-  }
+  /* No conflicting transform overrides */
 }
 
 /* Touch feedback */
