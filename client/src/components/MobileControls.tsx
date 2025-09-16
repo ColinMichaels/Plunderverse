@@ -1,11 +1,14 @@
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 
 export function MobileControls() {
   const [isGyroEnabled, setIsGyroEnabled] = useState(false);
   const [permissionGranted, setPermissionGranted] = useState(false);
   const [isShooting, setIsShooting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const gyroDataRef = useRef({ alpha: 0, beta: 0, gamma: 0 });
   const lastGyroRef = useRef({ alpha: 0, beta: 0, gamma: 0 });
+  const lastTouchRef = useRef({ x: 0, y: 0 });
+  const touchAreaRef = useRef<HTMLDivElement>(null);
 
   // Request device orientation permission
   const requestPermission = async () => {
@@ -64,8 +67,74 @@ export function MobileControls() {
     };
   }, [permissionGranted, isGyroEnabled]);
 
-  // Touch shooting
-  const handleTouchStart = () => {
+  // Touch drag for camera look around
+  const handleTouchDragStart = useCallback((clientX: number, clientY: number) => {
+    setIsDragging(true);
+    lastTouchRef.current = { x: clientX, y: clientY };
+  }, []);
+
+  const handleTouchDragMove = useCallback((clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    
+    const deltaX = (clientX - lastTouchRef.current.x) * 0.003; // Sensitivity adjustment
+    const deltaY = (clientY - lastTouchRef.current.y) * 0.003;
+    
+    // Send rotation changes via global callback (similar to gyro)
+    const callbacks = (window as any).mobileControlCallbacks;
+    if (callbacks && callbacks.onLook) {
+      callbacks.onLook({ x: -deltaY, y: deltaX }); // Inverted Y for intuitive control
+    }
+    
+    lastTouchRef.current = { x: clientX, y: clientY };
+  }, [isDragging]);
+
+  const handleTouchDragEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  // Touch event handlers for the touch area
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    handleTouchDragStart(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault(); // Prevent scrolling
+    const touch = e.touches[0];
+    handleTouchDragMove(touch.clientX, touch.clientY);
+  };
+
+  const handleTouchEnd = () => {
+    handleTouchDragEnd();
+  };
+
+  // Mouse handlers for desktop testing
+  const handleMouseDown = (e: React.MouseEvent) => {
+    handleTouchDragStart(e.clientX, e.clientY);
+  };
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    handleTouchDragMove(e.clientX, e.clientY);
+  }, [handleTouchDragMove]);
+
+  const handleMouseUp = useCallback(() => {
+    handleTouchDragEnd();
+  }, [handleTouchDragEnd]);
+
+  // Set up global mouse listeners when dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Touch shooting for action buttons
+  const handleShootTouchStart = () => {
     setIsShooting(true);
     const callbacks = (window as any).mobileControlCallbacks;
     if (callbacks && callbacks.onShoot) {
@@ -73,7 +142,7 @@ export function MobileControls() {
     }
   };
 
-  const handleTouchEnd = () => {
+  const handleShootTouchEnd = () => {
     setIsShooting(false);
   };
 
@@ -104,22 +173,37 @@ export function MobileControls() {
         </div>
       )}
 
-      {/* Mobile UI elements */}
-      {permissionGranted && (
-        <div className="absolute inset-0 pointer-events-none">
-          {/* Gyro toggle button */}
-          <button 
-            className="absolute top-16 left-4 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600 rounded-xl p-2 text-xs text-white pointer-events-auto transition-colors"
-            onClick={() => setIsGyroEnabled(!isGyroEnabled)}
-          >
-            <div className="flex items-center space-x-2">
-              <div className={`w-2 h-2 rounded-full ${isGyroEnabled ? 'bg-cyan-400' : 'bg-red-400'}`} />
-              <span>Gyro {isGyroEnabled ? 'ON' : 'OFF'}</span>
-            </div>
-          </button>
+      {/* Mobile UI elements - always available */}
+      <div className="absolute inset-0 pointer-events-none">
+          {/* Control toggle buttons */}
+          <div className="absolute top-16 left-4 space-y-2 z-30">
+            {/* Gyro toggle - only show if permission granted */}
+            {permissionGranted && (
+              <button 
+                className="block bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600 rounded-xl p-2 text-xs text-white pointer-events-auto transition-colors"
+                onClick={() => setIsGyroEnabled(!isGyroEnabled)}
+              >
+                <div className="flex items-center space-x-2">
+                  <div className={`w-2 h-2 rounded-full ${isGyroEnabled ? 'bg-cyan-400' : 'bg-red-400'}`} />
+                  <span>Gyro {isGyroEnabled ? 'ON' : 'OFF'}</span>
+                </div>
+              </button>
+            )}
+            
+            {/* Touch Look button - always available */}
+            <button 
+              className="block bg-slate-800/80 hover:bg-slate-700/80 border border-slate-600 rounded-xl p-2 text-xs text-white pointer-events-auto transition-colors"
+              onClick={() => setIsGyroEnabled(false)}
+            >
+              <div className="flex items-center space-x-2">
+                <div className={`w-2 h-2 rounded-full ${!isGyroEnabled ? 'bg-cyan-400' : 'bg-red-400'}`} />
+                <span>Touch Look</span>
+              </div>
+            </button>
+          </div>
 
-          {/* Mobile Action Buttons - Bottom */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto flex space-x-4">
+          {/* Mobile Action Buttons - Bottom with higher z-index */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 pointer-events-auto flex space-x-4 z-20">
             {/* Fire Button */}
             <div className="text-center">
               <button
@@ -128,10 +212,10 @@ export function MobileControls() {
                     ? 'bg-red-600/80 border-red-400 text-white scale-95' 
                     : 'bg-slate-800/80 border-slate-600 text-slate-300 hover:border-red-400 hover:text-red-400'
                 }`}
-                onTouchStart={handleTouchStart}
-                onTouchEnd={handleTouchEnd}
-                onMouseDown={handleTouchStart}
-                onMouseUp={handleTouchEnd}
+                onTouchStart={() => handleShootTouchStart()}
+                onTouchEnd={() => handleShootTouchEnd()}
+                onMouseDown={() => handleShootTouchStart()}
+                onMouseUp={() => handleShootTouchEnd()}
               >
                 <div className="text-lg">🔥</div>
               </button>
@@ -155,12 +239,33 @@ export function MobileControls() {
             </div>
           </div>
 
-          {/* Controls indicator - Only show briefly on first load */}
-          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-800/80 border border-slate-600 rounded-xl p-2 text-center text-white pointer-events-none opacity-0 md:opacity-100">
-            <div className="text-xs text-slate-400">Tilt phone to look around</div>
+          {/* Touch Drag Area for Camera Control - safe zone that doesn't block other controls */}
+          {!isGyroEnabled && (
+            <div 
+              ref={touchAreaRef}
+              className="absolute inset-0 bottom-32 pointer-events-auto z-10"
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onMouseDown={handleMouseDown}
+              style={{ touchAction: 'none' }} // Prevent default touch behaviors
+            >
+              {/* Touch indicator */}
+              {isDragging && (
+                <div className="absolute top-4 right-4 bg-cyan-500/80 text-white text-xs px-2 py-1 rounded">
+                  👆 Look Around
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Controls indicator */}
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-slate-800/80 border border-slate-600 rounded-xl p-2 text-center text-white pointer-events-none opacity-90">
+            <div className="text-xs text-slate-400">
+              {isGyroEnabled ? "Tilt phone to look around" : "Drag anywhere to look around"}
+            </div>
           </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 }
