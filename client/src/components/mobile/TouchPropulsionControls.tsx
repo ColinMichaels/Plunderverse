@@ -20,31 +20,26 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
   const thrustAnimationRef = useRef<number>();
   const [showInstructions, setShowInstructions] = useState(true);
   
-  // Convert screen position to thrust direction
-  const screenToThrustDirection = useCallback((clientX: number, clientY: number) => {
-    if (!canvasRef.current) return { x: 0, y: 0, z: 0 };
+  // Convert screen Y position to forward thrust speed
+  const screenToThrustSpeed = useCallback((clientY: number) => {
+    if (!canvasRef.current) return 0;
     
     const rect = canvasRef.current.getBoundingClientRect();
-    const centerX = rect.width / 2;
     const centerY = rect.height / 2;
     
-    // Convert screen coordinates to normalized thrust vector
-    const deltaX = (clientX - rect.left - centerX) / centerX;
-    const deltaY = (clientY - rect.top - centerY) / centerY;
+    // Convert Y position to thrust speed
+    // Top of screen = max forward speed
+    // Center = no thrust
+    // Bottom = max backward speed
+    const normalizedY = (clientY - rect.top - centerY) / centerY;
     
-    // Map screen deltas to world space thrust
-    // X-axis: left/right movement
-    // Y-axis: up/down movement  
-    // Z-axis: forward/back movement (up on screen = forward)
-    const thrustX = deltaX * 0.8; // Left/right
-    const thrustY = 0; // No vertical thrust from touch
-    const thrustZ = -deltaY * 0.8; // Forward/back (inverted Y)
+    // Invert Y so up = forward, down = backward
+    const speed = -normalizedY * 0.8;
     
-    // Normalize and apply deadzone
-    const magnitude = Math.sqrt(thrustX * thrustX + thrustZ * thrustZ);
-    if (magnitude < 0.1) return { x: 0, y: 0, z: 0 };
+    // Apply deadzone in center
+    if (Math.abs(speed) < 0.15) return 0;
     
-    return { x: thrustX, y: thrustY, z: thrustZ };
+    return speed;
   }, []);
   
   // Handle look controls (drag without thrust)
@@ -67,11 +62,13 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
   const updateThrust = useCallback(() => {
     if (!isThrusting.current) return;
     
-    const direction = screenToThrustDirection(currentTouchRef.current.x, currentTouchRef.current.y);
-    move(direction);
+    const speed = screenToThrustSpeed(currentTouchRef.current.y);
+    // Always thrust forward (Z-axis), speed controlled by Y position
+    const thrustVector = { x: 0, y: 0, z: speed };
+    move(thrustVector);
     
     thrustAnimationRef.current = requestAnimationFrame(updateThrust);
-  }, [move, screenToThrustDirection]);
+  }, [move, screenToThrustSpeed]);
   
   const handlePointerDown = (e: React.PointerEvent) => {
     if (!isMobile) return;
@@ -93,10 +90,11 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     
     // Check for double tap (within 300ms)
     if (timeSinceLastTouch < 300) {
-      // Double tap: immediate thrust burst
-      const direction = screenToThrustDirection(e.clientX, e.clientY);
-      move(direction);
-      console.log('[MOBILE-TOUCH] Double tap thrust:', direction);
+      // Double tap: immediate forward thrust burst
+      const speed = screenToThrustSpeed(e.clientY);
+      const thrustVector = { x: 0, y: 0, z: speed };
+      move(thrustVector);
+      console.log('[MOBILE-TOUCH] Double tap thrust:', thrustVector);
       return;
     }
     
@@ -198,8 +196,8 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
             <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.radius} px-4 py-2 ${config.text.label} opacity-70 transition-opacity duration-300`}>
               <div className="text-center text-sm">
-                <div>Touch & hold anywhere to thrust in that direction</div>
-                <div className="text-xs mt-1">Double tap for quick thrust • Drag to look around</div>
+                <div>Touch & hold to thrust forward</div>
+                <div className="text-xs mt-1">Y position controls speed • Drag to rotate ship</div>
               </div>
             </div>
           </div>
