@@ -7,6 +7,8 @@ interface InventoryActions {
   addResource: (resource: ResourceData, quantity: number, planetSource: string) => boolean;
   removeResource: (resourceType: string, quantity: number) => boolean;
   getResourceQuantity: (resourceType: string) => number;
+  getTotalValue: () => number;
+  getStorageUsed: () => number;
   upgradeStorage: (additionalCapacity: number) => void;
 }
 
@@ -115,6 +117,16 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     const state = get();
     const item = state.items.find(item => item.type === resourceType);
     return item ? item.quantity : 0;
+  },
+  
+  getTotalValue: () => {
+    const state = get();
+    return state.items.reduce((total, item) => total + (item.value * item.quantity), 0);
+  },
+  
+  getStorageUsed: () => {
+    const state = get();
+    return state.currentStorage;
   },
   
   upgradeStorage: (additionalCapacity) => {

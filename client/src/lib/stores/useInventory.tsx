@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { ResourceData } from "../planetData";
+import { useInventoryStore } from "../../domain/economy/inventory.store";
 
 export interface InventoryItem extends ResourceData {
   quantity: number;
@@ -20,141 +21,53 @@ interface InventoryState {
   upgradeStorage: (additionalCapacity: number) => void;
 }
 
-export const useInventory = create<InventoryState>((set, get) => ({
-  items: [],
-  storageCapacity: 100, // Starting storage capacity
-  currentStorage: 0,
-  
-  addResource: (resource, quantity, planetSource) => {
-    const state = get();
-    const spaceNeeded = quantity;
-    
-    console.log(`\n[INVENTORY-DEBUG] === ADD RESOURCE OPERATION START ===`);
-    console.log(`[INVENTORY-DEBUG] INPUT: resource=${resource.type}, quantity=${quantity}, planetSource=${planetSource}`);
-    console.log(`[INVENTORY-DEBUG] RESOURCE DETAILS: rarity=${resource.rarity}, value=${resource.value}`);
-    console.log(`[INVENTORY-DEBUG] CURRENT STATE: items=${state.items.length}, storage=${state.currentStorage}/${state.storageCapacity}`);
-    
-    // Input validation
-    if (quantity <= 0) {
-      console.error(`[INVENTORY-DEBUG] ⚠️ INVALID QUANTITY: ${quantity} - must be positive!`);
-      console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION FAILED ===\n`);
-      return false;
-    }
-    
-    // Check storage capacity
-    const availableSpace = state.storageCapacity - state.currentStorage;
-    console.log(`[INVENTORY-DEBUG] CAPACITY CHECK: need=${spaceNeeded}, available=${availableSpace}`);
-    if (state.currentStorage + spaceNeeded > state.storageCapacity) {
-      console.error(`[INVENTORY-DEBUG] ⚠️ STORAGE FULL! Need ${spaceNeeded}, available: ${availableSpace}`);
-      console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION FAILED ===\n`);
-      return false;
-    }
-    
-    // Find existing item or create new
-    const existingItemIndex = state.items.findIndex(item => item.type === resource.type);
-    console.log(`[INVENTORY-DEBUG] STACKING CHECK: existingItemIndex=${existingItemIndex}`);
-    
-    if (existingItemIndex >= 0) {
-      // Update existing item (stacking)
-      const existingItem = state.items[existingItemIndex];
-      console.log(`[INVENTORY-DEBUG] STACKING: Found existing ${existingItem.type} with ${existingItem.quantity} units`);
-      const newQuantity = existingItem.quantity + quantity;
-      
-      const updatedItems = [...state.items];
-      updatedItems[existingItemIndex] = {
-        ...updatedItems[existingItemIndex],
-        quantity: newQuantity
-      };
-      
-      set({
-        items: updatedItems,
-        currentStorage: state.currentStorage + spaceNeeded
-      });
-      
-      console.log(`[INVENTORY-DEBUG] STACKING SUCCESS: ${existingItem.type} now has ${newQuantity} units (added ${quantity})`);
-    } else {
-      // Add new item
-      console.log(`[INVENTORY-DEBUG] NEW ITEM: Creating new inventory slot for ${resource.type}`);
-      const newItem: InventoryItem = {
-        ...resource,
-        quantity,
-        planetSource
-      };
-      
-      set({
-        items: [...state.items, newItem],
-        currentStorage: state.currentStorage + spaceNeeded
-      });
-      
-      console.log(`[INVENTORY-DEBUG] NEW ITEM SUCCESS: Created slot with ${quantity} ${resource.type}`);
-    }
-    
-    // Final state verification
-    const finalState = get();
-    const totalUnits = finalState.items.reduce((sum, item) => sum + item.quantity, 0);
-    console.log(`[INVENTORY-DEBUG] FINAL STATE: items=${finalState.items.length}, storage=${finalState.currentStorage}/${finalState.storageCapacity}`);
-    console.log(`[INVENTORY-DEBUG] TOTAL UNITS: ${totalUnits}`);
-    console.log(`[INVENTORY-DEBUG] LAST ITEM: ${finalState.items.length > 0 ? finalState.items[finalState.items.length - 1].type : 'none'}`);
-    console.log(`[INVENTORY-DEBUG] === ADD RESOURCE OPERATION SUCCESS ===\n`);
-    return true;
-  },
-  
-  removeResource: (resourceType, quantity) => {
-    const state = get();
-    const itemIndex = state.items.findIndex(item => item.type === resourceType);
-    
-    if (itemIndex === -1) {
-      console.log(`Resource ${resourceType} not found in inventory`);
-      return false;
-    }
-    
-    const item = state.items[itemIndex];
-    if (item.quantity < quantity) {
-      console.log(`Insufficient ${resourceType}! Have ${item.quantity}, need ${quantity}`);
-      return false;
-    }
-    
-    const updatedItems = [...state.items];
-    if (item.quantity === quantity) {
-      // Remove item entirely
-      updatedItems.splice(itemIndex, 1);
-    } else {
-      // Reduce quantity
-      updatedItems[itemIndex] = {
-        ...item,
-        quantity: item.quantity - quantity
-      };
-    }
-    
+// Legacy adapter store that delegates to the domain store
+// This maintains backward compatibility while ensuring single source of truth
+export const useInventory = create<InventoryState>((set, get) => {
+  // Subscribe to domain store changes and sync legacy store
+  useInventoryStore.subscribe((domainState) => {
     set({
-      items: updatedItems,
-      currentStorage: state.currentStorage - quantity
+      items: domainState.items,
+      storageCapacity: domainState.storageCapacity,
+      currentStorage: domainState.currentStorage
     });
+  });
+
+  // Initialize with current domain store state
+  const domainState = useInventoryStore.getState();
+  
+  return {
+    items: domainState.items,
+    storageCapacity: domainState.storageCapacity,
+    currentStorage: domainState.currentStorage,
     
-    console.log(`Removed ${quantity} ${resourceType} from inventory`);
-    return true;
-  },
-  
-  getResourceQuantity: (resourceType) => {
-    const state = get();
-    const item = state.items.find(item => item.type === resourceType);
-    return item ? item.quantity : 0;
-  },
-  
-  getTotalValue: () => {
-    const state = get();
-    return state.items.reduce((total, item) => total + (item.value * item.quantity), 0);
-  },
-  
-  getStorageUsed: () => {
-    const state = get();
-    return state.currentStorage;
-  },
-  
-  upgradeStorage: (additionalCapacity) => {
-    set(state => ({
-      storageCapacity: state.storageCapacity + additionalCapacity
-    }));
-    console.log(`Storage upgraded! New capacity: ${get().storageCapacity}`);
-  }
-}));
+    // Delegate all operations to domain store
+    addResource: (resource, quantity, planetSource) => {
+      console.log(`[LEGACY-INVENTORY] Delegating addResource to domain store: ${resource.type} x${quantity}`);
+      return useInventoryStore.getState().addResource(resource, quantity, planetSource);
+    },
+    
+    removeResource: (resourceType, quantity) => {
+      console.log(`[LEGACY-INVENTORY] Delegating removeResource to domain store: ${resourceType} x${quantity}`);
+      return useInventoryStore.getState().removeResource(resourceType, quantity);
+    },
+    
+    getResourceQuantity: (resourceType) => {
+      return useInventoryStore.getState().getResourceQuantity(resourceType);
+    },
+    
+    getTotalValue: () => {
+      const domainState = useInventoryStore.getState();
+      return domainState.items.reduce((total, item) => total + (item.value * item.quantity), 0);
+    },
+    
+    getStorageUsed: () => {
+      return useInventoryStore.getState().currentStorage;
+    },
+    
+    upgradeStorage: (additionalCapacity) => {
+      console.log(`[LEGACY-INVENTORY] Delegating upgradeStorage to domain store: +${additionalCapacity}`);
+      useInventoryStore.getState().upgradeStorage(additionalCapacity);
+    }
+  };
+});
