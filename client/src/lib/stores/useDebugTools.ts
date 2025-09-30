@@ -33,8 +33,8 @@ export const useDebugTools = create<DebugToolsState>()(
       },
       
       setTimeScale: (scale: number) => {
-        // Clamp the value between 0.1 and 10
-        const clampedScale = Math.max(0.1, Math.min(10, scale));
+        // Clamp the value between 0 and 10 (0 = paused)
+        const clampedScale = Math.max(0, Math.min(10, scale));
         set({ timeScale: clampedScale });
       },
       

@@ -18,6 +18,7 @@ import { CryptoWallet } from "./CryptoWallet";
 import { CryptoMarketplace } from "./CryptoMarketplace";
 import { ControlsHelp } from "./ControlsHelp";
 import { SettingsPanel } from "./SettingsPanel";
+import { DevDebugOverlay } from "./DevDebugOverlay";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -142,6 +143,9 @@ export function GameUI() {
 
       {/* Settings Panel */}
       <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
+
+      {/* Debug Overlay - Dev mode only (F3 to toggle) */}
+      <DevDebugOverlay />
     </>
   );
 }
