@@ -42,6 +42,8 @@ export function GameUI() {
   useEffect(() => {
     if (!import.meta.env.DEV) return;
 
+    console.log("[DEBUG] GameUI mounted - F3 to toggle debug overlay");
+
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "F3") {
         event.preventDefault();
