@@ -3,6 +3,9 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useFlashlight } from "../lib/stores/useFlashlight";
+import { useSurfaceCollision } from "../lib/stores/useSurfaceCollision";
+import { useMining } from "../lib/stores/useMining";
+import { useAudio } from "../lib/stores/useAudio";
 
 enum SurfaceControls {
   forward = "forward",
@@ -29,6 +32,22 @@ export function SurfaceMovementController() {
   const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
   const rotationRef = useRef(0);
   const velocityRef = useRef(new THREE.Vector3());
+
+  // Collision system
+  const { checkCollision } = useSurfaceCollision();
+  const { isActive: isMining, currentNodeId } = useMining();
+  const { playHit } = useAudio();
+  const lastCollisionSoundRef = useRef(0);
+  const lastCollisionTimeRef = useRef(0);
+
+  // Camera shake system
+  const cameraShakeRef = useRef({
+    active: false,
+    intensity: 0,
+    duration: 0,
+    elapsed: 0,
+    offset: new THREE.Vector3(),
+  });
 
   // Flashlight system
   const {
@@ -65,10 +84,12 @@ export function SurfaceMovementController() {
     const position = positionRef.current;
     const rotation = rotationRef.current;
     const velocity = velocityRef.current;
+    const shake = cameraShakeRef.current;
 
     const moveSpeed = 6; // Rover movement speed
     const turnSpeed = 0.9; // Turning speed
     const maxVelocity = 15; // Cap velocity to prevent runaway acceleration
+    const playerCollisionRadius = 2.5; // Collision detection radius
 
     // Reset velocity for this frame
     velocity.set(0, 0, 0);
@@ -133,7 +154,7 @@ export function SurfaceMovementController() {
     // Clamp velocity to prevent runaway acceleration
     velocity.clampLength(0, maxVelocity);
 
-    // Update position directly with single delta application
+    // Calculate intended new position
     const newPosition = position
       .clone()
       .add(velocity.clone().multiplyScalar(delta));
@@ -144,14 +165,88 @@ export function SurfaceMovementController() {
     // Follow terrain height with rover clearance
     newPosition.y = terrainHeightAt(newPosition.x, newPosition.z) + 1.8;
 
-    positionRef.current.copy(newPosition);
+    // Check for collision before applying movement
+    const collision = checkCollision(newPosition, playerCollisionRadius);
+    
+    if (collision) {
+      // Check if we're mining the collided resource node - allow getting close if mining it
+      const miningCurrentNode = isMining && collision.type === "resource" && collision.id === currentNodeId;
+      
+      if (!miningCurrentNode) {
+        // Calculate collision intensity based on velocity magnitude
+        const velocityMagnitude = velocity.length();
+        const collisionIntensity = Math.min(velocityMagnitude / maxVelocity, 1.0);
+        
+        // Only trigger collision feedback if moving with some velocity and not too recent
+        if (velocityMagnitude > 0.5 && currentTime - lastCollisionTimeRef.current > 100) {
+          // Trigger camera shake
+          shake.active = true;
+          shake.intensity = 0.08 + (collisionIntensity * 0.12); // 0.08 to 0.2
+          shake.duration = 0.25;
+          shake.elapsed = 0;
+          
+          // Play collision sound with cooldown (0.5 seconds)
+          if (currentTime - lastCollisionSoundRef.current > 500) {
+            playHit();
+            lastCollisionSoundRef.current = currentTime;
+          }
+          
+          lastCollisionTimeRef.current = currentTime;
+        }
+        
+        // Don't apply movement that would cause collision
+        // Instead, slide along the collision surface
+        const directionToObject = new THREE.Vector3()
+          .subVectors(newPosition, collision.position)
+          .normalize();
+        
+        // Project velocity onto tangent plane (perpendicular to collision normal)
+        const velocityProjected = velocity.clone().projectOnPlane(directionToObject);
+        
+        // Apply reduced movement along tangent
+        const slidingPosition = position
+          .clone()
+          .add(velocityProjected.multiplyScalar(delta * 0.3));
+        
+        slidingPosition.y = terrainHeightAt(slidingPosition.x, slidingPosition.z) + 1.8;
+        positionRef.current.copy(slidingPosition);
+      } else {
+        // Mining current node - allow movement
+        positionRef.current.copy(newPosition);
+      }
+    } else {
+      // No collision - apply movement normally
+      positionRef.current.copy(newPosition);
+    }
 
-    // Update camera position and rotation directly
-    camera.position.copy(positionRef.current);
+    // Update camera shake
+    if (shake.active) {
+      shake.elapsed += delta;
+      
+      if (shake.elapsed < shake.duration) {
+        // Generate random shake offset
+        const progress = shake.elapsed / shake.duration;
+        const damping = 1 - progress; // Fade out shake over time
+        
+        shake.offset.set(
+          (Math.random() - 0.5) * shake.intensity * damping,
+          (Math.random() - 0.5) * shake.intensity * damping,
+          (Math.random() - 0.5) * shake.intensity * damping * 0.5
+        );
+      } else {
+        // Shake complete - reset
+        shake.active = false;
+        shake.offset.set(0, 0, 0);
+      }
+    }
+
+    // Update camera position and rotation with shake
+    const finalCameraPosition = positionRef.current.clone().add(shake.offset);
+    camera.position.copy(finalCameraPosition);
     camera.rotation.y = rotationRef.current;
-    // Keep camera level with horizon
-    camera.rotation.x = 0;
-    camera.rotation.z = 0;
+    // Keep camera level with horizon (add subtle shake to rotation if needed)
+    camera.rotation.x = shake.offset.y * 0.5;
+    camera.rotation.z = shake.offset.x * 0.3;
     camera.updateMatrixWorld();
   });
 

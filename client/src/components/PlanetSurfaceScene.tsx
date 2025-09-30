@@ -16,6 +16,7 @@ import * as THREE from "three";
 
 import { usePlayer } from "../lib/stores/usePlayer";
 import { useFlashlight } from "../lib/stores/useFlashlight";
+import { useSurfaceCollision } from "../lib/stores/useSurfaceCollision";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -87,6 +88,7 @@ function terrainHeightAt(x: number, z: number): number {
 function SurfaceRocks({ planetName }: { planetName: string }) {
   const planet = planets.find((p) => p.name === planetName);
   const rockColor = planet?.color || "#666666";
+  const { registerCollisionObject, unregisterCollisionObject } = useSurfaceCollision();
 
   // Generate rock positions using useMemo
   const rockPositions = useMemo(() => {
@@ -95,25 +97,49 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
       const x = (Math.random() - 0.5) * 100;
       const z = (Math.random() - 0.5) * 100;
       const terrainHeight = terrainHeightAt(x, z);
+      
+      // Pre-calculate final render scale to match collision radius
+      const baseScale = 0.5 + Math.random() * 1.5;
+      const randomVariation = 0.8 + Math.random() * 0.4; // 0.8 to 1.2 variation
+      const finalScale = baseScale * 0.025 * randomVariation;
 
       positions.push({
+        id: `rock-${planetName}-${i}`,
         x,
         y: terrainHeight + 0.3 + Math.random() * 0.5, // Sit on terrain with clearance
         z,
-        scale: 0.5 + Math.random() * 1.5,
+        scale: finalScale, // Store the final render scale
         rotationY: Math.random() * Math.PI * 2,
       });
     }
     return positions;
   }, [planetName]);
 
+  // Register rock collision objects
+  useEffect(() => {
+    rockPositions.forEach((rock) => {
+      registerCollisionObject({
+        id: rock.id,
+        position: new THREE.Vector3(rock.x, rock.y, rock.z),
+        radius: rock.scale * 2, // Collision radius matches visual size
+        type: "rock",
+      });
+    });
+
+    return () => {
+      rockPositions.forEach((rock) => {
+        unregisterCollisionObject(rock.id);
+      });
+    };
+  }, [rockPositions]);
+
   return (
     <>
       {rockPositions.map((rock, index) => (
         <FBXAsteroid
-          key={index}
+          key={rock.id}
           position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale * 0.025 * Math.random()} // Scale down to make small rock-like size (couple feet)
+          scale={rock.scale} // Use pre-calculated final scale
           rotation={[0, rock.rotationY, 0]}
           color={rockColor}
           roughness={0.8}
@@ -630,14 +656,32 @@ function ResourceNode({
   position,
   onInteract,
   progress = 0,
+  nodeId,
 }: {
   resource: ResourceData;
   position: [number, number, number];
   onInteract: () => void;
   progress?: number;
+  nodeId: string;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
+  const { registerCollisionObject, unregisterCollisionObject } = useSurfaceCollision();
+
+  // Register collision object on mount
+  useEffect(() => {
+    const collisionObj = {
+      id: nodeId,
+      position: new THREE.Vector3(position[0], position[1], position[2]),
+      radius: 1.5,
+      type: "resource" as const,
+    };
+    registerCollisionObject(collisionObj);
+
+    return () => {
+      unregisterCollisionObject(nodeId);
+    };
+  }, [nodeId, position[0], position[1], position[2]]);
 
   // Get color based on rarity
   const getResourceColor = (rarity: string) => {
@@ -845,6 +889,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
           return (
             <ResourceNode
               key={node.id}
+              nodeId={node.id}
               resource={node.resource}
               position={node.position}
               onInteract={() => handleResourceClick(node.resource, node.id)}
