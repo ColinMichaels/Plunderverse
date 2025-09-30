@@ -11,6 +11,7 @@ import { SurfaceMovementController } from "./SurfaceMovementController";
 import { FBXAsteroid } from "./FBXAsteroid";
 import { FlashlightSystem } from "./FlashlightSystem";
 import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
+import { DebugCollisionBoxes } from "./DebugCollisionBoxes";
 import * as THREE from "three";
 
 import { usePlayer } from "../lib/stores/usePlayer";
@@ -1395,6 +1396,7 @@ export function PlanetSurfaceScene() {
           <SurfaceRocks planetName={landedPlanet} />
           <ResourceNodes planetName={landedPlanet} />
           <SurfaceMovementController />
+          <DebugCollisionBoxes />
         </Canvas>
       </KeyboardControls>
 

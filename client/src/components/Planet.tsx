@@ -4,6 +4,7 @@ import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PlanetData } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
+import { useDebugWireframe } from "./DebugWireframeWrapper";
 
 interface PlanetProps {
   data: PlanetData;
@@ -17,6 +18,7 @@ export function Planet({ data, time }: PlanetProps) {
   const { setSelectedPlanet, selectedPlanet, setDistanceToTarget } =
     useSolarSystem();
   const [hovered, setHovered] = useState(false);
+  const showWireframes = useDebugWireframe();
 
   // Planet texture mapping - only for textures that exist
   const getTextureForPlanet = (planetName: string) => {
@@ -143,6 +145,7 @@ export function Planet({ data, time }: PlanetProps) {
           metalness={materialProps.metalness}
           emissive={isSelected || hovered ? data.color : "#000000"}
           emissiveIntensity={isSelected ? 0.12 : hovered ? 0.06 : 0}
+          wireframe={showWireframes}
         />
       </Sphere>
 
