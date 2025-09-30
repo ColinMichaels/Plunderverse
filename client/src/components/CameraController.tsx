@@ -48,7 +48,6 @@ export function CameraController() {
   const lastForwardPressRef = useRef(0);
   const forwardDoubleClickRef = useRef(false);
   const warpSpeedMultiplierRef = useRef(1);
-  const lastThrusterSoundRef = useRef(0);
 
   // Mobile control states
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
@@ -471,14 +470,6 @@ export function CameraController() {
         // Disable warp mode during autopilot for consistent behavior
         if (isWarpMode) {
           setWarpMode(false);
-        }
-
-        // Proper timestamp-based audio throttling (max 1 sound per 2 seconds)
-        const currentTime = state.clock.elapsedTime;
-        const soundInterval = 2; // Play sound every 2 seconds
-        if (currentTime - lastThrusterSoundRef.current >= soundInterval) {
-          playLaser(); // Reuse laser sound as thruster sound
-          lastThrusterSoundRef.current = currentTime;
         }
 
         if (!isOrbiting && distanceToTarget > landingDistance) {
