@@ -5,6 +5,21 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "./ui/dialog";
 
+function getOrCreatePlayerId(): string {
+  const PLAYER_ID_KEY = 'space_game_player_id';
+  let playerId = localStorage.getItem(PLAYER_ID_KEY);
+  
+  if (!playerId) {
+    playerId = `player_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
+    localStorage.setItem(PLAYER_ID_KEY, playerId);
+    console.log('[CRYPTO-WALLET] Generated new player ID:', playerId);
+  } else {
+    console.log('[CRYPTO-WALLET] Using existing player ID:', playerId);
+  }
+  
+  return playerId;
+}
+
 export function CryptoWallet() {
   const {
     isInitialized,
@@ -15,6 +30,7 @@ export function CryptoWallet() {
     showWallet,
     isProcessingTransaction,
     lastTransactionResult,
+    initializeCrypto,
     toggleWallet,
     refreshBalance,
     refreshMarketPrice,
@@ -26,6 +42,8 @@ export function CryptoWallet() {
   const [recipientAddress, setRecipientAddress] = useState("");
   const [transferMemo, setTransferMemo] = useState("");
   const [showTransferDialog, setShowTransferDialog] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(false);
+  const [initError, setInitError] = useState<string | null>(null);
 
   // Auto-refresh balance and market price every 30 seconds
   useEffect(() => {
@@ -88,6 +106,27 @@ export function CryptoWallet() {
     });
   };
 
+  const handleInitializeWallet = async () => {
+    setIsInitializing(true);
+    setInitError(null);
+    
+    try {
+      const playerId = getOrCreatePlayerId();
+      console.log('[CRYPTO-WALLET] Initializing wallet with player ID:', playerId);
+      
+      const success = await initializeCrypto(playerId);
+      
+      if (!success) {
+        setInitError('Failed to initialize wallet. Please try again.');
+      }
+    } catch (error) {
+      console.error('[CRYPTO-WALLET] Initialization error:', error);
+      setInitError('An error occurred during initialization.');
+    } finally {
+      setIsInitializing(false);
+    }
+  };
+
   if (!isInitialized) {
     return (
       <SpaceUIPanel
@@ -96,15 +135,54 @@ export function CryptoWallet() {
         icon="💰"
         zone="right-sidebar"
         priority={2}
-        defaultExpanded={false}
+        defaultExpanded={true}
       >
-        <div className="space-y-3 text-center">
-          <div className="text-yellow-400">
-            Wallet not initialized
+        <div className="space-y-4 text-center">
+          <div className="space-y-2">
+            <div className="text-yellow-400 font-semibold">
+              Wallet Not Initialized
+            </div>
+            <div className="text-sm text-slate-400">
+              Initialize your crypto wallet to:
+            </div>
+            <ul className="text-xs text-slate-300 space-y-1 text-left list-disc list-inside">
+              <li>Earn cryptocurrency from mining</li>
+              <li>Trade resources for crypto</li>
+              <li>Transfer funds to other players</li>
+            </ul>
           </div>
-          <div className="text-sm text-slate-400">
-            Connect your crypto wallet to start trading
-          </div>
+          
+          <Button
+            onClick={handleInitializeWallet}
+            disabled={isInitializing}
+            className="w-full bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white font-semibold"
+          >
+            {isInitializing ? (
+              <>⏳ INITIALIZING...</>
+            ) : (
+              <>🚀 INITIALIZE CRYPTO WALLET</>
+            )}
+          </Button>
+          
+          {initError && (
+            <div className="space-status-bar border border-red-400/30 bg-red-900/20 rounded">
+              <div className="space-status-item">
+                <span className="text-red-400 text-xs">
+                  ❌ {initError}
+                </span>
+              </div>
+            </div>
+          )}
+          
+          {isInitializing && (
+            <div className="space-status-bar border border-cyan-400/30 bg-cyan-900/20 rounded">
+              <div className="space-status-item">
+                <span className="text-cyan-400 text-xs">
+                  ⏳ Creating wallet and connecting to blockchain...
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </SpaceUIPanel>
     );

@@ -20,7 +20,7 @@ interface MiningState {
   // Actions
   startMining: (planet: string, resource: ResourceData) => void;
   stopMining: () => void;
-  performClick: () => TransactionResult | null;
+  performClick: () => Promise<TransactionResult | null>;
   updateProgress: (deltaTime: number) => TransactionResult | null;
   upgradeDrill: () => void;
   upgradeExtractor: () => void;
@@ -71,7 +71,7 @@ export const useMining = create<MiningState>((set, get) => ({
     console.log("Mining operation stopped");
   },
   
-  performClick: () => {
+  performClick: async () => {
     const state = get();
     if (!state.isActive || !state.targetResource) return null;
     
@@ -127,7 +127,7 @@ export const useMining = create<MiningState>((set, get) => ({
       get().stopMining();
       
       // Use EconomyService to handle all mining yield processing (resources, credits, equipment wear, sounds, events)
-      const result = economyService.applyMiningYield(
+      const result = await economyService.applyMiningYield(
         state.targetResource!,
         extractedAmount,
         state.currentPlanet || "Unknown"
@@ -169,53 +169,6 @@ export const useMining = create<MiningState>((set, get) => ({
     // Click-based mining - no automatic progress
     // This function is kept for backward compatibility but not used in click-based system
     // Equipment wear is now handled by EconomyService.applyMiningYield()
-    
-    // Mining complete (legacy time-based code, not used in click system)
-    if (false) {
-      // Calculate base extraction - more dependent on equipment levels
-      const equipmentMultiplier = (state.drillPower * state.extractorLevel * drillPerformance * extractorPerformance);
-      const baseExtraction = Math.max(0.1, state.miningEfficiency * equipmentMultiplier);
-      
-      // Apply rarity-based yield reduction and round to reasonable amounts
-      const rarityYieldMultiplier = {
-        common: 1.0,
-        uncommon: 0.8,
-        rare: 0.6,
-        legendary: 0.4
-      }[state.targetResource!.rarity] || 1.0;
-      
-      const extractedAmount = extractorPerformance === 0 ? 0 : Math.max(1, Math.ceil(baseExtraction * rarityYieldMultiplier));
-      
-      // Check if extractor is broken
-      if (extractorPerformance === 0) {
-        console.warn("Extractor is broken! No resources extracted.");
-        get().stopMining();
-        return {
-          resource: state.targetResource!,
-          quantity: 0,
-          planet: state.currentPlanet || "Unknown"
-        };
-      }
-      
-      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} (base: ${baseExtraction}, performance: ${Math.round(extractorPerformance * 100)}%)`);
-      
-      // Debug assert for healthy extractor
-      if (extractorPerformance >= 1.0 && extractedAmount <= 0) {
-        console.error("DEBUG: Healthy extractor produced 0 resources! Base:", baseExtraction, "Performance:", extractorPerformance);
-      }
-      
-      // Apply wear to extractor equipment on completion
-      equipmentStore.applyWear('extractor-basic', stressFactors, 1.0); // Full cycle wear
-      
-      // Reset for next mining cycle (legacy code removed)
-      
-      // Return the extracted materials for inventory addition
-      return {
-        resource: state.targetResource!,
-        quantity: extractedAmount,
-        planet: state.currentPlanet || "Unknown"
-      };
-    }
     
     return null;
   },

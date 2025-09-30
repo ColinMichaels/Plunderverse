@@ -737,7 +737,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     return positions;
   }, [planet, planetName]);
 
-  const handleResourceClick = (resource: ResourceData, nodeId: string) => {
+  const handleResourceClick = async (resource: ResourceData, nodeId: string) => {
     console.log(
       `[MINING-DEBUG] Resource click detected: ${resource.type} on ${planetName}`,
     );
@@ -751,7 +751,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         console.log(
           `[MINING-DEBUG] Performing mining click for ${resource.type}`,
         );
-        const result = performClick();
+        const result = await performClick();
         console.log(`[MINING-DEBUG] performClick result:`, result);
 
         if (result) {

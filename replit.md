@@ -23,6 +23,10 @@ Preferred communication style: Simple, everyday language.
   - Solar system time and planet selection (`useSolarSystem`)
   - Audio controls and sound effects (`useAudio`)
   - Game phases and lifecycle (`useGame`)
+  - Cryptocurrency wallet and marketplace (`useCrypto`)
+  - Economy and inventory management (`useInventoryStore`, `useCreditsStore`)
+  - Mining operations (`useMining`)
+  - Equipment and ship status (`useEquipment`)
 
 ### 3D Graphics System
 - **Three.js**: Core 3D graphics engine
@@ -62,6 +66,15 @@ Preferred communication style: Simple, everyday language.
 - **Warping Visual Effects**: Particle-based "stars streaming past cockpit" effects during autopilot travel
 - **Extended Travel Time**: Reduced autopilot speed (4 units/sec) for more immersive space travel experience
 - **Navigation Integration**: Credit-based system with automatic target selection and UI management
+
+### Cryptocurrency Integration (September 30, 2025)
+- **Wallet System**: One-click wallet initialization with persistent player IDs stored in localStorage
+- **Mining Rewards**: Automatic cryptocurrency rewards (0.1% of resource value) for successful mining operations
+- **Marketplace Operations**: Buy and sell resources using cryptocurrency with atomic transaction handling
+- **Transaction Management**: Complete transaction history with balance tracking and market price updates
+- **Error Handling**: Comprehensive error handling with user-friendly messages and automatic rollback on failures
+- **State Synchronization**: Coordinated updates between crypto balance, game inventory, and credits
+- **UI Integration**: Crypto wallet and marketplace panels integrated into GameUI with proper visibility and z-index
 
 ## External Dependencies
 

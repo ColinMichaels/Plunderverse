@@ -3,6 +3,7 @@ import { useInventoryStore } from './inventory.store';
 import { useEquipment } from '../../lib/stores/useEquipment';
 import { useMining } from '../../lib/stores/useMining';
 import { useAudio } from '../../lib/stores/useAudio';
+import { useCrypto } from '../../lib/stores/useCrypto';
 import { ResourceData } from '../../lib/planetData';
 import { economyEvents } from './events';
 import {
@@ -483,7 +484,7 @@ class EconomyService {
   /**
    * Process mining yield - add resources and award credits
    */
-  applyMiningYield(resource: ResourceData, quantity: number, planetSource: string): TransactionResult {
+  async applyMiningYield(resource: ResourceData, quantity: number, planetSource: string): Promise<TransactionResult> {
     console.log(`[ECONOMY-SERVICE] Starting applyMiningYield: ${resource.type} x${quantity} from ${planetSource}`);
     
     const inventory = useInventoryStore.getState();
@@ -506,6 +507,24 @@ class EconomyService {
       // Award mining credits (10% of resource value)
       const creditReward = Math.floor(resource.value * quantity * 0.1);
       credits.earnCredits(creditReward);
+      
+      // Award cryptocurrency mining rewards (if crypto system is initialized)
+      const crypto = useCrypto.getState();
+      if (crypto.isInitialized) {
+        try {
+          const cryptoReward = Math.floor((resource.value * quantity * 0.001) * 1000000) / 1000000;
+          const MINIMUM_CRYPTO_PAYOUT = 0.01;
+          
+          if (cryptoReward >= MINIMUM_CRYPTO_PAYOUT) {
+            console.log(`[ECONOMY-SERVICE] Issuing crypto mining reward: ${cryptoReward} SPACE for ${quantity}x ${resource.type}`);
+            await crypto.issueMiningReward(cryptoReward, resource.type, planetSource);
+          } else {
+            console.log(`[ECONOMY-SERVICE] Crypto reward ${cryptoReward} below minimum threshold ${MINIMUM_CRYPTO_PAYOUT}, skipping`);
+          }
+        } catch (error) {
+          console.error('[ECONOMY-SERVICE] Error during crypto reward issuance:', error);
+        }
+      }
       
       // Apply equipment wear for mining operation
       const stressFactors = equipment.calculateStressFactor(resource, planetSource);

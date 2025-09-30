@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { cryptoService } from '../../domain/crypto/crypto.service';
 import { CryptoTransaction, CryptoMarketPrice } from '../../domain/crypto/crypto-api.types';
+import { useInventoryStore } from '../../domain/economy/inventory.store';
 
 interface CryptoState {
   // Wallet state
@@ -241,27 +242,68 @@ export const useCrypto = create<CryptoState>()(
     sellResource: async (resourceType: string, quantity: number, pricePerUnit: number) => {
       if (!get().isInitialized) return false;
 
+      if (get().isProcessingTransaction) {
+        console.warn('[CRYPTO-STORE] Transaction already in progress, ignoring');
+        return false;
+      }
+
       set({ isProcessingTransaction: true });
+      
+      const inventory = useInventoryStore.getState();
+      const item = inventory.items.find(i => i.type === resourceType);
+      
+      if (!item) {
+        set({ 
+          lastTransactionResult: { success: false, message: `Resource ${resourceType} not found in inventory` },
+          isProcessingTransaction: false 
+        });
+        return false;
+      }
+      
+      if (item.quantity < quantity) {
+        set({ 
+          lastTransactionResult: { success: false, message: `Insufficient ${resourceType}! Have ${item.quantity}, need ${quantity}` },
+          isProcessingTransaction: false 
+        });
+        return false;
+      }
+      
       try {
-        const success = await cryptoService.sellResource(resourceType, quantity, pricePerUnit);
+        const removeSuccess = inventory.removeResource(resourceType, quantity);
         
-        if (success) {
+        if (!removeSuccess) {
           set({ 
-            lastTransactionResult: { success: true, message: `Successfully listed ${quantity}x ${resourceType} for sale` },
+            lastTransactionResult: { success: false, message: `Failed to remove ${resourceType} from inventory` },
             isProcessingTransaction: false 
           });
-        } else {
-          set({ 
-            lastTransactionResult: { success: false, message: `Failed to list ${resourceType} for sale` },
-            isProcessingTransaction: false 
-          });
+          return false;
         }
         
-        return success;
+        const totalRevenue = Math.floor((quantity * pricePerUnit) * 1000000) / 1000000;
+        const success = await cryptoService.sellResource(resourceType, Math.floor(quantity), Math.floor(pricePerUnit * 1000000) / 1000000);
+        
+        if (success) {
+          await get().refreshBalance();
+          await get().loadTransactionHistory();
+          set({ 
+            lastTransactionResult: { success: true, message: `Sold ${quantity}x ${resourceType} for ${totalRevenue.toFixed(6)} ${get().currency}` },
+            isProcessingTransaction: false 
+          });
+          console.log(`[CRYPTO-STORE] Successfully sold ${quantity}x ${resourceType} for ${totalRevenue.toFixed(6)} ${get().currency}`);
+          return true;
+        } else {
+          inventory.addResource(item, quantity, item.planetSource || 'Unknown');
+          set({ 
+            lastTransactionResult: { success: false, message: `Crypto transaction failed - resources restored` },
+            isProcessingTransaction: false 
+          });
+          return false;
+        }
       } catch (error) {
         console.error('[CRYPTO-STORE] Sell resource error:', error);
+        inventory.addResource(item, quantity, item.planetSource || 'Unknown');
         set({ 
-          lastTransactionResult: { success: false, message: 'Sell order error occurred' },
+          lastTransactionResult: { success: false, message: 'Sell order error occurred - resources restored' },
           isProcessingTransaction: false 
         });
         return false;
@@ -272,24 +314,74 @@ export const useCrypto = create<CryptoState>()(
     buyResource: async (resourceType: string, quantity: number, pricePerUnit: number) => {
       if (!get().isInitialized) return false;
 
+      if (get().isProcessingTransaction) {
+        console.warn('[CRYPTO-STORE] Transaction already in progress, ignoring');
+        return false;
+      }
+
       set({ isProcessingTransaction: true });
+      
+      const inventory = useInventoryStore.getState();
+      const cleanQuantity = Math.floor(quantity);
+      const cleanPricePerUnit = Math.floor(pricePerUnit * 1000000) / 1000000;
+      const totalCost = Math.floor((cleanQuantity * cleanPricePerUnit) * 1000000) / 1000000;
+      const currentBalance = get().balance;
+      
+      if (currentBalance < totalCost) {
+        set({ 
+          lastTransactionResult: { success: false, message: `Insufficient funds! Need ${totalCost.toFixed(6)}, have ${currentBalance.toFixed(6)} ${get().currency}` },
+          isProcessingTransaction: false 
+        });
+        return false;
+      }
+      
+      const storageUsed = inventory.getStorageUsed();
+      if (storageUsed + quantity > inventory.storageCapacity) {
+        set({ 
+          lastTransactionResult: { success: false, message: `Inventory full! Need ${quantity} space, have ${inventory.storageCapacity - storageUsed} available` },
+          isProcessingTransaction: false 
+        });
+        return false;
+      }
+      
       try {
-        const success = await cryptoService.buyResource(resourceType, quantity, pricePerUnit);
+        const success = await cryptoService.buyResource(resourceType, cleanQuantity, cleanPricePerUnit);
         
         if (success) {
           await get().refreshBalance();
-          set({ 
-            lastTransactionResult: { success: true, message: `Successfully placed buy order for ${quantity}x ${resourceType}` },
-            isProcessingTransaction: false 
-          });
+          await get().loadTransactionHistory();
+          
+          const resourceData = {
+            type: resourceType,
+            value: Math.floor(cleanPricePerUnit * 1000),
+            rarity: 'common' as const,
+            description: `Purchased via crypto marketplace`,
+            complexity: 1
+          };
+          
+          const addSuccess = inventory.addResource(resourceData, cleanQuantity, 'Crypto Marketplace');
+          
+          if (addSuccess) {
+            set({ 
+              lastTransactionResult: { success: true, message: `Bought ${cleanQuantity}x ${resourceType} for ${totalCost.toFixed(6)} ${get().currency}` },
+              isProcessingTransaction: false 
+            });
+            console.log(`[CRYPTO-STORE] Successfully bought ${cleanQuantity}x ${resourceType} for ${totalCost.toFixed(6)} ${get().currency}`);
+            return true;
+          } else {
+            set({ 
+              lastTransactionResult: { success: false, message: `Crypto deducted but failed to add resources - contact support` },
+              isProcessingTransaction: false 
+            });
+            return false;
+          }
         } else {
           set({ 
             lastTransactionResult: { success: false, message: `Failed to place buy order for ${resourceType}` },
             isProcessingTransaction: false 
           });
+          return false;
         }
-        
-        return success;
       } catch (error) {
         console.error('[CRYPTO-STORE] Buy resource error:', error);
         set({ 
