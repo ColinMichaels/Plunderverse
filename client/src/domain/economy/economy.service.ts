@@ -433,41 +433,44 @@ class EconomyService {
       };
     }
     
+    // Ensure repair cost is at least 1 credit if repair is needed
+    const finalRepairCost = Math.max(1, repairCost);
+    
     // Check credits first
-    if (credits.credits < repairCost) {
+    if (credits.credits < finalRepairCost) {
       return {
         success: false,
-        message: `Insufficient credits! Need ${repairCost}, have ${credits.credits}`
+        message: `Insufficient credits! Need ${finalRepairCost}, have ${credits.credits}`
       };
     }
     
     // ATOMIC TRANSACTION: Spend credits first, then apply repair only if successful
-    const spendSuccess = credits.spendCredits(repairCost);
+    const spendSuccess = credits.spendCredits(finalRepairCost);
     if (spendSuccess) {
       // Apply repair after successful credit spending
-      const repairResult = equipment.repairEquipment(equipmentId, repairAmount, repairCost + 1); // Pass sufficient credits
+      const repairResult = equipment.repairEquipment(equipmentId, repairAmount, finalRepairCost + 1); // Pass sufficient credits
       if (repairResult.success) {
         audio.playSuccess();
         
         // Emit event
         economyEvents.emit({
           type: 'credits_spent',
-          payload: { amount: repairCost },
+          payload: { amount: finalRepairCost },
           timestamp: Date.now()
         });
         
-        console.log(`[ECONOMY-SERVICE] Repaired ${equipmentItem.name} for ${repairCost} credits`);
+        console.log(`[ECONOMY-SERVICE] Repaired ${equipmentItem.name} for ${finalRepairCost} credits`);
         return {
           success: true,
-          message: `Repaired ${equipmentItem.name} for ${repairCost} credits`,
+          message: `Repaired ${equipmentItem.name} for ${finalRepairCost} credits`,
           details: {
-            creditsSpent: repairCost,
+            creditsSpent: finalRepairCost,
             durabilityRestored: [{ equipmentId, amount: actualRepairAmount }]
           }
         };
       } else {
         // Rollback - refund credits if repair application failed
-        credits.earnCredits(repairCost);
+        credits.earnCredits(finalRepairCost);
         return {
           success: false,
           message: `Failed to apply repair to ${equipmentItem.name} after payment - credits refunded`
