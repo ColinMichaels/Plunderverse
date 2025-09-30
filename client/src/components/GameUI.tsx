@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { LandingTransition } from "./LandingTransition";
@@ -21,6 +21,7 @@ import { SettingsPanel } from "./SettingsPanel";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
+import { useDebugTools } from "../lib/stores/useDebugTools";
 import { planets } from "../lib/planetData";
 
 export function GameUI() {
@@ -34,6 +35,27 @@ export function GameUI() {
     hideWarning,
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
+  const { toggleVisibility } = useDebugTools();
+
+  // F3 key handler for debug overlay (dev mode only)
+  useEffect(() => {
+    if (!import.meta.env.DEV) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "F3") {
+        event.preventDefault();
+        event.stopPropagation();
+        toggleVisibility();
+        console.log("[DEBUG] F3 pressed - Debug overlay toggled");
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [toggleVisibility]);
 
   // Autopilot activation function
   const handleAutopilot = () => {
