@@ -319,6 +319,45 @@ export function CameraController() {
       velocity.multiplyScalar(dragCoefficient);
     }
 
+    // Planet collision detection - prevent camera from passing through planets
+    if (!isAutopilotActive && !isLanding && !isLanded) {
+      const proposedPosition = camera.position.clone().add(velocity.clone().multiplyScalar(delta));
+      
+      for (const planetData of planets) {
+        // Calculate planet's current orbital position
+        const angle = time * planetData.orbitalSpeed;
+        const planetX = Math.cos(angle) * planetData.distance;
+        const planetZ = Math.sin(angle) * planetData.distance;
+        const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
+        
+        // Check collision with planet (using planet size as collision radius)
+        const collisionRadius = planetData.size * 2.5; // Slightly larger than visual size for safety margin
+        const distanceToProposed = proposedPosition.distanceTo(planetPosition);
+        
+        if (distanceToProposed < collisionRadius) {
+          // Collision detected! Stop movement towards planet
+          const directionToPlanet = planetPosition.clone().sub(camera.position).normalize();
+          const velocityTowardsPlanet = velocity.dot(directionToPlanet);
+          
+          if (velocityTowardsPlanet > 0) {
+            // Only prevent movement if heading towards planet
+            // Bounce back with reduced velocity
+            const bounce = directionToPlanet.multiplyScalar(-velocityTowardsPlanet * 0.5);
+            velocity.add(bounce);
+            
+            // Push camera slightly away from planet surface
+            const pushDistance = collisionRadius - camera.position.distanceTo(planetPosition);
+            if (pushDistance > 0) {
+              const pushDirection = camera.position.clone().sub(planetPosition).normalize();
+              camera.position.add(pushDirection.multiplyScalar(pushDistance + 0.5));
+            }
+            
+            console.log(`Collision with ${planetData.name} prevented at distance ${distanceToProposed.toFixed(1)}`);
+          }
+        }
+      }
+    }
+
     // Landing mode - only allow if close to planet and not recently attempted
     if (controls.land && selectedPlanet && !isLanding) {
       const currentTime = state.clock.elapsedTime;
