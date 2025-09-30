@@ -27,7 +27,7 @@ interface CryptoState {
   lastTransactionResult: { success: boolean; message: string } | null;
   
   // Actions
-  initializeCrypto: (apiKey: string, playerId: string) => Promise<boolean>;
+  initializeCrypto: (playerId: string) => Promise<boolean>;
   refreshBalance: () => Promise<void>;
   refreshMarketPrice: () => Promise<void>;
   loadTransactionHistory: () => Promise<void>;
@@ -69,12 +69,12 @@ export const useCrypto = create<CryptoState>()(
     lastTransactionResult: null,
 
     // Initialize crypto system
-    initializeCrypto: async (apiKey: string, playerId: string) => {
+    initializeCrypto: async (playerId: string) => {
       console.log('[CRYPTO-STORE] Initializing cryptocurrency system...');
       
       try {
         const config = {
-          apiKey,
+          apiKey: '', // Not needed - server proxy handles authentication
           baseUrl: import.meta.env.VITE_CRYPTO_API_URL || '/api/crypto',
           network: (import.meta.env.VITE_CRYPTO_NETWORK as 'testnet' | 'mainnet') || 'testnet',
           currency: 'SPACE'
