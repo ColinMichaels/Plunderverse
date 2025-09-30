@@ -1,13 +1,14 @@
 import { create } from "zustand";
 import { useAudio } from "./useAudio";
 import { useLandedState } from "./useLandedState";
+import { AUDIO_CONFIG, AudioCategory } from "../audioConfig";
 
 interface Track {
   id: string;
   name: string;
   filename: string;
   audio: HTMLAudioElement | null;
-  categories: ("space" | "surface" | "atmospheric")[];
+  categories: AudioCategory[];
 }
 
 interface MusicPlayerState {
@@ -42,44 +43,6 @@ interface MusicPlayerState {
   getFilteredTracks: (isOnSurface: boolean) => Track[];
 }
 
-// scan music files in the public/sounds/music directory
-// and create an array of objects with the filename and name of each track
-// todo: automate this process using a script to scan the directory and generate the array
-
-const MUSIC_FILES = [
-  {
-    filename: "ES_Ame - Shinji Wakasa.mp3",
-    name: "Ame by Shinji Wakasa",
-    categories: ["surface", "atmospheric"] as const,
-  },
-  {
-    filename: "ES_Cairn - By Lotus.mp3",
-    name: "Cairn by Lotus",
-    categories: ["surface", "atmospheric"] as const,
-  },
-  {
-    filename: "ES_Rotting Circuit - Joseph Beg.mp3",
-    name: "Rotting Circuit by Joseph Beg",
-    categories: ["space"] as const,
-  },
-  {
-    filename: "ES_Lovesick - Cushy.mp3",
-    name: "Lovesick by Cushy",
-    categories: ["space", "surface"] as const,
-  },
-  {
-    filename: "ES_Night Sky Travel - Static Glow Sounds.mp3",
-    name: "Night Sky Travel by Static Glow Sounds",
-    categories: ["space", "atmospheric"] as const,
-  },
-  {
-    filename: "ES_Orbit - Van Sandano.mp3",
-    name: "Orbit by Van Sandano",
-    categories: ["space"] as const,
-  },
-];
-
-// first load play random track from the array after 30 seconds of inactivity at low volume
 // Random delay between tracks (2-10 minutes in milliseconds)
 
 
@@ -107,7 +70,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
 
     try {
       const loadedTracks: Track[] = await Promise.all(
-        MUSIC_FILES.map(async (file, index) => {
+        AUDIO_CONFIG.musicTracks.map(async (file, index) => {
           const audio = new Audio(`/sounds/music/${file.filename}`);
 
           return new Promise<Track>((resolve, reject) => {

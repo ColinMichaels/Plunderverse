@@ -54,7 +54,10 @@ Preferred communication style: Simple, everyday language.
 - **GLSL Shader Support**: Custom shader loading for enhanced graphics
 
 ### Audio System
-- **HTML5 Audio**: Native audio playbook with background music and sound effects
+- **HTML5 Audio**: Native audio playback with background music and sound effects
+- **Global Audio Config**: Centralized configuration in `client/src/lib/audioConfig.ts` for all audio files and effects
+- **Configurable Sound Effects**: Volume, looping, throttling, and playback rate settings for each sound effect
+- **Music Track Management**: Category-based music system (space/surface/atmospheric) with configurable tracks
 - **Mute Controls**: User-controllable audio with persistent state
 - **Audio Stores**: Centralized audio management through Zustand
 - **Autopilot Audio**: Throttled thruster sound effects during automated flight

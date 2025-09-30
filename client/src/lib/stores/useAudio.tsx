@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { AUDIO_CONFIG } from "../audioConfig";
 
 interface AudioState {
   backgroundMusic: HTMLAudioElement | null;
@@ -64,19 +65,20 @@ export const useAudio = create<AudioState>((set, get) => ({
         return;
       }
 
-      // PLACEHOLDER: Prevent rapid hit sound spam - limit to once per 200ms  
-      // TODO: Future sound design work will revisit this debouncing implementation
-      const now = Date.now();
-      const lastHitTime = (hitSound as any).lastPlayTime || 0;
-      if (now - lastHitTime < 200) {
-        console.log("Hit sound throttled (preventing spam)");
-        return;
+      const throttleMs = AUDIO_CONFIG.soundEffects.hit.throttleMs ?? 0;
+      if (throttleMs > 0) {
+        const now = Date.now();
+        const lastHitTime = (hitSound as any).lastPlayTime || 0;
+        if (now - lastHitTime < throttleMs) {
+          console.log("Hit sound throttled (preventing spam)");
+          return;
+        }
+        (hitSound as any).lastPlayTime = now;
       }
-      (hitSound as any).lastPlayTime = now;
 
       // Clone the sound to allow overlapping playback
       const soundClone = hitSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.3;
+      soundClone.volume = AUDIO_CONFIG.soundEffects.hit.volume;
       soundClone.play().catch((error) => {
         console.log("Hit sound play prevented:", error);
       });

@@ -12,6 +12,7 @@ import { useGame } from "./lib/stores/useGame";
 import { useSettings } from "./lib/stores/useSettings";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import { HintModal } from "./components/HintModal";
+import { AUDIO_CONFIG } from "./lib/audioConfig";
 import "@fontsource/inter";
 
 // Main App component
@@ -33,19 +34,23 @@ function App() {
 
   // Initialize audio and show canvas
   useEffect(() => {
+    const { soundEffects } = AUDIO_CONFIG;
+    
     // Load background music
-    const music = new Audio("/sounds/background.mp3");
-    music.loop = true;
-    music.volume = 0.3;
+    const music = new Audio(soundEffects.background.path);
+    music.loop = soundEffects.background.loop ?? false;
+    music.volume = soundEffects.background.volume;
     setBackgroundMusic(music);
 
-    // Load laser sound (using hit.mp3)
-    const laser = new Audio("/sounds/space-lazer.mp3");
-    laser.volume = 0.4;
+    // Load laser sound
+    const laser = new Audio(soundEffects.laser.path);
+    laser.volume = soundEffects.laser.volume;
     useAudio.getState().setLaserSound(laser);
 
     // Load thruster sound for autopilot
-    const thruster = new Audio("/sounds/thruster.mp3");
+    const thruster = new Audio(soundEffects.thruster.path);
+    thruster.volume = soundEffects.thruster.volume;
+    thruster.loop = soundEffects.thruster.loop ?? false;
     useAudio.getState().setThrusterSound(thruster);
 
     setShowCanvas(true);

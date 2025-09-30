@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useGame } from "../lib/stores/useGame";
 import { useAudio } from "../lib/stores/useAudio";
 import { MusicPlayer } from "./MusicPlayer";
+import { AUDIO_CONFIG } from "../lib/audioConfig";
 
 export function SplashScreen() {
   const [showOptions, setShowOptions] = useState(false);
@@ -157,12 +158,17 @@ export function SplashScreen() {
 
   // Initialize sounds and start ambient music
   useEffect(() => {
+    const { soundEffects } = AUDIO_CONFIG;
+    
     // Load space ambience
-    const ambientAudio = new Audio("/sounds/space-ambience.mp3");
+    const ambientAudio = new Audio(soundEffects.ambient.path);
+    ambientAudio.volume = soundEffects.ambient.volume;
+    ambientAudio.loop = soundEffects.ambient.loop ?? false;
     setAmbientMusic(ambientAudio);
 
-    // Load new laser sound (zap)
-    const zapAudio = new Audio("/sounds/zap.mp3");
+    // Load zap sound
+    const zapAudio = new Audio(soundEffects.zap.path);
+    zapAudio.volume = soundEffects.zap.volume;
     setLaserSound(zapAudio);
 
     // Play ambient music when splash screen loads

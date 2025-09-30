@@ -17,6 +17,7 @@ import * as THREE from "three";
 import { usePlayer } from "../lib/stores/usePlayer";
 import { useFlashlight } from "../lib/stores/useFlashlight";
 import { useSurfaceCollision } from "../lib/stores/useSurfaceCollision";
+import { AUDIO_CONFIG } from "../lib/audioConfig";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -912,9 +913,10 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
   // Initialize and manage helmet breathing audio
   useEffect(() => {
     if (needsHelmet) {
-      const audio = new Audio("/sounds/space-helmet-breathing.mp3");
-      audio.loop = true;
-      audio.volume = isMuted ? 0 : 0.1; // Respect mute setting
+      const { soundEffects } = AUDIO_CONFIG;
+      const audio = new Audio(soundEffects.spaceHelmetBreathing.path);
+      audio.loop = soundEffects.spaceHelmetBreathing.loop ?? true;
+      audio.volume = isMuted ? 0 : soundEffects.spaceHelmetBreathing.volume;
       audio
         .play()
         .catch((e) => console.log("Helmet audio autoplay prevented:", e));
@@ -931,7 +933,8 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
   // Update volume when mute state changes
   useEffect(() => {
     if (helmetAudio) {
-      helmetAudio.volume = isMuted ? 0 : 0.1;
+      const { soundEffects } = AUDIO_CONFIG;
+      helmetAudio.volume = isMuted ? 0 : soundEffects.spaceHelmetBreathing.volume;
     }
   }, [isMuted, helmetAudio]);
 
