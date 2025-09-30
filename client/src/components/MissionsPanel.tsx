@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMissions, Mission, Bounty } from "../lib/stores/useMissions";
 import { useCreditsData } from "../domain/economy/selectors";
 import { useRewards } from "../lib/stores/useRewards";
+import { DraggablePanel } from "./DraggablePanel";
 
 interface MissionsPanelProps {
   isVisible: boolean;
@@ -55,9 +56,14 @@ export function MissionsPanel({ isVisible, onToggle }: MissionsPanelProps) {
   }
 
   return (
-    <div className="fixed right-4 top-16 w-96 max-h-[80vh] bg-gray-900/95 border border-gray-600 rounded-lg overflow-hidden z-40">
-      {/* Header */}
-      <div className="bg-gray-800 p-4 border-b border-gray-600">
+    <DraggablePanel 
+      defaultPosition={{ x: window.innerWidth - 400, y: 64 }}
+      handle=".missions-panel-header"
+      bounds="window"
+    >
+      <div className="w-96 max-h-[80vh] bg-gray-900/95 border border-gray-600 rounded-lg overflow-hidden z-40">
+        {/* Header */}
+        <div className="missions-panel-header bg-gray-800 p-4 border-b border-gray-600 cursor-move">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-bold text-white">Mission Control</h2>
           <button
@@ -260,6 +266,7 @@ export function MissionsPanel({ isVisible, onToggle }: MissionsPanelProps) {
           </div>
         )}
       </div>
-    </div>
+      </div>
+    </DraggablePanel>
   );
 }

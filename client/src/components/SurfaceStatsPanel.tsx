@@ -6,6 +6,7 @@ import { useMining } from "../lib/stores/useMining";
 import { useInventoryDisplayData } from "../domain/economy/selectors";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { planets } from "../lib/planetData";
+import { DraggablePanel } from "./DraggablePanel";
 
 export function SurfaceStatsPanel() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -51,7 +52,11 @@ export function SurfaceStatsPanel() {
   
   if (!isExpanded) {
     return (
-      <div className="fixed bottom-4 right-24 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-2 flex items-center gap-3 z-50">
+      <DraggablePanel
+        defaultPosition={{ x: window.innerWidth - 440, y: window.innerHeight - 80 }}
+        bounds="window"
+      >
+        <div className="bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-2 flex items-center gap-3 z-50 cursor-move">
         <div 
           className={`font-mono text-xs ${getBatteryColor()}`}
           title={`Flashlight Battery: ${Math.round(batteryLevel)}% - ${isOn ? "ON" : "OFF"}${isCharging ? " (Charging)" : ""}`}
@@ -73,22 +78,28 @@ export function SurfaceStatsPanel() {
         >
           <span className="text-xl">⬇️</span>
         </button>
-      </div>
+        </div>
+      </DraggablePanel>
     );
   }
   
   return (
-    <div className="fixed bottom-4 right-24 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-4 z-50 min-w-[320px]">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-cyan-400 font-bold text-sm">Surface Stats</h3>
-        <button
-          onClick={() => setIsExpanded(false)}
-          className="bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center"
-          title="Collapse Stats Panel"
-        >
-          <span className="text-xl">⬆️</span>
-        </button>
-      </div>
+    <DraggablePanel
+      defaultPosition={{ x: window.innerWidth - 440, y: window.innerHeight - 320 }}
+      handle=".surface-stats-header"
+      bounds="window"
+    >
+      <div className="bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-4 z-50 min-w-[320px]">
+        <div className="surface-stats-header flex items-center justify-between mb-3 cursor-move">
+          <h3 className="text-cyan-400 font-bold text-sm">Surface Stats</h3>
+          <button
+            onClick={() => setIsExpanded(false)}
+            className="bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center"
+            title="Collapse Stats Panel"
+          >
+            <span className="text-xl">⬆️</span>
+          </button>
+        </div>
       
       <div className="space-y-3 text-xs font-mono">
         <div className="border-b border-cyan-400/30 pb-2">
@@ -155,6 +166,7 @@ export function SurfaceStatsPanel() {
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </DraggablePanel>
   );
 }
