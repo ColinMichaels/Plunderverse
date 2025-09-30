@@ -1,5 +1,5 @@
 import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useRef } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import { SolarSystem } from "./components/SolarSystem";
 import { GameUI } from "./components/GameUI";
@@ -9,44 +9,27 @@ import { TakeoffControls } from "./components/TakeoffControls";
 import { UILayoutProvider } from "./components/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
+import { useSettings } from "./lib/stores/useSettings";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import { HintModal } from "./components/HintModal";
 import "@fontsource/inter";
-
-// Define control keys for space flight
-enum Controls {
-  forward = "forward",
-  backward = "backward",
-  left = "left",
-  right = "right",
-  up = "up",
-  down = "down",
-  shoot = "shoot",
-  land = "land",
-  info = "info",
-  menu = "menu",
-  center = "center",
-}
-
-const controls = [
-  { name: Controls.forward, keys: ["KeyW", "ArrowUp"] },
-  { name: Controls.backward, keys: ["KeyS", "ArrowDown"] },
-  { name: Controls.left, keys: ["KeyA", "ArrowLeft"] },
-  { name: Controls.right, keys: ["KeyD", "ArrowRight"] },
-  { name: Controls.up, keys: ["KeyQ"] },
-  { name: Controls.down, keys: ["KeyE"] },
-  { name: Controls.shoot, keys: ["Space"] },
-  { name: Controls.land, keys: ["KeyL"] },
-  { name: Controls.info, keys: ["KeyI"] },
-  { name: Controls.menu, keys: ["Escape"] },
-  { name: Controls.center, keys: ["KeyC"] },
-];
 
 // Main App component
 function App() {
   const [showCanvas, setShowCanvas] = useState(false);
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
+  
+  // Create a stable keyboard map using a ref to prevent infinite loops
+  const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
+  
+  // Update the keyboard map only when keybinds actually change
+  useEffect(() => {
+    const unsubscribe = useSettings.subscribe(() => {
+      keyboardMapRef.current = useSettings.getState().getKeyboardMap();
+    });
+    return unsubscribe;
+  }, []);
 
   // Initialize audio and show canvas
   useEffect(() => {
@@ -83,7 +66,7 @@ function App() {
 
         {/* Show game when playing */}
         {phase === "playing" && showCanvas && (
-          <KeyboardControls map={controls}>
+          <KeyboardControls map={keyboardMapRef.current}>
             <TouchPropulsionControls>
               <Canvas
                 shadows

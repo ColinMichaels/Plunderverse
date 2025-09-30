@@ -1,0 +1,27 @@
+export enum Controls {
+  forward = "forward",
+  backward = "backward",
+  left = "left",
+  right = "right",
+  up = "up",
+  down = "down",
+  shoot = "shoot",
+  land = "land",
+  info = "info",
+  menu = "menu",
+  center = "center",
+}
+
+export const DEFAULT_KEYBINDS: Record<string, string[]> = {
+  forward: ["KeyW", "ArrowUp"],
+  backward: ["KeyS", "ArrowDown"],
+  left: ["KeyA", "ArrowLeft"],
+  right: ["KeyD", "ArrowRight"],
+  up: ["KeyQ"],
+  down: ["KeyE"],
+  shoot: ["Space"],
+  land: ["KeyL"],
+  info: ["KeyI"],
+  menu: ["Escape"],
+  center: ["KeyC"],
+};

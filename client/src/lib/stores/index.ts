@@ -16,6 +16,7 @@ export { useLandingWarning } from './useLandingWarning';
 export { useMissions } from './useMissions';
 export { useRewards } from './useRewards';
 export { useMusicPlayer } from './useMusicPlayer';
+export { useSettings } from './useSettings';
 
 // Legacy exports that map to new domain stores for backward compatibility
 export { useCredits } from './useCredits';

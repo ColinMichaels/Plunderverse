@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { LandingTransition } from "./LandingTransition";
@@ -16,12 +17,14 @@ import { MusicPlayer } from "./MusicPlayer";
 import { CryptoWallet } from "./CryptoWallet";
 import { CryptoMarketplace } from "./CryptoMarketplace";
 import { ControlsHelp } from "./ControlsHelp";
+import { SettingsPanel } from "./SettingsPanel";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
 import { planets } from "../lib/planetData";
 
 export function GameUI() {
+  const [showSettings, setShowSettings] = useState(false);
   const { selectedPlanet, time } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
@@ -105,6 +108,18 @@ export function GameUI() {
 
       {/* Controls Help - shows on first launch, accessible via F1 */}
       <ControlsHelp />
+
+      {/* Settings button in top right corner */}
+      <button
+        onClick={() => setShowSettings(true)}
+        className="fixed top-4 right-4 bg-cyan-600/80 hover:bg-cyan-500/80 text-white px-3 py-2 rounded-lg border border-cyan-400 transition-colors z-40 text-sm backdrop-blur-sm"
+        title="Game Settings"
+      >
+        ⚙️ Settings
+      </button>
+
+      {/* Settings Panel */}
+      <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
     </>
   );
 }

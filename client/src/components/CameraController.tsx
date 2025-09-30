@@ -12,22 +12,10 @@ import { useAutopilot } from "../lib/stores/useAutopilot";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useMining } from "../lib/stores/useMining";
 import { useLandedState } from "../lib/stores/useLandedState";
+import { useSettings } from "../lib/stores/useSettings";
 import { planets } from "../lib/planetData";
 import { bindInputHandlers, useInput } from "../stores/useInput";
-
-enum Controls {
-  forward = "forward",
-  backward = "backward",
-  left = "left",
-  right = "right",
-  up = "up",
-  down = "down",
-  shoot = "shoot",
-  land = "land",
-  info = "info",
-  menu = "menu",
-  center = "center",
-}
+import { Controls } from "../lib/controls";
 
 export function CameraController() {
   const { camera } = useThree();
@@ -41,6 +29,7 @@ export function CameraController() {
   const { setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
   const { setGyroEnabled, setDragging } = useInput();
+  const { sensitivity, invertY } = useSettings();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
   const lastMenuPressRef = useRef(0);
@@ -427,13 +416,11 @@ export function CameraController() {
 
     // Only apply look controls if not landing
     if (!isLanding) {
-      const sensitivity = 0.001; // Reduced sensitivity for smoother control
-
       // Combine mouse and mobile rotation inputs
       const mouseX = mouse.x * sensitivity;
-      const mouseY = mouse.y * sensitivity;
+      const mouseY = mouse.y * sensitivity * (invertY ? -1 : 1);
       const mobileX = mobileRotationRef.current.x * 0.1; // Scale mobile input
-      const mobileY = mobileRotationRef.current.y * 0.1;
+      const mobileY = mobileRotationRef.current.y * 0.1 * (invertY ? -1 : 1);
 
       const targetRotationY = camera.rotation.y - (mouseX + mobileX);
       const targetRotationX = THREE.MathUtils.clamp(
