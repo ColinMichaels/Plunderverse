@@ -645,8 +645,8 @@ export function CameraController() {
           lookAtMatrix.lookAt(camera.position, currentPlanetPosition, new THREE.Vector3(0, 1, 0));
           targetQuaternion.setFromRotationMatrix(lookAtMatrix);
 
-          // Very gentle camera rotation to look at planet (much slower than autopilot)
-          camera.quaternion.slerp(targetQuaternion, delta * 0.8);
+          // Very slow, subtle camera rotation to look at planet - not jarring
+          camera.quaternion.slerp(targetQuaternion, delta * 0.25);
         }
       }
     } else if (isProximityCameraActive) {
