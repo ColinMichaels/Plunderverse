@@ -719,7 +719,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
       id: string;
     }> = [];
 
-    planet.resources.forEach((resource, index) => {
+    planet.resources.forEach((resource, resourceIndex) => {
       // Create multiple nodes for each resource type
       const nodeCount =
         resource.rarity === "legendary"
@@ -732,7 +732,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 
       for (let i = 0; i < nodeCount; i++) {
         const angle =
-          ((index * nodeCount + i) * (Math.PI * 2)) /
+          ((resourceIndex * nodeCount + i) * (Math.PI * 2)) /
           (planet.resources.length * 3);
         const distance = 15 + Math.random() * 30;
         const x = Math.cos(angle) * distance;
@@ -743,7 +743,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         positions.push({
           resource,
           position: [x, y, z],
-          id: `${planetName}-${resource.type}-${i}`, // Unique ID for each node
+          id: `${planetName}-${resource.type}-${resourceIndex}-${i}`, // Unique ID with resource index to prevent collisions
         });
       }
     });
