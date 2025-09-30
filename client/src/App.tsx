@@ -47,6 +47,22 @@ function App() {
     laser.volume = soundEffects.laser.volume;
     useAudio.getState().setLaserSound(laser);
 
+    // Load hit sound for mining
+    const hit = new Audio(soundEffects.hit.path);
+    hit.volume = soundEffects.hit.volume;
+    useAudio.getState().setHitSound(hit);
+
+    // Load success sound
+    const success = new Audio(soundEffects.success.path);
+    success.volume = soundEffects.success.volume;
+    useAudio.getState().setSuccessSound(success);
+
+    // Load ambient sound  
+    const ambient = new Audio(soundEffects.ambient.path);
+    ambient.volume = soundEffects.ambient.volume;
+    ambient.loop = soundEffects.ambient.loop ?? false;
+    useAudio.getState().setAmbientMusic(ambient);
+
     // Load thruster sound for autopilot
     const thruster = new Audio(soundEffects.thruster.path);
     thruster.volume = soundEffects.thruster.volume;
