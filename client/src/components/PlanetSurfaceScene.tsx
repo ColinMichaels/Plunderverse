@@ -28,14 +28,14 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   // Select appropriate texture based on planet
   const getTextureForPlanet = (name: string) => {
     switch (name.toLowerCase()) {
-      case 'earth':
-        return '/textures/earth_grass.png';
-      case 'mars':
-        return '/textures/mars_terrain.png';
-      case 'moon':
-        return '/textures/moon_terrain.png';
+      case "earth":
+        return "/textures/earth_grass.png";
+      case "mars":
+        return "/textures/mars_terrain.png";
+      case "moon":
+        return "/textures/moon_terrain.png";
       default:
-        return '/textures/surfaces/black-white-details-moon-texture-concept.jpg';
+        return "/textures/surfaces/black-white-details-moon-texture-concept.jpg";
     }
   };
 
@@ -67,7 +67,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     if (surfaceTexture) {
       surfaceTexture.wrapS = THREE.RepeatWrapping;
       surfaceTexture.wrapT = THREE.RepeatWrapping;
-      surfaceTexture.repeat.set(8, 8); // Repeat the texture 8x8 times for detail
+      surfaceTexture.repeat.set(16, 16); // Repeat the texture 8x8 times for detail
       surfaceTexture.anisotropy = 16; // Improve texture quality at angles
     }
   }, [surfaceTexture]);
@@ -183,29 +183,39 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   };
 
   // Load all planet textures for sky rendering
-  const earthTexture = useTexture('/textures/planets/2k_earth_daymap.jpg');
-  const marsTexture = useTexture('/textures/planets/2k_mars.jpg');
-  const venusTexture = useTexture('/textures/planets/2k_venus_surface.jpg');
-  const mercuryTexture = useTexture('/textures/planets/2k_mercury.jpg');
-  const jupiterTexture = useTexture('/textures/planets/2k_jupiter.jpg');
-  const saturnTexture = useTexture('/textures/planets/2k_saturn.jpg');
-  const uranusTexture = useTexture('/textures/planets/2k_uranus.jpg');
-  const neptuneTexture = useTexture('/textures/planets/2k_neptune.jpg');
-  const moonTexture = useTexture('/textures/planets/2k_moon.jpg');
+  const earthTexture = useTexture("/textures/planets/2k_earth_daymap.jpg");
+  const marsTexture = useTexture("/textures/planets/2k_mars.jpg");
+  const venusTexture = useTexture("/textures/planets/2k_venus_surface.jpg");
+  const mercuryTexture = useTexture("/textures/planets/2k_mercury.jpg");
+  const jupiterTexture = useTexture("/textures/planets/2k_jupiter.jpg");
+  const saturnTexture = useTexture("/textures/planets/2k_saturn.jpg");
+  const uranusTexture = useTexture("/textures/planets/2k_uranus.jpg");
+  const neptuneTexture = useTexture("/textures/planets/2k_neptune.jpg");
+  const moonTexture = useTexture("/textures/planets/2k_moon.jpg");
 
   // Get planet texture by name
   const getPlanetTexture = (planetName: string) => {
     switch (planetName) {
-      case 'Earth': return earthTexture;
-      case 'Mars': return marsTexture;
-      case 'Venus': return venusTexture;
-      case 'Mercury': return mercuryTexture;
-      case 'Jupiter': return jupiterTexture;
-      case 'Saturn': return saturnTexture;
-      case 'Uranus': return uranusTexture;
-      case 'Neptune': return neptuneTexture;
-      case 'Moon': return moonTexture;
-      default: return null;
+      case "Earth":
+        return earthTexture;
+      case "Mars":
+        return marsTexture;
+      case "Venus":
+        return venusTexture;
+      case "Mercury":
+        return mercuryTexture;
+      case "Jupiter":
+        return jupiterTexture;
+      case "Saturn":
+        return saturnTexture;
+      case "Uranus":
+        return uranusTexture;
+      case "Neptune":
+        return neptuneTexture;
+      case "Moon":
+        return moonTexture;
+      default:
+        return null;
     }
   };
 
@@ -246,13 +256,13 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
       if (distance > 5) {
         const direction = relativePosition.normalize();
-        
+
         // Vary the sky dome radius based on actual distance to show depth
         // Closer planets appear larger and at closer sky dome distance
         // Farther planets appear smaller and at farther sky dome distance
         const skyDomeRadius = 350 + Math.min(150, distance * 2);
         const skyPosition = direction.clone().multiplyScalar(skyDomeRadius);
-        
+
         // Apparent size based on actual planet size and distance
         const apparentSize = Math.max(
           1.0,
@@ -463,10 +473,11 @@ function SurfaceSky({ planetName }: { planetName: string }) {
       {/* Distant planets and celestial objects */}
       <group ref={planetsRef}>
         {visiblePlanets.map((celestialObject, index) => {
-          const texture = celestialObject.planet.name !== "Sun" 
-            ? getPlanetTexture(celestialObject.planet.name)
-            : null;
-          
+          const texture =
+            celestialObject.planet.name !== "Sun"
+              ? getPlanetTexture(celestialObject.planet.name)
+              : null;
+
           return (
             <mesh
               key={`${celestialObject.planet.name}-${index}`}
@@ -484,7 +495,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
                   emissiveIntensity={0.8}
                 />
               ) : texture ? (
-                <meshStandardMaterial 
+                <meshStandardMaterial
                   map={texture}
                   metalness={0.1}
                   roughness={0.8}
@@ -649,10 +660,18 @@ function SurfaceLighting() {
       typeof lightingData.sunElevation === "number" &&
       typeof ambientIntensity === "number"
     ) {
-      const elevationDegrees = ((lightingData.sunElevation * 180) / Math.PI).toFixed(1);
-      const timeOfDay = lightingData.sunElevation < -0.3 ? 'NIGHT' : 
-                        lightingData.sunElevation < 0.0 ? 'DAWN/DUSK' :
-                        lightingData.sunElevation < 0.5 ? 'MORNING' : 'MIDDAY';
+      const elevationDegrees = (
+        (lightingData.sunElevation * 180) /
+        Math.PI
+      ).toFixed(1);
+      const timeOfDay =
+        lightingData.sunElevation < -0.3
+          ? "NIGHT"
+          : lightingData.sunElevation < 0.0
+            ? "DAWN/DUSK"
+            : lightingData.sunElevation < 0.5
+              ? "MORNING"
+              : "MIDDAY";
       console.log(
         `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°`,
       );
@@ -661,20 +680,24 @@ function SurfaceLighting() {
 
   // Calculate sky colors based on time of day
   const sunElevation = lightingData.sunElevation ?? 0;
-  const skyColor = sunElevation < -0.3 ? '#000814' : // Night: very dark blue
-                   sunElevation < 0.0 ? '#1a2332' : // Dawn/Dusk: dark blue-gray  
-                   sunElevation < 0.5 ? '#4a7c9e' : // Morning: medium blue
-                   '#87CEEB'; // Midday: sky blue
-  
+  const skyColor =
+    sunElevation < -0.3
+      ? "#000814" // Night: very dark blue
+      : sunElevation < 0.0
+        ? "#1a2332" // Dawn/Dusk: dark blue-gray
+        : sunElevation < 0.5
+          ? "#4a7c9e" // Morning: medium blue
+          : "#87CEEB"; // Midday: sky blue
+
   const groundColor = surfaceColor;
 
   return (
     <>
       {/* Dynamic ambient light that changes with time of day */}
       <ambientLight intensity={ambientIntensity * 0.5} color={surfaceColor} />
-      
+
       {/* Hemisphere light for natural sky-to-ground gradient */}
-      <hemisphereLight 
+      <hemisphereLight
         color={skyColor}
         groundColor={groundColor}
         intensity={ambientIntensity * 1.5}
