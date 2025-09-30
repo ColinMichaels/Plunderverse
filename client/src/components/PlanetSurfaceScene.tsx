@@ -12,6 +12,7 @@ import { planets, ResourceData } from "../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import { FBXAsteroid } from "./FBXAsteroid";
 import { FlashlightSystem } from "./FlashlightSystem";
+import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import * as THREE from "three";
 
 import { usePlayer } from "../lib/stores/usePlayer";
@@ -957,27 +958,6 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
         <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-16 h-64 bg-gradient-to-l from-gray-800/80 to-transparent rounded-l-full" />
       </div>
 
-      {/* HUD elements */}
-      <div className="absolute top-4 right-4 bg-gray-900/70 border border-green-400 rounded p-2 text-green-400 text-xs font-mono">
-        <div>O₂: {player.oxygenPercentage}</div>
-        <div>SUIT: {player.suitStatus} </div>
-        <div>TEMP: {planet?.surfaceTemperature}</div>
-        <div
-          className={`${
-            getBatteryStatus() === "critical"
-              ? "text-red-400"
-              : getBatteryStatus() === "low"
-                ? "text-yellow-400"
-                : isCharging
-                  ? "text-cyan-400"
-                  : "text-green-400"
-          }`}
-        >
-          💡: {isOn ? "ON" : "OFF"} {Math.round(batteryLevel)}%{" "}
-          {isCharging ? "⚡" : ""}
-        </div>
-      </div>
-
       {/* Atmosphere warning */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-900/70 border border-red-400 rounded px-3 py-1 text-red-400 text-sm">
         ⚠️ HOSTILE ATMOSPHERE - EVA SUIT ACTIVE
@@ -1102,61 +1082,6 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   );
 }
 
-function MiningDebugDisplay() {
-  const { isLanded, landedPlanet } = useLandedState();
-  const { isActive, targetResource, clicksCompleted, clicksRequired } =
-    useMining();
-  const items = useInventoryStore(state => state.items);
-  const storageInfo = useStorageInfo();
-  const { used: storageUsed, capacity: storageCapacity } = storageInfo;
-  const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
-
-  // Calculate total units and find last changed item
-  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
-  const lastChangedItem = items.length > 0 ? items[items.length - 1] : null;
-
-  // Get equipment performance data
-  const drillPerformance = getPerformanceMultiplier("drill-mk1");
-  const extractorPerformance = getPerformanceMultiplier("extractor-basic");
-  const drillStatus = getConditionStatus("drill-mk1");
-  const extractorStatus = getConditionStatus("extractor-basic");
-
-  return (
-    <div className="fixed top-4 right-4 bg-black/80 border border-cyan-400/50 rounded p-3 text-cyan-400 font-mono text-xs z-50">
-      <div className="space-y-1">
-        <div>LANDING: {isLanded ? `✓ ${landedPlanet}` : "✗ Not landed"}</div>
-        <div>
-          MINING: {isActive ? `✓ ${targetResource?.type}` : "✗ Inactive"}
-        </div>
-        <div>
-          PROGRESS: {clicksCompleted}/{clicksRequired}
-        </div>
-        <div>
-          CARGO: {totalUnits} units ({items.length} types)
-        </div>
-        <div>
-          STORAGE: {storageUsed}/{storageCapacity}
-        </div>
-        {lastChangedItem && (
-          <div>
-            LAST: {lastChangedItem.quantity}x {lastChangedItem.type}
-          </div>
-        )}
-        <div className="border-t border-cyan-600 pt-1 mt-1">
-          <div>
-            DRILL: {(drillPerformance * 100).toFixed(0)}% ({drillStatus})
-          </div>
-          <div>
-            EXTR: {(extractorPerformance * 100).toFixed(0)}% ({extractorStatus})
-          </div>
-          {(drillStatus === "broken" || extractorStatus === "broken") && (
-            <div className="text-red-400">⚠️ EQUIPMENT BROKEN</div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
@@ -1189,8 +1114,8 @@ export function PlanetSurfaceScene() {
         </Canvas>
       </KeyboardControls>
 
-      {/* Mining debug display */}
-      <MiningDebugDisplay />
+      {/* Unified collapsible stats panel */}
+      <SurfaceStatsPanel />
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />
