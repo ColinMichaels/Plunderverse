@@ -85,6 +85,7 @@ Preferred communication style: Simple, everyday language.
 - **Error Handling**: Comprehensive error handling with user-friendly messages and automatic rollback on failures
 - **State Synchronization**: Coordinated updates between crypto balance, game inventory, and credits
 - **UI Integration**: Crypto wallet and marketplace panels integrated into GameUI with proper visibility and z-index
+- **API Contract**: Server mock API responses match client TypeScript interfaces (CryptoWallet, CryptoMarketPrice) with proper field names and types
 
 ## External Dependencies
 
