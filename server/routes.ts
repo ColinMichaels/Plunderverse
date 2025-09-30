@@ -14,7 +14,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const MOCK_CRYPTO_MODE = !CRYPTO_API_KEY;
 
   // Mock storage for wallets and transactions
-  const mockWallets = new Map<string, { address: string; playerId: string; balance: number; currency: string }>();
+  const mockWallets = new Map<string, { address: string; playerId: string; balance: number; currency: string; network: string }>();
   const mockTransactions = new Map<string, { id: string; from: string; to: string; amount: number; timestamp: string; type: string; memo?: string }[]>();
   
   if (MOCK_CRYPTO_MODE) {
@@ -66,15 +66,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       if (MOCK_CRYPTO_MODE) {
         const mockAddress = generateMockAddress(playerId);
-        const wallet = {
+        const walletData = {
           address: mockAddress,
           playerId,
           balance: 1000,
-          currency: 'SPACE'
+          currency: 'SPACE',
+          network: CRYPTO_NETWORK
         };
-        mockWallets.set(playerId, wallet);
+        mockWallets.set(playerId, walletData);
         mockTransactions.set(mockAddress, []);
         console.log(`CRYPTO MOCK: Created wallet for player ${playerId} with address ${mockAddress}`);
+        const { playerId: _, ...wallet } = walletData;
         res.json({ success: true, data: wallet });
       } else {
         const data = await cryptoApiRequest('/wallets', 'POST', {
@@ -100,11 +102,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { address } = req.params;
       
       if (MOCK_CRYPTO_MODE) {
-        const wallet = Array.from(mockWallets.values()).find(w => w.address === address);
-        if (!wallet) {
+        const walletData = Array.from(mockWallets.values()).find(w => w.address === address);
+        if (!walletData) {
           throw new Error('Wallet not found');
         }
         console.log(`CRYPTO MOCK: Fetched wallet ${address}`);
+        const { playerId: _, ...wallet } = walletData;
         res.json({ success: true, data: wallet });
       } else {
         const data = await cryptoApiRequest(`/wallets/${address}`);
@@ -126,19 +129,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { playerId } = req.params;
       
       if (MOCK_CRYPTO_MODE) {
-        let wallet = mockWallets.get(playerId);
-        if (!wallet) {
+        let walletData = mockWallets.get(playerId);
+        if (!walletData) {
           const mockAddress = generateMockAddress(playerId);
-          wallet = {
+          walletData = {
             address: mockAddress,
             playerId,
             balance: 1000,
-            currency: 'SPACE'
+            currency: 'SPACE',
+            network: CRYPTO_NETWORK
           };
-          mockWallets.set(playerId, wallet);
+          mockWallets.set(playerId, walletData);
           mockTransactions.set(mockAddress, []);
           console.log(`CRYPTO MOCK: Auto-created wallet for player ${playerId}`);
         }
+        const { playerId: _, ...wallet } = walletData;
         res.json({ success: true, data: wallet });
       } else {
         const data = await cryptoApiRequest(`/wallets/player/${playerId}`);
@@ -301,13 +306,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const currency = req.params.currency || 'SPACE';
       
       if (MOCK_CRYPTO_MODE) {
+        const priceInUSD = 0.50 + (Math.random() * 0.1 - 0.05);
         const mockPrice = {
           currency: 'SPACE',
-          usdPrice: 0.50 + (Math.random() * 0.1 - 0.05),
+          priceInUSD,
           change24h: (Math.random() * 10 - 5),
-          timestamp: new Date().toISOString()
+          lastUpdated: Date.now()
         };
-        console.log(`CRYPTO MOCK: Fetched market price for ${currency}: $${mockPrice.usdPrice.toFixed(2)}`);
+        console.log(`CRYPTO MOCK: Fetched market price for ${currency}: $${mockPrice.priceInUSD.toFixed(2)}`);
         res.json({ success: true, data: mockPrice });
       } else {
         const data = await cryptoApiRequest(`/market/price/${currency}`);
