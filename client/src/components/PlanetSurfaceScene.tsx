@@ -4,8 +4,6 @@ import { KeyboardControls, useTexture } from "@react-three/drei";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
-import { useStorageInfo } from "../domain/economy/selectors";
-import { useInventoryStore } from "../domain/economy/inventory.store";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { planets, ResourceData } from "../lib/planetData";
