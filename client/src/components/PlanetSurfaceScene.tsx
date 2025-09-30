@@ -629,10 +629,12 @@ function ResourceNode({
   resource,
   position,
   onInteract,
+  progress = 0,
 }: {
   resource: ResourceData;
   position: [number, number, number];
   onInteract: () => void;
+  progress?: number;
 }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [hovered, setHovered] = useState(false);
@@ -653,6 +655,9 @@ function ResourceNode({
     }
   };
 
+  // Calculate scale based on mining progress: 1.0 down to 0.2
+  const miningScale = 1 - (progress * 0.8);
+
   useFrame((state) => {
     if (meshRef.current) {
       // Gentle floating animation
@@ -666,6 +671,10 @@ function ResourceNode({
     }
   });
 
+  // Combine mining scale with hover scale
+  const baseScale = hovered ? 1.2 : 1;
+  const finalScale = baseScale * miningScale;
+
   return (
     <mesh
       ref={meshRef}
@@ -673,7 +682,7 @@ function ResourceNode({
       onClick={onInteract}
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
-      scale={hovered ? 1.2 : 1}
+      scale={finalScale}
     >
       <octahedronGeometry args={[1.5, 0]} />
       <meshStandardMaterial
@@ -689,11 +698,16 @@ function ResourceNode({
 
 function ResourceNodes({ planetName }: { planetName: string }) {
   const planet = planets.find((p) => p.name === planetName);
-  const { startMining, performClick, isActive, targetResource } = useMining();
+  const { startMining, performClick, isActive, targetResource, clicksCompleted, clicksRequired, currentNodeId } = useMining();
   const { playHit } = useAudio();
 
   // Track destroyed resource nodes per planet
   const [destroyedNodes, setDestroyedNodes] = useState<Set<string>>(new Set());
+
+  // Calculate current mining progress (0 to 1)
+  const miningProgress = isActive && clicksRequired > 0 
+    ? Math.min(1, clicksCompleted / clicksRequired) // Clamp to [0,1]
+    : 0;
 
   if (!planet) return null;
 
@@ -746,10 +760,13 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     );
 
     try {
-      if (isActive && targetResource?.type === resource.type) {
-        // If already mining this resource, perform a click
+      // Check if we're currently mining THIS SPECIFIC node
+      const { currentNodeId: activeNodeId } = useMining.getState();
+      
+      if (isActive && activeNodeId === nodeId) {
+        // If already mining this specific node, perform a click
         console.log(
-          `[MINING-DEBUG] Performing mining click for ${resource.type}`,
+          `[MINING-DEBUG] Performing mining click for ${resource.type} (node: ${nodeId})`,
         );
         const result = await performClick();
         console.log(`[MINING-DEBUG] performClick result:`, result);
@@ -804,11 +821,11 @@ function ResourceNodes({ planetName }: { planetName: string }) {
       } else {
         // Start mining a new resource
         console.log(
-          `[MINING-DEBUG] Starting new mining operation for ${resource.type} on ${planetName}`,
+          `[MINING-DEBUG] Starting new mining operation for ${resource.type} (node: ${nodeId}) on ${planetName}`,
         );
-        startMining(planetName, resource);
+        startMining(planetName, resource, nodeId);
         console.log(
-          `[MINING-DEBUG] startMining called for ${resource.type} on ${planetName}`,
+          `[MINING-DEBUG] startMining called for ${resource.type} (node: ${nodeId}) on ${planetName}`,
         );
       }
     } catch (error) {
@@ -820,14 +837,21 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     <>
       {resourcePositions
         .filter((node) => !destroyedNodes.has(node.id)) // Only show non-destroyed nodes
-        .map((node, index) => (
-          <ResourceNode
-            key={node.id}
-            resource={node.resource}
-            position={node.position}
-            onInteract={() => handleResourceClick(node.resource, node.id)}
-          />
-        ))}
+        .map((node, index) => {
+          // Check if THIS SPECIFIC node is currently being mined using its unique ID
+          const isBeingMined = isActive && currentNodeId === node.id;
+          const nodeProgress = isBeingMined ? miningProgress : 0;
+          
+          return (
+            <ResourceNode
+              key={node.id}
+              resource={node.resource}
+              position={node.position}
+              onInteract={() => handleResourceClick(node.resource, node.id)}
+              progress={nodeProgress}
+            />
+          );
+        })}
     </>
   );
 }

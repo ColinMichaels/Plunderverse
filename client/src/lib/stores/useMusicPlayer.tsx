@@ -1,11 +1,13 @@
 import { create } from "zustand";
 import { useAudio } from "./useAudio";
+import { useLandedState } from "./useLandedState";
 
 interface Track {
   id: string;
   name: string;
   filename: string;
   audio: HTMLAudioElement | null;
+  categories: ("space" | "surface" | "atmospheric")[];
 }
 
 interface MusicPlayerState {
@@ -36,7 +38,8 @@ interface MusicPlayerState {
   scheduleNextTrack: () => void;
   crossfadeToTrack: (trackIndex: number) => void;
   getCurrentTrack: () => Track | null;
-  getRandomTrackIndex: () => number;
+  getRandomTrackIndex: (isOnSurface?: boolean) => number;
+  getFilteredTracks: (isOnSurface: boolean) => Track[];
 }
 
 // scan music files in the public/sounds/music directory
@@ -47,26 +50,32 @@ const MUSIC_FILES = [
   {
     filename: "ES_Ame - Shinji Wakasa.mp3",
     name: "Ame by Shinji Wakasa",
+    categories: ["surface", "atmospheric"] as const,
   },
   {
     filename: "ES_Cairn - By Lotus.mp3",
     name: "Cairn by Lotus",
+    categories: ["surface", "atmospheric"] as const,
   },
   {
     filename: "ES_Rotting Circuit - Joseph Beg.mp3",
     name: "Rotting Circuit by Joseph Beg",
+    categories: ["space"] as const,
   },
   {
     filename: "ES_Lovesick - Cushy.mp3",
     name: "Lovesick by Cushy",
+    categories: ["space", "surface"] as const,
   },
   {
     filename: "ES_Night Sky Travel - Static Glow Sounds.mp3",
     name: "Night Sky Travel by Static Glow Sounds",
+    categories: ["space", "atmospheric"] as const,
   },
   {
     filename: "ES_Orbit - Van Sandano.mp3",
     name: "Orbit by Van Sandano",
+    categories: ["space"] as const,
   },
 ];
 
@@ -107,6 +116,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
               name: file.name,
               filename: file.filename,
               audio: null,
+              categories: [...file.categories],
             };
 
             audio.addEventListener("canplaythrough", () => {
@@ -199,9 +209,12 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     const { tracks, playbackMode } = get();
     if (tracks.length === 0) return;
 
+    // Check if player is on a planet surface for context-aware selection
+    const { isLanded } = useLandedState.getState();
+
     let nextIndex;
     if (playbackMode === "random") {
-      nextIndex = get().getRandomTrackIndex();
+      nextIndex = get().getRandomTrackIndex(isLanded);
     } else {
       nextIndex = (get().currentTrackIndex + 1) % tracks.length;
     }
@@ -212,6 +225,9 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   skipPrevious: () => {
     const { tracks, lastPlayedTracks } = get();
     if (tracks.length === 0) return;
+
+    // Check if player is on a planet surface for context-aware selection
+    const { isLanded } = useLandedState.getState();
 
     let prevIndex;
     if (lastPlayedTracks.length > 1) {
@@ -267,7 +283,9 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     const nextPlayTime = Date.now() + delay;
 
     const timeout = setTimeout(() => {
-      const nextIndex = get().getRandomTrackIndex();
+      // Check if player is on a planet surface
+      const { isLanded } = useLandedState.getState();
+      const nextIndex = get().getRandomTrackIndex(isLanded);
       get().crossfadeToTrack(nextIndex);
     }, delay);
 
@@ -371,11 +389,60 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     return tracks[currentTrackIndex] || null;
   },
 
-  getRandomTrackIndex: () => {
+  getFilteredTracks: (isOnSurface: boolean) => {
+    const { tracks } = get();
+    
+    // When in space, allow all tracks (full selection)
+    if (!isOnSurface) {
+      return tracks;
+    }
+    
+    // When on surface, only play surface or atmospheric tracks
+    const filtered = tracks.filter(track => 
+      track.categories.includes("surface") || 
+      track.categories.includes("atmospheric")
+    );
+    
+    // If no tracks match, return all tracks as fallback
+    return filtered.length > 0 ? filtered : tracks;
+  },
+
+  getRandomTrackIndex: (isOnSurface?: boolean) => {
     const { tracks, currentTrackIndex, lastPlayedTracks } = get();
     if (tracks.length <= 1) return 0;
 
-    // Avoid recently played tracks
+    // Get appropriate tracks based on context
+    let availableTracks = tracks;
+    if (isOnSurface !== undefined) {
+      const filteredTracks = get().getFilteredTracks(isOnSurface);
+      // Map filtered tracks back to their indices in the main tracks array
+      const filteredIndices = filteredTracks.map(track => 
+        tracks.findIndex(t => t.id === track.id)
+      ).filter(index => index !== -1);
+      
+      // Avoid recently played tracks from the filtered set
+      const availableIndices = filteredIndices.filter(
+        (index) =>
+          index !== currentTrackIndex &&
+          !lastPlayedTracks.slice(-2).includes(index),
+      );
+
+      if (availableIndices.length > 0) {
+        return availableIndices[
+          Math.floor(Math.random() * availableIndices.length)
+        ];
+      }
+      
+      // Fallback: any filtered track that's not current
+      const fallbackIndices = filteredIndices.filter(
+        (index) => index !== currentTrackIndex
+      );
+      if (fallbackIndices.length > 0) {
+        return fallbackIndices[Math.floor(Math.random() * fallbackIndices.length)];
+      }
+    }
+
+    // Default behavior (no context filtering)
     const availableIndices = tracks
       .map((_, index) => index)
       .filter(
@@ -385,7 +452,6 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       );
 
     if (availableIndices.length === 0) {
-      // If all tracks were recently played, just pick a different one
       return (
         tracks
           .map((_, index) => index)

@@ -3,11 +3,13 @@ import { ResourceData } from "../planetData";
 import { useEquipment } from "./useEquipment";
 import { useLandedState } from "./useLandedState";
 import { economyService, TransactionResult } from "../../domain/economy/economy.service";
+import { useAudio } from "./useAudio";
 
 interface MiningState {
   isActive: boolean;
   currentPlanet: string | null;
   targetResource: ResourceData | null;
+  currentNodeId: string | null; // Tracks the specific node being mined
   clicksCompleted: number; // Number of clicks made
   clicksRequired: number; // Total clicks needed based on complexity
   miningSpeed: number; // Resources per second (legacy)
@@ -18,7 +20,7 @@ interface MiningState {
   extractorLevel: number;
   
   // Actions
-  startMining: (planet: string, resource: ResourceData) => void;
+  startMining: (planet: string, resource: ResourceData, nodeId?: string) => void;
   stopMining: () => void;
   performClick: () => Promise<TransactionResult | null>;
   updateProgress: (deltaTime: number) => TransactionResult | null;
@@ -30,6 +32,7 @@ export const useMining = create<MiningState>((set, get) => ({
   isActive: false,
   currentPlanet: null,
   targetResource: null,
+  currentNodeId: null,
   clicksCompleted: 0,
   clicksRequired: 0,
   miningSpeed: 0.2, // Much slower base mining speed (legacy)
@@ -39,7 +42,7 @@ export const useMining = create<MiningState>((set, get) => ({
   drillPower: 1,
   extractorLevel: 1,
   
-  startMining: (planet, resource) => {
+  startMining: (planet, resource, nodeId) => {
     // Check if ship is actually landed on the planet
     const landedState = useLandedState.getState();
     console.log(`[MINING-DEBUG] Checking landing status: isLanded=${landedState.isLanded}, landedPlanet=${landedState.landedPlanet}, targetPlanet=${planet}`);
@@ -54,10 +57,11 @@ export const useMining = create<MiningState>((set, get) => ({
       isActive: true,
       currentPlanet: planet,
       targetResource: resource,
+      currentNodeId: nodeId || null,
       clicksCompleted: 0,
       clicksRequired: resource.complexity
     });
-    console.log(`[MINING-DEBUG] Started mining ${resource.type} on ${planet} surface - ${resource.complexity} clicks needed`);
+    console.log(`[MINING-DEBUG] Started mining ${resource.type} (node: ${nodeId}) on ${planet} surface - ${resource.complexity} clicks needed`);
   },
   
   stopMining: () => {
@@ -65,6 +69,7 @@ export const useMining = create<MiningState>((set, get) => ({
       isActive: false,
       currentPlanet: null,
       targetResource: null,
+      currentNodeId: null,
       clicksCompleted: 0,
       clicksRequired: 0
     });
@@ -75,10 +80,26 @@ export const useMining = create<MiningState>((set, get) => ({
     const state = get();
     if (!state.isActive || !state.targetResource) return null;
     
+    // Calculate previous and new progress percentages
+    const previousProgress = (state.clicksCompleted / state.clicksRequired) * 100;
     const newClicksCompleted = state.clicksCompleted + 1;
+    const newProgress = (newClicksCompleted / state.clicksRequired) * 100;
+    
     set({ clicksCompleted: newClicksCompleted });
     
     console.log(`Mining click ${newClicksCompleted}/${state.clicksRequired} on ${state.targetResource!.type}`);
+    
+    // Play hit sound at milestone crossings (25%, 50%, 75%)
+    const { playHit, playSuccess } = useAudio.getState();
+    const milestones = [25, 50, 75];
+    
+    for (const milestone of milestones) {
+      if (previousProgress < milestone && newProgress >= milestone) {
+        playHit();
+        console.log(`[MINING-AUDIO] Hit milestone: ${milestone}%`);
+        break;
+      }
+    }
     
     // Check if mining is complete
     if (newClicksCompleted >= state.clicksRequired) {
@@ -122,6 +143,10 @@ export const useMining = create<MiningState>((set, get) => ({
       }
       
       console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} after ${newClicksCompleted} clicks`);
+      
+      // Play success sound at 100% completion
+      playSuccess();
+      console.log(`[MINING-AUDIO] Mining completed at 100%`);
       
       // Reset mining state
       get().stopMining();

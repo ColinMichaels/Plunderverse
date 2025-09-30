@@ -149,8 +149,9 @@ export function SurfaceMovementController() {
     // Update camera position and rotation directly
     camera.position.copy(positionRef.current);
     camera.rotation.y = rotationRef.current;
-    // Add slight downward pitch to see terrain
-    camera.rotation.x = -0.1;
+    // Keep camera level with horizon
+    camera.rotation.x = 0;
+    camera.rotation.z = 0;
     camera.updateMatrixWorld();
   });
 
