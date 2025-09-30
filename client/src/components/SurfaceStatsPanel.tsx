@@ -3,8 +3,7 @@ import { usePlayer } from "../lib/stores/usePlayer";
 import { useFlashlight } from "../lib/stores/useFlashlight";
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
-import { useInventoryStore } from "../domain/economy/inventory.store";
-import { useStorageInfo } from "../domain/economy/selectors";
+import { useInventoryDisplayData } from "../domain/economy/selectors";
 import { useEquipment } from "../lib/stores/useEquipment";
 import { planets } from "../lib/planetData";
 
@@ -15,14 +14,13 @@ export function SurfaceStatsPanel() {
   const { isOn, batteryLevel, getBatteryStatus, isCharging } = useFlashlight();
   const { isLanded, landedPlanet } = useLandedState();
   const { isActive: isMining, targetResource, clicksCompleted, clicksRequired } = useMining();
-  const items = useInventoryStore(state => state.items);
-  const storageInfo = useStorageInfo();
+  const inventoryData = useInventoryDisplayData();
   const { getPerformanceMultiplier, getConditionStatus } = useEquipment();
   
   const planet = planets.find((p) => p.name === landedPlanet);
   
-  const totalUnits = items.reduce((sum, item) => sum + item.quantity, 0);
-  const lastChangedItem = items.length > 0 ? items[items.length - 1] : null;
+  const totalUnits = inventoryData.storageUsed;
+  const lastChangedItem = inventoryData.items.length > 0 ? inventoryData.items[inventoryData.items.length - 1] : null;
   
   const drillPerformance = getPerformanceMultiplier("drill-mk1");
   const extractorPerformance = getPerformanceMultiplier("extractor-basic");
@@ -135,7 +133,7 @@ export function SurfaceStatsPanel() {
             Total Units: {totalUnits}
           </div>
           <div className="text-gray-300">
-            Storage: {storageInfo.used}/{storageInfo.capacity}
+            Storage: {inventoryData.storageUsed}/{inventoryData.storageCapacity}
           </div>
           {lastChangedItem && (
             <div className="text-gray-400 text-[10px]">
