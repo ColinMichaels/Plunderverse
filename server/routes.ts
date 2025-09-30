@@ -10,6 +10,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const CRYPTO_API_URL = process.env.CRYPTO_API_URL || 'https://api.spacecrypto.example.com';
   const CRYPTO_NETWORK = process.env.CRYPTO_NETWORK || 'testnet';
 
+  // Mock mode flag
+  const MOCK_CRYPTO_MODE = !CRYPTO_API_KEY;
+
+  // Mock storage for wallets and transactions
+  const mockWallets = new Map<string, { address: string; playerId: string; balance: number; currency: string }>();
+  const mockTransactions = new Map<string, { id: string; from: string; to: string; amount: number; timestamp: string; type: string; memo?: string }[]>();
+  
+  if (MOCK_CRYPTO_MODE) {
+    console.log('CRYPTO: Running in MOCK MODE (CRYPTO_API_KEY not set)');
+  } else {
+    console.log('CRYPTO: Running in REAL MODE with API key');
+  }
+
+  // Helper function to generate deterministic mock address
+  function generateMockAddress(playerId: string): string {
+    let hash = 0;
+    for (let i = 0; i < playerId.length; i++) {
+      const char = playerId.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return `MOCK_${Math.abs(hash).toString(16).toUpperCase().padStart(12, '0')}`;
+  }
+
   // Helper function to make authenticated requests to external crypto API
   async function cryptoApiRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', body?: any) {
     if (!CRYPTO_API_KEY) {
@@ -39,12 +63,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/crypto/wallets', async (req, res) => {
     try {
       const { playerId } = req.body;
-      const data = await cryptoApiRequest('/wallets', 'POST', {
-        playerId,
-        currency: 'SPACE',
-        network: CRYPTO_NETWORK
-      });
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const mockAddress = generateMockAddress(playerId);
+        const wallet = {
+          address: mockAddress,
+          playerId,
+          balance: 1000,
+          currency: 'SPACE'
+        };
+        mockWallets.set(playerId, wallet);
+        mockTransactions.set(mockAddress, []);
+        console.log(`CRYPTO MOCK: Created wallet for player ${playerId} with address ${mockAddress}`);
+        res.json({ success: true, data: wallet });
+      } else {
+        const data = await cryptoApiRequest('/wallets', 'POST', {
+          playerId,
+          currency: 'SPACE',
+          network: CRYPTO_NETWORK
+        });
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -59,8 +98,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crypto/wallets/:address', async (req, res) => {
     try {
       const { address } = req.params;
-      const data = await cryptoApiRequest(`/wallets/${address}`);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const wallet = Array.from(mockWallets.values()).find(w => w.address === address);
+        if (!wallet) {
+          throw new Error('Wallet not found');
+        }
+        console.log(`CRYPTO MOCK: Fetched wallet ${address}`);
+        res.json({ success: true, data: wallet });
+      } else {
+        const data = await cryptoApiRequest(`/wallets/${address}`);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -75,8 +124,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crypto/wallets/player/:playerId', async (req, res) => {
     try {
       const { playerId } = req.params;
-      const data = await cryptoApiRequest(`/wallets/player/${playerId}`);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        let wallet = mockWallets.get(playerId);
+        if (!wallet) {
+          const mockAddress = generateMockAddress(playerId);
+          wallet = {
+            address: mockAddress,
+            playerId,
+            balance: 1000,
+            currency: 'SPACE'
+          };
+          mockWallets.set(playerId, wallet);
+          mockTransactions.set(mockAddress, []);
+          console.log(`CRYPTO MOCK: Auto-created wallet for player ${playerId}`);
+        }
+        res.json({ success: true, data: wallet });
+      } else {
+        const data = await cryptoApiRequest(`/wallets/player/${playerId}`);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -92,14 +159,56 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/crypto/transactions', async (req, res) => {
     try {
       const { fromAddress, toAddress, amount, gameContext } = req.body;
-      const data = await cryptoApiRequest('/transactions', 'POST', {
-        fromAddress,
-        toAddress,
-        amount,
-        currency: 'SPACE',
-        gameContext
-      });
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const fromWallet = Array.from(mockWallets.values()).find(w => w.address === fromAddress);
+        const toWallet = Array.from(mockWallets.values()).find(w => w.address === toAddress);
+        
+        if (!fromWallet) {
+          throw new Error('From wallet not found');
+        }
+        
+        if (fromWallet.balance < amount) {
+          throw new Error('Insufficient balance');
+        }
+        
+        fromWallet.balance -= amount;
+        if (toWallet) {
+          toWallet.balance += amount;
+        }
+        
+        const transaction = {
+          id: `MOCK_TX_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          from: fromAddress,
+          to: toAddress,
+          amount,
+          timestamp: new Date().toISOString(),
+          type: gameContext?.type || 'transfer',
+          memo: gameContext?.details ? JSON.stringify(gameContext.details) : undefined
+        };
+        
+        const fromTxHistory = mockTransactions.get(fromAddress) || [];
+        fromTxHistory.push(transaction);
+        mockTransactions.set(fromAddress, fromTxHistory);
+        
+        if (toAddress !== fromAddress) {
+          const toTxHistory = mockTransactions.get(toAddress) || [];
+          toTxHistory.push(transaction);
+          mockTransactions.set(toAddress, toTxHistory);
+        }
+        
+        console.log(`CRYPTO MOCK: Transaction ${transaction.id} from ${fromAddress} to ${toAddress} for ${amount} SPACE`);
+        res.json({ success: true, data: transaction });
+      } else {
+        const data = await cryptoApiRequest('/transactions', 'POST', {
+          fromAddress,
+          toAddress,
+          amount,
+          currency: 'SPACE',
+          gameContext
+        });
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -114,8 +223,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crypto/transactions/history/:address', async (req, res) => {
     try {
       const { address } = req.params;
-      const data = await cryptoApiRequest(`/transactions/history/${address}`);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const history = mockTransactions.get(address) || [];
+        console.log(`CRYPTO MOCK: Fetched transaction history for ${address} (${history.length} transactions)`);
+        res.json({ success: true, data: history });
+      } else {
+        const data = await cryptoApiRequest(`/transactions/history/${address}`);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -131,16 +247,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/crypto/rewards/mining', async (req, res) => {
     try {
       const { address, amount, resourceType, planetSource } = req.body;
-      const data = await cryptoApiRequest('/rewards/mining', 'POST', {
-        address,
-        amount,
-        currency: 'SPACE',
-        gameContext: {
-          type: 'mining_reward',
-          details: { resourceType, planetSource }
+      
+      if (MOCK_CRYPTO_MODE) {
+        const wallet = Array.from(mockWallets.values()).find(w => w.address === address);
+        if (!wallet) {
+          throw new Error('Wallet not found');
         }
-      });
-      res.json({ success: true, data });
+        
+        wallet.balance += amount;
+        
+        const transaction = {
+          id: `MOCK_REWARD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          from: 'SYSTEM_MINING_REWARD',
+          to: address,
+          amount,
+          timestamp: new Date().toISOString(),
+          type: 'mining_reward',
+          memo: JSON.stringify({ resourceType, planetSource })
+        };
+        
+        const txHistory = mockTransactions.get(address) || [];
+        txHistory.push(transaction);
+        mockTransactions.set(address, txHistory);
+        
+        console.log(`CRYPTO MOCK: Mining reward ${amount} SPACE to ${address} for ${resourceType} from ${planetSource}`);
+        res.json({ success: true, data: transaction });
+      } else {
+        const data = await cryptoApiRequest('/rewards/mining', 'POST', {
+          address,
+          amount,
+          currency: 'SPACE',
+          gameContext: {
+            type: 'mining_reward',
+            details: { resourceType, planetSource }
+          }
+        });
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -156,8 +299,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crypto/market/price/:currency?', async (req, res) => {
     try {
       const currency = req.params.currency || 'SPACE';
-      const data = await cryptoApiRequest(`/market/price/${currency}`);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const mockPrice = {
+          currency: 'SPACE',
+          usdPrice: 0.50 + (Math.random() * 0.1 - 0.05),
+          change24h: (Math.random() * 10 - 5),
+          timestamp: new Date().toISOString()
+        };
+        console.log(`CRYPTO MOCK: Fetched market price for ${currency}: $${mockPrice.usdPrice.toFixed(2)}`);
+        res.json({ success: true, data: mockPrice });
+      } else {
+        const data = await cryptoApiRequest(`/market/price/${currency}`);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -173,8 +328,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/crypto/trading/orders', async (req, res) => {
     try {
       const orderData = { ...req.body, currency: 'SPACE' };
-      const data = await cryptoApiRequest('/trading/orders', 'POST', orderData);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const { address, type, amount, price } = orderData;
+        const wallet = Array.from(mockWallets.values()).find(w => w.address === address);
+        
+        if (!wallet) {
+          throw new Error('Wallet not found');
+        }
+        
+        const order = {
+          id: `MOCK_ORDER_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          address,
+          type,
+          amount,
+          price,
+          currency: 'SPACE',
+          status: 'pending',
+          createdAt: new Date().toISOString()
+        };
+        
+        console.log(`CRYPTO MOCK: Created ${type} order ${order.id} for ${amount} SPACE at $${price}`);
+        res.json({ success: true, data: order });
+      } else {
+        const data = await cryptoApiRequest('/trading/orders', 'POST', orderData);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -189,9 +368,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/crypto/trading/orders/:address?', async (req, res) => {
     try {
       const { address } = req.params;
-      const endpoint = address ? `/trading/orders/${address}` : '/trading/orders';
-      const data = await cryptoApiRequest(endpoint);
-      res.json({ success: true, data });
+      
+      if (MOCK_CRYPTO_MODE) {
+        const orders: any[] = [];
+        console.log(`CRYPTO MOCK: Fetched trading orders${address ? ` for ${address}` : ''} (${orders.length} orders)`);
+        res.json({ success: true, data: orders });
+      } else {
+        const endpoint = address ? `/trading/orders/${address}` : '/trading/orders';
+        const data = await cryptoApiRequest(endpoint);
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
@@ -207,17 +393,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/crypto/purchases/upgrades', async (req, res) => {
     try {
       const { address, upgradeType, cost } = req.body;
-      const data = await cryptoApiRequest('/purchases/upgrades', 'POST', {
-        address,
-        upgradeType,
-        cost,
-        currency: 'SPACE',
-        gameContext: {
-          type: 'upgrade_purchase',
-          details: { upgradeType }
+      
+      if (MOCK_CRYPTO_MODE) {
+        const wallet = Array.from(mockWallets.values()).find(w => w.address === address);
+        if (!wallet) {
+          throw new Error('Wallet not found');
         }
-      });
-      res.json({ success: true, data });
+        
+        if (wallet.balance < cost) {
+          throw new Error('Insufficient balance for upgrade');
+        }
+        
+        wallet.balance -= cost;
+        
+        const transaction = {
+          id: `MOCK_PURCHASE_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          from: address,
+          to: 'SYSTEM_UPGRADE_STORE',
+          amount: cost,
+          timestamp: new Date().toISOString(),
+          type: 'upgrade_purchase',
+          memo: JSON.stringify({ upgradeType })
+        };
+        
+        const txHistory = mockTransactions.get(address) || [];
+        txHistory.push(transaction);
+        mockTransactions.set(address, txHistory);
+        
+        console.log(`CRYPTO MOCK: Purchased ${upgradeType} for ${cost} SPACE from ${address}`);
+        res.json({ success: true, data: transaction });
+      } else {
+        const data = await cryptoApiRequest('/purchases/upgrades', 'POST', {
+          address,
+          upgradeType,
+          cost,
+          currency: 'SPACE',
+          gameContext: {
+            type: 'upgrade_purchase',
+            details: { upgradeType }
+          }
+        });
+        res.json({ success: true, data });
+      }
     } catch (error) {
       res.status(400).json({ 
         success: false, 
