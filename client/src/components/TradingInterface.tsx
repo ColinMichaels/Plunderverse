@@ -86,7 +86,7 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[250]">
       <div className="bg-gray-900 border border-yellow-400 rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-yellow-400">🚀 Trading Station</h2>

@@ -94,25 +94,10 @@ export function InventoryDisplay() {
         </button>
 
         {/* Trading Interface */}
-        {showTrading ? (
-          <div>
-            <div className="text-xs text-cyan-400 font-mono mb-2">
-              [DEBUG] Trading interface rendered: visible={showTrading.toString()}
-            </div>
-            <TradingInterface 
-              isVisible={showTrading} 
-              onClose={() => {
-                console.log(`[TRADING-DEBUG] Trading interface close requested`);
-                setShowTrading(false);
-                console.log(`[TRADING-DEBUG] Trading interface closed`);
-              }} 
-            />
-          </div>
-        ) : (
-          <div className="text-xs text-gray-500 font-mono">
-            [DEBUG] Trading interface hidden: showTrading={showTrading.toString()}
-          </div>
-        )}
+        <TradingInterface 
+          isVisible={showTrading} 
+          onClose={() => setShowTrading(false)} 
+        />
 
         {/* Items List */}
         <div className="space-y-2 max-h-64 overflow-y-auto">
