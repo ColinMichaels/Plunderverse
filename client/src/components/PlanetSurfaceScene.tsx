@@ -25,10 +25,22 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   const planet = planets.find((p) => p.name === planetName);
   const surfaceColor = planet?.color || "#8C7853";
 
-  // Load surface texture
-  const surfaceTexture = useTexture(
-    "/textures/surfaces/black-white-details-moon-texture-concept.jpg",
-  );
+  // Select appropriate texture based on planet
+  const getTextureForPlanet = (name: string) => {
+    switch (name.toLowerCase()) {
+      case 'earth':
+        return '/textures/earth_grass.png';
+      case 'mars':
+        return '/textures/mars_terrain.png';
+      case 'moon':
+        return '/textures/moon_terrain.png';
+      default:
+        return '/textures/surfaces/black-white-details-moon-texture-concept.jpg';
+    }
+  };
+
+  // Load surface texture based on planet
+  const surfaceTexture = useTexture(getTextureForPlanet(planetName));
 
   // Generate terrain vertices using useMemo to avoid recreating on every render
   const terrainGeometry = useMemo(() => {
