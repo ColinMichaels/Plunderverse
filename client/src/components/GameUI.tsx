@@ -13,6 +13,7 @@ import { FixedMiniMap } from "./FixedMiniMap";
 import { MusicPlayer } from "./MusicPlayer";
 import { CryptoWallet } from "./CryptoWallet";
 import { CryptoMarketplace } from "./CryptoMarketplace";
+import { MissionsPanel } from "./MissionsPanel";
 import { ControlsHelp } from "./ControlsHelp";
 import { SettingsPanel } from "./SettingsPanel";
 import { DevDebugOverlay } from "./DevDebugOverlay";
@@ -111,6 +112,10 @@ export function GameUI() {
       <InventoryDisplay />
       <EquipmentWarning />
 
+      {/* Right Sidebar Panels */}
+      <MissionsPanel />
+      <ControlsHelp />
+      
       {/* Cryptocurrency Components */}
       <CryptoWallet />
       <CryptoMarketplace />
@@ -127,9 +132,6 @@ export function GameUI() {
       <div className="fixed top-4 left-28 z-30">
         <MusicPlayer />
       </div>
-
-      {/* Controls Help - shows on first launch, accessible via F1 */}
-      <ControlsHelp />
 
       {/* Settings button in top right corner */}
       <button

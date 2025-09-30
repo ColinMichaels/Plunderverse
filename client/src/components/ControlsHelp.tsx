@@ -9,17 +9,14 @@ export function ControlsHelp() {
     const hasSeenHelp = localStorage.getItem(HELP_SHOWN_KEY);
     return !hasSeenHelp;
   });
-  const { togglePanel, panels } = useUILayout();
+  const { togglePanel } = useUILayout();
 
   useEffect(() => {
     if (isFirstTime) {
-      const controlsPanel = panels.find(p => p.id === 'controls-help');
-      if (controlsPanel && !controlsPanel.isExpanded) {
-        localStorage.setItem(HELP_SHOWN_KEY, 'true');
-        setIsFirstTime(false);
-      }
+      localStorage.setItem(HELP_SHOWN_KEY, 'true');
+      setIsFirstTime(false);
     }
-  }, [panels, isFirstTime]);
+  }, [isFirstTime]);
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
