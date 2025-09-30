@@ -30,7 +30,7 @@ export function DevDebugOverlay() {
     toggleWireframes,
   } = useDebugTools();
 
-  const { time, setTime, cameraPosition, setCameraPosition } = useSolarSystem();
+  const { time, setTime, cameraPosition, setCameraPosition, setSelectedPlanet } = useSolarSystem();
   const { landedPlanet, setLanded } = useLandedState();
 
   const [previousTimeScale, setPreviousTimeScale] = useState(timeScale || 1);
@@ -94,8 +94,32 @@ export function DevDebugOverlay() {
   // Handle planet travel
   const handleTravelToPlanet = () => {
     if (selectedTravelPlanet) {
-      setLanded(selectedTravelPlanet);
-      console.log(`[DEBUG] Fast traveled to ${selectedTravelPlanet}`);
+      const planet = planets.find(p => p.name === selectedTravelPlanet);
+      if (planet) {
+        const angle = planet.orbitalSpeed * time;
+        const planetPos = new THREE.Vector3(
+          Math.cos(angle) * planet.distance,
+          0,
+          Math.sin(angle) * planet.distance
+        );
+        
+        setSelectedPlanet(selectedTravelPlanet);
+        
+        // Calculate radial offset from planet center (away from sun)
+        const directionFromSun = planetPos.clone().normalize();
+        const viewDistance = planet.size * 3 + 15; // Safe distance based on planet size
+        const cameraPos = planetPos.clone().add(
+          directionFromSun.clone().multiplyScalar(viewDistance)
+        );
+        // Add some Y offset for better viewing angle
+        cameraPos.y += 10;
+        
+        setCameraPosition(cameraPos);
+        
+        setLanded(selectedTravelPlanet);
+        
+        console.log(`[DEBUG] Fast traveled to ${selectedTravelPlanet} - Planet at (${planetPos.x.toFixed(1)}, ${planetPos.y.toFixed(1)}, ${planetPos.z.toFixed(1)}), Camera at (${cameraPos.x.toFixed(1)}, ${cameraPos.y.toFixed(1)}, ${cameraPos.z.toFixed(1)})`);
+      }
     }
   };
 
