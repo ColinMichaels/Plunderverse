@@ -112,10 +112,10 @@ export function GameUI() {
       {/* Settings button in top right corner */}
       <button
         onClick={() => setShowSettings(true)}
-        className="fixed top-4 right-4 bg-cyan-600/80 hover:bg-cyan-500/80 text-white px-3 py-2 rounded-lg border border-cyan-400 transition-colors z-40 text-sm backdrop-blur-sm"
+        className="fixed top-4 right-4 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center justify-center"
         title="Game Settings"
       >
-        ⚙️ Settings
+        <span className="text-xl">⚙️</span>
       </button>
 
       {/* Settings Panel */}

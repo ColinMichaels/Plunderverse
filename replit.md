@@ -8,6 +8,13 @@ This is an interactive 3D solar system exploration game built with React, Three.
 
 Preferred communication style: Simple, everyday language.
 
+### UI Design Guidelines
+- **Action Buttons**: Use icon-only design with hover-over tooltips for better space efficiency
+- **Button Style**: `bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center`
+- **Icon Size**: Use `text-xl` for icon size within buttons
+- **Tooltip**: Always include descriptive `title` attribute for accessibility
+- **Consistency**: All new UI action items should follow this pattern for uniformity and better layout
+
 ## System Architecture
 
 ### Frontend Architecture

@@ -37,10 +37,10 @@ export function ControlsHelp() {
     return (
       <button
         onClick={() => setIsVisible(true)}
-        className="fixed bottom-20 left-4 bg-blue-600/80 hover:bg-blue-500/80 text-white px-3 py-2 rounded-lg border border-blue-400 transition-colors z-40 text-sm backdrop-blur-sm"
+        className="fixed top-4 right-16 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center justify-center"
         title="Show Controls (F1)"
       >
-        ❓ Help
+        <span className="text-xl">❓</span>
       </button>
     );
   }
