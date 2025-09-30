@@ -173,46 +173,6 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   const planetsRef = useRef<THREE.Group>(null);
 
   // Orbital calculation utilities
-  const calculateOrbitPosition = (
-    distance: number,
-    speed: number,
-    time: number,
-  ) => {
-    const angle = speed * time;
-    return new THREE.Vector3(
-      Math.cos(angle) * distance,
-      0,
-      Math.sin(angle) * distance,
-    );
-  };
-
-  // TEMPORARY: Commenting out corrupted code to fix syntax errors
-  /*
-  const calculatePlanetPosition = (planet: any, time: number) => {
-    return calculateOrbitPosition(planet.distance, planet.orbita
-
-  // map planet textures appropriately and shade them according to the sun position to make them appear more realistic in the sky
-  const planetTextures = useMemo(() =>
-    planets.map((planet) => ({
-      name: planet.name,
-      texture: useTexture(planet.texture || "/textures/planets/2k_earth_daymap.jpg"),
-    }))
-                                  , [])
-  );
-  // Get planet texture by name
-  const getPlanetTexture = (planetName: string) =>
-    planetTextures.find((p) => p.name === planetName)?.texture || null
-  ;
-  // Update planet textures when planetName changes
-  useEffect(() =>
-
-
-
-      lSpeed, time);
-  };
-  */
-
-  // Temporary minimal implementation to get app running
   const calculatePlanetPosition = (planet: any, time: number) => {
     const angle = planet.orbitalSpeed * time;
     return new THREE.Vector3(
@@ -220,6 +180,33 @@ function SurfaceSky({ planetName }: { planetName: string }) {
       0,
       Math.sin(angle) * planet.distance,
     );
+  };
+
+  // Load all planet textures for sky rendering
+  const earthTexture = useTexture('/textures/planets/2k_earth_daymap.jpg');
+  const marsTexture = useTexture('/textures/planets/2k_mars.jpg');
+  const venusTexture = useTexture('/textures/planets/2k_venus_surface.jpg');
+  const mercuryTexture = useTexture('/textures/planets/2k_mercury.jpg');
+  const jupiterTexture = useTexture('/textures/planets/2k_jupiter.jpg');
+  const saturnTexture = useTexture('/textures/planets/2k_saturn.jpg');
+  const uranusTexture = useTexture('/textures/planets/2k_uranus.jpg');
+  const neptuneTexture = useTexture('/textures/planets/2k_neptune.jpg');
+  const moonTexture = useTexture('/textures/planets/2k_moon.jpg');
+
+  // Get planet texture by name
+  const getPlanetTexture = (planetName: string) => {
+    switch (planetName) {
+      case 'Earth': return earthTexture;
+      case 'Mars': return marsTexture;
+      case 'Venus': return venusTexture;
+      case 'Mercury': return mercuryTexture;
+      case 'Jupiter': return jupiterTexture;
+      case 'Saturn': return saturnTexture;
+      case 'Uranus': return uranusTexture;
+      case 'Neptune': return neptuneTexture;
+      case 'Moon': return moonTexture;
+      default: return null;
+    }
   };
 
   // Calculate visible planets for current time
@@ -238,7 +225,8 @@ function SurfaceSky({ planetName }: { planetName: string }) {
     // Add the Sun as a visible object
     const sunDistance = currentPosition.length();
     const sunDirection = currentPosition.clone().negate().normalize();
-    const sunSkyPosition = sunDirection.clone().multiplyScalar(400);
+    // Sun at fixed distance on sky dome
+    const sunSkyPosition = sunDirection.clone().multiplyScalar(450);
     const sunApparentSize = Math.min(40, Math.max(8, 15 * (30 / sunDistance)));
 
     visibleObjects.push({
@@ -258,10 +246,17 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
       if (distance > 5) {
         const direction = relativePosition.normalize();
-        const skyPosition = direction.clone().multiplyScalar(400);
+        
+        // Vary the sky dome radius based on actual distance to show depth
+        // Closer planets appear larger and at closer sky dome distance
+        // Farther planets appear smaller and at farther sky dome distance
+        const skyDomeRadius = 350 + Math.min(150, distance * 2);
+        const skyPosition = direction.clone().multiplyScalar(skyDomeRadius);
+        
+        // Apparent size based on actual planet size and distance
         const apparentSize = Math.max(
-          0.8,
-          Math.log(planet.size + 1) * (50 / Math.sqrt(distance)),
+          1.0,
+          (planet.size * 2.5) / Math.sqrt(distance),
         );
 
         visibleObjects.push({
@@ -467,27 +462,39 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
       {/* Distant planets and celestial objects */}
       <group ref={planetsRef}>
-        {visiblePlanets.map((celestialObject, index) => (
-          <mesh
-            key={`${celestialObject.planet.name}-${index}`}
-            position={[
-              celestialObject.skyPosition.x,
-              celestialObject.skyPosition.y,
-              celestialObject.skyPosition.z,
-            ]}
-          >
-            <sphereGeometry args={[celestialObject.apparentSize, 8, 8]} />
-            {celestialObject.planet.name === "Sun" ? (
-              <meshStandardMaterial
-                color={celestialObject.planet.color}
-                emissive={celestialObject.planet.color}
-                emissiveIntensity={0.8}
-              />
-            ) : (
-              <meshBasicMaterial color={celestialObject.planet.color} />
-            )}
-          </mesh>
-        ))}
+        {visiblePlanets.map((celestialObject, index) => {
+          const texture = celestialObject.planet.name !== "Sun" 
+            ? getPlanetTexture(celestialObject.planet.name)
+            : null;
+          
+          return (
+            <mesh
+              key={`${celestialObject.planet.name}-${index}`}
+              position={[
+                celestialObject.skyPosition.x,
+                celestialObject.skyPosition.y,
+                celestialObject.skyPosition.z,
+              ]}
+            >
+              <sphereGeometry args={[celestialObject.apparentSize, 16, 16]} />
+              {celestialObject.planet.name === "Sun" ? (
+                <meshStandardMaterial
+                  color={celestialObject.planet.color}
+                  emissive={celestialObject.planet.color}
+                  emissiveIntensity={0.8}
+                />
+              ) : texture ? (
+                <meshStandardMaterial 
+                  map={texture}
+                  metalness={0.1}
+                  roughness={0.8}
+                />
+              ) : (
+                <meshBasicMaterial color={celestialObject.planet.color} />
+              )}
+            </mesh>
+          );
+        })}
       </group>
 
       {/* Additional dim background stars for depth */}
