@@ -1,72 +1,54 @@
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
+import { SpaceUIPanel } from './SpaceUIPanel';
+import { useUILayout } from './UILayoutManager';
 
 const HELP_SHOWN_KEY = 'space_game_controls_help_shown';
 
 export function ControlsHelp() {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isFirstTime, setIsFirstTime] = useState(false);
+  const [isFirstTime, setIsFirstTime] = useState(() => {
+    const hasSeenHelp = localStorage.getItem(HELP_SHOWN_KEY);
+    return !hasSeenHelp;
+  });
+  const { togglePanel, panels } = useUILayout();
 
   useEffect(() => {
-    const hasSeenHelp = localStorage.getItem(HELP_SHOWN_KEY);
-    if (!hasSeenHelp) {
-      setIsVisible(true);
-      setIsFirstTime(true);
+    if (isFirstTime) {
+      const controlsPanel = panels.find(p => p.id === 'controls-help');
+      if (controlsPanel && !controlsPanel.isExpanded) {
+        localStorage.setItem(HELP_SHOWN_KEY, 'true');
+        setIsFirstTime(false);
+      }
     }
+  }, [panels, isFirstTime]);
 
+  useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === 'F1') {
         e.preventDefault();
-        setIsVisible(prev => !prev);
+        togglePanel('controls-help');
       }
     };
 
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, []);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    if (isFirstTime) {
-      localStorage.setItem(HELP_SHOWN_KEY, 'true');
-      setIsFirstTime(false);
-    }
-  };
-
-  if (!isVisible) {
-    return (
-      <button
-        onClick={() => setIsVisible(true)}
-        className="fixed top-4 right-16 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center justify-center"
-        title="Show Controls (F1)"
-      >
-        <span className="text-xl">❓</span>
-      </button>
-    );
-  }
+  }, [togglePanel]);
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 backdrop-blur-sm">
-      <div className="bg-gray-900/95 border-2 border-cyan-400 rounded-lg p-6 max-w-2xl w-full mx-4 shadow-2xl">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-cyan-400 mb-1">🚀 FLIGHT CONTROLS</h2>
-            {isFirstTime && (
-              <p className="text-sm text-yellow-400">Welcome, Commander! Here are your basic controls:</p>
-            )}
-          </div>
-          <button
-            onClick={handleDismiss}
-            className="text-gray-400 hover:text-white text-2xl leading-none"
-          >
-            ✕
-          </button>
-        </div>
+    <SpaceUIPanel
+      id="controls-help"
+      title="FLIGHT CONTROLS"
+      icon="❓"
+      zone="right-sidebar"
+      priority={1}
+      defaultExpanded={isFirstTime}
+      canCollapse={true}
+    >
+      <div className="space-y-4">
+        {isFirstTime && (
+          <p className="text-sm text-yellow-400">Welcome, Commander! Here are your basic controls:</p>
+        )}
 
-        {/* Controls Grid */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          {/* Movement Controls */}
+        <div className="grid md:grid-cols-2 gap-4">
           <div className="space-y-3">
             <h3 className="text-cyan-300 font-semibold text-sm uppercase border-b border-cyan-700 pb-1">
               🎮 Ship Movement
@@ -103,7 +85,6 @@ export function ControlsHelp() {
             </div>
           </div>
 
-          {/* Navigation & Actions */}
           <div className="space-y-3">
             <h3 className="text-cyan-300 font-semibold text-sm uppercase border-b border-cyan-700 pb-1">
               🌍 Navigation & Actions
@@ -134,8 +115,7 @@ export function ControlsHelp() {
           </div>
         </div>
 
-        {/* Tips Section */}
-        <div className="bg-blue-900/30 border border-blue-400/30 rounded p-4 mb-6">
+        <div className="bg-blue-900/30 border border-blue-400/30 rounded p-4">
           <h3 className="text-blue-300 font-semibold text-sm mb-2">💡 QUICK TIPS</h3>
           <ul className="text-xs text-gray-300 space-y-1">
             <li>• Use autopilot for long-distance travel between planets</li>
@@ -145,17 +125,7 @@ export function ControlsHelp() {
             <li>• Double-tap W to activate warp speed (requires fuel or upgrade)</li>
           </ul>
         </div>
-
-        {/* Action Button */}
-        <div className="flex justify-center">
-          <Button
-            onClick={handleDismiss}
-            className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold px-8 py-3"
-          >
-            {isFirstTime ? "🚀 GOT IT! LET'S FLY" : "Close Help (F1)"}
-          </Button>
-        </div>
       </div>
-    </div>
+    </SpaceUIPanel>
   );
 }
