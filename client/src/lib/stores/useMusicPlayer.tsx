@@ -151,10 +151,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
         currentTrackIndex: 0,
       });
 
-      console.log(`Loaded ${validTracks.length} music tracks`);
-
-      // Start the Minecraft-style random music system
-      get().scheduleNextTrack();
+      console.log(`Loaded ${validTracks.length} music tracks (use music player to start playback)`);
     } catch (error) {
       console.error("Error loading music tracks:", error);
       set({ isLoading: false });
