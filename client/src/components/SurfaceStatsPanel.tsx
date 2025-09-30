@@ -53,14 +53,7 @@ export function SurfaceStatsPanel() {
   
   if (!isExpanded) {
     return (
-      <div className="fixed top-4 right-4 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-2 flex items-center gap-3 z-50">
-        <div 
-          className={`font-mono text-xs ${getOxygenColor(player.oxygenPercentage)}`}
-          title={`Oxygen Level: ${player.oxygenPercentage}% - Suit: ${player.suitStatus}`}
-        >
-          O₂ {player.oxygenPercentage}%
-        </div>
-        
+      <div className="fixed bottom-4 right-4 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-2 flex items-center gap-3 z-50">
         <div 
           className={`font-mono text-xs ${getBatteryColor()}`}
           title={`Flashlight Battery: ${Math.round(batteryLevel)}% - ${isOn ? "ON" : "OFF"}${isCharging ? " (Charging)" : ""}`}
@@ -87,7 +80,7 @@ export function SurfaceStatsPanel() {
   }
   
   return (
-    <div className="fixed top-4 right-4 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-4 z-50 min-w-[320px]">
+    <div className="fixed bottom-4 right-4 bg-gray-900/90 backdrop-blur-sm border border-cyan-400/50 rounded-lg p-4 z-50 min-w-[320px]">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-cyan-400 font-bold text-sm">Surface Stats</h3>
         <button
