@@ -55,7 +55,7 @@ export function MissionsPanel({ isVisible, onToggle }: MissionsPanelProps) {
   }
 
   return (
-    <div className="fixed right-4 top-4 w-96 max-h-[80vh] bg-gray-900/95 border border-gray-600 rounded-lg overflow-hidden z-40">
+    <div className="fixed right-4 top-16 w-96 max-h-[80vh] bg-gray-900/95 border border-gray-600 rounded-lg overflow-hidden z-40">
       {/* Header */}
       <div className="bg-gray-800 p-4 border-b border-gray-600">
         <div className="flex items-center justify-between">
