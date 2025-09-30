@@ -48,10 +48,16 @@ export const useHints = create<HintState>((set, get) => {
     currentHint: null,
 
     showHint: (hintId: string) => {
-      const { shownHints, disabledHints } = get();
+      const { shownHints, disabledHints, currentHint } = get();
       
       if (disabledHints.has(hintId)) {
         console.log(`Hint ${hintId} is disabled, not showing`);
+        return;
+      }
+
+      // Prevent replacing a hint that's already showing
+      if (currentHint) {
+        console.log(`A hint is already showing (${currentHint}), skipping ${hintId}`);
         return;
       }
 

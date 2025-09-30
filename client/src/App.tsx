@@ -10,6 +10,7 @@ import { UILayoutProvider } from "./components/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
+import { HintModal } from "./components/HintModal";
 import "@fontsource/inter";
 
 // Define control keys for space flight
@@ -108,6 +109,7 @@ function App() {
             <GameUI />
             <PlanetSurfaceScene />
             <TakeoffControls />
+            <HintModal />
           </KeyboardControls>
         )}
       </div>

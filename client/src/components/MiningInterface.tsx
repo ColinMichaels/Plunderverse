@@ -3,6 +3,7 @@ import { useMining } from "../lib/stores/useMining";
 import { useStorageInfo, useCreditsData } from "../domain/economy/selectors";
 import { useAudio } from "../lib/stores/useAudio";
 import { useEquipment } from "../lib/stores/useEquipment";
+import { useHints } from "../lib/stores/useHints";
 import { ResourceData } from "../lib/planetData";
 
 interface MiningInterfaceProps {
@@ -36,6 +37,7 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   const { earnCredits, spendCredits, credits } = useCreditsData();
   const { playHit, playSuccess } = useAudio();
   const { equipment, repairEquipment, getConditionStatus } = useEquipment();
+  const { showHint, hasSeenHint } = useHints();
   const [selectedResource, setSelectedResource] = useState<ResourceData | null>(null);
 
   // Precompute particle parameters to avoid Math.random in render
@@ -92,6 +94,13 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
       }
       
       startMining(planetName, selectedResource);
+      
+      // Show first-mining hint if player hasn't seen it yet
+      if (!hasSeenHint("first-mining")) {
+        setTimeout(() => {
+          showHint("first-mining");
+        }, 1000);
+      }
       
       // Play resource-specific start sound
       if (selectedResource.type === 'Rare Earth Elements') {
