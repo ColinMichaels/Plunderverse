@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useInventoryDisplayData } from "../domain/economy/selectors";
 import { TradingInterface } from "./TradingInterface";
 import { SpaceUIPanel } from "./SpaceUIPanel";
@@ -27,16 +27,9 @@ export function InventoryDisplay() {
     }
   };
 
-  return (
-    <SpaceUIPanel
-      id="inventory"
-      title="CARGO BAY"
-      icon="📦"
-      zone="left-sidebar"
-      priority={3}
-      defaultExpanded={false}
-    >
-      <div className="space-y-3">
+  // Memoize panel content to reduce unnecessary SpaceUIPanel updates
+  const panelContent = useMemo(() => (
+    <div className="space-y-3">
         {/* Storage Status */}
         <div className="space-status-bar">
           <div className="space-status-item">
@@ -64,30 +57,7 @@ export function InventoryDisplay() {
 
         {/* Trading Button */}
         <button
-          onClick={() => {
-            console.log(`[TRADING-DEBUG] Trading button clicked: showTrading=${showTrading}`);
-            console.log(`[TRADING-DEBUG] Current inventory items:`, items.length);
-            console.log(`[TRADING-DEBUG] Total value:`, totalValue);
-            
-            // Check for trading prerequisites
-            if (items.length === 0) {
-              console.warn(`[TRADING-DEBUG] ⚠️ No items to trade!`);
-            }
-            
-            if (totalValue === 0) {
-              console.warn(`[TRADING-DEBUG] ⚠️ No valuable items to trade!`);
-            }
-            
-            const newShowTrading = !showTrading;
-            console.log(`[TRADING-DEBUG] Setting showTrading to: ${newShowTrading}`);
-            setShowTrading(newShowTrading);
-            
-            if (newShowTrading) {
-              console.log(`[TRADING-DEBUG] ✓ Trading panel opened successfully`);
-            } else {
-              console.log(`[TRADING-DEBUG] ✓ Trading panel closed`);
-            }
-          }}
+          onClick={() => setShowTrading(!showTrading)}
           className="space-button w-full"
         >
           💰 {showTrading ? 'CLOSE' : 'OPEN'} TRADING
@@ -139,6 +109,18 @@ export function InventoryDisplay() {
           )}
         </div>
       </div>
+  ), [items, storageCapacity, storageUsed, totalValue, storagePercentage, showTrading, getRarityColor, getRarityBg]);
+
+  return (
+    <SpaceUIPanel
+      id="inventory"
+      title="CARGO BAY"
+      icon="📦"
+      zone="left-sidebar"
+      priority={3}
+      defaultExpanded={false}
+    >
+      {panelContent}
     </SpaceUIPanel>
   );
 }
