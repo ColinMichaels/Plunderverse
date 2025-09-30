@@ -555,7 +555,16 @@ export function SplashScreen() {
           </div>
         </div>
       )}
-      <MusicPlayer className="absolute bottom-4 right-4" />
+      {/* Music Player - prominently displayed */}
+      <div className="absolute bottom-4 right-4">
+        <div className="animate-pulse mb-1">
+          <div className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
+            <span>🎵</span>
+            <span>MUSIC PLAYER</span>
+          </div>
+        </div>
+        <MusicPlayer />
+      </div>
     </div>
   );
 }
