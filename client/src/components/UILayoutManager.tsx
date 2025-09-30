@@ -182,13 +182,18 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
 
-      {/* Expanded Panel Overlay */}
-      {expandedPanel && (
-        <ExpandedPanel
-          panel={expandedPanel}
-          onToggle={() => togglePanel(expandedPanel.id)}
-        />
-      )}
+      {/* Expanded Panel Overlays - render all but show only expanded */}
+      {panels.map((panel) => (
+        <div 
+          key={panel.id}
+          style={{ display: panel.isExpanded ? 'block' : 'none' }}
+        >
+          <ExpandedPanel
+            panel={panel}
+            onToggle={() => togglePanel(panel.id)}
+          />
+        </div>
+      ))}
     </UILayoutContext.Provider>
   );
 }

@@ -48,7 +48,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
 
   const { isMuted, toggleMute } = useAudio();
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
-  const [isMinimized, setIsMinimized] = useState(false); // Start expanded to be visible
+  const [isMinimized, setIsMinimized] = useState(true); // Start collapsed to be visible
 
   // Initialize music player on mount
   useEffect(() => {
@@ -85,7 +85,12 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
   // Always show the player, even if not loaded yet
   if (!isLoaded && !isLoading) {
     return (
-      <div className={cn("bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[250px]", className)}>
+      <div
+        className={cn(
+          "bg-black/80 backdrop-blur-sm border border-white/20 rounded-lg p-4 min-w-[250px]",
+          className,
+        )}
+      >
         <div className="text-center text-cyan-300 py-4">
           Initializing music player...
         </div>
@@ -278,7 +283,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               {currentTrack ? currentTrack.name : "No track"}
             </div>
           </div>
-          
+
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"

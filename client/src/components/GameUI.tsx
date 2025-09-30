@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
-import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { LandingTransition } from "./LandingTransition";
-import { WarpingEffect } from "./WarpingEffect";
 import { CockpitOverlay } from "./CockpitOverlay";
 import { LandingWarning } from "./LandingWarning";
 import { CockpitHUD } from "./CockpitHUD";
-import { MiniMap } from "./MiniMap";
 import { MobileHUD } from "./mobile/MobileHUD";
 import { OrbitalInterface } from "./OrbitalInterface";
 import { InventoryDisplay } from "./InventoryDisplay";
@@ -122,12 +119,12 @@ export function GameUI() {
       <MobileHUD />
 
       {/* Fixed minimap in bottom left corner */}
-      <div className="fixed bottom-4 left-4 z-30">
+      <div className="fixed bottom-4 left-8 z-30">
         <FixedMiniMap />
       </div>
 
       {/* Music Player in bottom right corner */}
-      <div className="fixed bottom-4 left-8 z-30">
+      <div className="fixed top-4 left-28 z-30">
         <MusicPlayer />
       </div>
 

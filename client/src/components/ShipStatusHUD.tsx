@@ -2,16 +2,23 @@ import { useShipStatus } from "../lib/stores/useShipStatus";
 import { useEquipment } from "../lib/stores/useEquipment";
 
 export function ShipStatusHUD() {
-  const { shield, hull, isDestroyed, isCritical, lastDamageSource } = useShipStatus();
+  const { shield, hull, isDestroyed, isCritical, lastDamageSource } =
+    useShipStatus();
   const { getEquipment } = useEquipment();
-  
+
   // Get fuel from equipment system
-  const fuelTank = getEquipment('fuel-tank');
-  const fuel = fuelTank ? (fuelTank.currentDurability / fuelTank.maxDurability) * 100 : 0;
+  const fuelTank = getEquipment("fuel-tank");
+  const fuel = fuelTank
+    ? (fuelTank.currentDurability / fuelTank.maxDurability) * 100
+    : 0;
 
   const getMeterColor = (value: number, type: "fuel" | "shield" | "hull") => {
     if (value > 60) {
-      return type === "fuel" ? "bg-blue-500" : type === "shield" ? "bg-cyan-500" : "bg-green-500";
+      return type === "fuel"
+        ? "bg-blue-500"
+        : type === "shield"
+          ? "bg-cyan-500"
+          : "bg-green-500";
     } else if (value > 30) {
       return "bg-yellow-500";
     } else {
@@ -19,11 +26,14 @@ export function ShipStatusHUD() {
     }
   };
 
-  const getMeterGradient = (value: number, type: "fuel" | "shield" | "hull") => {
+  const getMeterGradient = (
+    value: number,
+    type: "fuel" | "shield" | "hull",
+  ) => {
     const baseColors = {
       fuel: "from-blue-600 to-blue-400",
-      shield: "from-cyan-600 to-cyan-400", 
-      hull: "from-green-600 to-green-400"
+      shield: "from-cyan-600 to-cyan-400",
+      hull: "from-green-600 to-green-400",
     };
 
     if (value > 60) {
@@ -39,7 +49,9 @@ export function ShipStatusHUD() {
     return (
       <div className="fixed inset-0 bg-red-900/80 flex items-center justify-center z-40">
         <div className="text-center">
-          <h2 className="text-6xl font-bold text-red-400 mb-4">SHIP DESTROYED</h2>
+          <h2 className="text-6xl font-bold text-red-400 mb-4">
+            SHIP DESTROYED
+          </h2>
           <p className="text-xl text-white mb-6">
             {lastDamageSource && `Destroyed by: ${lastDamageSource}`}
           </p>
@@ -55,9 +67,11 @@ export function ShipStatusHUD() {
   }
 
   return (
-    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/90 text-white p-4 rounded-lg backdrop-blur-sm min-w-[400px]">
-      <h3 className="text-sm font-bold mb-3 text-center text-blue-400">SHIP STATUS</h3>
-      
+    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white p-2 rounded-lg min-w-[400px]">
+      <h3 className="text-sm font-bold mb-3 text-center text-blue-400">
+        SHIP STATUS
+      </h3>
+
       {/* Critical warning */}
       {isCritical && (
         <div className="mb-3 p-2 bg-red-900/50 border border-red-500 rounded text-center animate-pulse">
@@ -71,10 +85,12 @@ export function ShipStatusHUD() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <span className="text-xs text-gray-300">FUEL</span>
-            <span className="text-xs font-mono text-white">{Math.round(fuel)}%</span>
+            <span className="text-xs font-mono text-white">
+              {Math.round(fuel)}%
+            </span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-3">
-            <div 
+            <div
               className={`h-full rounded-full transition-all duration-300 ${getMeterGradient(fuel, "fuel")}`}
               style={{ width: `${fuel}%` }}
             />
@@ -85,10 +101,12 @@ export function ShipStatusHUD() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <span className="text-xs text-gray-300">SHIELDS</span>
-            <span className="text-xs font-mono text-white">{Math.round(shield)}%</span>
+            <span className="text-xs font-mono text-white">
+              {Math.round(shield)}%
+            </span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-3">
-            <div 
+            <div
               className={`h-full rounded-full transition-all duration-300 ${getMeterGradient(shield, "shield")}`}
               style={{ width: `${shield}%` }}
             />
@@ -99,10 +117,12 @@ export function ShipStatusHUD() {
         <div>
           <div className="flex justify-between items-center mb-1">
             <span className="text-xs text-gray-300">HULL</span>
-            <span className="text-xs font-mono text-white">{Math.round(hull)}%</span>
+            <span className="text-xs font-mono text-white">
+              {Math.round(hull)}%
+            </span>
           </div>
           <div className="w-full bg-gray-800 rounded-full h-3">
-            <div 
+            <div
               className={`h-full rounded-full transition-all duration-300 ${getMeterGradient(hull, "hull")}`}
               style={{ width: `${hull}%` }}
             />

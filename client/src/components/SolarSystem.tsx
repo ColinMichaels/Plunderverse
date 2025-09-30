@@ -7,7 +7,6 @@ import { Moon } from "./Moon";
 import { Starfield } from "./Starfield";
 import { CameraController } from "./CameraController";
 import { ShootingSystem } from "./ShootingSystem";
-import { AsteroidField } from "./AsteroidField";
 import { planets } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useDebugTools } from "../lib/stores/useDebugTools";
