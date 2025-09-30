@@ -12,9 +12,9 @@ interface LandedState {
 }
 
 export const useLandedState = create<LandedState>((set, get) => ({
-  isLanded: false,
-  landedPlanet: null,
-  landingTime: null,
+  isLanded: true,
+  landedPlanet: "Earth",
+  landingTime: Date.now(),
   
   setLanded: (planetName) => {
     set({
