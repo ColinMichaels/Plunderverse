@@ -3,29 +3,30 @@ import { useInventoryDisplayData } from "../domain/economy/selectors";
 import { TradingInterface } from "./TradingInterface";
 import { SpaceUIPanel } from "./SpaceUIPanel";
 
+// Helper functions moved outside component to avoid recreation on every render
+const getRarityColor = (rarity: string) => {
+  switch (rarity) {
+    case 'common': return 'text-gray-400';
+    case 'uncommon': return 'text-green-400';
+    case 'rare': return 'text-blue-400';
+    case 'legendary': return 'text-purple-400';
+    default: return 'text-gray-400';
+  }
+};
+
+const getRarityBg = (rarity: string) => {
+  switch (rarity) {
+    case 'common': return 'bg-gray-800/50 border-gray-600';
+    case 'uncommon': return 'bg-green-900/50 border-green-600';
+    case 'rare': return 'bg-blue-900/50 border-blue-600';
+    case 'legendary': return 'bg-purple-900/50 border-purple-600';
+    default: return 'bg-gray-800/50 border-gray-600';
+  }
+};
+
 export function InventoryDisplay() {
   const { items, storageCapacity, storageUsed, totalValue, storagePercentage } = useInventoryDisplayData();
   const [showTrading, setShowTrading] = useState(false);
-
-  const getRarityColor = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return 'text-gray-400';
-      case 'uncommon': return 'text-green-400';
-      case 'rare': return 'text-blue-400';
-      case 'legendary': return 'text-purple-400';
-      default: return 'text-gray-400';
-    }
-  };
-
-  const getRarityBg = (rarity: string) => {
-    switch (rarity) {
-      case 'common': return 'bg-gray-800/50 border-gray-600';
-      case 'uncommon': return 'bg-green-900/50 border-green-600';
-      case 'rare': return 'bg-blue-900/50 border-blue-600';
-      case 'legendary': return 'bg-purple-900/50 border-purple-600';
-      default: return 'bg-gray-800/50 border-gray-600';
-    }
-  };
 
   // Memoize panel content to reduce unnecessary SpaceUIPanel updates
   const panelContent = useMemo(() => (
@@ -109,7 +110,7 @@ export function InventoryDisplay() {
           )}
         </div>
       </div>
-  ), [items, storageCapacity, storageUsed, totalValue, storagePercentage, showTrading, getRarityColor, getRarityBg]);
+  ), [items, storageCapacity, storageUsed, totalValue, storagePercentage, showTrading]);
 
   return (
     <SpaceUIPanel
