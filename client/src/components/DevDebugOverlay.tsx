@@ -17,6 +17,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { X } from "lucide-react";
+import { DraggablePanel } from "./DraggablePanel";
 
 export function DevDebugOverlay() {
   const {
@@ -124,9 +125,14 @@ export function DevDebugOverlay() {
   };
 
   return (
-    <div className="fixed top-4 left-4 z-50 w-80 bg-gray-900/90 backdrop-blur-md border border-cyan-400/50 rounded-lg shadow-2xl shadow-cyan-500/20 overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-cyan-500/10 border-b border-cyan-400/30">
+    <DraggablePanel
+      defaultPosition={{ x: 16, y: 16 }}
+      handle=".debug-panel-header"
+      bounds="window"
+    >
+      <div className="z-50 w-80 bg-gray-900/90 backdrop-blur-md border border-cyan-400/50 rounded-lg shadow-2xl shadow-cyan-500/20 overflow-hidden">
+        {/* Header */}
+        <div className="debug-panel-header cursor-move flex items-center justify-between px-4 py-2 bg-cyan-500/10 border-b border-cyan-400/30">
         <h2 className="text-cyan-400 font-semibold text-sm">Debug Controls</h2>
         <button
           onClick={toggleVisibility}
@@ -328,6 +334,7 @@ export function DevDebugOverlay() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </DraggablePanel>
   );
 }
