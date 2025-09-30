@@ -592,56 +592,86 @@ function SurfaceLighting() {
       Math.max(-1, Math.min(1, rotatedSunDirection.y)),
     );
 
-    // Calculate intensity based on sun elevation and distance
+    // Calculate intensity based on sun elevation with improved day/night transitions
     let sunIntensity = 0;
+    let ambientIntensity = 0.02; // Base ambient
 
-    if (sunElevation < -0.4) {
-      // Deep night - complete darkness
+    if (sunElevation < -0.3) {
+      // Deep night - complete darkness, flashlight essential
       sunIntensity = 0.0;
-    } else if (sunElevation < -0.1) {
-      // Dawn/dusk transition
-      const transitionFactor = (sunElevation + 0.4) / 0.3;
-      sunIntensity = Math.max(0, transitionFactor * 0.1);
-    } else if (sunElevation < 0.2) {
-      // Early morning/late evening
-      const dawnFactor = (sunElevation + 0.1) / 0.3;
-      sunIntensity = 0.1 + dawnFactor * 0.4;
+      ambientIntensity = 0.01; // Very dark ambient
+    } else if (sunElevation < 0.0) {
+      // Dawn/dusk transition - smooth gradient from night to day
+      const transitionFactor = (sunElevation + 0.3) / 0.3; // 0 to 1
+      const smoothTransition = transitionFactor * transitionFactor; // Ease-in curve
+      sunIntensity = smoothTransition * 0.3; // Gentle increase
+      ambientIntensity = 0.01 + smoothTransition * 0.04; // Ambient grows with sun
+    } else if (sunElevation < 0.5) {
+      // Morning to midday - building to full brightness
+      const dayFactor = sunElevation / 0.5; // 0 to 1
+      sunIntensity = 0.3 + dayFactor * 1.2; // 0.3 to 1.5
+      ambientIntensity = 0.05 + dayFactor * 0.15; // Bright ambient during day
     } else {
-      // Full daylight
-      sunIntensity = 0.5 + Math.sin(sunElevation) * 0.9;
+      // Full daylight - maximum brightness, flashlight unnecessary
+      const peakFactor = Math.sin(sunElevation * 1.2); // Peaks at high sun
+      sunIntensity = 1.5 + peakFactor * 1.5; // 1.5 to 3.0
+      ambientIntensity = 0.2 + peakFactor * 0.1; // Bright ambient
     }
 
     // Apply distance-based scaling with realistic intensity differences
     const finalIntensity = sunIntensity * distanceBasedIntensity;
+    const finalAmbient = ambientIntensity * Math.sqrt(distanceBasedIntensity); // Less affected by distance
 
     return {
       sunPosition: sunLightPosition,
-      sunIntensity: Math.max(0, Math.min(4.0, finalIntensity)), // Higher cap for closer planets
+      sunIntensity: Math.max(0, Math.min(6.0, finalIntensity)), // Higher cap for brighter days
+      ambientIntensity: finalAmbient,
       distanceBasedIntensity,
       sunElevation,
       planetName: planet.name,
     };
   }, [planet, time]);
 
-  const { sunPosition, sunIntensity } = lightingData;
+  const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
 
   // Add debug logging for lighting changes
   useEffect(() => {
     if (
       planet &&
       lightingData &&
-      typeof lightingData.sunElevation === "number"
+      typeof lightingData.sunElevation === "number" &&
+      typeof ambientIntensity === "number"
     ) {
+      const elevationDegrees = ((lightingData.sunElevation * 180) / Math.PI).toFixed(1);
+      const timeOfDay = lightingData.sunElevation < -0.3 ? 'NIGHT' : 
+                        lightingData.sunElevation < 0.0 ? 'DAWN/DUSK' :
+                        lightingData.sunElevation < 0.5 ? 'MORNING' : 'MIDDAY';
       console.log(
-        `[LIGHTING-${planet.name}] Distance-based intensity: ${lightingData.distanceBasedIntensity.toFixed(2)}x, Sun intensity: ${sunIntensity.toFixed(2)}, Elevation: ${((lightingData.sunElevation * 180) / Math.PI).toFixed(1)}°`,
+        `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°`,
       );
     }
-  }, [planet?.name, sunIntensity, lightingData]);
+  }, [planet?.name, sunIntensity, ambientIntensity, lightingData]);
+
+  // Calculate sky colors based on time of day
+  const sunElevation = lightingData.sunElevation ?? 0;
+  const skyColor = sunElevation < -0.3 ? '#000814' : // Night: very dark blue
+                   sunElevation < 0.0 ? '#1a2332' : // Dawn/Dusk: dark blue-gray  
+                   sunElevation < 0.5 ? '#4a7c9e' : // Morning: medium blue
+                   '#87CEEB'; // Midday: sky blue
+  
+  const groundColor = surfaceColor;
 
   return (
     <>
-      {/* Extremely minimal ambient light - shadows should be very dark */}
-      <ambientLight intensity={0.02} color={surfaceColor} />
+      {/* Dynamic ambient light that changes with time of day */}
+      <ambientLight intensity={ambientIntensity * 0.5} color={surfaceColor} />
+      
+      {/* Hemisphere light for natural sky-to-ground gradient */}
+      <hemisphereLight 
+        color={skyColor}
+        groundColor={groundColor}
+        intensity={ambientIntensity * 1.5}
+      />
 
       {/* Dynamic sun based on orbital mechanics and planet rotation */}
       <directionalLight
@@ -659,8 +689,6 @@ function SurfaceLighting() {
         shadow-camera-far={800}
         shadow-bias={-0.0005}
       />
-
-      {/* Removed all secondary lights - flashlight is essential for navigation in shadows! */}
     </>
   );
 }
