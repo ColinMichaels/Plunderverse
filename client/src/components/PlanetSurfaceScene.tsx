@@ -1005,7 +1005,7 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   } = useFlashlight();
 
   return (
-    <div className="absolute bottom-4 left-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
+    <div className="absolute bottom-4 right-4 bg-gray-900/90 border border-cyan-400 rounded-lg p-4 max-w-md">
       <h3 className="text-lg font-bold text-cyan-400 mb-3">
         🚀 Surface Operations
       </h3>
@@ -1017,10 +1017,9 @@ function SurfaceControls({ planetName }: { planetName: string }) {
         </h4>
         <div className="grid grid-cols-2 gap-2 text-xs text-gray-400 mb-3">
           <div>WASD: Move</div>
-   
-          <h3 className="text-lg font-bold text-cyan-400 mb-3">Flashlight:</h3>       <div>Q/E: Turn</div>
+          <div>Q/E: Turn</div>
           <div>F: Flashlight</div>
-          <div>C: Charge</div>
+          <div>R: Charge</div>
         </div>
 
         {/* Flashlight controls */}
