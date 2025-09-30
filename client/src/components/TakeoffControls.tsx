@@ -1,12 +1,16 @@
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
+import { useSolarSystem } from "../lib/stores/useSolarSystem";
+import { planets } from "../lib/planetData";
+import * as THREE from "three";
 import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function TakeoffControls() {
   const { isLanded, landedPlanet, setNotLanded } = useLandedState();
   const { isActive: isMining, stopMining } = useMining();
   const { playSuccess } = useAudio();
+  const { time, setCameraPosition } = useSolarSystem();
 
   if (!isLanded) return null;
 
@@ -16,9 +20,33 @@ export function TakeoffControls() {
       console.log("Mining operations stopped for takeoff");
     }
     
+    // Find the planet we're taking off from
+    const planet = planets.find((p) => p.name === landedPlanet);
+    
+    if (planet) {
+      // Calculate the planet's current orbital position
+      const angle = time * planet.orbitalSpeed;
+      const orbitX = Math.cos(angle) * planet.distance;
+      const orbitZ = Math.sin(angle) * planet.distance;
+      
+      // Position player slightly above and offset from planet in its orbit
+      // Using planet size to ensure we're just outside the planet
+      const orbitOffset = planet.size * 8; // 8x planet radius for comfortable viewing distance
+      const orbitY = 10; // Slight elevation above orbital plane
+      
+      const takeoffPosition = new THREE.Vector3(
+        orbitX + Math.cos(angle) * orbitOffset,
+        orbitY,
+        orbitZ + Math.sin(angle) * orbitOffset
+      );
+      
+      // Set camera to orbital position
+      setCameraPosition(takeoffPosition);
+      console.log(`Taking off from ${landedPlanet} to orbital position:`, takeoffPosition);
+    }
+    
     setNotLanded();
     playSuccess();
-    console.log(`Taking off from ${landedPlanet}`);
   };
 
   return (
