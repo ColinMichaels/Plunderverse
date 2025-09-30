@@ -99,7 +99,8 @@ export function CryptoWallet() {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
   };
 
-  const formatBalance = (balance: number) => {
+  const formatBalance = (balance: number | undefined) => {
+    if (balance === undefined || balance === null) return '0.00';
     return balance.toLocaleString(undefined, { 
       minimumFractionDigits: 2, 
       maximumFractionDigits: 6 
@@ -217,15 +218,17 @@ export function CryptoWallet() {
         </div>
 
         {/* Market Price */}
-        {marketPrice && (
+        {marketPrice && marketPrice.priceInUSD !== undefined && (
           <div className="space-status-bar border border-blue-400/30 bg-blue-900/20 rounded">
             <div className="space-status-item">
               <span className="text-blue-300 font-mono text-xs">MARKET:</span>
               <span className="text-blue-400 font-mono text-xs">
                 ${marketPrice.priceInUSD.toFixed(4)}
-                <span className={`ml-1 ${marketPrice.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  ({marketPrice.change24h >= 0 ? '+' : ''}{marketPrice.change24h.toFixed(2)}%)
-                </span>
+                {marketPrice.change24h !== undefined && (
+                  <span className={`ml-1 ${marketPrice.change24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    ({marketPrice.change24h >= 0 ? '+' : ''}{marketPrice.change24h.toFixed(2)}%)
+                  </span>
+                )}
               </span>
             </div>
           </div>
@@ -275,7 +278,7 @@ export function CryptoWallet() {
                     placeholder="0.00"
                     step="0.000001"
                     min="0"
-                    max={balance.toString()}
+                    max={(balance || 0).toString()}
                     className="bg-slate-700 border-slate-600 text-white"
                   />
                 </div>

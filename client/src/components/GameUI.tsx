@@ -15,6 +15,7 @@ import { FixedMiniMap } from "./FixedMiniMap";
 import { MusicPlayer } from "./MusicPlayer";
 import { CryptoWallet } from "./CryptoWallet";
 import { CryptoMarketplace } from "./CryptoMarketplace";
+import { ControlsHelp } from "./ControlsHelp";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
 import { useLandingWarning } from "../lib/stores/useLandingWarning";
 import { useAutopilot } from "../lib/stores/useAutopilot";
@@ -101,6 +102,9 @@ export function GameUI() {
       <div className="fixed bottom-4 right-4 z-30">
         <MusicPlayer />
       </div>
+
+      {/* Controls Help - shows on first launch, accessible via F1 */}
+      <ControlsHelp />
     </>
   );
 }
