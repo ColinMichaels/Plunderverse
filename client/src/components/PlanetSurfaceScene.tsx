@@ -68,6 +68,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
       geometry={terrainGeometry}
       rotation={[-Math.PI / 2, 0, 0]}
       position={[0, 0, 0]}
+      receiveShadow={true}
     >
       <meshStandardMaterial
         map={surfaceTexture}
@@ -653,6 +654,90 @@ function SurfaceLighting() {
   );
 }
 
+function MiningFragments({
+  isActive,
+  color,
+  position,
+}: {
+  isActive: boolean;
+  color: string;
+  position: [number, number, number];
+}) {
+  const particlesRef = useRef<THREE.Group>(null);
+  
+  // Generate particle data using useMemo to avoid re-calculating on every render
+  const particles = useMemo(() => {
+    const particleCount = 8 + Math.floor(Math.random() * 5); // 8-12 particles
+    const particleData = [];
+    
+    for (let i = 0; i < particleCount; i++) {
+      // Random direction for each particle
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      const speed = 0.5 + Math.random() * 1.5;
+      
+      particleData.push({
+        id: i,
+        direction: new THREE.Vector3(
+          Math.sin(phi) * Math.cos(theta) * speed,
+          Math.sin(phi) * Math.sin(theta) * speed,
+          Math.cos(phi) * speed
+        ),
+        initialPosition: new THREE.Vector3(position[0], position[1], position[2]),
+        progress: 0
+      });
+    }
+    
+    return particleData;
+  }, [position[0], position[1], position[2]]);
+  
+  // Animate particles using useFrame
+  useFrame((state, delta) => {
+    if (particlesRef.current && isActive) {
+      particlesRef.current.children.forEach((child, index) => {
+        const particle = particles[index];
+        if (particle) {
+          // Update particle progress
+          particle.progress = Math.min(particle.progress + delta * 2, 1);
+          
+          // Move particle outward
+          child.position.copy(particle.initialPosition);
+          child.position.addScaledVector(particle.direction, particle.progress * 2);
+          
+          // Fade out and shrink as particle spreads
+          const fadeAmount = 1 - particle.progress;
+          child.scale.setScalar(fadeAmount * 0.3);
+          
+          // Update material opacity
+          if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+            child.material.opacity = fadeAmount;
+          }
+        }
+      });
+    } else if (particlesRef.current && !isActive) {
+      // Reset particles when mining stops
+      particles.forEach(p => p.progress = 0);
+    }
+  });
+  
+  if (!isActive) return null;
+  
+  return (
+    <group ref={particlesRef}>
+      {particles.map((particle) => (
+        <mesh key={particle.id} position={position}>
+          <boxGeometry args={[0.2, 0.2, 0.2]} />
+          <meshStandardMaterial
+            color={color}
+            transparent={true}
+            opacity={1}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function ResourceNode({
   resource,
   position,
@@ -701,6 +786,58 @@ function ResourceNode({
     }
   };
 
+  // Determine geometry based on resource type
+  const { geometry, materialProps, randomRotation } = useMemo(() => {
+    const type = resource.type;
+    
+    // Water-based resources: flat cylinder (puddles/ice patches)
+    if (type.includes("Water") || type.includes("Ice")) {
+      return {
+        geometry: <cylinderGeometry args={[2, 2, 0.3, 16]} />,
+        materialProps: {},
+        randomRotation: [0, 0, 0] as [number, number, number]
+      };
+    }
+    
+    // Crystal/Gem resources: dodecahedron
+    if (type.includes("Crystal") || type.includes("Diamond") || type.includes("Gem")) {
+      return {
+        geometry: <dodecahedronGeometry args={[1.5, 0]} />,
+        materialProps: {},
+        randomRotation: [0, 0, 0] as [number, number, number]
+      };
+    }
+    
+    // Gas resources: transparent sphere
+    if (type.includes("Gas") || type.includes("Methane")) {
+      return {
+        geometry: <sphereGeometry args={[1.5, 16, 16]} />,
+        materialProps: { opacity: 0.6, transparent: true },
+        randomRotation: [0, 0, 0] as [number, number, number]
+      };
+    }
+    
+    // Ore/Rock/Metal resources: box with random rotation
+    if (type.includes("Ore") || type.includes("Iron") || type.includes("Rock") || type.includes("Platinum")) {
+      return {
+        geometry: <boxGeometry args={[2, 2, 2]} />,
+        materialProps: {},
+        randomRotation: [
+          Math.random() * Math.PI,
+          Math.random() * Math.PI,
+          Math.random() * Math.PI
+        ] as [number, number, number]
+      };
+    }
+    
+    // Default: octahedron
+    return {
+      geometry: <octahedronGeometry args={[1.5, 0]} />,
+      materialProps: {},
+      randomRotation: [0, 0, 0] as [number, number, number]
+    };
+  }, [resource.type]);
+
   // Calculate scale based on mining progress: 1.0 down to 0.2
   const miningScale = 1 - (progress * 0.8);
 
@@ -729,14 +866,18 @@ function ResourceNode({
       onPointerOver={() => setHovered(true)}
       onPointerOut={() => setHovered(false)}
       scale={finalScale}
+      rotation={randomRotation}
+      castShadow={true}
+      receiveShadow={true}
     >
-      <octahedronGeometry args={[1.5, 0]} />
+      {geometry}
       <meshStandardMaterial
         color={getResourceColor(resource.rarity)}
         emissive={hovered ? getResourceColor(resource.rarity) : "#000000"}
         emissiveIntensity={hovered ? 0.3 : 0}
         roughness={0.2}
         metalness={0.8}
+        {...materialProps}
       />
     </mesh>
   );
@@ -814,6 +955,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         console.log(
           `[MINING-DEBUG] Performing mining click for ${resource.type} (node: ${nodeId})`,
         );
+        playHit();
         const result = await performClick();
         console.log(`[MINING-DEBUG] performClick result:`, result);
 
@@ -860,9 +1002,8 @@ function ResourceNodes({ planetName }: { planetName: string }) {
             }
           }
         } else {
-          // Continue mining - play hit sound
+          // Continue mining
           console.log(`[MINING-DEBUG] Mining click registered, continuing...`);
-          playHit();
         }
       } else {
         // Start mining a new resource
@@ -879,6 +1020,22 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     }
   };
 
+  // Get resource color based on rarity (same logic as in ResourceNode)
+  const getResourceColor = (rarity: string) => {
+    switch (rarity) {
+      case "common":
+        return "#10B981";
+      case "uncommon":
+        return "#3B82F6";
+      case "rare":
+        return "#8B5CF6";
+      case "legendary":
+        return "#F59E0B";
+      default:
+        return "#6B7280";
+    }
+  };
+
   return (
     <>
       {resourcePositions
@@ -889,14 +1046,20 @@ function ResourceNodes({ planetName }: { planetName: string }) {
           const nodeProgress = isBeingMined ? miningProgress : 0;
           
           return (
-            <ResourceNode
-              key={node.id}
-              nodeId={node.id}
-              resource={node.resource}
-              position={node.position}
-              onInteract={() => handleResourceClick(node.resource, node.id)}
-              progress={nodeProgress}
-            />
+            <group key={node.id}>
+              <ResourceNode
+                nodeId={node.id}
+                resource={node.resource}
+                position={node.position}
+                onInteract={() => handleResourceClick(node.resource, node.id)}
+                progress={nodeProgress}
+              />
+              <MiningFragments
+                isActive={isBeingMined}
+                color={getResourceColor(node.resource.rarity)}
+                position={node.position}
+              />
+            </group>
           );
         })}
     </>
