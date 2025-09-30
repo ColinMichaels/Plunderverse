@@ -1,6 +1,7 @@
 import { useLandedState } from "../lib/stores/useLandedState";
 import { useMining } from "../lib/stores/useMining";
 import { useAudio } from "../lib/stores/useAudio";
+import { SpaceUIPanel } from "./SpaceUIPanel";
 
 export function TakeoffControls() {
   const { isLanded, landedPlanet, setNotLanded } = useLandedState();
@@ -21,28 +22,36 @@ export function TakeoffControls() {
   };
 
   return (
-    <div className="fixed bottom-4 left-4 z-30">
-      <div className="bg-gray-900/90 border border-orange-400 rounded-lg p-4 max-w-sm">
-        <h3 className="text-lg font-bold text-orange-400 mb-2">
-          🚀 Surface Operations
-        </h3>
-        <p className="text-gray-300 text-sm mb-3">
-          Landed on {landedPlanet}
-        </p>
+    <SpaceUIPanel
+      id="surface-operations"
+      title="SURFACE OPERATIONS"
+      icon="🚀"
+      zone="left-sidebar"
+      priority={5}
+      defaultExpanded={false}
+    >
+      <div className="space-y-3">
+        <div className="space-status-bar">
+          <div className="space-status-item col-span-2">
+            <span className="text-orange-400 font-mono">LOCATION:</span>
+            <span className="font-mono">{landedPlanet}</span>
+          </div>
+        </div>
         
         {isMining && (
-          <div className="mb-3 p-2 bg-yellow-900/30 border border-yellow-400 rounded text-yellow-400 text-sm">
+          <div className="p-2 bg-yellow-900/30 border border-yellow-400/50 rounded text-yellow-400 text-xs font-mono">
             ⚠️ Mining in progress - will stop on takeoff
           </div>
         )}
         
         <button
           onClick={handleTakeoff}
-          className="w-full px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded font-semibold transition-colors"
+          className="bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center"
+          title="Take Off"
         >
-          🚀 Take Off
+          <span className="text-xl">🚀</span>
         </button>
       </div>
-    </div>
+    </SpaceUIPanel>
   );
 }
