@@ -795,7 +795,7 @@ function ResourceNode({
       return {
         geometry: <cylinderGeometry args={[2, 2, 0.3, 16]} />,
         materialProps: {},
-        randomRotation: [0, 0, 0] as [number, number, number]
+        randomRotation: [0, 0, 0] as [number, number, number] // Keep flat - cylinders are already horizontal in Three.js
       };
     }
     
@@ -843,9 +843,17 @@ function ResourceNode({
 
   useFrame((state) => {
     if (meshRef.current) {
-      // Gentle floating animation
-      meshRef.current.position.y =
-        position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+      // Check if this is a water/ice resource
+      const isWater = resource.type.includes("Water") || resource.type.includes("Ice");
+      
+      if (!isWater) {
+        // Gentle floating animation for non-water resources
+        meshRef.current.position.y =
+          position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2;
+      } else {
+        // Water stays flat on ground - no floating
+        meshRef.current.position.y = position[1];
+      }
 
       // Glow effect when hovered
       if (hovered) {
@@ -925,7 +933,10 @@ function ResourceNodes({ planetName }: { planetName: string }) {
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
         const terrainHeight = terrainHeightAt(x, z);
-        const y = terrainHeight + 0.8 + Math.random() * 1.5; // Sit on terrain with clearance
+        const isWater = resource.type.includes("Water") || resource.type.includes("Ice");
+        const y = isWater 
+          ? terrainHeight + 0.2  // Water lies flat on surface, very low
+          : terrainHeight + 0.8 + Math.random() * 1.5; // Other resources sit higher
 
         positions.push({
           resource,
