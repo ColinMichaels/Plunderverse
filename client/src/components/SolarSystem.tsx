@@ -10,14 +10,16 @@ import { ShootingSystem } from "./ShootingSystem";
 import { AsteroidField } from "./AsteroidField";
 import { planets } from "../lib/planetData";
 import { useSolarSystem } from "../lib/stores/useSolarSystem";
+import { useDebugTools } from "../lib/stores/useDebugTools";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);
   const { time, setTime } = useSolarSystem();
+  const timeScale = useDebugTools((state) => state.timeScale);
 
   // Update orbital mechanics
   useFrame((state, delta) => {
-    setTime(time + delta * 0.1); // Slow down time for better visualization
+    setTime(time + delta * 0.1 * timeScale);
   });
 
   return (
