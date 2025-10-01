@@ -180,7 +180,7 @@ export function CrewManagementPanel({ onClose, onOpenRecruitment }: CrewManageme
               ) : (
                 activeCrew.map((crew) => {
                   const loyaltyStatus = getLoyaltyStatus(crew.currentLoyalty);
-                  const topSkill = getTopSkill(crew.skills);
+                  const topSkill = getTopSkill(crew.skills as Record<string, number>);
                   const isSelected = selectedCrew === crew.id;
                   
                   return (
