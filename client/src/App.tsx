@@ -7,6 +7,7 @@ import { SplashScreen } from "./components/screens/SplashScreen";
 import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
 import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
+import { PatrolEncounter } from "./components/space/PatrolEncounter";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
 import { useSettings } from "./lib/stores/ui/useSettings";
@@ -119,6 +120,7 @@ function App() {
             </TouchPropulsionControls>
 
             <GameUI />
+            <PatrolEncounter />
             <PlanetSurfaceScene />
             <TakeoffControls />
             <HintModal />

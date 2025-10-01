@@ -9,6 +9,8 @@ import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useHeatSystem } from "../../lib/stores/player/useHeatSystem";
+import { WantedLevelIndicator } from "../ui/WantedLevelIndicator";
 import { planets } from "../../lib/planetData";
 import * as THREE from "three";
 
@@ -40,6 +42,7 @@ export function CockpitHUD() {
   const { activate: activateAutopilot, isActive: isAutopilotActive } =
     useAutopilot();
   const { isLanded } = useLandedState();
+  const { currentHeat, wantedLevel } = useHeatSystem();
 
   const selectedPlanetData = selectedPlanet
     ? planets.find((p) => p.name === selectedPlanet)
@@ -112,6 +115,13 @@ export function CockpitHUD() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
+      {/* Wanted Level Indicator - Always visible in top right */}
+      {!isLanded && currentHeat > 0 && (
+        <div className="absolute top-4 right-4 pointer-events-auto">
+          <WantedLevelIndicator />
+        </div>
+      )}
+      
       {/* Mobile: Hide large central HUD, Desktop: Show central HUD */}
       <div className="hidden md:block">
         <div

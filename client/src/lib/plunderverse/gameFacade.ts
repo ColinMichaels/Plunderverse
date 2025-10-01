@@ -791,18 +791,20 @@ export class GameFacade {
    * Apply heat decay (call periodically) with faction modifiers
    */
   async applyHeatDecay(): Promise<void> {
-    const player = usePlayer.getState();
-    const economy = usePlunderverseEconomy.getState();
+    // Import the new heat system
+    const { useHeatSystem } = await import('../stores/player/useHeatSystem');
+    const heatSystem = useHeatSystem.getState();
     
-    let newHeat = economy.calculateHeatDecay(player.heat);
+    // Apply decay through the heat system
+    heatSystem.applyHeatDecay();
     
-    // Modify heat decay based on corporation reputation
-    const corpModifier = this.getFactionHeatModifier('corporations');
-    const decayAmount = player.heat - newHeat;
-    const modifiedDecay = decayAmount * corpModifier;
-    newHeat = player.heat - modifiedDecay;
+    // Process laying low if active
+    if (heatSystem.isLayingLow) {
+      heatSystem.processLayingLowTick();
+    }
     
-    player.updateHeat(newHeat - player.heat);
+    // Check for consequences after decay
+    heatSystem.checkHeatConsequences();
   }
   
   /**
@@ -996,10 +998,17 @@ export class GameFacade {
     const player = usePlayer.getState();
     player.updateNotoriety(2);
     
-    // Apply heat for combat
-    const economy = usePlunderverseEconomy.getState();
-    const heat = economy.calculateHeatFromAction('combat', this.getCurrentFaction());
-    player.updateHeat(heat);
+    // Apply heat through new heat system
+    const { useHeatSystem } = await import('../stores/player/useHeatSystem');
+    const heatSystem = useHeatSystem.getState();
+    
+    // Combat with law enforcement is assault
+    if (enemyType === 'patrol' || enemyType === 'police') {
+      heatSystem.applyHeat('assault', 1.5);
+    } else {
+      // Regular combat is minor crime
+      heatSystem.applyHeat('minor_smuggling', 0.5);
+    }
   }
   
   /**
