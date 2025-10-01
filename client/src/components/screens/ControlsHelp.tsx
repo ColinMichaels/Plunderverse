@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from "react";
-import { SpaceUIPanel } from '../ui/SpaceUIPanel';
 import { useUILayout } from '../ui/UILayoutManager';
 
 const HELP_SHOWN_KEY = 'space_game_controls_help_shown';
@@ -31,16 +30,7 @@ export function ControlsHelp() {
   }, [togglePanel]);
 
   return (
-    <SpaceUIPanel
-      id="controls-help"
-      title="FLIGHT CONTROLS"
-      icon="❓"
-      zone="right-sidebar"
-      priority={1}
-      defaultExpanded={isFirstTime}
-      canCollapse={true}
-    >
-      <div className="space-y-4">
+    <div className="space-y-4">
         {isFirstTime && (
           <p className="text-sm text-yellow-400">Welcome, Commander! Here are your basic controls:</p>
         )}
@@ -122,7 +112,6 @@ export function ControlsHelp() {
             <li>• Double-tap W to activate warp speed (requires fuel or upgrade)</li>
           </ul>
         </div>
-      </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

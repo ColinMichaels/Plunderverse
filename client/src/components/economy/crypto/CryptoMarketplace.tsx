@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useCrypto } from "../../../lib/stores/economy/useCrypto";
 import { useInventoryDisplayData } from "../../../domain/economy/selectors";
-import { SpaceUIPanel } from "../../ui/SpaceUIPanel";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../ui/dialog";
@@ -131,36 +130,19 @@ export function CryptoMarketplace() {
 
   if (!isInitialized) {
     return (
-      <SpaceUIPanel
-        id="crypto-marketplace"
-        title="CRYPTO MARKETPLACE"
-        icon="🏪"
-        zone="right-sidebar"
-        priority={3}
-        defaultExpanded={false}
-      >
-        <div className="space-y-3 text-center">
-          <div className="text-yellow-400">
-            Marketplace unavailable
-          </div>
-          <div className="text-sm text-slate-400">
-            Initialize crypto wallet to access trading
-          </div>
+      <div className="space-y-3 text-center">
+        <div className="text-yellow-400">
+          Marketplace unavailable
         </div>
-      </SpaceUIPanel>
+        <div className="text-sm text-slate-400">
+          Initialize crypto wallet to access trading
+        </div>
+      </div>
     );
   }
 
   return (
-    <SpaceUIPanel
-      id="crypto-marketplace"
-      title="CRYPTO MARKETPLACE"
-      icon="🏪"
-      zone="right-sidebar"
-      priority={3}
-      defaultExpanded={showMarketplace}
-    >
-      <div className="space-y-3">
+    <div className="space-y-3">
         {/* Tab Navigation */}
         <div className="flex space-x-1 bg-slate-800 rounded p-1">
           <button
@@ -405,7 +387,6 @@ export function CryptoMarketplace() {
             </div>
           </div>
         )}
-      </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

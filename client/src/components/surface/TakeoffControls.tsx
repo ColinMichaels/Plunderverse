@@ -4,7 +4,6 @@ import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets } from "../../lib/planetData";
 import * as THREE from "three";
-import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 export function TakeoffControls() {
   const { isLanded, landedPlanet, setNotLanded } = useLandedState();
@@ -50,15 +49,7 @@ export function TakeoffControls() {
   };
 
   return (
-    <SpaceUIPanel
-      id="surface-operations"
-      title="SURFACE OPERATIONS"
-      icon="🚀"
-      zone="left-sidebar"
-      priority={5}
-      defaultExpanded={false}
-    >
-      <div className="space-y-3">
+    <div className="space-y-3">
         <div className="space-status-bar">
           <div className="space-status-item col-span-2">
             <span className="text-orange-400 font-mono">LOCATION:</span>
@@ -79,7 +70,6 @@ export function TakeoffControls() {
         >
           <span className="text-xl">🚀</span>
         </button>
-      </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

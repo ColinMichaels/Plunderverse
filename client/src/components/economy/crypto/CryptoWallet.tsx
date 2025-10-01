@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useCrypto } from "../../../lib/stores/economy/useCrypto";
-import { SpaceUIPanel } from "../../ui/SpaceUIPanel";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../../ui/dialog";
@@ -130,15 +129,7 @@ export function CryptoWallet() {
 
   if (!isInitialized) {
     return (
-      <SpaceUIPanel
-        id="crypto-wallet"
-        title="CRYPTO WALLET"
-        icon="💰"
-        zone="right-sidebar"
-        priority={2}
-        defaultExpanded={true}
-      >
-        <div className="space-y-4 text-center">
+      <div className="space-y-4 text-center">
           <div className="space-y-2">
             <div className="text-yellow-400 font-semibold">
               Wallet Not Initialized
@@ -184,21 +175,12 @@ export function CryptoWallet() {
               </div>
             </div>
           )}
-        </div>
-      </SpaceUIPanel>
+      </div>
     );
   }
 
   return (
-    <SpaceUIPanel
-      id="crypto-wallet"
-      title="CRYPTO WALLET"
-      icon="💰"
-      zone="right-sidebar"
-      priority={2}
-      defaultExpanded={showWallet}
-    >
-      <div className="space-y-3">
+    <div className="space-y-3">
         {/* Wallet Address */}
         <div className="space-status-bar">
           <div className="space-status-item">
@@ -339,7 +321,6 @@ export function CryptoWallet() {
             </div>
           </div>
         )}
-      </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

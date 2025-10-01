@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
-import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 export function EquipmentWarning() {
   const { equipment, getConditionStatus } = useEquipment();
@@ -21,16 +20,7 @@ export function EquipmentWarning() {
   if (!showWarning) return null;
 
   return (
-    <SpaceUIPanel
-      id="equipment-warning"
-      title="SYSTEM ALERT"
-      icon="⚠️"
-      zone="left-sidebar"
-      priority={4}
-      defaultExpanded={false}
-      canCollapse={true}
-    >
-      <div className="space-y-2 bg-red-900/30 border border-red-500/50 rounded p-2 animate-pulse">
+    <div className="space-y-2 bg-red-900/30 border border-red-500/50 rounded p-2 animate-pulse">
         <div className="text-xs text-red-200 font-mono">
           CRITICAL CONDITION DETECTED:
         </div>
@@ -54,7 +44,6 @@ export function EquipmentWarning() {
         >
           ACKNOWLEDGE
         </button>
-      </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

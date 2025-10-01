@@ -1,7 +1,6 @@
 import { useState, useMemo } from "react";
 import { useInventoryDisplayData } from "../../domain/economy/selectors";
 import { TradingInterface } from "./TradingInterface";
-import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 // Helper functions moved outside component to avoid recreation on every render
 const getRarityColor = (rarity: string) => {
@@ -112,16 +111,5 @@ export function InventoryDisplay() {
       </div>
   ), [items, storageCapacity, storageUsed, totalValue, storagePercentage, showTrading]);
 
-  return (
-    <SpaceUIPanel
-      id="inventory"
-      title="CARGO BAY"
-      icon="📦"
-      zone="left-sidebar"
-      priority={3}
-      defaultExpanded={false}
-    >
-      {panelContent}
-    </SpaceUIPanel>
-  );
+  return panelContent;
 }

@@ -1,6 +1,5 @@
 import { useSolarSystem } from "../../../lib/stores/space/useSolarSystem";
 import { planets } from "../../../lib/planetData";
-import { SpaceUIPanel } from "../../ui/SpaceUIPanel";
 
 export function MiniMap() {
   const { time, cameraPosition } = useSolarSystem();
@@ -19,14 +18,7 @@ export function MiniMap() {
   });
 
   return (
-    <SpaceUIPanel
-      id="minimap"
-      title="NAVIGATION MAP"
-      icon="🗺️"
-      zone="left-sidebar"
-      priority={2}
-      defaultExpanded={false}
-    >
+    <div>
       <div
         className="relative border border-cyan-400/30 bg-black rounded"
         style={{ width: mapSize, height: mapSize }}
@@ -135,6 +127,6 @@ export function MiniMap() {
           </div>
         </div>
       </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

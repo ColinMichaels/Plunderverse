@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useCreditsData } from "../../domain/economy/selectors";
-import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 export function ShipStatus() {
   const { equipment, repairEquipment, replenishFuel, getConditionStatus, getPerformanceMultiplier } = useEquipment();
@@ -83,15 +82,7 @@ export function ShipStatus() {
   const criticalCount = shipComponents.filter(c => getConditionStatus(c.id) === 'critical' || getConditionStatus(c.id) === 'broken').length;
 
   return (
-    <SpaceUIPanel
-      id="ship-status"
-      title="SHIP STATUS"
-      icon="🚢"
-      zone="left-sidebar"
-      priority={1}
-      defaultExpanded={false}
-    >
-      <div className="space-y-3">
+    <div className="space-y-3">
         {/* System status overview */}
         <div className="space-status-bar grid-cols-2">
           {shipComponents.map((component) => {
@@ -228,8 +219,7 @@ export function ShipStatus() {
                'GOOD'}
             </span>
           </div>
-        </div>
       </div>
-    </SpaceUIPanel>
+    </div>
   );
 }

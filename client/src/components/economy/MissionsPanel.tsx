@@ -4,7 +4,6 @@ import { usePlunderverseMissions } from "../../lib/stores/economy/usePlundervers
 import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useCreditsData } from "../../domain/economy/selectors";
 import { useRewards } from "../../lib/stores/ui/useRewards";
-import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 import { gameFacade } from "../../lib/plunderverse/gameFacade";
 import { Mission, MissionChoice, FactionId, MissionObjective } from "../../lib/plunderverse/types";
 
@@ -283,15 +282,7 @@ export function MissionsPanel() {
   };
 
   return (
-    <SpaceUIPanel
-      id="missions-panel"
-      title="MISSION CONTROL"
-      icon="📋"
-      zone="right-sidebar"
-      priority={0}
-      defaultExpanded={false}
-      canCollapse={true}
-    >
+    <>
       <div className="space-y-3">
         {/* Header with Player Status */}
         <div className="missions-panel-header bg-gray-800 p-4 border-b border-gray-600 rounded-t-lg">
@@ -816,6 +807,6 @@ export function MissionsPanel() {
           </div>
         </div>
       )}
-    </SpaceUIPanel>
+    </>
   );
 }
