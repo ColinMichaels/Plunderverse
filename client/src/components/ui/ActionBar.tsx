@@ -60,8 +60,8 @@ export function ActionBar() {
       if (fKeyMatch) {
         const fNumber = parseInt(fKeyMatch[1]);
         if (fNumber >= 1 && fNumber <= 8) {
+          // Only prevent default for F-keys, don't stop propagation to allow game controls
           event.preventDefault();
-          event.stopPropagation();
           
           // Find the corresponding button
           const button = ACTION_BUTTONS[fNumber - 1];
@@ -83,34 +83,48 @@ export function ActionBar() {
             setManualPanelOverride(true);
             refreshPanelOverrideTimeout();
           }
+          // Return early for F-keys
+          return;
         }
       }
 
-      // ESC key to close all panels
+      // ESC key to close all panels - only handle if panels are open
       if (event.key === 'Escape') {
-        console.log('[ActionBar] ====== ESC KEY TRIGGERED ======');
-        console.log('[ActionBar] Action: Closing all panels');
-        console.log('[ActionBar] Resetting manual override');
-        console.log('[ActionBar] ================================');
+        // Check if any panels are open
+        let anyPanelOpen = false;
+        panels.forEach(panel => {
+          if (panel.isOpen) anyPanelOpen = true;
+        });
         
-        // Visual feedback - flash all buttons briefly
-        setPressedButton('all' as PanelId);
-        setTimeout(() => setPressedButton(null), 200);
-        
-        closeAllPanels();
-        setManualPanelOverride(false);
+        if (anyPanelOpen) {
+          // Only prevent default and handle if panels are open
+          event.preventDefault();
+          
+          console.log('[ActionBar] ====== ESC KEY TRIGGERED ======');
+          console.log('[ActionBar] Action: Closing all panels');
+          console.log('[ActionBar] Resetting manual override');
+          console.log('[ActionBar] ================================');
+          
+          // Visual feedback - flash all buttons briefly
+          setPressedButton('all' as PanelId);
+          setTimeout(() => setPressedButton(null), 200);
+          
+          closeAllPanels();
+          setManualPanelOverride(false);
+        }
+        // Let ESC propagate to game if no panels are open
       }
     };
 
-    // Use capture phase to ensure we get the event first
-    window.addEventListener('keydown', handleKeyDown, { capture: true });
+    // Don't use capture phase to allow game controls to work
+    window.addEventListener('keydown', handleKeyDown);
     
     // Debug logging
     console.log('[ActionBar] Keyboard shortcuts initialized');
     console.log('[ActionBar] Available shortcuts: F1-F8 for panels, ESC to close all');
     
     return () => {
-      window.removeEventListener('keydown', handleKeyDown, { capture: true });
+      window.removeEventListener('keydown', handleKeyDown);
     };
   }, [currentContext, togglePanel, closeAllPanels, setManualPanelOverride, refreshPanelOverrideTimeout]);
 

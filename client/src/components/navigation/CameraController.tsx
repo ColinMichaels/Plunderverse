@@ -585,8 +585,8 @@ export function CameraController() {
         const fuelEfficiency = getFuelEfficiencyMultiplier();
         
         // Apply crew pilot bonus if available
-        const crewState = (window as any).crewManagement || { bonuses: { fuelEfficiency: 0 } };
-        const crewFuelBonus = 1 - crewState.bonuses.fuelEfficiency; // Convert percentage reduction to multiplier
+        const crewState = (window as any).crewManagement;
+        const crewFuelBonus = 1 - (crewState?.bonuses?.fuelEfficiency || 0); // Convert percentage reduction to multiplier
         
         const finalAutopilotConsumption =
           baseAutopilotRate * fuelEfficiency * crewFuelBonus * delta;
@@ -682,8 +682,8 @@ export function CameraController() {
       const fuelEfficiency = getFuelEfficiencyMultiplier();
       
       // Apply crew pilot bonus if available
-      const crewState = (window as any).crewManagement || { bonuses: { fuelEfficiency: 0 } };
-      const crewFuelBonus = 1 - crewState.bonuses.fuelEfficiency; // Convert percentage reduction to multiplier
+      const crewState = (window as any).crewManagement;
+      const crewFuelBonus = 1 - (crewState?.bonuses?.fuelEfficiency || 0); // Convert percentage reduction to multiplier
 
       // Calculate final consumption with all factors
       const finalConsumption =
