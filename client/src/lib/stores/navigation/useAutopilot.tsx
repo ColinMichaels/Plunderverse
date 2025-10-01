@@ -33,8 +33,8 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     console.log("Autopilot activated!");
     
     // Start thruster sound with current fuel level
-    import('./useAudio').then(({ useAudio }) => {
-      import('./useEquipment').then(({ useEquipment }) => {
+    import('../ui/useAudio').then(({ useAudio }) => {
+      import('../ship/useEquipment').then(({ useEquipment }) => {
         const fuelTank = useEquipment.getState().getEquipment('fuel-tank');
         const fuelLevel = fuelTank?.currentDurability || 0;
         useAudio.getState().playThruster(fuelLevel);
@@ -52,7 +52,7 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     console.log("Autopilot deactivated!");
     
     // Stop thruster sound
-    import('./useAudio').then(({ useAudio }) => {
+    import('../ui/useAudio').then(({ useAudio }) => {
       useAudio.getState().stopThruster();
     });
   },
@@ -74,8 +74,8 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     if (!state.isActive) return;
     
     // Update thruster volume based on current fuel level
-    import('./useAudio').then(({ useAudio }) => {
-      import('./useEquipment').then(({ useEquipment }) => {
+    import('../ui/useAudio').then(({ useAudio }) => {
+      import('../ship/useEquipment').then(({ useEquipment }) => {
         const fuelTank = useEquipment.getState().getEquipment('fuel-tank');
         const fuelLevel = fuelTank?.currentDurability || 0;
         

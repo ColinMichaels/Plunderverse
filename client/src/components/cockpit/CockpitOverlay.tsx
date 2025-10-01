@@ -1,4 +1,4 @@
-import { useShipStatus } from "../../lib/stores/useShipStatus";
+import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 
 export function CockpitOverlay() {
   const { isThrusting } = useShipStatus();

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { ResourceData } from "../planetData";
+import { ResourceData } from "../../planetData";
 
 export interface EquipmentItem {
   id: string;

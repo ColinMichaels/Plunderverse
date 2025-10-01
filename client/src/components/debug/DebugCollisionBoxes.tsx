@@ -1,5 +1,5 @@
-import { useDebugTools } from "../../lib/stores/useDebugTools";
-import { useSurfaceCollision } from "../../lib/stores/useSurfaceCollision";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
+import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
 import * as THREE from "three";
 
 export function DebugCollisionBoxes() {

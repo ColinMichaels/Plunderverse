@@ -8,8 +8,8 @@ import { Starfield } from "./Starfield";
 import { CameraController } from "../navigation/CameraController";
 import { ShootingSystem } from "../combat/ShootingSystem";
 import { planets } from "../../lib/planetData";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useDebugTools } from "../../lib/stores/useDebugTools";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);

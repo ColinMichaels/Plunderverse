@@ -1,5 +1,5 @@
-import { useShipStatus } from "../../lib/stores/useShipStatus";
-import { useEquipment } from "../../lib/stores/useEquipment";
+import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
 
 export function ShipStatusHUD() {
   const { shield, hull, isDestroyed, isCritical, lastDamageSource } =

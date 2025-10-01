@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCrypto } from "../../../lib/stores/useCrypto";
+import { useCrypto } from "../../../lib/stores/economy/useCrypto";
 import { SpaceUIPanel } from "../../ui/SpaceUIPanel";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";

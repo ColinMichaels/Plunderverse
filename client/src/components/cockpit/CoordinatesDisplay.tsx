@@ -1,4 +1,4 @@
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 
 export function CoordinatesDisplay() {
   const { cameraPosition } = useSolarSystem();

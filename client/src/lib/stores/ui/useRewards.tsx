@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { useCredits } from "./useCredits";
-import { useMissions } from "./useMissions";
+import { useCredits } from "../economy/useCredits";
+import { useMissions } from "../economy/useMissions";
 
 interface LandingReward {
   planetName: string;

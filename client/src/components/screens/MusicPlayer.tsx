@@ -17,8 +17,8 @@ import { Slider } from "../ui/slider";
 import {
   useMusicPlayer,
   initializeMusicPlayer,
-} from "../../lib/stores/useMusicPlayer";
-import { useAudio } from "../../lib/stores/useAudio";
+} from "../../lib/stores/ui/useMusicPlayer";
+import { useAudio } from "../../lib/stores/ui/useAudio";
 import { cn } from "../../lib/utils";
 
 interface MusicPlayerProps {

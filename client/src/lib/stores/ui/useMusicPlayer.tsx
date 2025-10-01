@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useAudio } from "./useAudio";
-import { useLandedState } from "./useLandedState";
-import { AUDIO_CONFIG, AudioCategory } from "../audioConfig";
+import { useLandedState } from "../surface/useLandedState";
+import { AUDIO_CONFIG, AudioCategory } from "../../audioConfig";
 
 interface Track {
   id: string;

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useCreditsStore } from "../../domain/economy/credits.store";
+import { useCreditsStore } from "../../../domain/economy/credits.store";
 
 interface CreditsState {
   credits: number;

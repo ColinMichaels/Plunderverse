@@ -1,11 +1,11 @@
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useTexture } from "@react-three/drei";
-import { useLandedState } from "../../lib/stores/useLandedState";
-import { useMining } from "../../lib/stores/useMining";
-import { useAudio } from "../../lib/stores/useAudio";
-import { useEquipment } from "../../lib/stores/useEquipment";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useMining } from "../../lib/stores/economy/useMining";
+import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, ResourceData } from "../../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import { FBXAsteroid } from "../space/FBXAsteroid";
@@ -14,9 +14,9 @@ import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import * as THREE from "three";
 
-import { usePlayer } from "../../lib/stores/usePlayer";
-import { useFlashlight } from "../../lib/stores/useFlashlight";
-import { useSurfaceCollision } from "../../lib/stores/useSurfaceCollision";
+import { usePlayer } from "../../lib/stores/player/usePlayer";
+import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
+import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {

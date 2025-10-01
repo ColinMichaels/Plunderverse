@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { AUDIO_CONFIG } from "../audioConfig";
+import { AUDIO_CONFIG } from "../../audioConfig";
 
 interface AudioState {
   backgroundMusic: HTMLAudioElement | null;

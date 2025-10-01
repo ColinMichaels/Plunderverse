@@ -10,7 +10,7 @@
 import { economyService } from './domain/economy/economy.service';
 import { useCreditsStore } from './domain/economy/credits.store';
 import { useInventoryStore } from './domain/economy/inventory.store';
-import { useEquipment } from './lib/stores/useEquipment';
+import { useEquipment } from './lib/stores/ship/useEquipment';
 import { planets } from './lib/planetData';
 import { 
   createStateSnapshot, 

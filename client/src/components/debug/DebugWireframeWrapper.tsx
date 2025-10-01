@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { useDebugTools } from "../../lib/stores/useDebugTools";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 
 /**
  * Hook to get the current wireframe debug state

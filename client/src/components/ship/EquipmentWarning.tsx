@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useEquipment } from "../../lib/stores/useEquipment";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 export function EquipmentWarning() {

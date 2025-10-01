@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { useCredits } from "./useCredits";
+import { useCredits } from "../economy/useCredits";
 import { useEquipment } from "./useEquipment";
 
 interface ShipStatusState {

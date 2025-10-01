@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTradingData } from "../../domain/economy/selectors";
-import { useEquipment } from "../../lib/stores/useEquipment";
-import { useMining } from "../../lib/stores/useMining";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { useMining } from "../../lib/stores/economy/useMining";
 import { economyService } from "../../domain/economy/economy.service";
 
 interface TradingInterfaceProps {

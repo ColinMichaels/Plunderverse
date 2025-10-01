@@ -1,9 +1,9 @@
 import { useCreditsStore } from './credits.store';
 import { useInventoryStore } from './inventory.store';
-import { useEquipment } from '../../lib/stores/useEquipment';
-import { useMining } from '../../lib/stores/useMining';
-import { useAudio } from '../../lib/stores/useAudio';
-import { useCrypto } from '../../lib/stores/useCrypto';
+import { useEquipment } from '../../lib/stores/ship/useEquipment';
+import { useMining } from '../../lib/stores/economy/useMining';
+import { useAudio } from '../../lib/stores/ui/useAudio';
+import { useCrypto } from '../../lib/stores/economy/useCrypto';
 import { ResourceData } from '../../lib/planetData';
 import { economyEvents } from './events';
 import {

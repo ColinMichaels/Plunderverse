@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from "react";
-import { useMining } from "../../lib/stores/useMining";
+import { useMining } from "../../lib/stores/economy/useMining";
 import { useStorageInfo, useCreditsData } from "../../domain/economy/selectors";
-import { useAudio } from "../../lib/stores/useAudio";
-import { useEquipment } from "../../lib/stores/useEquipment";
-import { useHints } from "../../lib/stores/useHints";
+import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { useHints } from "../../lib/stores/ui/useHints";
 import { ResourceData } from "../../lib/planetData";
 
 interface MiningInterfaceProps {

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useEquipment } from "../../lib/stores/useEquipment";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useCreditsData } from "../../domain/economy/selectors";
 import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 

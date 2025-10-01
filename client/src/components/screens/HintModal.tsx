@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useHints } from "../../lib/stores/useHints";
+import { useHints } from "../../lib/stores/ui/useHints";
 
 interface HintContent {
   title: string;

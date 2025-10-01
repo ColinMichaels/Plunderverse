@@ -17,10 +17,10 @@ import { MissionsPanel } from "../economy/MissionsPanel";
 import { ControlsHelp } from "../screens/ControlsHelp";
 import { SettingsPanel } from "../screens/SettingsPanel";
 import { DevDebugOverlay } from "../debug/DevDebugOverlay";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useLandingWarning } from "../../lib/stores/useLandingWarning";
-import { useAutopilot } from "../../lib/stores/useAutopilot";
-import { useDebugTools } from "../../lib/stores/useDebugTools";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
+import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 import { planets } from "../../lib/planetData";
 
 export function GameUI() {

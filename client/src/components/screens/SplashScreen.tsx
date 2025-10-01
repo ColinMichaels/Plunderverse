@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useGame } from "../../lib/stores/useGame";
-import { useAudio } from "../../lib/stores/useAudio";
+import { useGame } from "../../lib/stores/ui/useGame";
+import { useAudio } from "../../lib/stores/ui/useAudio";
 import { MusicPlayer } from "./MusicPlayer";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 

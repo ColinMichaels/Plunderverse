@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useRewards } from "../../lib/stores/useRewards";
-import { useLandedState } from "../../lib/stores/useLandedState";
-import { useHints } from "../../lib/stores/useHints";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useRewards } from "../../lib/stores/ui/useRewards";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useHints } from "../../lib/stores/ui/useHints";
 import { planets } from "../../lib/planetData";
 
 export function LandingTransition() {

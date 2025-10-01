@@ -1,7 +1,7 @@
-import { useLandedState } from "../../lib/stores/useLandedState";
-import { useMining } from "../../lib/stores/useMining";
-import { useAudio } from "../../lib/stores/useAudio";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useMining } from "../../lib/stores/economy/useMining";
+import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets } from "../../lib/planetData";
 import * as THREE from "three";
 import { SpaceUIPanel } from "../ui/SpaceUIPanel";

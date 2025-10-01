@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { Asteroid as AsteroidType } from "../../lib/stores/useAsteroids";
+import { Asteroid as AsteroidType } from "../../lib/stores/space/useAsteroids";
 import { FBXAsteroid } from "./FBXAsteroid";
 
 interface AsteroidProps {

@@ -2,10 +2,10 @@ import { useRef, useEffect } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
-import { useFlashlight } from "../../lib/stores/useFlashlight";
-import { useSurfaceCollision } from "../../lib/stores/useSurfaceCollision";
-import { useMining } from "../../lib/stores/useMining";
-import { useAudio } from "../../lib/stores/useAudio";
+import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
+import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
+import { useMining } from "../../lib/stores/economy/useMining";
+import { useAudio } from "../../lib/stores/ui/useAudio";
 
 enum SurfaceControls {
   forward = "forward",

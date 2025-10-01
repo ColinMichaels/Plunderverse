@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { cryptoService } from '../../domain/crypto/crypto.service';
-import { CryptoTransaction, CryptoMarketPrice } from '../../domain/crypto/crypto-api.types';
-import { useInventoryStore } from '../../domain/economy/inventory.store';
+import { cryptoService } from '../../../domain/crypto/crypto.service';
+import { CryptoTransaction, CryptoMarketPrice } from '../../../domain/crypto/crypto-api.types';
+import { useInventoryStore } from '../../../domain/economy/inventory.store';
 
 interface CryptoState {
   // Wallet state

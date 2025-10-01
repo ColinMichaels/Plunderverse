@@ -3,7 +3,7 @@ import { useRef, useState } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PlanetData } from "../../lib/planetData";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useDebugWireframe } from "../debug/DebugWireframeWrapper";
 
 interface PlanetProps {

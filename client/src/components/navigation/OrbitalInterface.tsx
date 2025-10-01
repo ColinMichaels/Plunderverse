@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useAutopilot } from "../../lib/stores/useAutopilot";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useCreditsData } from "../../domain/economy/selectors";
 import { planets, ResourceData } from "../../lib/planetData";
 import { MiningInterface } from "../economy/MiningInterface";

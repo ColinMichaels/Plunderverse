@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { useMissions } from "../../lib/stores/useMissions";
+import { useMissions } from "../../lib/stores/economy/useMissions";
 import { useCreditsData } from "../../domain/economy/selectors";
-import { useRewards } from "../../lib/stores/useRewards";
+import { useRewards } from "../../lib/stores/ui/useRewards";
 import { SpaceUIPanel } from "../ui/SpaceUIPanel";
 
 export function MissionsPanel() {

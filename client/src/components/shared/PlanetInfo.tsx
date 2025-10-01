@@ -1,4 +1,4 @@
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, moonData } from "../../lib/planetData";
 
 export function PlanetInfo() {

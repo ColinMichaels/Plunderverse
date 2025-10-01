@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import { Projectile } from "../../lib/stores/useShooting";
+import { Projectile } from "../../lib/stores/combat/useShooting";
 
 interface LaserProps {
   projectile: Projectile;

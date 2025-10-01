@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import * as THREE from "three";
-import { useDebugTools } from "../../lib/stores/useDebugTools";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useLandedState } from "../../lib/stores/useLandedState";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { planets } from "../../lib/planetData";
 import { Button } from "../ui/button";
 import { Slider } from "../ui/slider";

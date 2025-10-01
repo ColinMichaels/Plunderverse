@@ -1,4 +1,4 @@
-import { useSolarSystem } from "../../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../../lib/stores/space/useSolarSystem";
 import { planets } from "../../../lib/planetData";
 import { SpaceUIPanel } from "../../ui/SpaceUIPanel";
 

@@ -1,9 +1,9 @@
 import { create } from "zustand";
-import { ResourceData } from "../planetData";
-import { useEquipment } from "./useEquipment";
-import { useLandedState } from "./useLandedState";
-import { economyService, TransactionResult } from "../../domain/economy/economy.service";
-import { useAudio } from "./useAudio";
+import { ResourceData } from "../../planetData";
+import { useEquipment } from "../ship/useEquipment";
+import { useLandedState } from "../surface/useLandedState";
+import { economyService, TransactionResult } from "../../../domain/economy/economy.service";
+import { useAudio } from "../ui/useAudio";
 
 interface MiningState {
   isActive: boolean;

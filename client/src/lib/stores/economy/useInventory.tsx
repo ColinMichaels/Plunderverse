@@ -1,6 +1,6 @@
 import { create } from "zustand";
-import { ResourceData } from "../planetData";
-import { useInventoryStore } from "../../domain/economy/inventory.store";
+import { ResourceData } from "../../planetData";
+import { useInventoryStore } from "../../../domain/economy/inventory.store";
 
 export interface InventoryItem extends ResourceData {
   quantity: number;

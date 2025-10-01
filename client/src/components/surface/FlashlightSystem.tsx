@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { SpotLight } from "three";
 import * as THREE from "three";
-import { useFlashlight } from "../../lib/stores/useFlashlight";
+import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
 
 export function FlashlightSystem() {
   const { camera } = useThree();

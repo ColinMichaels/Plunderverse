@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useCreditsData } from "../../domain/economy/selectors";
-import { useShipStatus } from "../../lib/stores/useShipStatus";
-import { useEquipment } from "../../lib/stores/useEquipment";
-import { useRewards } from "../../lib/stores/useRewards";
-import { useMissions } from "../../lib/stores/useMissions";
-import { useAudio } from "../../lib/stores/useAudio";
-import { useGame } from "../../lib/stores/useGame";
-import { useAutopilot } from "../../lib/stores/useAutopilot";
-import { useLandedState } from "../../lib/stores/useLandedState";
+import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { useRewards } from "../../lib/stores/ui/useRewards";
+import { useMissions } from "../../lib/stores/economy/useMissions";
+import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useGame } from "../../lib/stores/ui/useGame";
+import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { planets } from "../../lib/planetData";
 import * as THREE from "three";
 

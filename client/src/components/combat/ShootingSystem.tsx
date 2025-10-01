@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useShooting } from "../../lib/stores/useShooting";
+import { useShooting } from "../../lib/stores/combat/useShooting";
 import { Laser } from "./Laser";
 
 export function ShootingSystem() {

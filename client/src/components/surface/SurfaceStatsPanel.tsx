@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { usePlayer } from "../../lib/stores/usePlayer";
-import { useFlashlight } from "../../lib/stores/useFlashlight";
-import { useLandedState } from "../../lib/stores/useLandedState";
-import { useMining } from "../../lib/stores/useMining";
+import { usePlayer } from "../../lib/stores/player/usePlayer";
+import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useMining } from "../../lib/stores/economy/useMining";
 import { useInventoryDisplayData } from "../../domain/economy/selectors";
-import { useEquipment } from "../../lib/stores/useEquipment";
+import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { planets } from "../../lib/planetData";
 import { DraggablePanel } from "../ui/DraggablePanel";
 

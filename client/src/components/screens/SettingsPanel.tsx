@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useSettings } from "../../lib/stores/useSettings";
+import { useSettings } from "../../lib/stores/ui/useSettings";
 import { Controls } from "../../lib/controls";
 import {
   Dialog,

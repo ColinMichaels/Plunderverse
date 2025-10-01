@@ -1,10 +1,10 @@
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
-import { useAsteroids } from "../../lib/stores/useAsteroids";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
-import { useShooting } from "../../lib/stores/useShooting";
-import { useShipStatus } from "../../lib/stores/useShipStatus";
-import { useAutopilot } from "../../lib/stores/useAutopilot";
+import { useAsteroids } from "../../lib/stores/space/useAsteroids";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useShooting } from "../../lib/stores/combat/useShooting";
+import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
+import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { Asteroid } from "./Asteroid";
 
 export function AsteroidField() {

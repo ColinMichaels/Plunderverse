@@ -2,7 +2,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useRef, useState } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-import { useSolarSystem } from "../../lib/stores/useSolarSystem";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, moonData } from "../../lib/planetData";
 
 export function Moon() {

@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import { useGame } from "@/lib/stores/useGame";
-import { useAudio } from "@/lib/stores/useAudio";
+import { useGame } from "@/lib/stores/ui/useGame";
+import { useAudio } from "@/lib/stores/ui/useAudio";
 import { Button } from "./button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
 import { VolumeX, Volume2, RotateCw, Trophy } from "lucide-react";

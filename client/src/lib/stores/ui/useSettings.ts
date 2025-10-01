@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Controls, DEFAULT_KEYBINDS } from "../controls";
+import { Controls, DEFAULT_KEYBINDS } from "../../controls";
 
 interface SettingsState {
   sensitivity: number;

@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
-import { useAutopilot } from '../lib/stores/useAutopilot';
+import { useAutopilot } from '../../lib/stores/navigation/useAutopilot';
 
 export function WarpingEffect() {
   // Use selector to only subscribe to isActive, preventing unnecessary re-renders from orbit state changes
