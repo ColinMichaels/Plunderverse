@@ -3,6 +3,8 @@ import { usePlunderverseMissions } from "../../lib/stores/economy/usePlundervers
 import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useCreditsStore } from "../../domain/economy/credits.store";
 import { gameFacade } from "../../lib/plunderverse/gameFacade";
+import { useObjectiveTriggers } from "../../lib/stores/economy/useObjectiveTriggers";
+import { testObjectiveTriggers } from "../../lib/tests/objectiveTriggerTest";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
@@ -28,9 +30,15 @@ export function MissionDebugPanel() {
   const missionsStore = usePlunderverseMissions();
   const player = usePlayer();
   const credits = useCreditsStore();
+  const triggers = useObjectiveTriggers();
   const { isLanded, landedPlanet, setLanded, setNotLanded } = useLandedState();
   const { time, setCameraPosition, setSelectedPlanet } = useSolarSystem();
   const [selectedTravelPlanet, setSelectedTravelPlanet] = useState<string>("");
+  const [triggerLocation, setTriggerLocation] = useState("Mars");
+  const [collectionAmount, setCollectionAmount] = useState("5");
+  const [combatCount, setCombatCount] = useState("1");
+  const [interactionId, setInteractionId] = useState("trade_merchant");
+  const [customValue, setCustomValue] = useState("50");
   const crew = useCrewManagement();
 
   // Keyboard shortcut to toggle debug panel (`)
@@ -215,6 +223,62 @@ export function MissionDebugPanel() {
   const takeoffFromPlanet = () => {
     setNotLanded();
     console.log(`[MISSION-DEBUG] Took off from ${landedPlanet}`);
+  };
+
+  // Trigger simulation functions
+  const simulateLocationTrigger = () => {
+    console.log(`[TRIGGER-DEBUG] Simulating location trigger for: ${triggerLocation}`);
+    triggers.reportLocationProgress(triggerLocation, undefined, triggerLocation);
+    console.log(`[TRIGGER-DEBUG] Location trigger reported for ${triggerLocation}`);
+  };
+
+  const simulateCollectionTrigger = () => {
+    const amount = parseInt(collectionAmount) || 1;
+    console.log(`[TRIGGER-DEBUG] Simulating collection of ${amount} resources`);
+    triggers.reportCollectionProgress('debug_resource', 'resource', amount);
+    console.log(`[TRIGGER-DEBUG] Collection trigger reported: ${amount} items`);
+  };
+
+  const simulateCombatTrigger = () => {
+    const count = parseInt(combatCount) || 1;
+    console.log(`[TRIGGER-DEBUG] Simulating ${count} combat victories`);
+    triggers.reportCombatProgress('enemy', undefined, count);
+    console.log(`[TRIGGER-DEBUG] Combat trigger reported: ${count} enemies defeated`);
+  };
+
+  const simulateInteractionTrigger = () => {
+    console.log(`[TRIGGER-DEBUG] Simulating interaction: ${interactionId}`);
+    triggers.reportInteractionProgress(interactionId);
+    console.log(`[TRIGGER-DEBUG] Interaction trigger reported: ${interactionId}`);
+  };
+
+  const simulateCustomTrigger = () => {
+    const value = parseInt(customValue) || 1;
+    console.log(`[TRIGGER-DEBUG] Simulating custom trigger with value: ${value}`);
+    triggers.reportCustomProgress('test_condition', value);
+    console.log(`[TRIGGER-DEBUG] Custom trigger reported: value ${value}`);
+  };
+
+  const logObjectiveProgress = () => {
+    console.log("[TRIGGER-DEBUG] === OBJECTIVE PROGRESS ===");
+    missionsStore.activeMissions.forEach(mission => {
+      console.log(`[TRIGGER-DEBUG] Mission: ${mission.title}`);
+      mission.objectives.forEach(obj => {
+        const progress = missionsStore.currentObjectiveProgress.get(mission.id)?.get(obj.id) || 0;
+        const triggerData = triggers.progressData.get(obj.id);
+        console.log(`  - ${obj.description}: ${progress}%`);
+        if (triggerData) {
+          console.log(`    Trigger: ${triggerData.type}, Current: ${triggerData.currentValue}, Target: ${triggerData.targetValue}`);
+        }
+      });
+    });
+    console.log("[TRIGGER-DEBUG] =========================");
+  };
+
+  const runFullTriggerTest = async () => {
+    console.log("[TRIGGER-DEBUG] Starting full trigger test suite...");
+    await testObjectiveTriggers();
+    console.log("[TRIGGER-DEBUG] Test suite complete. Check console for results.");
   };
 
   return (
@@ -485,11 +549,141 @@ export function MissionDebugPanel() {
           </div>
         </div>
 
+        {/* Objective Trigger Testing */}
+        <div className="space-y-2 border-2 border-purple-600 p-3 rounded">
+          <h3 className="text-sm font-bold text-purple-400">🎯 Objective Trigger Testing</h3>
+          
+          {/* Location Trigger */}
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-400">Location Trigger</Label>
+            <div className="flex space-x-2">
+              <Input
+                value={triggerLocation}
+                onChange={(e) => setTriggerLocation(e.target.value)}
+                className="flex-1 bg-gray-800 text-white text-xs"
+                placeholder="Location name"
+              />
+              <Button onClick={simulateLocationTrigger} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs">
+                Trigger
+              </Button>
+            </div>
+          </div>
+
+          {/* Collection Trigger */}
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-400">Collection Trigger</Label>
+            <div className="flex space-x-2">
+              <Input
+                type="number"
+                value={collectionAmount}
+                onChange={(e) => setCollectionAmount(e.target.value)}
+                className="flex-1 bg-gray-800 text-white text-xs"
+                placeholder="Amount"
+              />
+              <Button onClick={simulateCollectionTrigger} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs">
+                Collect
+              </Button>
+            </div>
+          </div>
+
+          {/* Combat Trigger */}
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-400">Combat Trigger</Label>
+            <div className="flex space-x-2">
+              <Input
+                type="number"
+                value={combatCount}
+                onChange={(e) => setCombatCount(e.target.value)}
+                className="flex-1 bg-gray-800 text-white text-xs"
+                placeholder="Enemy count"
+              />
+              <Button onClick={simulateCombatTrigger} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs">
+                Defeat
+              </Button>
+            </div>
+          </div>
+
+          {/* Interaction Trigger */}
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-400">Interaction Trigger</Label>
+            <div className="flex space-x-2">
+              <Input
+                value={interactionId}
+                onChange={(e) => setInteractionId(e.target.value)}
+                className="flex-1 bg-gray-800 text-white text-xs"
+                placeholder="Interaction ID"
+              />
+              <Button onClick={simulateInteractionTrigger} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs">
+                Interact
+              </Button>
+            </div>
+          </div>
+
+          {/* Custom Trigger */}
+          <div className="space-y-2">
+            <Label className="text-xs text-gray-400">Custom Trigger</Label>
+            <div className="flex space-x-2">
+              <Input
+                type="number"
+                value={customValue}
+                onChange={(e) => setCustomValue(e.target.value)}
+                className="flex-1 bg-gray-800 text-white text-xs"
+                placeholder="Custom value"
+              />
+              <Button onClick={simulateCustomTrigger} size="sm" className="bg-purple-600 hover:bg-purple-700 text-xs">
+                Custom
+              </Button>
+            </div>
+          </div>
+
+          {/* Trigger Test Actions */}
+          <div className="space-y-2 pt-2 border-t border-gray-700">
+            <Button 
+              onClick={logObjectiveProgress}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-xs"
+              size="sm"
+            >
+              📊 Log Objective Progress
+            </Button>
+            <Button 
+              onClick={runFullTriggerTest}
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-xs font-bold"
+              size="sm"
+            >
+              🚀 Run Full Trigger Test Suite
+            </Button>
+          </div>
+          
+          {/* Active Objectives Display */}
+          {missionsStore.activeMissions.length > 0 && (
+            <div className="bg-gray-800 p-2 rounded text-xs">
+              <h4 className="text-yellow-400 font-bold mb-1">Active Objectives:</h4>
+              {missionsStore.activeMissions.map(mission => (
+                <div key={mission.id} className="mb-1">
+                  <div className="text-cyan-400">{mission.title}</div>
+                  {mission.objectives.map(obj => {
+                    const progress = missionsStore.currentObjectiveProgress.get(mission.id)?.get(obj.id) || 0;
+                    return (
+                      <div key={obj.id} className="ml-2 text-gray-400">
+                        • {obj.description}: 
+                        <span className={progress >= 100 ? 'text-green-400' : 'text-orange-400'}>
+                          {' '}{progress}%
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Keyboard Shortcuts */}
         <div className="bg-gray-800 p-3 rounded space-y-1 text-xs">
           <h3 className="font-bold text-yellow-400 mb-2">Shortcuts</h3>
           <div>` (backtick) - Toggle this panel</div>
           <div>F3 - Toggle main debug overlay</div>
+          <div>Console: window.testObjectiveTriggers() - Run tests</div>
         </div>
       </div>
     </div>
