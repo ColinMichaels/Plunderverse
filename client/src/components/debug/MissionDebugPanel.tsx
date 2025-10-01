@@ -16,6 +16,8 @@ import {
 } from "../ui/select";
 
 export function MissionDebugPanel() {
+  console.log("[MISSION-DEBUG] MissionDebugPanel component initialized");
+  
   const [isVisible, setIsVisible] = useState(false);
   const [creditAmount, setCreditAmount] = useState("1000");
   const [reputationAmount, setReputationAmount] = useState("10");
@@ -30,8 +32,11 @@ export function MissionDebugPanel() {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "`") {
         e.preventDefault(); // Prevent the backtick from being typed in input fields
-        setIsVisible(prev => !prev);
-        console.log("[MISSION-DEBUG] Debug panel toggled");
+        setIsVisible(prev => {
+          const newValue = !prev;
+          console.log(`[MISSION-DEBUG] Debug panel toggled: ${prev} -> ${newValue}`);
+          return newValue;
+        });
       }
     };
 
@@ -39,7 +44,16 @@ export function MissionDebugPanel() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, []);
 
-  if (!isVisible || !import.meta.env.DEV) {
+  // Debug logging
+  console.log(`[MISSION-DEBUG] Render check - isVisible: ${isVisible}, DEV: ${import.meta.env.DEV}`);
+
+  if (!import.meta.env.DEV) {
+    console.log("[MISSION-DEBUG] Not in dev mode, hiding panel");
+    return null;
+  }
+
+  if (!isVisible) {
+    console.log("[MISSION-DEBUG] Panel hidden by visibility state");
     return null;
   }
 

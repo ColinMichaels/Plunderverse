@@ -125,9 +125,11 @@ function App() {
             <PlanetSurfaceScene />
             <TakeoffControls />
             <HintModal />
-            {import.meta.env.DEV && <MissionDebugPanel />}
           </KeyboardControls>
         )}
+        
+        {/* Debug panel available even on splash screen in dev mode */}
+        {import.meta.env.DEV && <MissionDebugPanel />}
       </div>
     </UILayoutProvider>
   );
