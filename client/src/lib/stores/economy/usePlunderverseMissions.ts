@@ -37,6 +37,7 @@ interface PlunderverseMissionsState {
   getActiveMissionsByType: (type: string) => Mission[];
   checkMissionRequirements: (mission: Mission, playerState: any) => boolean;
   clearExpiredMissions: () => void;
+  addEmergencyMissions: (missions: Mission[]) => void;
 }
 
 export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, get) => ({
@@ -315,6 +316,18 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     });
     
     set({ activeMissions });
+  },
+  
+  addEmergencyMissions: (missions: Mission[]) => {
+    const state = get();
+    console.log(`[Missions] Adding ${missions.length} emergency missions`);
+    
+    // Add emergency missions to available missions
+    set({
+      availableMissions: [...state.availableMissions, ...missions]
+    });
+    
+    console.log(`[Missions] Emergency missions added. Total available: ${state.availableMissions.length + missions.length}`);
   }
 }));
 

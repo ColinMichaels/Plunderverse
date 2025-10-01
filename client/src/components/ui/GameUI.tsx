@@ -17,6 +17,7 @@ import { MissionsPanel } from "../economy/MissionsPanel";
 import { ControlsHelp } from "../screens/ControlsHelp";
 import { SettingsPanel } from "../screens/SettingsPanel";
 import { DevDebugOverlay } from "../debug/DevDebugOverlay";
+import { EconomicPressureHUD } from "../economy/EconomicPressureHUD";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
@@ -111,6 +112,9 @@ export function GameUI() {
 
       <InventoryDisplay />
       <EquipmentWarning />
+      
+      {/* Economic Pressure HUD - Fuel, Credits, Survival */}
+      <EconomicPressureHUD />
 
       {/* Right Sidebar Panels */}
       <MissionsPanel />

@@ -3,6 +3,8 @@ import { usePlunderverseMissions } from '../stores/economy/usePlunderverseMissio
 import { usePlunderverseEconomy } from '../stores/economy/usePlunderverseEconomy';
 import { useMissions } from '../stores/economy/useMissions';
 import { useCreditsStore } from '../../domain/economy/credits.store';
+import { useEquipment } from '../stores/ship/useEquipment';
+import { useSurvival } from '../stores/economy/useSurvival';
 import { ContentRegistry } from './contentRegistry';
 import { 
   StarNode, 
@@ -24,6 +26,9 @@ export class GameFacade {
   private currentLocation: string = 'Earth';
   private playerId: string | null = null;
   private gameDay: number = 1; // Tracks in-game day for seed stability
+  private economicPressureInterval: NodeJS.Timeout | null = null;
+  private maintenanceInterval: NodeJS.Timeout | null = null;
+  private survivalInterval: NodeJS.Timeout | null = null;
   
   private constructor() {
     this.contentRegistry = new ContentRegistry();
@@ -104,10 +109,145 @@ export class GameFacade {
       
       this.initialized = true;
       console.log('[GameFacade] Initialized successfully with deterministic seeding');
+      
+      // Start economic pressure systems
+      this.startEconomicPressure();
     } catch (error) {
       console.error('[GameFacade] Failed to initialize:', error);
       throw error;
     }
+  }
+  
+  /**
+   * Start the economic pressure system timers
+   */
+  startEconomicPressure(): void {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    // Clear existing intervals if any
+    this.stopEconomicPressure();
+    
+    // Daily costs timer (every minute = 1 game day)
+    const dailyCostInterval = (tuning?.economy?.daily_costs?.payment_interval_minutes || 1) * 60000;
+    this.economicPressureInterval = setInterval(async () => {
+      await this.applyDailyCosts();
+      await this.applyHeatDecay();
+      await this.applyReputationDecay();
+      
+      // Check for emergency missions
+      const credits = useCreditsStore.getState().credits;
+      const emergencyThreshold = tuning?.economy?.economic_pressure?.emergency_missions?.trigger_credit_threshold || 100;
+      if (credits < emergencyThreshold) {
+        this.generateEmergencyMissions();
+      }
+    }, dailyCostInterval);
+    
+    // Maintenance degradation timer (every 5 minutes = more realistic)
+    this.maintenanceInterval = setInterval(async () => {
+      await this.applyMaintenanceDegradation();
+    }, 5 * 60000);
+    
+    // Survival consumption timer (every 30 seconds for oxygen, adjusted for other resources)
+    this.survivalInterval = setInterval(() => {
+      const survival = useSurvival.getState();
+      survival.consumeResources(0.5); // Consume for 30 seconds worth
+      
+      // Check warnings
+      const warnings = survival.checkResourceWarnings();
+      if (warnings.length > 0) {
+        console.warn('[GameFacade] Survival warnings:', warnings);
+      }
+    }, 30000);
+    
+    console.log('[GameFacade] Economic pressure systems started');
+  }
+  
+  /**
+   * Stop the economic pressure system timers
+   */
+  stopEconomicPressure(): void {
+    if (this.economicPressureInterval) {
+      clearInterval(this.economicPressureInterval);
+      this.economicPressureInterval = null;
+    }
+    
+    if (this.maintenanceInterval) {
+      clearInterval(this.maintenanceInterval);
+      this.maintenanceInterval = null;
+    }
+    
+    if (this.survivalInterval) {
+      clearInterval(this.survivalInterval);
+      this.survivalInterval = null;
+    }
+    
+    console.log('[GameFacade] Economic pressure systems stopped');
+  }
+  
+  /**
+   * Generate emergency missions when desperate for credits
+   */
+  generateEmergencyMissions(): void {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const emergencySettings = tuning?.economy?.economic_pressure?.emergency_missions;
+    
+    if (!emergencySettings) return;
+    
+    const missionsStore = usePlunderverseMissions.getState();
+    const player = usePlayer.getState();
+    
+    // Generate special high-risk, morally compromising missions
+    const emergencyMissions: Mission[] = [
+      {
+        id: `emergency_smuggling_${Date.now()}`,
+        title: 'URGENT: Smuggle Medical Supplies',
+        description: 'A desperate colony needs medical supplies, but they\'re embargoed. High pay, high risk.',
+        type: 'smuggling',
+        difficulty: 'hard',
+        rank: player.rank,
+        faction: 'outlaws',
+        rewards: {
+          credits: Math.floor(3000 * (emergencySettings.payout_multiplier || 0.7)),
+          reputation: { outlaws: 10, corporations: emergencySettings.reputation_cost || -10 },
+          notoriety: 15,
+          heat: 20
+        },
+        requirements: { minRank: 1 },
+        tags: ['illegal', 'urgent', 'moral_compromise'],
+        timeLimit: 60,
+        objectives: [],
+        choices: [],
+        active: false,
+        completed: false,
+        failed: false
+      },
+      {
+        id: `emergency_combat_${Date.now()}`,
+        title: 'URGENT: Eliminate Rival Crew',
+        description: 'Take out a rival crew for quick credits. No questions asked.',
+        type: 'combat',
+        difficulty: 'hard',
+        rank: player.rank,
+        faction: 'outlaws',
+        rewards: {
+          credits: Math.floor(2500 * (emergencySettings.payout_multiplier || 0.7)),
+          reputation: { outlaws: 5, corporations: emergencySettings.reputation_cost || -10 },
+          notoriety: 20
+        },
+        requirements: { minRank: 1 },
+        tags: ['illegal', 'urgent', 'violent'],
+        objectives: [],
+        choices: [],
+        active: false,
+        completed: false,
+        failed: false
+      }
+    ];
+    
+    // Add emergency missions to available missions using proper setter
+    missionsStore.addEmergencyMissions(emergencyMissions);
+    
+    console.log('[GameFacade] Generated emergency missions due to low credits');
   }
   
   /**
@@ -138,13 +278,52 @@ export class GameFacade {
       return { success: false, message: 'Invalid destination' };
     }
     
-    // Check fuel (would need ship status store)
-    const fuelNeeded = this.calculateFuelNeeded(nodeKey);
-    // For now, assume we have enough fuel
+    // Check fuel and consume it
+    const fuelNeeded = this.calculateFuelNeeded(node.name);
+    const equipmentStore = useEquipment.getState();
+    const fuelTank = equipmentStore.getEquipment('fuel-tank');
+    
+    if (!fuelTank) {
+      console.error('[GameFacade] No fuel tank found!');
+      return { success: false, message: 'Ship has no fuel tank!' };
+    }
+    
+    // Check if we have enough fuel
+    if (fuelTank.currentDurability < fuelNeeded) {
+      const tuning = usePlunderverseEconomy.getState().tuning;
+      const emergencyReserve = tuning?.economy?.balance_constants?.fuel_emergency_reserve || 10;
+      
+      if (fuelTank.currentDurability < emergencyReserve) {
+        return { 
+          success: false, 
+          message: `CRITICAL: Not enough fuel! Need ${fuelNeeded} units, only have ${fuelTank.currentDurability.toFixed(1)}. Refuel immediately!`,
+          fuelConsumed: 0
+        };
+      } else {
+        return { 
+          success: false, 
+          message: `Insufficient fuel for jump. Need ${fuelNeeded} units, only have ${fuelTank.currentDurability.toFixed(1)}.`,
+          fuelConsumed: 0
+        };
+      }
+    }
+    
+    // Consume fuel
+    const fuelConsumed = equipmentStore.consumeFuel(fuelNeeded);
+    if (!fuelConsumed) {
+      return { 
+        success: false, 
+        message: 'Failed to consume fuel. Check ship systems.',
+        fuelConsumed: 0
+      };
+    }
+    
+    console.log(`[GameFacade] Travel fuel consumed: ${fuelNeeded} units. Remaining: ${(fuelTank.currentDurability - fuelNeeded).toFixed(1)}`);
     
     // Update player location
     const player = usePlayer.getState();
     player.visitPlanet(node.name);
+    player.incrementJumps(); // Track jumps for stats
     
     // Increment game day on travel
     this.incrementGameDay();
@@ -320,6 +499,291 @@ export class GameFacade {
       reputation: player.reputation,
       heat: player.heat,
       notoriety: player.notoriety
+    };
+  }
+  
+  /**
+   * Calculate daily operating costs
+   */
+  async calculateDailyCosts(): Promise<{
+    crew: number;
+    lifeSupport: number;
+    docking: number;
+    insurance: number;
+    supplies: number;
+    total: number;
+    location: string;
+  }> {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    console.log('[GameFacade] Tuning structure:', {
+      hasTuning: !!tuning,
+      hasEconomy: !!tuning?.economy,
+      hasDailyCosts: !!tuning?.economy?.daily_costs
+    });
+    
+    if (!tuning?.economy?.daily_costs) {
+      console.warn('[GameFacade] No daily costs tuning found, using defaults');
+      return {
+        crew: 50,
+        lifeSupport: 25,
+        docking: 0,
+        insurance: 15,
+        supplies: 20,
+        total: 110,
+        location: this.currentLocation
+      };
+    }
+    
+    const dailyCosts = tuning.economy.daily_costs;
+    
+    // Calculate crew costs (base crew is always present)
+    let crewCost = dailyCosts.crew_salaries.base_crew;
+    
+    // Add specialist crew costs if they exist (future expansion)
+    // For now, just use base crew
+    
+    // Life support costs
+    const lifeSupport = dailyCosts.life_support;
+    
+    // Docking fees based on current location
+    const content = this.contentRegistry.getContent();
+    const currentNode = content?.starNodes?.find(n => 
+      n.name === this.currentLocation || n.id === this.currentLocation.toLowerCase()
+    );
+    
+    let dockingFee = 0;
+    if (currentNode) {
+      if (currentNode.faction === 'corporations') {
+        dockingFee = dailyCosts.docking_fees.corporations;
+      } else if (currentNode.faction === 'independents') {
+        dockingFee = dailyCosts.docking_fees.independents;
+      } else if (currentNode.faction === 'outlaws') {
+        dockingFee = dailyCosts.docking_fees.outlaws;
+      } else {
+        dockingFee = dailyCosts.docking_fees.deep_space || 0;
+      }
+    }
+    
+    // Insurance and supplies
+    const insurance = dailyCosts.insurance;
+    const supplies = dailyCosts.supplies;
+    
+    // Calculate total
+    const total = crewCost + lifeSupport + dockingFee + insurance + supplies;
+    
+    return {
+      crew: crewCost,
+      lifeSupport,
+      docking: dockingFee,
+      insurance,
+      supplies,
+      total,
+      location: this.currentLocation
+    };
+  }
+  
+  /**
+   * Apply daily costs (deduct from credits)
+   */
+  async applyDailyCosts(): Promise<{
+    success: boolean;
+    message: string;
+    costsDeducted: number;
+    remainingCredits: number;
+    bankruptcyWarning: boolean;
+  }> {
+    const costs = await this.calculateDailyCosts();
+    const creditsStore = useCreditsStore.getState();
+    const currentCredits = creditsStore.credits;
+    
+    // Deduct costs
+    const success = creditsStore.spendCredits(costs.total);
+    
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const warningThreshold = tuning?.economy?.daily_costs?.warning_credit_threshold || 200;
+    const criticalThreshold = tuning?.economy?.daily_costs?.critical_credit_threshold || 50;
+    const bankruptcyThreshold = tuning?.economy?.daily_costs?.bankruptcy_threshold || -500;
+    
+    const remainingCredits = creditsStore.credits;
+    let message = `Daily costs of ${costs.total} credits deducted.`;
+    let bankruptcyWarning = false;
+    
+    if (remainingCredits < bankruptcyThreshold) {
+      message = `BANKRUPTCY! Your ship will be repossessed. Credits: ${remainingCredits}`;
+      bankruptcyWarning = true;
+      // Trigger bankruptcy consequences
+      this.handleBankruptcy();
+    } else if (remainingCredits < 0) {
+      message = `IN DEBT! Daily costs deducted. Credits: ${remainingCredits}. Find work immediately!`;
+      bankruptcyWarning = true;
+    } else if (remainingCredits < criticalThreshold) {
+      message = `CRITICAL: Only ${remainingCredits} credits remaining after daily costs!`;
+    } else if (remainingCredits < warningThreshold) {
+      message = `Warning: Low on credits (${remainingCredits} remaining)`;
+    }
+    
+    console.log(`[GameFacade] ${message} Location: ${this.currentLocation}`);
+    
+    return {
+      success,
+      message,
+      costsDeducted: costs.total,
+      remainingCredits,
+      bankruptcyWarning
+    };
+  }
+  
+  /**
+   * Handle bankruptcy consequences
+   */
+  private handleBankruptcy(): void {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const consequences = tuning?.economy?.economic_pressure?.bankruptcy_consequences;
+    
+    if (!consequences) return;
+    
+    // Apply reputation penalty
+    const player = usePlayer.getState();
+    player.updateReputation('corporations', consequences.reputation_penalty_per_day || -5);
+    player.updateReputation('independents', consequences.reputation_penalty_per_day || -5);
+    
+    // Equipment failure chance
+    const equipmentStore = useEquipment.getState();
+    const failureRate = consequences.equipment_failure_rate || 0.5;
+    
+    if (Math.random() < failureRate) {
+      // Random equipment takes damage
+      const equipment = equipmentStore.equipment;
+      if (equipment.length > 0) {
+        const randomEquipment = equipment[Math.floor(Math.random() * equipment.length)];
+        equipmentStore.applyWear(randomEquipment.id, {
+          resourceHardness: 0.5,
+          operationIntensity: 1.0,
+          environmentalFactor: 0.5
+        }, 10);
+        console.log(`[GameFacade] Equipment failure due to bankruptcy: ${randomEquipment.name}`);
+      }
+    }
+  }
+  
+  /**
+   * Apply maintenance degradation (call periodically)
+   */
+  async applyMaintenanceDegradation(): Promise<void> {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    if (!tuning?.economy?.maintenance_system) return;
+    
+    const degradation = tuning.economy.maintenance_system.degradation_per_day;
+    const equipmentStore = useEquipment.getState();
+    
+    // Apply degradation to hull
+    const hull = equipmentStore.getEquipment('hull-primary');
+    if (hull && degradation.hull) {
+      equipmentStore.applyWear('hull-primary', {
+        resourceHardness: 0.2,
+        operationIntensity: 0.1,
+        environmentalFactor: 0.2
+      }, degradation.hull);
+    }
+    
+    // Apply degradation to engine
+    const engine = equipmentStore.getEquipment('engine-main');
+    if (engine && degradation.engine) {
+      equipmentStore.applyWear('engine-main', {
+        resourceHardness: 0.2,
+        operationIntensity: 0.2,
+        environmentalFactor: 0.2
+      }, degradation.engine);
+    }
+    
+    // Check for maintenance reminders
+    const reminderThreshold = tuning.maintenance_system.maintenance_reminder_threshold || 30;
+    
+    equipmentStore.equipment.forEach(eq => {
+      const condition = (eq.currentDurability / eq.maxDurability) * 100;
+      if (condition <= reminderThreshold && condition > 0) {
+        console.log(`[GameFacade] MAINTENANCE REQUIRED: ${eq.name} at ${condition.toFixed(0)}% condition`);
+      }
+    });
+    
+    // Track days since last maintenance
+    const gameDay = this.getGameDay();
+    const lastMaintenance = parseInt(localStorage.getItem('last_maintenance_day') || '0');
+    const daysSinceMaintenance = gameDay - lastMaintenance;
+    
+    const maintenanceInterval = tuning.maintenance_system.maintenance_interval_days || 5;
+    
+    if (daysSinceMaintenance >= maintenanceInterval) {
+      console.log(`[GameFacade] OVERDUE MAINTENANCE: ${daysSinceMaintenance} days since last service!`);
+      
+      // Apply extra degradation for overdue maintenance
+      const overdueMultiplier = 1 + ((daysSinceMaintenance - maintenanceInterval) * 0.2);
+      
+      equipmentStore.equipment.forEach(eq => {
+        equipmentStore.applyWear(eq.id, {
+          resourceHardness: 0.3 * overdueMultiplier,
+          operationIntensity: 0.3 * overdueMultiplier,
+          environmentalFactor: 0.3 * overdueMultiplier
+        }, 1);
+      });
+    }
+  }
+  
+  /**
+   * Perform ship maintenance
+   */
+  async performMaintenance(): Promise<{
+    success: boolean;
+    message: string;
+    cost: number;
+  }> {
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const maintenanceCosts = tuning?.maintenance_system?.maintenance_costs;
+    
+    if (!maintenanceCosts) {
+      return { success: false, message: 'Maintenance system not configured', cost: 0 };
+    }
+    
+    const equipmentStore = useEquipment.getState();
+    const creditsStore = useCreditsStore.getState();
+    
+    // Calculate total repair cost
+    let totalCost = 0;
+    equipmentStore.equipment.forEach(eq => {
+      const damagePercent = ((eq.maxDurability - eq.currentDurability) / eq.maxDurability) * 100;
+      if (damagePercent > 0) {
+        let costPerPoint = maintenanceCosts.equipment_per_point;
+        if (eq.type === 'hull') costPerPoint = maintenanceCosts.hull_per_point;
+        if (eq.type === 'engine') costPerPoint = maintenanceCosts.engine_per_point;
+        
+        totalCost += Math.ceil(damagePercent * costPerPoint);
+      }
+    });
+    
+    // Check if player can afford it
+    if (creditsStore.credits < totalCost) {
+      return { 
+        success: false, 
+        message: `Cannot afford maintenance. Need ${totalCost} credits, have ${creditsStore.credits}`, 
+        cost: totalCost 
+      };
+    }
+    
+    // Perform repairs
+    creditsStore.spendCredits(totalCost);
+    
+    equipmentStore.equipment.forEach(eq => {
+      const result = equipmentStore.repairEquipment(eq.id, eq.maxDurability, creditsStore.credits + totalCost);
+      console.log(`[GameFacade] Repaired ${eq.name}: ${result.success}`);
+    });
+    
+    // Update last maintenance day
+    localStorage.setItem('last_maintenance_day', this.getGameDay().toString());
+    
+    return {
+      success: true,
+      message: `Maintenance complete. All systems repaired for ${totalCost} credits.`,
+      cost: totalCost
     };
   }
   
@@ -566,20 +1030,61 @@ export class GameFacade {
     }
   }
   
+  /**
+   * Calculate distance between two star nodes
+   */
+  private calculateDistance(from: StarNode, to: StarNode): number {
+    const dx = to.coordinates.x - from.coordinates.x;
+    const dy = to.coordinates.y - from.coordinates.y;
+    const dz = to.coordinates.z - from.coordinates.z;
+    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+  }
+  
   private calculateFuelNeeded(destination: string): number {
-    // Simple distance calculation (would be more complex in reality)
-    const distances: Record<string, number> = {
-      'Mercury': 10,
-      'Venus': 15,
-      'Earth': 0,
-      'Mars': 20,
-      'Jupiter': 40,
-      'Saturn': 60,
-      'Uranus': 80,
-      'Neptune': 100
-    };
+    const content = this.contentRegistry.getContent();
+    if (!content?.starNodes) return 0;
     
-    return distances[destination] || 50;
+    // Get current location node
+    const fromNode = content.starNodes.find(n => n.name === this.currentLocation || n.id === this.currentLocation.toLowerCase());
+    const toNode = content.starNodes.find(n => n.name === destination || n.id === destination);
+    
+    if (!fromNode || !toNode) {
+      console.error(`[GameFacade] Could not find nodes for fuel calculation: ${this.currentLocation} -> ${destination}`);
+      return 20; // Default fuel cost
+    }
+    
+    const distance = this.calculateDistance(fromNode, toNode);
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    if (!tuning?.economy?.fuel_system) {
+      console.warn('[GameFacade] No fuel tuning found, using defaults');
+      return Math.ceil(distance * 0.1);
+    }
+    
+    // Determine fuel consumption based on distance thresholds
+    const thresholds = tuning.economy.fuel_system.distance_thresholds;
+    const fuelPerJump = tuning.economy.fuel_system.fuel_per_jump;
+    
+    let fuelNeeded: number;
+    if (distance <= thresholds.short) {
+      fuelNeeded = fuelPerJump.short_range;
+    } else if (distance <= thresholds.medium) {
+      fuelNeeded = fuelPerJump.medium_range;
+    } else if (distance <= thresholds.long) {
+      fuelNeeded = fuelPerJump.long_range;
+    } else {
+      // Emergency jump for very long distances
+      fuelNeeded = fuelPerJump.emergency_jump || fuelPerJump.long_range * 1.5;
+    }
+    
+    // Apply fuel efficiency modifiers from equipment
+    const equipmentStore = useEquipment.getState();
+    const efficiencyMultiplier = equipmentStore.getFuelEfficiencyMultiplier();
+    fuelNeeded = Math.ceil(fuelNeeded * efficiencyMultiplier);
+    
+    console.log(`[GameFacade] Fuel calculation: ${this.currentLocation} -> ${destination}, distance: ${distance.toFixed(1)}, fuel needed: ${fuelNeeded}`);
+    
+    return fuelNeeded;
   }
   
   private applyLocationEffects(node: StarNode): void {
