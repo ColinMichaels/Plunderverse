@@ -25,6 +25,14 @@ Preferred communication style: Simple, everyday language.
 - **Mission objectives**: delivery, combat, mining, smuggling
 - **Dynamic generation** based on location and player rank
 - **Hot-reload support** via Vite for instant content updates
+- **Objective Trigger System**: Automatic checkpoint tracking for missions
+  - Location triggers: Landing on planets, reaching coordinates
+  - Collection triggers: Mining resources, gathering items
+  - Combat triggers: Defeating enemies, destroying targets
+  - Interaction triggers: Trading, scanning, docking
+  - Custom triggers: Any game-specific conditions
+- **Real-time Objective Tracking**: Visual UI showing mission progress
+- **Game System Integration**: Landing, mining, combat, and trading report progress automatically
 
 #### 2. Faction Reputation
 - **Three factions**: Corporations, Independents, Outlaws
