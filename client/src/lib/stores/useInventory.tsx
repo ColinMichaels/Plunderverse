@@ -22,7 +22,14 @@ interface InventoryState {
 
 // Legacy adapter store that delegates to the domain store
 // This maintains backward compatibility while ensuring single source of truth
+// 
+// ⚠️ DEPRECATED: Use `useInventoryStore` from '../domain/economy/inventory.store' instead  
+// This legacy export will be removed in a future version
 export const useInventory = create<InventoryState>((set, get) => {
+  // Log deprecation warning in development
+  if (import.meta.env.DEV) {
+    console.warn('[DEPRECATED] useInventory is deprecated. Use useInventoryStore from domain stores instead.');
+  }
   // Subscribe to domain store changes and sync legacy store
   useInventoryStore.subscribe((domainState) => {
     set({

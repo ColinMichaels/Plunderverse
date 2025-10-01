@@ -2,6 +2,21 @@ import { useMemo } from 'react';
 import { useCreditsStore } from './credits.store';
 import { useInventoryStore } from './inventory.store';
 import { EconomySelectors } from './types';
+
+// Direct data selectors for easier migration
+export const useCreditsData = () => useCreditsStore(state => state.credits);
+export const useInventoryDisplayData = () => {
+  const items = useInventoryStore(state => state.items);
+  const storageCapacity = useInventoryStore(state => state.storageCapacity);
+  const storageUsed = items.reduce((total, item) => total + item.quantity, 0);
+  
+  return {
+    items,
+    storageCapacity,
+    storageUsed,
+    storagePercentage: (storageUsed / storageCapacity) * 100
+  };
+};
 import {
   validateEconomyState,
   assert,

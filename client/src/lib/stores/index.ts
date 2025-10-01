@@ -24,11 +24,25 @@ export { useInventory } from './useInventory';
 export { useEquipment } from './useEquipment';
 export { useMining } from './useMining';
 
-// Re-export new domain stores (optional, for those who want to use them directly)
-// Temporarily commented out until full migration is complete
-// export { useCreditsStore } from '../domain/economy/credits.store';
-// export { useInventoryStore } from '../domain/economy/inventory.store';
-// export { economyService } from '../domain/economy/economy.service';
+// Re-export new domain stores (preferred for new code)
+export { useCreditsStore } from '../domain/economy/credits.store';
+export { useInventoryStore } from '../domain/economy/inventory.store';
+export { economyService } from '../domain/economy/economy.service';
+
+// Re-export domain selectors for easier access
+export { 
+  useEconomySelectors, 
+  useTotalInventoryValue, 
+  useStorageInfo, 
+  useCanAfford,
+  useCreditsData,
+  useInventoryDisplayData 
+} from '../domain/economy/selectors';
+
+// Re-export domain events
+export { economyEvents } from '../domain/economy/events';
+
+// Equipment and Mining stores - these would be implemented next
 // export { useEquipmentStore } from '../domain/equipment/equipment.store';
 // export { equipmentService } from '../domain/equipment/equipment.service';
 // export { useMiningStore } from '../domain/mining/mining.store';

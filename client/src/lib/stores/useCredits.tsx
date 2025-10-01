@@ -12,7 +12,14 @@ interface CreditsState {
 
 // Legacy adapter store that delegates to the domain store
 // This maintains backward compatibility while ensuring single source of truth
+// 
+// ⚠️ DEPRECATED: Use `useCreditsStore` from '../domain/economy/credits.store' instead
+// This legacy export will be removed in a future version
 export const useCredits = create<CreditsState>((set, get) => {
+  // Log deprecation warning in development
+  if (import.meta.env.DEV) {
+    console.warn('[DEPRECATED] useCredits is deprecated. Use useCreditsStore from domain stores instead.');
+  }
   // Subscribe to domain store changes and sync legacy store
   useCreditsStore.subscribe((domainState) => {
     set({ credits: domainState.credits });
