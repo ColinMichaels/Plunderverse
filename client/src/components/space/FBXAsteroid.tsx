@@ -2,6 +2,22 @@ import { useRef, forwardRef, useMemo } from "react";
 import { useFBX } from "@react-three/drei";
 import * as THREE from "three";
 
+/* want to randomize the asteroid model and color used for the Astroid FBX files. Create an array of the different models to randomly place  */
+
+const asteroidModels = [
+  "/geometries/Asteroid_1b.fbx",
+  "/geometries/_asteroid_01.fbx",
+  "/geometries/_asteroid_02.fbx",
+  "/geometries/_asteroid_03.fbx",
+  "/geometries/_asteroid_04.fbx",
+  "/geometries/_asteroid_05.fbx",
+  "/geometries/_asteroid_06.fbx",
+  "/geometries/_asteroid_07.fbx",
+  "/geometries/_asteroid_08.fbx",
+  "/geometries/_asteroid_09.fbx",
+  "/geometries/_asteroid_010.fbx",
+];
+
 interface FBXAsteroidProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
@@ -38,7 +54,9 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
     ref,
   ) => {
     // Load the FBX model
-    const fbxModel = useFBX("/geometries/Asteroid_1b.fbx");
+    const randomModel =
+      asteroidModels[Math.floor(Math.random() * asteroidModels.length)];
+    const fbxModel = useFBX(randomModel);
 
     // Clone and configure the model for reuse
     const configuredModel = useMemo(() => {
