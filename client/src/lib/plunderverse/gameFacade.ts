@@ -7,6 +7,8 @@ import { useEquipment } from '../stores/ship/useEquipment';
 import { useSurvival } from '../stores/economy/useSurvival';
 import { useCrewManagement } from '../stores/ship/useCrewManagement';
 import { ContentRegistry } from './contentRegistry';
+import { toast } from 'sonner';
+import { missionControlTest } from '../tests/missionControlTest';
 import { 
   StarNode, 
   Mission, 
@@ -166,6 +168,9 @@ export class GameFacade {
       this.initialized = true;
       console.log('[GameFacade] Initialized successfully with deterministic seeding');
       
+      // Setup keyboard shortcuts for testing
+      this.setupTestKeyboardShortcuts();
+      
       // Start economic pressure systems
       this.startEconomicPressure();
     } catch (error) {
@@ -238,6 +243,35 @@ export class GameFacade {
     }
     
     console.log('[GameFacade] Economic pressure systems stopped');
+  }
+  
+  /**
+   * Setup keyboard shortcuts for testing
+   */
+  private setupTestKeyboardShortcuts(): void {
+    window.addEventListener('keydown', (e) => {
+      // Ctrl+T to run full test
+      if (e.ctrlKey && !e.shiftKey && e.key === 't') {
+        e.preventDefault();
+        console.log('[GameFacade] Running Mission Control test suite...');
+        toast.info('Starting Test Suite', {
+          description: 'Running comprehensive Mission Control tests...'
+        });
+        missionControlTest.runAllTests(true); // Run in non-destructive mode
+      }
+      
+      // Ctrl+Shift+Q for quick test
+      if (e.ctrlKey && e.shiftKey && e.key === 'Q') {
+        e.preventDefault();
+        console.log('[GameFacade] Running quick test...');
+        toast.info('Quick Test', {
+          description: 'Running quick system check...'
+        });
+        missionControlTest.runQuickTest();
+      }
+    });
+    
+    console.log('[GameFacade] Test keyboard shortcuts registered (Ctrl+T for full test, Ctrl+Shift+Q for quick test)');
   }
   
   /**
@@ -434,6 +468,9 @@ export class GameFacade {
     const accepted = missionsStore.acceptMission(missionId);
     
     if (!accepted) {
+      toast.error('Mission Failed', {
+        description: 'Failed to accept mission'
+      });
       return { success: false, message: 'Failed to accept mission' };
     }
     
@@ -442,6 +479,11 @@ export class GameFacade {
       // Would add cargo to ship
       console.log(`Received cargo for ${mission.title}`);
     }
+    
+    // Show success toast
+    toast.success('Mission Accepted!', {
+      description: mission.title
+    });
     
     return {
       success: true,
@@ -487,11 +529,20 @@ export class GameFacade {
     const rewards = missionsStore.completeMission(missionId);
     
     if (!rewards) {
+      toast.error('Mission Failed', {
+        description: 'Failed to complete mission'
+      });
       return { success: false, message: 'Failed to complete mission' };
     }
     
     // Apply rewards
     await this.applyRewards(rewards, mission);
+    
+    // Show success toast with rewards
+    const creditsEarned = rewards.credits || 0;
+    toast.success('🎉 Mission Completed!', {
+      description: `${mission.title} - Earned ${creditsEarned} credits`
+    });
     
     // Update player progression
     this.checkRankProgression();
@@ -1235,13 +1286,25 @@ export class GameFacade {
     const content = await this.contentRegistry.loadContent();
     const ranks = content.ranks;
     
+    const oldRank = player.rank;
     player.incrementRank();
+    const newRank = player.rank;
+    
+    // Show rank increase toast
+    if (newRank > oldRank) {
+      toast.success('🎖️ Rank Increased!', {
+        description: `Advanced to Rank ${newRank}: ${player.rankTitle}`
+      });
+    }
     
     // Check for act progression
     const currentAct = await this.getCurrentAct();
     if (currentAct && player.rank > currentAct.rankRange.max) {
       this.currentAct++;
       console.log(`[GameFacade] Advanced to Act ${this.currentAct}!`);
+      toast.info('📖 Story Progression', {
+        description: `Advanced to Act ${this.currentAct}`
+      });
       
       // Generate new story missions for the new act
       this.generateStoryMissions();
