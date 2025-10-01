@@ -3,12 +3,9 @@ import * as THREE from "three";
 import { LandingTransition } from "../surface/LandingTransition";
 import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
-import { CockpitHUD } from "../cockpit/CockpitHUD";
 import { MobileHUD } from "../mobile/MobileHUD";
 import { OrbitalInterface } from "../navigation/OrbitalInterface";
 import { InventoryDisplay } from "../economy/InventoryDisplay";
-import { EquipmentWarning } from "../ship/EquipmentWarning";
-import { ShipStatus } from "../ship/ShipStatus";
 import { FixedMiniMap } from "../navigation/MiniMap/FixedMiniMap";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoWallet } from "../economy/crypto/CryptoWallet";
@@ -17,10 +14,14 @@ import { MissionsPanel } from "../economy/MissionsPanel";
 import { ControlsHelp } from "../screens/ControlsHelp";
 import { SettingsPanel } from "../screens/SettingsPanel";
 import { DevDebugOverlay } from "../debug/DevDebugOverlay";
-import { EconomicPressureHUD } from "../economy/EconomicPressureHUD";
 import { CrewManagementPanel } from "../ship/CrewManagementPanel";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
 import { StoryProgressionPanel } from "./StoryProgressionPanel";
+// New HUD Components
+import { ShipCoreStatus } from "./ShipCoreStatus";
+import { MissionContextHUD } from "./MissionContextHUD";
+import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
+import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
@@ -41,6 +42,7 @@ export function GameUI() {
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
   const { toggleVisibility } = useDebugTools();
+  const { currentContext, uiZoneVisibility } = useHUDContext();
 
   // F3 key handler for debug overlay (dev mode only)
   useEffect(() => {
@@ -93,8 +95,15 @@ export function GameUI() {
       {/* Cockpit Overlay - background frame */}
       <CockpitOverlay />
 
-      {/* Unified Cockpit HUD */}
-      <CockpitHUD />
+      {/* New Contextual HUD System */}
+      {/* Top Left - Ship Core Status */}
+      {uiZoneVisibility.topLeft && <ShipCoreStatus />}
+      
+      {/* Top Right - Mission Context */}
+      {uiZoneVisibility.topRight && <MissionContextHUD />}
+      
+      {/* Bottom Center - Primary Controls */}
+      {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
 
       {/* Landing Transition */}
       <LandingTransition />
@@ -112,25 +121,20 @@ export function GameUI() {
       {/* Orbital Interface - when orbiting a planet */}
       <OrbitalInterface />
 
-      {/* UI Components - these register themselves with UILayoutManager but render content via SpaceUIPanel */}
-      <ShipStatus />
-
-      <InventoryDisplay />
-      <EquipmentWarning />
-      
-      {/* Economic Pressure HUD - Fuel, Credits, Survival */}
-      <EconomicPressureHUD />
-
-      {/* Right Sidebar Panels */}
-      <MissionsPanel />
-      <ControlsHelp />
-      
-      {/* Story Progression Panel */}
-      <StoryProgressionPanel />
-      
-      {/* Cryptocurrency Components */}
-      <CryptoWallet />
-      <CryptoMarketplace />
+      {/* Right Sidebar Panels - Only show when visibility allows */}
+      {uiZoneVisibility.rightSidebar && (
+        <>
+          {/* Using SpaceUIPanel system with standardized order */}
+          <MissionsPanel />      {/* 📋 Missions */}
+          <InventoryDisplay />   {/* 💼 Inventory */}
+          <StoryProgressionPanel /> {/* 📖 Story */}
+          <ControlsHelp />       {/* ⌨️ Controls */}
+          
+          {/* Cryptocurrency Components */}
+          <CryptoWallet />
+          <CryptoMarketplace />
+        </>
+      )}
 
       {/* Mobile Controls - New Unified System */}
       <MobileHUD />
