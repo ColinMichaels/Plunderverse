@@ -1,8 +1,8 @@
-# Solar System Explorer
+# Plunderverse - Solar System Explorer
 
 ## Overview
 
-This is an interactive 3D solar system exploration game built with React, Three.js, and Express. Users can navigate through space, explore planets, and learn about our solar system through an immersive 3D experience. The application features realistic planetary orbits, detailed planet information, keyboard controls for space navigation, and audio feedback.
+This is "Plunderverse" - a Firefly-inspired 3D space outlaw game built with React, Three.js, and Express. Set in 2149 in a bankrupt solar system, players operate on the fringes as smugglers and space outlaws. The game features a comprehensive outlaw gameplay system including faction reputation, moral choices with consequences, crew management, heat/notoriety tracking, and a 4-act story progression from Rogue to Space Pirate Supreme. Built with a JSON-based mission authoring system for easy content creation while maintaining a sci-fi aesthetic with outlaw mechanics.
 
 ## User Preferences
 
@@ -14,6 +14,56 @@ Preferred communication style: Simple, everyday language.
 - **Icon Size**: Use `text-xl` for icon size within buttons
 - **Tooltip**: Always include descriptive `title` attribute for accessibility
 - **Consistency**: All new UI action items should follow this pattern for uniformity and better layout
+
+## Plunderverse Features (October 1, 2025)
+
+### Core Gameplay Systems
+
+#### 1. Mission Engine
+- **JSON-based content authoring** in `client/src/content/plunderverse/`
+- **Branching dialogue** with moral choices affecting outcomes
+- **Mission objectives**: delivery, combat, mining, smuggling
+- **Dynamic generation** based on location and player rank
+- **Hot-reload support** via Vite for instant content updates
+
+#### 2. Faction Reputation
+- **Three factions**: Corporations, Independents, Outlaws
+- **Reputation affects**: mission availability, prices, heat decay
+- **Black market access** requires Outlaw reputation ≥10
+- **Dynamic pricing** based on faction standing (60%-200% modifier)
+
+#### 3. Economic Pressure
+- **Fuel consumption** based on travel distance
+- **Daily operating costs**: crew salaries, life support, docking fees
+- **Equipment degradation** requiring maintenance
+- **Survival resources**: food, water, oxygen, medical supplies
+- **Emergency missions** when credits drop below 100
+
+#### 4. Heat/Notoriety System
+- **Six wanted levels** from Clean to Shoot on Sight
+- **Patrol encounters** with bribe/flee/fight options
+- **Laying low mechanics** to reduce heat over time
+- **Consequences**: price markups, mission restrictions, bounty hunters
+
+#### 5. Crew Management
+- **10 unique crew members** with skills and backgrounds
+- **Loyalty system** affecting performance and desertion
+- **Skill bonuses**: pilot, mechanic, medic, gunner, negotiator, hacker
+- **Personal quest hooks** for narrative depth
+- **Daily salary costs** adding to economic pressure
+
+#### 6. Story Progression
+- **4-act narrative**: The Rogue, The Outlaw, The Captain, The Legend
+- **11 ranks** from Rogue to Space Pirate Supreme
+- **Story missions** with permanent consequences
+- **Multiple endings** based on choices and faction allegiance
+- **Morality tracking** affecting available paths
+
+#### 7. Content System
+- **Hot-reloadable JSON files** for all content
+- **ContentRegistry** managing missions, factions, nodes, ranks
+- **GameFacade** orchestrating all gameplay systems
+- **Deterministic RNG** for consistent procedural generation
 
 ## System Architecture
 
