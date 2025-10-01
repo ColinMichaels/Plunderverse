@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePanelManager, PanelId } from '../../lib/stores/ui/usePanelManager';
 import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
 import { MissionsPanel } from '../economy/MissionsPanel';
@@ -43,6 +43,9 @@ export function ActionBar() {
     setManualPanelOverride,
     refreshPanelOverrideTimeout
   } = useHUDContext();
+  
+  // State to track which button was recently pressed for visual feedback
+  const [pressedButton, setPressedButton] = useState<PanelId | null>(null);
 
   // Set up keyboard shortcuts with proper keydown handling
   useEffect(() => {
@@ -63,7 +66,19 @@ export function ActionBar() {
           // Find the corresponding button
           const button = ACTION_BUTTONS[fNumber - 1];
           if (button) {
-            console.log(`[ActionBar] ${event.key} pressed - toggling ${button.label}`);
+            // Enhanced logging
+            console.log(`[ActionBar] ====== KEYBOARD SHORTCUT TRIGGERED ======`);
+            console.log(`[ActionBar] Key: ${event.key}`);
+            console.log(`[ActionBar] Panel: ${button.label} (${button.id})`);
+            console.log(`[ActionBar] Action: Toggling panel`);
+            console.log(`[ActionBar] Current Context: ${currentContext}`);
+            console.log(`[ActionBar] ==========================================`);
+            
+            // Add visual feedback - highlight the button briefly
+            setPressedButton(button.id);
+            setTimeout(() => setPressedButton(null), 300);
+            
+            // Toggle the panel
             togglePanel(button.id);
             setManualPanelOverride(true);
             refreshPanelOverrideTimeout();
@@ -73,7 +88,15 @@ export function ActionBar() {
 
       // ESC key to close all panels
       if (event.key === 'Escape') {
-        console.log('[ActionBar] ESC pressed - closing all panels');
+        console.log('[ActionBar] ====== ESC KEY TRIGGERED ======');
+        console.log('[ActionBar] Action: Closing all panels');
+        console.log('[ActionBar] Resetting manual override');
+        console.log('[ActionBar] ================================');
+        
+        // Visual feedback - flash all buttons briefly
+        setPressedButton('all' as PanelId);
+        setTimeout(() => setPressedButton(null), 200);
+        
         closeAllPanels();
         setManualPanelOverride(false);
       }
@@ -97,7 +120,15 @@ export function ActionBar() {
   }
 
   const handleButtonClick = (id: PanelId) => {
-    console.log(`[ActionBar] Button clicked: ${id}`);
+    console.log(`[ActionBar] ====== BUTTON CLICKED ======`);
+    console.log(`[ActionBar] Panel: ${id}`);
+    console.log(`[ActionBar] Mouse interaction detected`);
+    console.log(`[ActionBar] ==============================`);
+    
+    // Add visual feedback for mouse clicks too
+    setPressedButton(id);
+    setTimeout(() => setPressedButton(null), 200);
+    
     togglePanel(id);
     setManualPanelOverride(true);
     refreshPanelOverrideTimeout();
@@ -105,28 +136,38 @@ export function ActionBar() {
 
   return (
     <>
-      {/* Vertical icon bar on right edge */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-2">
+      {/* Vertical icon bar on right edge - aligned and polished */}
+      <div className="fixed right-2 top-1/2 -translate-y-1/2 z-40 flex flex-col gap-1.5">
         {ACTION_BUTTONS.map(button => {
           const panel = panels.get(button.id);
           const isOpen = panel?.isOpen || false;
+          const isPressed = pressedButton === button.id;
           
           return (
             <button
               key={button.id}
               onClick={() => handleButtonClick(button.id)}
               className={`
-                bg-gray-900/90 hover:bg-cyan-600/90 
-                ${isOpen ? 'bg-cyan-600/90 text-white' : 'text-cyan-400 hover:text-white'}
-                w-10 h-10 rounded-lg 
-                border ${isOpen ? 'border-cyan-400' : 'border-cyan-400/50 hover:border-cyan-400'}
-                transition-all backdrop-blur-sm 
+                ${isOpen 
+                  ? 'bg-cyan-600/90 text-white shadow-lg shadow-cyan-400/50' 
+                  : 'bg-gray-900/90 text-cyan-400 hover:text-white hover:bg-cyan-600/90'}
+                ${isPressed 
+                  ? 'scale-110 bg-yellow-500/90 border-yellow-400 shadow-lg shadow-yellow-400/50 animate-button-press' 
+                  : ''}
+                w-12 h-12 rounded-xl 
+                border-2 ${isOpen ? 'border-cyan-400 animate-pulse' : 'border-cyan-400/30 hover:border-cyan-400'}
+                transition-all duration-200 backdrop-blur-md 
                 flex items-center justify-center
                 relative group
+                transform hover:scale-105
+                ${isOpen ? '' : 'hover:shadow-md hover:shadow-cyan-400/30'}
               `}
               title={`${button.label} (${button.shortcut})`}
+              aria-label={`${button.label} (${button.shortcut})`}
             >
-              <span className="text-xl">{button.icon}</span>
+              <span className={`text-xl ${isPressed ? 'scale-125' : ''} ${isOpen ? 'drop-shadow-glow' : ''} transition-transform duration-150`}>
+                {button.icon}
+              </span>
               
               {/* Tooltip on hover */}
               <div className="
@@ -144,8 +185,8 @@ export function ActionBar() {
         })}
       </div>
 
-      {/* Panels - sliding in from right */}
-      <div className="fixed right-16 top-20 bottom-20 w-96 z-30 pointer-events-none">
+      {/* Panels - sliding in from right with proper spacing from action bar */}
+      <div className="fixed right-16 top-1/2 -translate-y-1/2 w-96 h-[80vh] max-h-[600px] z-30 pointer-events-none">
         {/* Missions Panel */}
         {panels.get('missions')?.isOpen && (
           <div className="
