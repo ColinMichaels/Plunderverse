@@ -583,8 +583,13 @@ export function CameraController() {
         const baseAutopilotRate = 0.2; // Further reduced to make fuel last longer
         const { getFuelEfficiencyMultiplier } = useEquipment.getState();
         const fuelEfficiency = getFuelEfficiencyMultiplier();
+        
+        // Apply crew pilot bonus if available
+        const crewState = (window as any).crewManagement || { bonuses: { fuelEfficiency: 0 } };
+        const crewFuelBonus = 1 - crewState.bonuses.fuelEfficiency; // Convert percentage reduction to multiplier
+        
         const finalAutopilotConsumption =
-          baseAutopilotRate * fuelEfficiency * delta;
+          baseAutopilotRate * fuelEfficiency * crewFuelBonus * delta;
 
         if (!consumeShipFuel(finalAutopilotConsumption)) {
           console.warn("Out of fuel! Autopilot deactivated.");
@@ -675,10 +680,14 @@ export function CameraController() {
       // Get fuel efficiency from equipment system (engine type + fuel type)
       const { getFuelEfficiencyMultiplier } = useEquipment.getState();
       const fuelEfficiency = getFuelEfficiencyMultiplier();
+      
+      // Apply crew pilot bonus if available
+      const crewState = (window as any).crewManagement || { bonuses: { fuelEfficiency: 0 } };
+      const crewFuelBonus = 1 - crewState.bonuses.fuelEfficiency; // Convert percentage reduction to multiplier
 
       // Calculate final consumption with all factors
       const finalConsumption =
-        fuelMultiplier * efficiencyBonus * fuelEfficiency * delta;
+        fuelMultiplier * efficiencyBonus * fuelEfficiency * crewFuelBonus * delta;
 
       // Use equipment fuel system
       if (!consumeShipFuel(finalConsumption)) {

@@ -1,0 +1,537 @@
+{
+  "$schema": "./schemas/crew.schema.json",
+  "crew": [
+    {
+      "id": "crew_zara_chen",
+      "name": "Zara 'Wrench' Chen",
+      "title": "Chief Engineer",
+      "background": "Former MegaCorp propulsion engineer who quit after discovering her designs were being used to power warships that destroyed independent colonies. Now uses her skills to keep rust buckets flying and Corps guessing.",
+      "personality": {
+        "traits": ["brilliant", "sarcastic", "loyal", "distrustful of authority"],
+        "quirks": ["Talks to engines like they're people", "Hoards spare parts obsessively"],
+        "values": ["technical excellence", "helping underdogs", "freedom"]
+      },
+      "skills": {
+        "mechanic": 85,
+        "pilot": 45,
+        "hacker": 60,
+        "medic": 20,
+        "gunner": 30,
+        "negotiator": 25
+      },
+      "startingLoyalty": 50,
+      "hiringCost": 3500,
+      "dailySalary": 150,
+      "preferredFaction": "independents",
+      "hatedFaction": "corporations",
+      "personalQuest": {
+        "id": "quest_zara_redemption",
+        "title": "Ghosts in the Machine",
+        "hook": "Zara discovered one of her old engine designs is being used in a new Corp dreadnought. She wants to sabotage it.",
+        "triggerLoyalty": 70,
+        "stages": [
+          "Find information about the dreadnought's location",
+          "Infiltrate the shipyard",
+          "Plant the virus in the engine systems",
+          "Escape before detection"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Well, if it isn't our fearless captain. What's broken now?",
+        "lowMorale": "You know, Corps may be evil, but at least they pay on time.",
+        "highMorale": "This ship purrs like a kitten now. My kitten. With fusion drives.",
+        "combatStart": "Hold together, baby. Just a few more jumps...",
+        "missionSuccess": "See? Told you she'd hold. Never doubt my engines."
+      },
+      "bonusEffects": {
+        "primary": "repair_cost_reduction",
+        "secondary": "engine_efficiency",
+        "special": "emergency_repairs"
+      }
+    },
+    {
+      "id": "crew_marcus_stone",
+      "name": "Marcus 'Doc' Stone",
+      "title": "Combat Medic",
+      "background": "Dishonorably discharged Alliance military medic who refused orders to withhold treatment from wounded independents. Now patches up anyone who needs it, no questions asked.",
+      "personality": {
+        "traits": ["compassionate", "haunted", "professional", "quietly heroic"],
+        "quirks": ["Never removes his medical gloves", "Quotes ancient Earth philosophy when stressed"],
+        "values": ["preservation of life", "medical ethics", "redemption"]
+      },
+      "skills": {
+        "medic": 90,
+        "gunner": 55,
+        "pilot": 35,
+        "negotiator": 40,
+        "mechanic": 25,
+        "hacker": 15
+      },
+      "startingLoyalty": 60,
+      "hiringCost": 4000,
+      "dailySalary": 175,
+      "preferredFaction": "independents",
+      "hatedFaction": null,
+      "personalQuest": {
+        "id": "quest_marcus_atonement",
+        "title": "First, Do No Harm",
+        "hook": "Marcus learns his old unit is planning to destroy a medical station. He needs to warn them or stop it.",
+        "triggerLoyalty": 75,
+        "stages": [
+          "Intercept military communications",
+          "Choose: Warn the station or confront your old unit",
+          "Deal with the consequences",
+          "Save as many as you can"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain. Everyone still breathing? Good. Let's keep it that way.",
+        "lowMorale": "I've served with worse crews. Not many, but some.",
+        "highMorale": "This crew... it's like a family. Dysfunctional, but family.",
+        "combatStart": "Remember: aim to disable, not to kill. We're not monsters.",
+        "missionSuccess": "Everyone made it back. That's what matters."
+      },
+      "bonusEffects": {
+        "primary": "crew_health_regen",
+        "secondary": "reduced_medical_costs",
+        "special": "battlefield_triage"
+      }
+    },
+    {
+      "id": "crew_kassandra_vex",
+      "name": "Kassandra 'Kass' Vex",
+      "title": "Data Specialist",
+      "background": "Elite corporate hacker who got burned when she discovered her CEO father was selling colonist data to slavers. Now she uses her skills to expose corruption and protect the innocent.",
+      "personality": {
+        "traits": ["brilliant", "paranoid", "fiercely independent", "secretly caring"],
+        "quirks": ["Encrypts everything, even shopping lists", "Collects vintage Earth tech"],
+        "values": ["information freedom", "privacy", "justice"]
+      },
+      "skills": {
+        "hacker": 95,
+        "negotiator": 50,
+        "pilot": 30,
+        "mechanic": 40,
+        "medic": 15,
+        "gunner": 25
+      },
+      "startingLoyalty": 40,
+      "hiringCost": 5000,
+      "dailySalary": 200,
+      "preferredFaction": "outlaws",
+      "hatedFaction": "corporations",
+      "personalQuest": {
+        "id": "quest_kass_revenge",
+        "title": "Sins of the Father",
+        "hook": "Kass finally tracked down evidence of her father's crimes. Time to bring him to justice.",
+        "triggerLoyalty": 80,
+        "stages": [
+          "Hack into Vex Industries mainframe",
+          "Gather incriminating evidence",
+          "Choose: Public exposure or private confrontation",
+          "Live with the consequences"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain. I've already encrypted today's communications. You're welcome.",
+        "lowMorale": "Trust is earned, Captain. You're not there yet.",
+        "highMorale": "You know, I actually deleted only half my backdoors to this ship. Progress!",
+        "combatStart": "Jamming their communications... they're flying blind.",
+        "missionSuccess": "Their security was a joke. I've already sold their data to their competitors."
+      },
+      "bonusEffects": {
+        "primary": "heat_reduction",
+        "secondary": "intel_gathering",
+        "special": "security_bypass"
+      }
+    },
+    {
+      "id": "crew_rex_murphy",
+      "name": "Rex 'Tank' Murphy",
+      "title": "Weapons Specialist",
+      "background": "Former outlaw enforcer who got tired of hurting innocent people. Built like a mountain, gentle as a lamb, until someone threatens his crew. Then he becomes the storm.",
+      "personality": {
+        "traits": ["gentle giant", "protective", "surprisingly philosophical", "loyal to a fault"],
+        "quirks": ["Writes poetry in private", "Names all his weapons", "Afraid of spiders"],
+        "values": ["protecting the innocent", "found family", "second chances"]
+      },
+      "skills": {
+        "gunner": 88,
+        "pilot": 40,
+        "mechanic": 35,
+        "medic": 30,
+        "negotiator": 45,
+        "hacker": 10
+      },
+      "startingLoyalty": 65,
+      "hiringCost": 3000,
+      "dailySalary": 140,
+      "preferredFaction": "independents",
+      "hatedFaction": "outlaws",
+      "personalQuest": {
+        "id": "quest_rex_redemption",
+        "title": "The Gentle Giant",
+        "hook": "Rex's old gang has kidnapped his sister to force him back. He needs to save her without becoming the monster he was.",
+        "triggerLoyalty": 70,
+        "stages": [
+          "Track down the old gang's hideout",
+          "Infiltrate without killing anyone",
+          "Rescue his sister",
+          "Choose: Let the gang go or turn them in"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Hey Cap. Need someone discouraged from bothering us?",
+        "lowMorale": "Starting to feel like the old days. And not in a good way.",
+        "highMorale": "This crew is worth protecting. Every single one.",
+        "combatStart": "They want a fight? Let's give them one they'll regret.",
+        "missionSuccess": "Everyone's safe. That's all that matters to me."
+      },
+      "bonusEffects": {
+        "primary": "combat_damage",
+        "secondary": "intimidation",
+        "special": "protective_fire"
+      }
+    },
+    {
+      "id": "crew_luna_starweaver",
+      "name": "Luna 'Whisper' Starweaver",
+      "title": "Navigator & Pilot",
+      "background": "Raised by space nomads, Luna can read stellar patterns like others read books. She's flown through nebulas that would kill most pilots and lived to paint about it.",
+      "personality": {
+        "traits": ["mystical", "intuitive", "free-spirited", "surprisingly practical"],
+        "quirks": ["Meditates while flying", "Paints stellar maps", "Talks to stars"],
+        "values": ["freedom", "exploration", "cosmic harmony"]
+      },
+      "skills": {
+        "pilot": 92,
+        "negotiator": 55,
+        "medic": 35,
+        "hacker": 25,
+        "mechanic": 40,
+        "gunner": 30
+      },
+      "startingLoyalty": 55,
+      "hiringCost": 4500,
+      "dailySalary": 160,
+      "preferredFaction": "independents",
+      "hatedFaction": null,
+      "personalQuest": {
+        "id": "quest_luna_homecoming",
+        "title": "Stars Call Home",
+        "hook": "Luna receives a cryptic message from her nomad clan. They need her help navigating a dangerous cosmic anomaly.",
+        "triggerLoyalty": 75,
+        "stages": [
+          "Decode the stellar message",
+          "Navigate to the hidden nomad fleet",
+          "Guide them through the anomaly",
+          "Decide whether to stay or continue with the crew"
+        ]
+      },
+      "dialogue": {
+        "greeting": "The stars are singing today, Captain. Where shall we dance?",
+        "lowMorale": "The void feels cold when the crew's spirit dims.",
+        "highMorale": "This ship has found its rhythm. We fly as one.",
+        "combatStart": "The cosmos guides us. They cannot follow where we go.",
+        "missionSuccess": "The stars smiled upon us. I painted the moment."
+      },
+      "bonusEffects": {
+        "primary": "fuel_efficiency",
+        "secondary": "navigation_speed",
+        "special": "nebula_navigation"
+      }
+    },
+    {
+      "id": "crew_salvatore_russo",
+      "name": "Salvatore 'Silver Tongue' Russo",
+      "title": "Negotiator & Quartermaster",
+      "background": "Former luxury cruise director who lost everything in a corporate hostile takeover. Now he uses his charm and connections to get the crew what they need, legally or otherwise.",
+      "personality": {
+        "traits": ["charming", "cunning", "cultured", "secretly sentimental"],
+        "quirks": ["Always impeccably dressed", "Mixes cocktails during negotiations", "Quotes old Earth movies"],
+        "values": ["style", "loyalty", "the art of the deal"]
+      },
+      "skills": {
+        "negotiator": 87,
+        "pilot": 45,
+        "hacker": 40,
+        "gunner": 35,
+        "medic": 25,
+        "mechanic": 20
+      },
+      "startingLoyalty": 50,
+      "hiringCost": 3800,
+      "dailySalary": 155,
+      "preferredFaction": null,
+      "hatedFaction": null,
+      "personalQuest": {
+        "id": "quest_salvatore_dignity",
+        "title": "A Gentleman's Revenge",
+        "hook": "The executive who ruined Salvatore is attending a high-stakes poker game. Time to win back more than just money.",
+        "triggerLoyalty": 72,
+        "stages": [
+          "Get invited to the exclusive game",
+          "Win the executive's trust",
+          "Beat him at his own game",
+          "Choose: Take everything or show mercy"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain! You're looking positively roguish today. How may I be of service?",
+        "lowMorale": "Even my charm has limits when morale is this low, Captain.",
+        "highMorale": "This crew has class. Rough edges, perhaps, but class nonetheless.",
+        "combatStart": "How barbaric. Still, let's do this with style.",
+        "missionSuccess": "Another successful negotiation. The secret? Let them think they've won."
+      },
+      "bonusEffects": {
+        "primary": "trade_prices",
+        "secondary": "mission_rewards",
+        "special": "black_market_access"
+      }
+    },
+    {
+      "id": "crew_jiro_tanaka",
+      "name": "Jiro 'Ghost' Tanaka",
+      "title": "Stealth Specialist",
+      "background": "Former corporate assassin who disappeared after refusing a contract on a ship full of refugee children. Lives in the shadows, strikes from silence, protects from the dark.",
+      "personality": {
+        "traits": ["silent", "professional", "haunted", "unexpectedly kind"],
+        "quirks": ["Barely speaks", "Practices calligraphy", "Feeds stray animals at stations"],
+        "values": ["precision", "honor", "protecting innocents"]
+      },
+      "skills": {
+        "gunner": 78,
+        "hacker": 65,
+        "pilot": 70,
+        "mechanic": 45,
+        "negotiator": 30,
+        "medic": 40
+      },
+      "startingLoyalty": 45,
+      "hiringCost": 5500,
+      "dailySalary": 180,
+      "preferredFaction": "outlaws",
+      "hatedFaction": "corporations",
+      "personalQuest": {
+        "id": "quest_jiro_honor",
+        "title": "Blood and Honor",
+        "hook": "Jiro's mentor has been captured by the Corps. Honor demands a rescue, but it could be a trap.",
+        "triggerLoyalty": 77,
+        "stages": [
+          "Gather intelligence on the prison facility",
+          "Infiltrate without raising alarms",
+          "Find the mentor",
+          "Discover the truth and make a choice"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain. *nods*",
+        "lowMorale": "...This crew deserves better.",
+        "highMorale": "*slight smile* Good crew. Worth protecting.",
+        "combatStart": "*disappears into shadows*",
+        "missionSuccess": "It is done. *bows*"
+      },
+      "bonusEffects": {
+        "primary": "stealth_operations",
+        "secondary": "combat_initiative",
+        "special": "silent_takedown"
+      }
+    },
+    {
+      "id": "crew_maya_rodriguez",
+      "name": "Maya 'Phoenix' Rodriguez",
+      "title": "Combat Pilot",
+      "background": "Hotshot racer turned rebel pilot after her home colony was destroyed by corporate mining. Lives for the thrill of impossible maneuvers and the rush of combat. Never met a risk she didn't like.",
+      "personality": {
+        "traits": ["daredevil", "passionate", "impulsive", "fiercely protective"],
+        "quirks": ["Constantly tweaking ship controls", "Races anything that moves", "Superstitious about pre-flight rituals"],
+        "values": ["freedom", "speed", "living on the edge"]
+      },
+      "skills": {
+        "pilot": 85,
+        "gunner": 72,
+        "mechanic": 50,
+        "negotiator": 35,
+        "hacker": 20,
+        "medic": 25
+      },
+      "startingLoyalty": 58,
+      "hiringCost": 4200,
+      "dailySalary": 165,
+      "preferredFaction": "outlaws",
+      "hatedFaction": "corporations",
+      "personalQuest": {
+        "id": "quest_maya_vengeance",
+        "title": "Ashes to Phoenix",
+        "hook": "Maya discovered the location of the executive who ordered her colony's destruction. Time for payback.",
+        "triggerLoyalty": 73,
+        "stages": [
+          "Track the executive's private yacht",
+          "Challenge them to a race through an asteroid field",
+          "Win or destroy them trying",
+          "Choose: Justice or revenge"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Cap! Ready to fly into hell and back? Because I am!",
+        "lowMorale": "This ship feels sluggish. Or maybe it's just the crew's spirit.",
+        "highMorale": "Now THIS is a crew worth flying for! Let's burn some stardust!",
+        "combatStart": "WOOHOO! Let's dance, you bastards!",
+        "missionSuccess": "Did you SEE that maneuver?! We are LEGENDS!"
+      },
+      "bonusEffects": {
+        "primary": "combat_evasion",
+        "secondary": "pursuit_escape",
+        "special": "emergency_maneuvers"
+      }
+    },
+    {
+      "id": "crew_ezra_wolfe",
+      "name": "Ezra 'Preacher' Wolfe",
+      "title": "Chaplain & Counselor",
+      "background": "Former military chaplain who lost his faith after witnessing corporate atrocities. Now seeks redemption in the black, offering wisdom, whiskey, and a steady gun hand when needed.",
+      "personality": {
+        "traits": ["wise", "troubled", "compassionate", "dangerous when provoked"],
+        "quirks": ["Quotes scripture and philosophy", "Always carries an old Earth book", "Makes the best moonshine in the sector"],
+        "values": ["redemption", "justice", "protecting the flock"]
+      },
+      "skills": {
+        "negotiator": 70,
+        "gunner": 65,
+        "medic": 55,
+        "pilot": 40,
+        "mechanic": 30,
+        "hacker": 15
+      },
+      "startingLoyalty": 62,
+      "hiringCost": 2800,
+      "dailySalary": 130,
+      "preferredFaction": "independents",
+      "hatedFaction": null,
+      "personalQuest": {
+        "id": "quest_ezra_faith",
+        "title": "Testament of the Stars",
+        "hook": "Ezra receives word that his old congregation is being threatened by raiders. Time to shepherd his flock one last time.",
+        "triggerLoyalty": 68,
+        "stages": [
+          "Return to the colony",
+          "Unite the colonists",
+          "Stand against the raiders",
+          "Find faith in humanity again"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain. Walk with me. Sometimes the path reveals itself in conversation.",
+        "lowMorale": "Even in the darkness of the void, we must be the light for each other.",
+        "highMorale": "This crew... it's found something holy. Not in any book, but in each other.",
+        "combatStart": "Forgive them, for they know exactly what they do. *loads gun*",
+        "missionSuccess": "We're still flying, still together. That's a kind of miracle."
+      },
+      "bonusEffects": {
+        "primary": "crew_morale_boost",
+        "secondary": "negotiation_bonus",
+        "special": "inspire_crew"
+      }
+    },
+    {
+      "id": "crew_aurora_kim",
+      "name": "Aurora 'Songbird' Kim",
+      "title": "Communications Officer",
+      "background": "Former corporate propaganda broadcaster who exposed massive corruption on live feed. Now uses her voice and connections to keep the crew informed and one step ahead of trouble.",
+      "personality": {
+        "traits": ["charismatic", "idealistic", "clever", "restless"],
+        "quirks": ["Constantly monitoring multiple comm channels", "Sings while working", "Collects banned music"],
+        "values": ["truth", "freedom of information", "the power of stories"]
+      },
+      "skills": {
+        "negotiator": 75,
+        "hacker": 58,
+        "pilot": 35,
+        "medic": 30,
+        "gunner": 28,
+        "mechanic": 22
+      },
+      "startingLoyalty": 52,
+      "hiringCost": 3200,
+      "dailySalary": 145,
+      "preferredFaction": "independents",
+      "hatedFaction": "corporations",
+      "personalQuest": {
+        "id": "quest_aurora_truth",
+        "title": "Signal in the Dark",
+        "hook": "Aurora intercepts proof of a massive corporate conspiracy. Broadcasting it could save lives but paint a target on the crew.",
+        "triggerLoyalty": 71,
+        "stages": [
+          "Verify the information",
+          "Find a secure broadcast location",
+          "Choose: Go public or use it as leverage",
+          "Deal with the fallout"
+        ]
+      },
+      "dialogue": {
+        "greeting": "Captain! You won't believe what I just heard on the wire...",
+        "lowMorale": "The comm channels are full of despair. We need to change that.",
+        "highMorale": "This crew's reputation is spreading! They're singing songs about us!",
+        "combatStart": "Jamming their comms and playing really annoying music on their frequency!",
+        "missionSuccess": "I've already spread the word. We're heroes in three systems!"
+      },
+      "bonusEffects": {
+        "primary": "intel_network",
+        "secondary": "reputation_spread",
+        "special": "propaganda_warfare"
+      }
+    }
+  ],
+  "loyaltyMechanics": {
+    "thresholds": {
+      "desertion": 30,
+      "neutral": 60,
+      "loyal": 80,
+      "devoted": 95
+    },
+    "modifiers": {
+      "missionSuccess": 3,
+      "missionFailure": -5,
+      "paidOnTime": 1,
+      "paidLate": -3,
+      "noPay": -10,
+      "giftBonus": 5,
+      "alignedChoice": 2,
+      "opposedChoice": -4,
+      "crewDeath": -15,
+      "personalQuestComplete": 20
+    }
+  },
+  "skillBonuses": {
+    "pilot": {
+      "60": { "fuelEfficiency": 0.05, "navigationSpeed": 0.05 },
+      "80": { "fuelEfficiency": 0.10, "navigationSpeed": 0.10, "evasion": 0.15 },
+      "95": { "fuelEfficiency": 0.15, "navigationSpeed": 0.15, "evasion": 0.25, "special": "impossible_routes" }
+    },
+    "mechanic": {
+      "60": { "repairCost": -0.10, "maintenanceEfficiency": 0.10 },
+      "80": { "repairCost": -0.20, "maintenanceEfficiency": 0.20, "equipmentDurability": 0.15 },
+      "95": { "repairCost": -0.30, "maintenanceEfficiency": 0.30, "equipmentDurability": 0.25, "special": "field_repairs" }
+    },
+    "medic": {
+      "60": { "healthRegen": 0.25, "medicalCosts": -0.15 },
+      "80": { "healthRegen": 0.50, "medicalCosts": -0.30, "survivalBonus": 0.20 },
+      "95": { "healthRegen": 0.75, "medicalCosts": -0.45, "survivalBonus": 0.35, "special": "combat_medic" }
+    },
+    "gunner": {
+      "60": { "combatDamage": 0.10, "accuracy": 0.05 },
+      "80": { "combatDamage": 0.25, "accuracy": 0.15, "criticalChance": 0.10 },
+      "95": { "combatDamage": 0.40, "accuracy": 0.25, "criticalChance": 0.20, "special": "suppressing_fire" }
+    },
+    "negotiator": {
+      "60": { "missionRewards": 0.07, "tradePrices": -0.05 },
+      "80": { "missionRewards": 0.15, "tradePrices": -0.10, "reputationGain": 0.10 },
+      "95": { "missionRewards": 0.25, "tradePrices": -0.15, "reputationGain": 0.20, "special": "diplomatic_immunity" }
+    },
+    "hacker": {
+      "60": { "heatReduction": 0.10, "securityBypass": 0.15 },
+      "80": { "heatReduction": 0.20, "securityBypass": 0.30, "intelGathering": 0.25 },
+      "95": { "heatReduction": 0.35, "securityBypass": 0.50, "intelGathering": 0.40, "special": "ghost_protocol" }
+    }
+  }
+}

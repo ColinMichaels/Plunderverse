@@ -5,6 +5,7 @@ import { useMissions } from '../stores/economy/useMissions';
 import { useCreditsStore } from '../../domain/economy/credits.store';
 import { useEquipment } from '../stores/ship/useEquipment';
 import { useSurvival } from '../stores/economy/useSurvival';
+import { useCrewManagement } from '../stores/ship/useCrewManagement';
 import { ContentRegistry } from './contentRegistry';
 import { 
   StarNode, 
@@ -100,6 +101,15 @@ export class GameFacade {
       const playerId = this.getPlayerId();
       const gameDay = this.getGameDay();
       usePlunderverseEconomy.getState().initializeRNG(playerId);
+      
+      // Initialize crew system and make it globally accessible
+      const crewManagement = useCrewManagement.getState();
+      crewManagement.initializeCrew();
+      
+      // Make crew management accessible globally for other systems
+      (window as any).crewManagement = crewManagement;
+      
+      console.log('[GameFacade] Crew system initialized');
       
       // Generate initial missions for starting location
       const player = usePlayer.getState();
@@ -515,32 +525,34 @@ export class GameFacade {
     location: string;
   }> {
     const tuning = usePlunderverseEconomy.getState().tuning;
+    const crewManagement = useCrewManagement.getState();
+    
     console.log('[GameFacade] Tuning structure:', {
       hasTuning: !!tuning,
       hasEconomy: !!tuning?.economy,
       hasDailyCosts: !!tuning?.economy?.daily_costs
     });
     
+    // Get crew salaries
+    const crewSalaries = crewManagement.dailySalaryCosts;
+    
     if (!tuning?.economy?.daily_costs) {
       console.warn('[GameFacade] No daily costs tuning found, using defaults');
       return {
-        crew: 50,
+        crew: 50 + crewSalaries,
         lifeSupport: 25,
         docking: 0,
         insurance: 15,
         supplies: 20,
-        total: 110,
+        total: 110 + crewSalaries,
         location: this.currentLocation
       };
     }
     
     const dailyCosts = tuning.economy.daily_costs;
     
-    // Calculate crew costs (base crew is always present)
-    let crewCost = dailyCosts.crew_salaries.base_crew;
-    
-    // Add specialist crew costs if they exist (future expansion)
-    // For now, just use base crew
+    // Calculate crew costs (base crew + hired specialists)
+    let crewCost = dailyCosts.crew_salaries.base_crew + crewSalaries;
     
     // Life support costs
     const lifeSupport = dailyCosts.life_support;
@@ -568,7 +580,7 @@ export class GameFacade {
     const insurance = dailyCosts.insurance;
     const supplies = dailyCosts.supplies;
     
-    // Calculate total
+    // Calculate total (including hired crew salaries)
     const total = crewCost + lifeSupport + dockingFee + insurance + supplies;
     
     return {
@@ -1188,13 +1200,22 @@ export class GameFacade {
       mission.type,
       player.reputation
     );
-    creditReward = Math.round(creditReward * payoutModifier);
+    
+    // Apply crew negotiator bonus to rewards
+    const crewState = useCrewManagement.getState();
+    let crewBonus = 1.0;
+    if (crewState.bonuses.missionRewards > 0) {
+      crewBonus = 1 + crewState.bonuses.missionRewards;
+      console.log(`[GameFacade] Applying negotiator bonus: +${crewState.bonuses.missionRewards * 100}% to mission rewards`);
+    }
+    
+    creditReward = Math.round(creditReward * payoutModifier * crewBonus);
     
     // Apply credits
     if (creditReward > 0) {
       const oldCredits = credits.credits;
       credits.earnCredits(creditReward);
-      console.log(`[GameFacade] Credits earned: ${oldCredits} -> ${credits.credits} (+${creditReward}, modifier: ${payoutModifier.toFixed(2)}x)`);
+      console.log(`[GameFacade] Credits earned: ${oldCredits} -> ${credits.credits} (+${creditReward}, modifiers: faction ${payoutModifier.toFixed(2)}x, crew ${crewBonus.toFixed(2)}x)`);
     }
     
     // Apply reputation changes

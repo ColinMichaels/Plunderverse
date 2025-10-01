@@ -18,6 +18,8 @@ import { ControlsHelp } from "../screens/ControlsHelp";
 import { SettingsPanel } from "../screens/SettingsPanel";
 import { DevDebugOverlay } from "../debug/DevDebugOverlay";
 import { EconomicPressureHUD } from "../economy/EconomicPressureHUD";
+import { CrewManagementPanel } from "../ship/CrewManagementPanel";
+import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
@@ -26,6 +28,8 @@ import { planets } from "../../lib/planetData";
 
 export function GameUI() {
   const [showSettings, setShowSettings] = useState(false);
+  const [showCrewManagement, setShowCrewManagement] = useState(false);
+  const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
   const { selectedPlanet, time } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
@@ -148,6 +152,39 @@ export function GameUI() {
 
       {/* Settings Panel */}
       <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
+
+      {/* Crew Management Button */}
+      <button
+        onClick={() => setShowCrewManagement(!showCrewManagement)}
+        className="fixed bottom-4 right-4 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white px-4 py-2 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center gap-2"
+        title="Crew Management"
+      >
+        <span className="text-xl">👥</span>
+        <span className="text-sm font-medium">Crew</span>
+      </button>
+
+      {/* Crew Management Panel - Modal overlay */}
+      {showCrewManagement && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <CrewManagementPanel
+            onClose={() => setShowCrewManagement(false)}
+            onOpenRecruitment={() => {
+              setShowCrewManagement(false);
+              setShowCrewRecruitment(true);
+            }}
+          />
+        </div>
+      )}
+
+      {/* Crew Recruitment Interface - Modal overlay */}
+      {showCrewRecruitment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <CrewRecruitmentInterface
+            stationFaction="independents"
+            onClose={() => setShowCrewRecruitment(false)}
+          />
+        </div>
+      )}
 
       {/* Debug Overlay - Dev mode only (F3 to toggle) */}
       <DevDebugOverlay />

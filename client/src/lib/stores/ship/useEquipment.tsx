@@ -201,7 +201,17 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     
     const maxRepair = equipment.maxDurability - equipment.currentDurability;
     const actualRepair = repairAmount !== undefined ? Math.min(repairAmount, maxRepair) : maxRepair;
-    const repairCost = Math.ceil((actualRepair / equipment.maxDurability) * equipment.repairCost);
+    
+    // Apply crew mechanic bonus to repair costs if available
+    let repairCostMultiplier = 1.0;
+    const crewState = (window as any).crewManagement;
+    if (crewState?.bonuses?.repairDiscount) {
+      repairCostMultiplier = 1 - crewState.bonuses.repairDiscount;
+      console.log(`[REPAIR] Applying mechanic discount: ${crewState.bonuses.repairDiscount * 100}%`);
+    }
+    
+    const baseRepairCost = Math.ceil((actualRepair / equipment.maxDurability) * equipment.repairCost);
+    const repairCost = Math.ceil(baseRepairCost * repairCostMultiplier);
     
     // Check if player has enough credits
     if (availableCredits !== undefined && availableCredits < repairCost) {
