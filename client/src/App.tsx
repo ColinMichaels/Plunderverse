@@ -1,17 +1,17 @@
 import { Canvas } from "@react-three/fiber";
 import { Suspense, useEffect, useState, useRef } from "react";
 import { KeyboardControls } from "@react-three/drei";
-import { SolarSystem } from "./components/SolarSystem";
-import { GameUI } from "./components/GameUI";
-import { SplashScreen } from "./components/SplashScreen";
-import { PlanetSurfaceScene } from "./components/PlanetSurfaceScene";
-import { TakeoffControls } from "./components/TakeoffControls";
-import { UILayoutProvider } from "./components/UILayoutManager";
+import { SolarSystem } from "./components/space/SolarSystem";
+import { GameUI } from "./components/ui/GameUI";
+import { SplashScreen } from "./components/screens/SplashScreen";
+import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
+import { TakeoffControls } from "./components/surface/TakeoffControls";
+import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { useAudio } from "./lib/stores/useAudio";
 import { useGame } from "./lib/stores/useGame";
 import { useSettings } from "./lib/stores/useSettings";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
-import { HintModal } from "./components/HintModal";
+import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import "@fontsource/inter";
 
