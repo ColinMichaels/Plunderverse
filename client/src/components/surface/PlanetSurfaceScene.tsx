@@ -30,11 +30,11 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   const getTextureForPlanet = (name: string) => {
     switch (name.toLowerCase()) {
       case "earth":
-        return "/textures/earth_grass.png";
+        return "/textures/terrain/earth_grass.png";
       case "mars":
-        return "/textures/mars_terrain.png";
+        return "/textures/terrain/mars_terrain.png";
       case "moon":
-        return "/textures/moon_terrain.png";
+        return "/textures/terrain/moon_terrain.png";
       default:
         return "/textures/surfaces/black-white-details-moon-texture-concept.jpg";
     }
