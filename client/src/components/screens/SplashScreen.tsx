@@ -14,48 +14,53 @@ export function SplashScreen() {
   const slideContent = [
     {
       type: "feature",
-      text: "🚀 Realistic Physics-Based Space Flight",
-      subtext: "Experience authentic rocket propulsion and momentum",
+      text: "🏴‍☠️ Live as a Space Outlaw in 2149",
+      subtext: "Navigate the bankrupt solar system's criminal underworld",
     },
     {
       type: "feature",
-      text: "🪐 Explore Our Solar System",
-      subtext: "Visit Mercury, Venus, Earth, Mars and beyond",
+      text: "⚖️ Choose Your Path: Hero or Villain",
+      subtext: "Every decision shapes your reputation and destiny",
     },
     {
       type: "feature",
-      text: "⛏️ Mine Resources & Manage Inventory",
-      subtext: "Discover rare materials on alien worlds",
+      text: "👥 Recruit Your Crew",
+      subtext: "Hire pilots, mechanics, and gunners with unique skills",
+    },
+    {
+      type: "feature",
+      text: "🎯 Dynamic Mission System",
+      subtext: "Smuggle contraband, mine resources, or hunt bounties",
     },
     {
       type: "reason",
-      text: "🎓 Educational & Entertaining",
-      subtext: "Learn real astronomy while having fun",
+      text: "🔥 Heat & Notoriety System",
+      subtext: "Stay under the radar or become the most wanted",
     },
     {
       type: "reason",
-      text: "🌌 Beautiful Cosmic Environments",
-      subtext: "Stunning 3D graphics powered by Three.js",
+      text: "🏛️ Three Factions to Navigate",
+      subtext: "Corporations, Independents, and fellow Outlaws",
     },
     {
       type: "reason",
-      text: "😌 Relaxing Space Exploration",
-      subtext: "Peaceful journey through the cosmos",
+      text: "💰 Economic Survival Pressure",
+      subtext: "Manage fuel, repairs, and crew salaries to stay afloat",
     },
     {
       type: "quote",
-      text: '"Like Kerbal Space Program meets No Man\'s Sky!"',
-      subtext: "- Steam Player Review",
+      text: '"Like Firefly meets Elite Dangerous!"',
+      subtext: "- Captain Reynolds, Beta Tester",
     },
     {
       type: "quote",
-      text: '"The most realistic space physics I\'ve experienced"',
-      subtext: "- SpaceGamer2024",
+      text: '"The moral choices actually matter here"',
+      subtext: "- SpaceRogue2149",
     },
     {
       type: "quote",
-      text: '"I lost hours just exploring the planets"',
-      subtext: "- AstronautDreamer",
+      text: '"From smuggler to pirate king - what a journey!"',
+      subtext: "- OutlawGamer",
     },
   ];
 
@@ -185,16 +190,18 @@ export function SplashScreen() {
   };
 
   const keyBindings = [
-    { action: "Move Forward", keys: "W / ↑" },
-    { action: "Move Backward", keys: "S / ↓" },
-    { action: "Move Left", keys: "A / ←" },
-    { action: "Move Right", keys: "D / →" },
-    { action: "Move Up", keys: "Q" },
-    { action: "Move Down", keys: "E" },
-    { action: "Fire Lasers", keys: "Space" },
-    { action: "Land on Planet", keys: "L" },
-    { action: "Toggle Info", keys: "I" },
-    { action: "Look Around", keys: "Mouse" },
+    { action: "Ship Forward", keys: "W / ↑" },
+    { action: "Ship Backward", keys: "S / ↓" },
+    { action: "Ship Left", keys: "A / ←" },
+    { action: "Ship Right", keys: "D / →" },
+    { action: "Ship Up", keys: "Q" },
+    { action: "Ship Down", keys: "E" },
+    { action: "Fire Weapons", keys: "Space" },
+    { action: "Land/Dock", keys: "L" },
+    { action: "Missions Panel", keys: "F1" },
+    { action: "Inventory", keys: "F2" },
+    { action: "Trade", keys: "F3" },
+    { action: "Debug Panel", keys: "` (backtick)" },
   ];
 
   return (
@@ -374,15 +381,15 @@ export function SplashScreen() {
         }
         
         .slide-feature {
-          color: #22d3ee;
+          color: #fb923c;
         }
         
         .slide-reason {
-          color: #a3e635;
+          color: #fbbf24;
         }
         
         .slide-quote {
-          color: #fbbf24;
+          color: #fde68a;
           font-style: italic;
         }
       `}</style>
@@ -390,14 +397,15 @@ export function SplashScreen() {
       <div className="relative z-10 text-center max-w-4xl px-8 content-float">
         {/* Enhanced Main Title with animations */}
         <div className="relative mb-4">
-          <h1 className="text-6xl md:text-8xl font-bold text-cyan-400 mb-4 tracking-wider">
-            SOLAR SYSTEM
+          <h1 className="text-6xl md:text-8xl font-bold text-orange-400 mb-4 tracking-wider relative">
+            PLUNDERVERSE
+            <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12">2149</span>
           </h1>
         </div>
 
         <div className="relative mb-8">
-          <h2 className="text-3xl md:text-4xl font-light text-cyan-300 tracking-wide">
-            EXPLORER
+          <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic">
+            The Solar System is Bankrupt. Survival Means Breaking the Law.
           </h2>
         </div>
 
@@ -419,42 +427,37 @@ export function SplashScreen() {
         {/* Main Action Button */}
         <button
           onClick={handleEnterCockpit}
-          className="bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-bold py-4 px-12 rounded-xl text-xl mb-8 
-                     transform transition-all duration-300 hover:scale-105 shadow-lg"
+          className="bg-orange-500 hover:bg-orange-400 text-slate-900 font-bold py-4 px-12 rounded-xl text-xl mb-8 
+                     transform transition-all duration-300 hover:scale-105 shadow-lg border-2 border-orange-600"
         >
-          🚀 ENTER THE COCKPIT
+          🏴‍☠️ BEGIN YOUR OUTLAW JOURNEY
         </button>
 
         {/* Menu Buttons */}
         <div className="flex justify-center gap-6 mb-8">
           <button
             onClick={() => setShowOptions(true)}
-            className="bg-slate-700 hover:bg-slate-600 text-cyan-400 font-semibold py-3 px-8 
-                       rounded-xl border border-slate-600 hover:border-cyan-400 transition-all duration-300 hover:scale-105"
+            className="bg-slate-700 hover:bg-slate-600 text-orange-400 font-semibold py-3 px-8 
+                       rounded-xl border border-slate-600 hover:border-orange-400 transition-all duration-300 hover:scale-105"
           >
             ⚙️ OPTIONS
           </button>
 
           <button
             onClick={() => setShowHelp(true)}
-            className="bg-slate-700 hover:bg-slate-600 text-cyan-400 font-semibold py-3 px-8 
-                       rounded-xl border border-slate-600 hover:border-cyan-400 transition-all duration-300 hover:scale-105"
+            className="bg-slate-700 hover:bg-slate-600 text-orange-400 font-semibold py-3 px-8 
+                       rounded-xl border border-slate-600 hover:border-orange-400 transition-all duration-300 hover:scale-105"
           >
-            ❓ HELP
+            📖 HANDBOOK
           </button>
         </div>
 
         {/* Version/Credits */}
         <p className="text-slate-500 text-sm">
-          Version 1.0.0 - Built with React, Three.js, and Tailwind CSS by{" "}
-          <a
-            href="https://colinmichaels.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-slate-400 hover:text-cyan-400 transition-colors duration-300 underline decoration-slate-600 hover:decoration-cyan-400"
-          >
-            Colin Michaels
-          </a>
+          Plunderverse Alpha v0.8 - A Firefly-Inspired Space Outlaw Adventure
+        </p>
+        <p className="text-slate-600 text-xs mt-2">
+          Built with React, Three.js, and the spirit of rebellion
         </p>
       </div>
 
@@ -462,7 +465,7 @@ export function SplashScreen() {
       {showOptions && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
           <div className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-md w-full mx-4">
-            <h3 className="text-2xl font-bold text-cyan-400 mb-6">Options</h3>
+            <h3 className="text-2xl font-bold text-orange-400 mb-6">Options</h3>
 
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -472,7 +475,7 @@ export function SplashScreen() {
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     isMuted
                       ? "bg-red-600 hover:bg-red-500 text-white"
-                      : "bg-cyan-500 hover:bg-cyan-400 text-slate-900"
+                      : "bg-orange-500 hover:bg-orange-400 text-slate-900"
                   }`}
                 >
                   {isMuted ? "🔇 Muted" : "🔊 Enabled"}
@@ -481,15 +484,15 @@ export function SplashScreen() {
 
               <div className="border-t border-slate-600 pt-4">
                 <p className="text-sm text-slate-400">
-                  Experience realistic space flight with momentum-based controls
-                  and authentic rocket physics.
+                  Navigate the lawless frontier. Your ship, your crew, your rules.
+                  Just don't get caught by the authorities.
                 </p>
               </div>
             </div>
 
             <button
               onClick={() => setShowOptions(false)}
-              className="mt-6 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
+              className="mt-6 w-full bg-orange-500 hover:bg-orange-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
             >
               Close
             </button>
@@ -501,14 +504,14 @@ export function SplashScreen() {
       {showHelp && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
           <div className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold text-cyan-400 mb-6">
-              Flight Manual
+            <h3 className="text-2xl font-bold text-orange-400 mb-6">
+              Outlaw's Handbook
             </h3>
 
             <div className="space-y-6">
               <div>
-                <h4 className="text-lg font-semibold text-cyan-400 mb-3">
-                  Controls
+                <h4 className="text-lg font-semibold text-orange-400 mb-3">
+                  Ship Controls
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {keyBindings.map((binding, index) => (
@@ -519,7 +522,7 @@ export function SplashScreen() {
                       <span className="text-slate-300 text-sm">
                         {binding.action}
                       </span>
-                      <kbd className="bg-slate-600 text-cyan-400 px-2 py-1 rounded text-xs font-mono">
+                      <kbd className="bg-slate-600 text-orange-400 px-2 py-1 rounded text-xs font-mono">
                         {binding.keys}
                       </kbd>
                     </div>
@@ -528,25 +531,27 @@ export function SplashScreen() {
               </div>
 
               <div>
-                <h4 className="text-lg font-semibold text-cyan-400 mb-3">
-                  Gameplay Tips
+                <h4 className="text-lg font-semibold text-orange-400 mb-3">
+                  Survival Tips
                 </h4>
                 <ul className="text-slate-300 text-sm space-y-2">
                   <li>
-                    • Use realistic momentum-based movement - thrusters build up
-                    speed gradually
+                    • Keep your heat low - high notoriety brings bounty hunters
                   </li>
                   <li>
-                    • Approach planets to learn about them and see detailed
-                    information
+                    • Manage fuel carefully - running out leaves you stranded
                   </li>
-                  <li>• Use the mini map to navigate the solar system</li>
+                  <li>• Pay your crew on time or risk desertion</li>
                   <li>
-                    • Fire lasers to defend yourself in the vastness of space
+                    • Build faction reputation for better prices and missions
                   </li>
-                  <li>• Land on planets by pressing 'L' when near them</li>
+                  <li>• Smuggling pays well but increases your wanted level</li>
                   <li>
-                    • Your coordinates are displayed in the top-right corner
+                    • Emergency missions appear when credits drop below 100
+                  </li>
+                  <li>• Mine resources on planets to supplement income</li>
+                  <li>
+                    • Your choices have consequences - think before acting
                   </li>
                 </ul>
               </div>
@@ -554,9 +559,9 @@ export function SplashScreen() {
 
             <button
               onClick={() => setShowHelp(false)}
-              className="mt-6 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
+              className="mt-6 w-full bg-orange-500 hover:bg-orange-400 text-slate-900 font-semibold py-2 rounded-lg transition-colors"
             >
-              Launch Mission
+              Ready to Break the Law
             </button>
           </div>
         </div>
@@ -564,9 +569,9 @@ export function SplashScreen() {
       {/* Music Player - prominently displayed */}
       <div className="absolute bottom-4 right-4">
         <div className="animate-pulse mb-1">
-          <div className="text-xs text-cyan-400 font-semibold flex items-center gap-1">
+          <div className="text-xs text-orange-400 font-semibold flex items-center gap-1">
             <span>🎵</span>
-            <span>MUSIC PLAYER</span>
+            <span>CANTINA JUKEBOX</span>
           </div>
         </div>
         <MusicPlayer />

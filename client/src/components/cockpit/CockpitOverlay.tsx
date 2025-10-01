@@ -56,19 +56,6 @@ export function CockpitOverlay() {
 
       {/* Side instrument panels */}
       <div className="absolute top-20 left-2 space-y-2"></div>
-
-      {/* Right side digital readouts */}
-      <div className="absolute top-20 right-2 space-y-2 text-right text-xs font-mono text-cyan-400">
-        <div className="bg-black/40 border border-cyan-400/30 px-2 py-1">
-          <div>VEL: 245.7</div>
-        </div>
-        <div className="bg-black/40 border border-cyan-400/30 px-2 py-1">
-          <div>ALT: 1.2K</div>
-        </div>
-        <div className="bg-black/40 border border-cyan-400/30 px-2 py-1">
-          <div>TMP: 23°C</div>
-        </div>
-      </div>
     </div>
   );
 }
