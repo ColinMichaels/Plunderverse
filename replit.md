@@ -25,6 +25,50 @@ Preferred communication style: Simple, everyday language.
 - **Tailwind CSS**: Utility-first CSS framework for responsive design
 - **Radix UI**: Headless component library for accessible UI primitives
 
+### Component Organization (October 1, 2025)
+Components are organized by gameplay mechanics and features for easier navigation:
+
+- **`space/`** - 3D Space Scene & Celestial Bodies
+  - SolarSystem, Planet, Moon, Sun, Starfield
+  - Asteroid, AsteroidField, FBXAsteroid
+
+- **`navigation/`** - Camera Controls & Navigation
+  - CameraController, OrbitalInterface, WarpingEffect
+  - MiniMap subfolder: MiniMap, FixedMiniMap
+
+- **`surface/`** - Planet Surface Gameplay
+  - PlanetSurfaceScene, SurfaceMovementController, SurfaceStatsPanel
+  - LandingTransition, LandingWarning, TakeoffControls, FlashlightSystem
+
+- **`cockpit/`** - Cockpit & HUD Elements
+  - CockpitHUD, CockpitOverlay, CoordinatesDisplay, ShipStatusHUD
+
+- **`combat/`** - Combat Systems
+  - ShootingSystem, Laser
+
+- **`economy/`** - Economy & Trading
+  - InventoryDisplay, TradingInterface, MiningInterface, MissionsPanel
+  - crypto subfolder: CryptoWallet, CryptoMarketplace
+
+- **`ship/`** - Ship Status & Management
+  - ShipStatus, EquipmentWarning
+
+- **`screens/`** - Game Screens & Menus
+  - SplashScreen, SettingsPanel, ControlsHelp, HintModal, MusicPlayer
+
+- **`ui/`** - Pure UI Framework (no game logic)
+  - GameUI (main orchestrator), SpaceUIPanel, UILayoutManager, DraggablePanel
+  - primitives subfolder: Shadcn/ui components
+
+- **`mobile/`** - Mobile-specific Controls
+  - MobileHUD, MobileControls, MobilePropulsion
+
+- **`debug/`** - Development Tools
+  - DevDebugOverlay, DebugCollisionBoxes, DebugWireframeWrapper
+
+- **`shared/`** - Shared/Info Components
+  - PlanetInfo
+
 ### State Management
 - **Zustand**: Lightweight state management for:
   - Solar system time and planet selection (`useSolarSystem`)
