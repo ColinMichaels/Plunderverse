@@ -22,23 +22,22 @@ export function SpaceUIPanel({
   canCollapse = true,
   children
 }: SpaceUIPanelProps) {
-  const { registerPanel, unregisterPanel, updatePanel } = useUILayout();
+  const { registerPanel, unregisterPanel } = useUILayout();
+
+  registerPanel({
+    id,
+    title,
+    icon,
+    zone,
+    priority,
+    isExpanded: defaultExpanded,
+    canCollapse,
+    children
+  });
 
   useEffect(() => {
-    registerPanel({
-      id,
-      title,
-      icon,
-      zone,
-      priority,
-      isExpanded: defaultExpanded,
-      canCollapse,
-      children
-    });
-
     return () => unregisterPanel(id);
-  }, [id, title, icon, zone, priority, defaultExpanded, canCollapse, children, registerPanel, unregisterPanel]);
+  }, [id, unregisterPanel]);
 
-  // The actual rendering is handled by UILayoutManager
   return null;
 }

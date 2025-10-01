@@ -6,13 +6,12 @@ import React, {
   useCallback,
 } from "react";
 
-// Define UI zones for sidebar layout
 export type UIZone = "left-sidebar" | "right-sidebar";
 
 export type UIPanel = {
   id: string;
   zone: UIZone;
-  priority: number; // Lower numbers have higher priority
+  priority: number;
   isExpanded: boolean;
   children: ReactNode;
   title: string;
@@ -38,7 +37,6 @@ export function useUILayout() {
   return context;
 }
 
-// Sidebar button component for collapsed panels
 function SidebarButton({
   panel,
   onToggle,
@@ -62,7 +60,6 @@ function SidebarButton({
   );
 }
 
-// Expanded panel overlay component
 function ExpandedPanel({
   panel,
   onToggle,
@@ -75,7 +72,6 @@ function ExpandedPanel({
       <div
         className={`expanded-panel ${panel.zone === "left-sidebar" ? "expanded-panel-left" : "expanded-panel-right"}`}
       >
-        {/* Panel header */}
         <div className="space-panel-header">
           <div className="flex items-center space-x-2">
             {panel.icon && <span className="text-cyan-400">{panel.icon}</span>}
@@ -103,7 +99,6 @@ function ExpandedPanel({
           )}
         </div>
 
-        {/* Panel content */}
         <div className="space-panel-content max-h-[70vh] opacity-100 overflow-y-auto">
           {panel.children}
         </div>
@@ -119,6 +114,17 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     setPanels((prev) => {
       const existing = prev.find((p) => p.id === panel.id);
       if (existing) {
+        const hasMetadataChanges = 
+          existing.title !== panel.title ||
+          existing.icon !== panel.icon ||
+          existing.zone !== panel.zone ||
+          existing.priority !== panel.priority ||
+          existing.canCollapse !== panel.canCollapse;
+        
+        if (!hasMetadataChanges && existing.children === panel.children) {
+          return prev;
+        }
+        
         return prev.map((p) =>
           p.id === panel.id ? { ...p, ...panel, isExpanded: p.isExpanded } : p,
         );
@@ -143,10 +149,8 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
-  // Group panels by sidebar
   const leftSidebarPanels = panels.filter((p) => p.zone === "left-sidebar");
   const rightSidebarPanels = panels.filter((p) => p.zone === "right-sidebar");
-  const expandedPanel = panels.find((p) => p.isExpanded);
 
   return (
     <UILayoutContext.Provider
@@ -160,7 +164,6 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     >
       {children}
 
-      {/* Left Sidebar */}
       <div className="ui-sidebar ui-sidebar-left">
         {leftSidebarPanels.map((panel) => (
           <SidebarButton
@@ -171,7 +174,6 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
 
-      {/* Right Sidebar */}
       <div className="ui-sidebar ui-sidebar-right">
         {rightSidebarPanels.map((panel) => (
           <SidebarButton
@@ -182,7 +184,6 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
 
-      {/* Expanded Panel Overlays - render all but show only expanded */}
       {panels.map((panel) => (
         <div 
           key={panel.id}

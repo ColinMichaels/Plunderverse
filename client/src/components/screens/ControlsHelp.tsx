@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { SpaceUIPanel } from '../ui/SpaceUIPanel';
 import { useUILayout } from '../ui/UILayoutManager';
 
