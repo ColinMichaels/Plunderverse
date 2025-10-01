@@ -121,7 +121,7 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
           existing.priority !== panel.priority ||
           existing.canCollapse !== panel.canCollapse;
         
-        if (!hasMetadataChanges && existing.children === panel.children) {
+        if (!hasMetadataChanges) {
           return prev;
         }
         

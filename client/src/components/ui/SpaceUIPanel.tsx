@@ -1,4 +1,4 @@
-import React, { useEffect, ReactNode } from 'react';
+import React, { useEffect, useRef, ReactNode } from 'react';
 import { useUILayout, UIZone } from './UILayoutManager';
 
 export interface SpaceUIPanelProps {
@@ -23,21 +23,25 @@ export function SpaceUIPanel({
   children
 }: SpaceUIPanelProps) {
   const { registerPanel, unregisterPanel } = useUILayout();
-
-  registerPanel({
-    id,
-    title,
-    icon,
-    zone,
-    priority,
-    isExpanded: defaultExpanded,
-    canCollapse,
-    children
-  });
+  const childrenRef = useRef(children);
+  childrenRef.current = children;
 
   useEffect(() => {
+    registerPanel({
+      id,
+      title,
+      icon,
+      zone,
+      priority,
+      isExpanded: defaultExpanded,
+      canCollapse,
+      get children() {
+        return childrenRef.current;
+      }
+    });
+
     return () => unregisterPanel(id);
-  }, [id, unregisterPanel]);
+  }, [id, title, icon, zone, priority, defaultExpanded, canCollapse, registerPanel, unregisterPanel]);
 
   return null;
 }
