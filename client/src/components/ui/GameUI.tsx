@@ -26,12 +26,18 @@ import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
+import { usePanelKeyboardShortcuts, PanelShortcutsHint } from "../../hooks/usePanelKeyboardShortcuts";
+import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { planets } from "../../lib/planetData";
 
 export function GameUI() {
   const [showSettings, setShowSettings] = useState(false);
   const [showCrewManagement, setShowCrewManagement] = useState(false);
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
+  
+  // Initialize panel keyboard shortcuts and docking detection
+  usePanelKeyboardShortcuts();
+  useDockingDetection();
   const { selectedPlanet, time } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
@@ -104,6 +110,9 @@ export function GameUI() {
       
       {/* Bottom Center - Primary Controls */}
       {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
+      
+      {/* Panel Shortcuts Hint */}
+      <PanelShortcutsHint />
 
       {/* Landing Transition */}
       <LandingTransition />

@@ -222,6 +222,81 @@ canvas {
   border: 1px solid rgba(75, 85, 99, 0.3);
 }
 
+/* HUD Animations */
+@keyframes fadeIn {
+  from { 
+    opacity: 0; 
+    transform: translateY(10px); 
+  }
+  to { 
+    opacity: 1; 
+    transform: translateY(0); 
+  }
+}
+
+@keyframes damageFloat {
+  0% { 
+    opacity: 1; 
+    transform: translateY(0);
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% { 
+    opacity: 1; 
+  }
+  50% { 
+    opacity: 0.5; 
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-damageFloat {
+  animation: damageFloat 1s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Panel visibility transitions */
+.panel-transition {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.panel-expanded {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.panel-collapsed {
+  opacity: 0;
+  transform: translateX(100px);
+  pointer-events: none;
+}
+
+/* Context transition effects */
+.context-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Combat screen effects */
+.combat-vignette {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 0, 0.1) 100%);
+  animation: pulse 2s infinite;
+  z-index: 100;
+}
+
 .space-status-item {
   @apply flex items-center justify-between text-xs font-mono;
 }

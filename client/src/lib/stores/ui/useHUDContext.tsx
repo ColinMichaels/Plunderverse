@@ -5,6 +5,9 @@ import { useShipStatus } from '../ship/useShipStatus';
 import { useAutopilot } from '../navigation/useAutopilot';
 import { useShooting } from '../combat/useShooting';
 import { useHeatSystem } from '../player/useHeatSystem';
+import { useSolarSystem } from '../space/useSolarSystem';
+import { planets } from '../../planetData';
+import { calculatePlanetPosition } from '../../utils3d';
 
 export type GameContext = 
   | 'space-flight'
@@ -32,14 +35,35 @@ interface HUDContextState {
   isInWarp: boolean;
   isDocked: boolean;
   isInMinigame: boolean;
+  dockedStationName: string | null;
+  
+  // Combat tracking
+  lastDamageTime: number;
+  lastShotTime: number;
+  combatCooldown: number; // 5 seconds after last shot/damage
+  
+  // Transition state
+  isTransitioning: boolean;
+  transitionDuration: number;
+  
+  // Enhanced context data
+  nearestPlanet: string | null;
+  distanceToNearest: number;
   
   // Actions
   detectContext: () => void;
-  setContext: (context: GameContext) => void;
+  setContext: (context: GameContext, smooth?: boolean) => void;
   updateZoneVisibility: (zone: keyof UIZoneVisibility, visible: boolean) => void;
   getContextPriority: (context: GameContext) => number;
   getContextVisibility: (context: GameContext) => UIZoneVisibility;
   startContextMonitoring: () => void;
+  
+  // New actions for enhanced detection
+  setDocked: (docked: boolean, stationName?: string) => void;
+  setMinigame: (active: boolean) => void;
+  registerDamage: () => void;
+  registerShot: () => void;
+  updateNearestPlanet: (planet: string | null, distance: number) => void;
 }
 
 export const useHUDContext = create<HUDContextState>((set, get) => ({
@@ -56,6 +80,17 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
   isInWarp: false,
   isDocked: false,
   isInMinigame: false,
+  dockedStationName: null,
+  
+  lastDamageTime: 0,
+  lastShotTime: 0,
+  combatCooldown: 5000, // 5 seconds
+  
+  isTransitioning: false,
+  transitionDuration: 300, // 300ms default transition
+  
+  nearestPlanet: null,
+  distanceToNearest: Infinity,
   
   detectContext: () => {
     const state = get();
@@ -66,6 +101,15 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
     const shootingState = useShooting.getState();
     const heatState = useHeatSystem.getState();
     
+    const currentTime = Date.now();
+    
+    // Enhanced combat detection
+    const recentDamage = currentTime - state.lastDamageTime < state.combatCooldown;
+    const recentShot = currentTime - state.lastShotTime < state.combatCooldown;
+    const hasProjectiles = shootingState.projectiles.length > 0;
+    const hasPatrolEncounter = heatState.patrolEncounter !== null;
+    const inCombat = recentDamage || recentShot || hasProjectiles || hasPatrolEncounter;
+    
     let newContext: GameContext = 'space-flight';
     let contextPriority = 0;
     
@@ -73,7 +117,7 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
     const contexts: { context: GameContext; condition: boolean; priority: number }[] = [
       { 
         context: 'planet-surface', 
-        condition: landedState.isLanded,
+        condition: landedState.isLanded && !miningState.isActive,
         priority: 10
       },
       { 
@@ -83,27 +127,27 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
       },
       { 
         context: 'combat', 
-        condition: shootingState.projectiles.length > 0 || heatState.patrolEncounter !== null,
+        condition: inCombat && !landedState.isLanded,
         priority: 20
       },
       { 
         context: 'docked', 
-        condition: state.isDocked, // This would be set by docking system
+        condition: state.isDocked,
         priority: 12
       },
       { 
         context: 'minigame', 
-        condition: state.isInMinigame, // Set by minigame triggers
+        condition: state.isInMinigame,
         priority: 25
       },
       { 
         context: 'autopilot', 
-        condition: autopilotState.isActive && !landedState.isLanded,
+        condition: autopilotState.isActive && !landedState.isLanded && !inCombat,
         priority: 5
       },
       { 
         context: 'space-flight', 
-        condition: !landedState.isLanded && !autopilotState.isActive,
+        condition: !landedState.isLanded && !autopilotState.isActive && !inCombat,
         priority: 1
       }
     ];
@@ -120,14 +164,27 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
     if (newContext !== state.currentContext) {
       console.log(`[HUD Context] Switching from ${state.currentContext} to ${newContext}`);
       
-      // Update visibility based on new context
-      const visibility = get().getContextVisibility(newContext);
-      
+      // Trigger smooth transition
       set({
-        previousContext: state.currentContext,
-        currentContext: newContext,
-        uiZoneVisibility: visibility,
-        isInCombat: shootingState.projectiles.length > 0,
+        isTransitioning: true,
+        isInCombat: inCombat,
+        isInWarp: shipState.isWarpMode
+      });
+      
+      // Delayed visibility update for smooth transition
+      setTimeout(() => {
+        const visibility = get().getContextVisibility(newContext);
+        set({
+          previousContext: state.currentContext,
+          currentContext: newContext,
+          uiZoneVisibility: visibility,
+          isTransitioning: false
+        });
+      }, 150);
+    } else {
+      // Update combat state even if context hasn't changed
+      set({
+        isInCombat: inCombat,
         isInWarp: shipState.isWarpMode
       });
     }
@@ -163,7 +220,7 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
         return {
           topLeft: false,  // Ship status less important
           topRight: true,  // Show missions/economy
-          bottomCenter: false, // No flight controls
+          bottomCenter: true, // Station services
           rightSidebar: true  // All panels accessible
         };
         
@@ -194,16 +251,29 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
     }
   },
   
-  setContext: (context: GameContext) => {
+  setContext: (context: GameContext, smooth = true) => {
     const state = get();
     if (context !== state.currentContext) {
-      const visibility = get().getContextVisibility(context);
-      
-      set({
-        previousContext: state.currentContext,
-        currentContext: context,
-        uiZoneVisibility: visibility
-      });
+      if (smooth) {
+        set({ isTransitioning: true });
+        
+        setTimeout(() => {
+          const visibility = get().getContextVisibility(context);
+          set({
+            previousContext: state.currentContext,
+            currentContext: context,
+            uiZoneVisibility: visibility,
+            isTransitioning: false
+          });
+        }, state.transitionDuration / 2);
+      } else {
+        const visibility = get().getContextVisibility(context);
+        set({
+          previousContext: state.currentContext,
+          currentContext: context,
+          uiZoneVisibility: visibility
+        });
+      }
       
       console.log(`[HUD Context] Manually set to ${context}`);
     }
@@ -232,10 +302,70 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
     return priorities[context] || 0;
   },
   
+  setDocked: (docked: boolean, stationName?: string) => {
+    set({
+      isDocked: docked,
+      dockedStationName: stationName || null
+    });
+    
+    if (docked) {
+      console.log(`[HUD Context] Docked at ${stationName || 'station'}`);
+    } else {
+      console.log('[HUD Context] Undocked from station');
+    }
+  },
+  
+  setMinigame: (active: boolean) => {
+    set({ isInMinigame: active });
+    console.log(`[HUD Context] Minigame ${active ? 'started' : 'ended'}`);
+  },
+  
+  registerDamage: () => {
+    set({ lastDamageTime: Date.now() });
+    console.log('[HUD Context] Damage registered');
+  },
+  
+  registerShot: () => {
+    set({ lastShotTime: Date.now() });
+  },
+  
+  updateNearestPlanet: (planet: string | null, distance: number) => {
+    set({
+      nearestPlanet: planet,
+      distanceToNearest: distance
+    });
+  },
+  
   startContextMonitoring: () => {
     // Start automatic context detection
     const intervalId = setInterval(() => {
       get().detectContext();
+      
+      // Also update nearest planet info
+      const solarSystem = useSolarSystem.getState();
+      if (solarSystem.cameraPosition) {
+        let nearest = null;
+        let minDist = Infinity;
+        
+        // Use the imported planets array and calculate their current positions
+        planets.forEach(planet => {
+          // Calculate the planet's current position based on time
+          const planetPosition = calculatePlanetPosition(planet, solarSystem.time);
+          
+          const dist = Math.sqrt(
+            Math.pow(planetPosition.x - solarSystem.cameraPosition.x, 2) +
+            Math.pow(planetPosition.y - solarSystem.cameraPosition.y, 2) +
+            Math.pow(planetPosition.z - solarSystem.cameraPosition.z, 2)
+          );
+          
+          if (dist < minDist) {
+            minDist = dist;
+            nearest = planet.name;
+          }
+        });
+        
+        get().updateNearestPlanet(nearest, minDist);
+      }
     }, 100); // Check context every 100ms
     
     // Store interval ID for cleanup if needed
