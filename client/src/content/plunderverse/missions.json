@@ -354,6 +354,654 @@
           "enemies": ["pirate_scouts"]
         }
       ]
+    },
+    {
+      "id": "story_act1_desperate_measures",
+      "title": "Desperate Measures",
+      "description": "Your contact Marcus has a job - steal medical supplies from a Corporate transport. It's dangerous, but you need the credits to survive.",
+      "type": "story",
+      "difficulty": "easy",
+      "minRank": 0,
+      "storyAct": 1,
+      "requirements": {
+        "storyProgress": "act1_start"
+      },
+      "objectives": [
+        {
+          "id": "obj_meet_marcus",
+          "type": "dialogue",
+          "description": "Meet Marcus at the Rusty Anchor bar",
+          "target": "earth_station",
+          "dialogue": {
+            "arrival": "Marcus slides a datapad across the grimy table. 'Corporate transport, docking bay 7. Medical supplies worth 10k easy. We split 60-40, my favor for the intel. You in?'"
+          }
+        },
+        {
+          "id": "obj_infiltrate",
+          "type": "stealth",
+          "description": "Infiltrate the Corporate transport",
+          "target": "corporate_transport"
+        },
+        {
+          "id": "obj_steal_supplies",
+          "type": "interact",
+          "description": "Steal the medical supplies"
+        },
+        {
+          "id": "obj_escape",
+          "type": "escape",
+          "description": "Escape before security arrives"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_split",
+          "text": "Demand a 50-50 split",
+          "appears": "obj_meet_marcus",
+          "outcomes": [
+            {
+              "type": "skillCheck",
+              "skill": "intimidation",
+              "difficulty": 12,
+              "success": {
+                "description": "Marcus backs down. 'Fine, 50-50. But this better not come back on me.'",
+                "credits": 5000
+              },
+              "failure": {
+                "description": "Marcus laughs. 'Nice try rookie. 60-40 or find another job.'",
+                "credits": 4000
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_violence",
+          "text": "Take the supplies for yourself",
+          "appears": "obj_steal_supplies",
+          "outcomes": [
+            {
+              "type": "betrayal",
+              "description": "You cut Marcus out of the deal. He won't forget this.",
+              "credits": 10000,
+              "reputation": {
+                "outlaws": -20,
+                "independents": -10
+              },
+              "consequence": "marcus_enemy",
+              "notoriety": 20
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 4000,
+          "reputation": {
+            "outlaws": 10
+          },
+          "notoriety": 10,
+          "storyProgress": "act1_first_job_complete"
+        }
+      }
+    },
+    {
+      "id": "story_act1_betrayal",
+      "title": "The Knife in the Back",
+      "description": "Marcus has set up a big score, but something doesn't feel right...",
+      "type": "story",
+      "difficulty": "medium",
+      "minRank": 2,
+      "storyAct": 1,
+      "climax": true,
+      "requirements": {
+        "storyProgress": "act1_first_job_complete"
+      },
+      "objectives": [
+        {
+          "id": "obj_rendezvous",
+          "type": "travel",
+          "description": "Meet Marcus at the abandoned station",
+          "target": "abandoned_station",
+          "dialogue": {
+            "arrival": "The station is too quiet. Marcus stands in the docking bay, sweating. 'You made it. The cargo's through here, just... follow me.'"
+          }
+        },
+        {
+          "id": "obj_ambush",
+          "type": "combat",
+          "description": "It's a trap! Corporate Security surrounds you!",
+          "enemies": ["corporate_squad", "marcus_turncoat"],
+          "dialogue": {
+            "trigger": "Marcus steps back as Corporate soldiers flood in. 'Sorry kid, they offered me a clean slate. Nothing personal.'"
+          }
+        },
+        {
+          "id": "obj_survive",
+          "type": "survive",
+          "description": "Fight your way out or find another solution"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_fight",
+          "text": "Fight your way out guns blazing",
+          "appears": "obj_ambush",
+          "outcomes": [
+            {
+              "type": "combat",
+              "description": "You blast through Corporate security, leaving bodies in your wake",
+              "reputation": {
+                "corporations": -50,
+                "outlaws": 25
+              },
+              "notoriety": 40,
+              "heat": 50
+            }
+          ]
+        },
+        {
+          "id": "choice_surrender_fake",
+          "text": "Pretend to surrender, then escape",
+          "appears": "obj_ambush",
+          "outcomes": [
+            {
+              "type": "skillCheck",
+              "skill": "deception",
+              "difficulty": 15,
+              "success": {
+                "description": "You fake surrender, then use a flash grenade to escape in the chaos",
+                "reputation": {
+                  "corporations": -20
+                },
+                "notoriety": 20
+              },
+              "failure": {
+                "description": "They see through your ruse. Time for Plan B: violence.",
+                "forceCombat": true
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_marcus_revenge",
+          "text": "Make sure Marcus doesn't leave alive",
+          "appears": "obj_survive",
+          "outcomes": [
+            {
+              "type": "vengeance",
+              "description": "You put a bullet in Marcus before escaping. Word spreads - you don't forgive betrayal.",
+              "reputation": {
+                "outlaws": 30,
+                "corporations": -30
+              },
+              "notoriety": 50,
+              "trait": "vengeful"
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 0,
+          "reputation": {
+            "outlaws": 15
+          },
+          "storyProgress": "act1_complete",
+          "unlock": "act2_missions"
+        }
+      }
+    },
+    {
+      "id": "story_act2_beaumonde_job",
+      "title": "The Beaumonde Job",
+      "description": "The heist that will make your reputation. Rob the Beaumonde Casino's vault during the Governor's Gala.",
+      "type": "story",
+      "difficulty": "hard",
+      "minRank": 4,
+      "storyAct": 2,
+      "requirements": {
+        "storyProgress": "act1_complete",
+        "crewSize": 3
+      },
+      "objectives": [
+        {
+          "id": "obj_planning",
+          "type": "preparation",
+          "description": "Plan the heist with your crew",
+          "subObjectives": [
+            "Acquire blueprints",
+            "Recruit a hacker",
+            "Get invitation to the Gala",
+            "Choose entry method"
+          ]
+        },
+        {
+          "id": "obj_infiltration",
+          "type": "choice",
+          "description": "Execute your infiltration plan"
+        },
+        {
+          "id": "obj_vault",
+          "type": "interact",
+          "description": "Crack the vault"
+        },
+        {
+          "id": "obj_escape",
+          "type": "escape",
+          "description": "Escape with the loot"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_stealth_approach",
+          "text": "Sneak in through maintenance shafts",
+          "appears": "obj_infiltration",
+          "requires": ["crew:engineer"],
+          "outcomes": [
+            {
+              "type": "stealth",
+              "description": "Your engineer guides you through the maintenance systems undetected",
+              "crewDialogue": {
+                "engineer": "I've disabled their sensors. We have 15 minutes before they cycle."
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_social_approach",
+          "text": "Attend the Gala as guests",
+          "appears": "obj_infiltration",
+          "requires": ["item:gala_invitation", "crew:diplomat"],
+          "outcomes": [
+            {
+              "type": "social",
+              "description": "You mingle with the elite while your crew gets into position",
+              "reputation": {
+                "corporations": 5
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_loud_approach",
+          "text": "Storm the casino with guns blazing",
+          "appears": "obj_infiltration",
+          "requires": ["crew:soldier", "crew:demolitionist"],
+          "outcomes": [
+            {
+              "type": "combat",
+              "description": "You hit hard and fast. Alarms blare as you fight to the vault.",
+              "enemies": ["casino_security", "corporate_response_team"],
+              "notoriety": 70,
+              "heat": 75
+            }
+          ]
+        },
+        {
+          "id": "choice_double_cross",
+          "text": "Your hacker offers to split the take if you cut out the crew",
+          "appears": "obj_vault",
+          "outcomes": [
+            {
+              "type": "betrayal",
+              "description": "You accept the hacker's deal. Your crew won't forgive this.",
+              "credits": 100000,
+              "crewLoyalty": -50,
+              "consequence": "crew_betrayed",
+              "trait": "untrustworthy"
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 50000,
+          "reputation": {
+            "outlaws": 40,
+            "corporations": -60
+          },
+          "notoriety": 60,
+          "storyProgress": "beaumonde_complete",
+          "unlock": "legendary_fence_contact"
+        },
+        "perfect": {
+          "condition": "no_alarms",
+          "credits": 25000,
+          "reputation": {
+            "outlaws": 20
+          },
+          "item": "master_thief_kit"
+        }
+      }
+    },
+    {
+      "id": "story_act2_corporate_conspiracy",
+      "title": "The Earth Files",
+      "description": "You've intercepted encrypted Corporate communications mentioning 'Project Scorched Earth'. The truth about humanity's homeworld is darker than anyone imagined.",
+      "type": "story",
+      "difficulty": "hard",
+      "minRank": 6,
+      "storyAct": 2,
+      "climax": true,
+      "requirements": {
+        "storyProgress": "beaumonde_complete"
+      },
+      "objectives": [
+        {
+          "id": "obj_decrypt",
+          "type": "puzzle",
+          "description": "Decrypt the Corporate files",
+          "dialogue": {
+            "success": "The files reveal everything: The Corps deliberately triggered Earth's environmental collapse to force humanity into space, where they control everything."
+          }
+        },
+        {
+          "id": "obj_infiltrate_archive",
+          "type": "stealth",
+          "description": "Break into the Corporate Archive Station",
+          "target": "corporate_archive"
+        },
+        {
+          "id": "obj_download_evidence",
+          "type": "interact",
+          "description": "Download the evidence of Corporate crimes"
+        },
+        {
+          "id": "obj_choice_evidence",
+          "type": "choice",
+          "description": "Decide what to do with the evidence"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_broadcast",
+          "text": "Broadcast the truth to every station",
+          "appears": "obj_choice_evidence",
+          "outcomes": [
+            {
+              "type": "revelation",
+              "description": "The truth sparks riots across the frontier. The Corps will never forgive you.",
+              "reputation": {
+                "corporations": -100,
+                "independents": 50,
+                "outlaws": 30
+              },
+              "notoriety": 80,
+              "heat": 90,
+              "storyFlag": "truth_revealed"
+            }
+          ]
+        },
+        {
+          "id": "choice_blackmail",
+          "text": "Use the files to blackmail the Corporations",
+          "appears": "obj_choice_evidence",
+          "outcomes": [
+            {
+              "type": "leverage",
+              "description": "You have leverage over the Corps. They'll pay to keep you quiet.",
+              "credits": 200000,
+              "monthlyIncome": 5000,
+              "reputation": {
+                "corporations": -20
+              },
+              "storyFlag": "corporate_blackmailer"
+            }
+          ]
+        },
+        {
+          "id": "choice_destroy_evidence",
+          "text": "Destroy the files - some truths are too dangerous",
+          "appears": "obj_choice_evidence",
+          "outcomes": [
+            {
+              "type": "suppression",
+              "description": "You destroy the evidence. The truth dies with you.",
+              "reputation": {
+                "corporations": 20
+              },
+              "trait": "keeper_of_secrets",
+              "storyFlag": "truth_buried"
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "storyProgress": "act2_complete",
+          "unlock": "act3_missions"
+        }
+      }
+    },
+    {
+      "id": "story_act3_faction_war",
+      "title": "The Side You Choose",
+      "description": "The frontier is at war. Corporations, Independents, and Outlaws clash for control. Your choice will determine the future.",
+      "type": "story",
+      "difficulty": "legendary",
+      "minRank": 8,
+      "storyAct": 3,
+      "climax": true,
+      "requirements": {
+        "storyProgress": "act2_complete"
+      },
+      "objectives": [
+        {
+          "id": "obj_war_briefing",
+          "type": "dialogue",
+          "description": "Receive offers from all three factions",
+          "dialogue": {
+            "corporations": "Join us. We offer legitimacy, wealth, and power. Help us restore order.",
+            "independents": "Fight for freedom. The colonies need a leader who understands struggle.",
+            "outlaws": "Take what's ours. No masters, no chains. Rule through strength."
+          }
+        },
+        {
+          "id": "obj_choose_side",
+          "type": "choice",
+          "description": "Choose your faction for the final war"
+        },
+        {
+          "id": "obj_faction_missions",
+          "type": "dynamic",
+          "description": "Complete faction-specific war missions"
+        },
+        {
+          "id": "obj_final_battle",
+          "type": "combat",
+          "description": "Lead your faction in the decisive battle"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_corporations",
+          "text": "Side with the Corporations - Order through control",
+          "appears": "obj_choose_side",
+          "outcomes": [
+            {
+              "type": "allegiance",
+              "faction": "corporations",
+              "description": "You join the Corporate fleet. Your past crimes are expunged.",
+              "reputation": {
+                "corporations": 100,
+                "independents": -50,
+                "outlaws": -75
+              },
+              "storyPath": "corporate_ending"
+            }
+          ]
+        },
+        {
+          "id": "choice_independents",
+          "text": "Side with the Independents - Freedom for all",
+          "appears": "obj_choose_side",
+          "outcomes": [
+            {
+              "type": "allegiance",
+              "faction": "independents",
+              "description": "You become the champion of the free colonies.",
+              "reputation": {
+                "independents": 100,
+                "corporations": -50,
+                "outlaws": -25
+              },
+              "storyPath": "independent_ending"
+            }
+          ]
+        },
+        {
+          "id": "choice_outlaws",
+          "text": "Side with the Outlaws - Take everything",
+          "appears": "obj_choose_side",
+          "outcomes": [
+            {
+              "type": "allegiance",
+              "faction": "outlaws",
+              "description": "You embrace chaos and lead the outlaw armada.",
+              "reputation": {
+                "outlaws": 100,
+                "corporations": -75,
+                "independents": -30
+              },
+              "notoriety": 100,
+              "storyPath": "outlaw_ending"
+            }
+          ]
+        },
+        {
+          "id": "choice_none",
+          "text": "Side with no one - Forge your own path",
+          "appears": "obj_choose_side",
+          "requires": ["fleet:3", "base:established"],
+          "outcomes": [
+            {
+              "type": "independence",
+              "description": "You declare independence from all factions.",
+              "reputation": {
+                "corporations": -40,
+                "independents": -40,
+                "outlaws": -40
+              },
+              "trait": "true_independent",
+              "storyPath": "independent_ending"
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "storyProgress": "act3_complete",
+          "unlock": "act4_missions"
+        }
+      }
+    },
+    {
+      "id": "story_act4_final_battle",
+      "title": "The Last Stand",
+      "description": "Everything has led to this moment. The fate of the frontier will be decided here.",
+      "type": "story",
+      "difficulty": "legendary",
+      "minRank": 10,
+      "storyAct": 4,
+      "climax": true,
+      "finalMission": true,
+      "requirements": {
+        "storyProgress": "act3_complete"
+      },
+      "objectives": [
+        {
+          "id": "obj_rally_forces",
+          "type": "preparation",
+          "description": "Rally your allies for the final battle"
+        },
+        {
+          "id": "obj_crew_moments",
+          "type": "dialogue",
+          "description": "Share final moments with your crew",
+          "dialogue": {
+            "engineer": "Whatever happens, Captain, it's been an honor.",
+            "pilot": "Let's give them hell one last time.",
+            "gunner": "Save the speeches. We've got work to do."
+          }
+        },
+        {
+          "id": "obj_final_assault",
+          "type": "combat",
+          "description": "Lead the assault",
+          "enemies": ["enemy_flagship", "enemy_fleet"],
+          "scale": "epic"
+        },
+        {
+          "id": "obj_final_choice",
+          "type": "choice",
+          "description": "With victory in your grasp, decide the frontier's fate"
+        }
+      ],
+      "choices": [
+        {
+          "id": "ending_pirate_king",
+          "text": "Seize control - Become the Pirate King",
+          "appears": "obj_final_choice",
+          "requires": ["notoriety:90", "fleet:5"],
+          "outcomes": [
+            {
+              "type": "ending",
+              "endingId": "pirate_king",
+              "description": "You crush all opposition and rule through fear. The frontier is yours.",
+              "epilogue": "Years later, your name is still whispered in terror. Ships pay tribute to pass through 'your' space. You got everything you wanted - an empire built on fear."
+            }
+          ]
+        },
+        {
+          "id": "ending_robin_hood",
+          "text": "Liberate the colonies - Become a hero",
+          "appears": "obj_final_choice",
+          "requires": ["independents:80", "moralityScore:50"],
+          "outcomes": [
+            {
+              "type": "ending",
+              "endingId": "robin_hood",
+              "description": "You break the chains of oppression and free the colonies.",
+              "epilogue": "The frontier prospers under freedom. Statues of you stand in colony squares. Children play 'Captain and Crew,' always fighting for justice. You became the hero you never thought you'd be."
+            }
+          ]
+        },
+        {
+          "id": "ending_redemption",
+          "text": "Seek redemption - Atone for your crimes",
+          "appears": "obj_final_choice",
+          "requires": ["moralityScore:75", "savedLives:100"],
+          "outcomes": [
+            {
+              "type": "ending",
+              "endingId": "redemption",
+              "description": "You turn from your dark path and choose redemption.",
+              "epilogue": "You spend your remaining years helping rebuild what was destroyed. Former enemies become allies. Your crew finds peace. In the end, you proved that anyone can change."
+            }
+          ]
+        },
+        {
+          "id": "ending_true_freedom",
+          "text": "Disappear into the black - True independence",
+          "appears": "obj_final_choice",
+          "requires": ["noFactionAbove:60"],
+          "outcomes": [
+            {
+              "type": "ending",
+              "endingId": "true_independence",
+              "description": "You refuse to rule or be ruled. Your ship vanishes into deep space.",
+              "epilogue": "Some say you're still out there, flying free among the stars. No chains, no masters, no responsibilities. Just you, your ship, and the infinite black. The only true freedom."
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "storyProgress": "game_complete",
+          "unlock": "new_game_plus",
+          "achievement": "space_pirate_supreme"
+        }
+      }
     }
   ]
 }

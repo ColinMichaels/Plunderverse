@@ -31,8 +31,31 @@ export class GameFacade {
   private maintenanceInterval: NodeJS.Timeout | null = null;
   private survivalInterval: NodeJS.Timeout | null = null;
   
+  // Story progression tracking
+  private storyProgress: Map<string, any> = new Map();
+  private currentAct: number = 1;
+  private completedStoryMissions: Set<string> = new Set();
+  private playerChoices: Map<string, string> = new Map(); // Track important choices
+  private moralityScore: number = 0; // Tracks moral alignment
+  private endingPath: string | null = null;
+  
+  // Progression metrics
+  private progressionMetrics = {
+    creditsEarnedTotal: 0,
+    missionsCompleted: 0,
+    missionsByType: new Map<string, number>(),
+    combatVictories: 0,
+    systemsVisited: new Set<string>(),
+    crewRecruited: 0,
+    shipsOwned: 1,
+    basesControlled: 0,
+    livesLost: 0,
+    livesSaved: 0
+  };
+  
   private constructor() {
     this.contentRegistry = new ContentRegistry();
+    this.loadProgressionData();
   }
   
   static getInstance(): GameFacade {
@@ -1010,6 +1033,9 @@ export class GameFacade {
     const player = usePlayer.getState();
     player.updateNotoriety(2);
     
+    // Update progression metrics
+    this.progressionMetrics.combatVictories++;
+    
     // Apply heat through new heat system
     const { useHeatSystem } = await import('../stores/player/useHeatSystem');
     const heatSystem = useHeatSystem.getState();
@@ -1017,10 +1043,448 @@ export class GameFacade {
     // Combat with law enforcement is assault
     if (enemyType === 'patrol' || enemyType === 'police') {
       heatSystem.applyHeat('assault', 1.5);
+      this.moralityScore -= 5; // Attacking law enforcement is immoral
     } else {
       // Regular combat is minor crime
       heatSystem.applyHeat('minor_smuggling', 0.5);
     }
+  }
+  
+  // ============================================================================
+  // STORY PROGRESSION METHODS
+  // ============================================================================
+  
+  /**
+   * Load progression data from localStorage
+   */
+  private loadProgressionData(): void {
+    const saved = localStorage.getItem('plunderverse_progression');
+    if (saved) {
+      try {
+        const data = JSON.parse(saved);
+        this.progressionMetrics = { ...this.progressionMetrics, ...data.metrics };
+        this.currentAct = data.currentAct || 1;
+        this.moralityScore = data.moralityScore || 0;
+        this.completedStoryMissions = new Set(data.completedStoryMissions || []);
+        this.playerChoices = new Map(Object.entries(data.playerChoices || {}));
+        this.storyProgress = new Map(Object.entries(data.storyProgress || {}));
+      } catch (error) {
+        console.error('[GameFacade] Failed to load progression data:', error);
+      }
+    }
+  }
+  
+  /**
+   * Save progression data to localStorage
+   */
+  private saveProgressionData(): void {
+    const data = {
+      metrics: {
+        ...this.progressionMetrics,
+        systemsVisited: Array.from(this.progressionMetrics.systemsVisited),
+        missionsByType: Object.fromEntries(this.progressionMetrics.missionsByType)
+      },
+      currentAct: this.currentAct,
+      moralityScore: this.moralityScore,
+      completedStoryMissions: Array.from(this.completedStoryMissions),
+      playerChoices: Object.fromEntries(this.playerChoices),
+      storyProgress: Object.fromEntries(this.storyProgress)
+    };
+    localStorage.setItem('plunderverse_progression', JSON.stringify(data));
+  }
+  
+  /**
+   * Get current story act information
+   */
+  async getCurrentAct(): Promise<any> {
+    const content = await this.contentRegistry.loadContent();
+    const storyActs = content.storyActs;
+    if (!storyActs) return null;
+    
+    return storyActs.acts.find((act: any) => act.number === this.currentAct);
+  }
+  
+  /**
+   * Check and update rank progression
+   */
+  async checkRankProgression(): Promise<{
+    currentRank: number;
+    nextRank: number | null;
+    progress: {
+      credits: number;
+      missions: number;
+      notoriety: number;
+      special: string | null;
+    };
+    canAdvance: boolean;
+  }> {
+    const player = usePlayer.getState();
+    const content = await this.contentRegistry.loadContent();
+    const rankRequirements = content.storyActs?.rankRequirements || [];
+    
+    const currentRank = player.rank;
+    const nextRankData = rankRequirements.find((r: any) => r.rank === currentRank + 1);
+    
+    if (!nextRankData) {
+      return {
+        currentRank,
+        nextRank: null,
+        progress: {
+          credits: this.progressionMetrics.creditsEarnedTotal,
+          missions: this.progressionMetrics.missionsCompleted,
+          notoriety: player.notoriety,
+          special: null
+        },
+        canAdvance: false
+      };
+    }
+    
+    const progress = {
+      credits: this.progressionMetrics.creditsEarnedTotal,
+      missions: this.progressionMetrics.missionsCompleted,
+      notoriety: player.notoriety,
+      special: nextRankData.requirements.special || null
+    };
+    
+    // Check if requirements are met
+    let canAdvance = progress.credits >= nextRankData.requirements.credits &&
+                     progress.missions >= nextRankData.requirements.missions &&
+                     progress.notoriety >= nextRankData.requirements.notoriety;
+    
+    // Check special requirements
+    if (nextRankData.requirements.special) {
+      canAdvance = canAdvance && this.checkSpecialRequirement(nextRankData.requirements.special);
+    }
+    
+    if (canAdvance) {
+      await this.advanceRank();
+    }
+    
+    return {
+      currentRank,
+      nextRank: currentRank + 1,
+      progress,
+      canAdvance
+    };
+  }
+  
+  /**
+   * Check special rank requirements
+   */
+  private checkSpecialRequirement(requirement: string): boolean {
+    const player = usePlayer.getState();
+    const crewManagement = useCrewManagement.getState();
+    
+    if (requirement.includes('smuggling missions')) {
+      const count = parseInt(requirement.match(/\d+/)?.[0] || '0');
+      return (this.progressionMetrics.missionsByType.get('smuggling') || 0) >= count;
+    }
+    
+    if (requirement.includes('Complete Act')) {
+      const actNum = parseInt(requirement.match(/\d+/)?.[0] || '0');
+      return this.currentAct > actNum;
+    }
+    
+    if (requirement.includes('faction at Friendly')) {
+      return Object.values(player.reputation).some(rep => rep >= 50);
+    }
+    
+    if (requirement.includes('Control a base')) {
+      return this.progressionMetrics.basesControlled > 0;
+    }
+    
+    if (requirement.includes('Maximum reputation')) {
+      return Object.values(player.reputation).some(rep => rep >= 90);
+    }
+    
+    if (requirement.includes('Complete the final battle')) {
+      return this.completedStoryMissions.has('story_act4_final_battle');
+    }
+    
+    return false;
+  }
+  
+  /**
+   * Advance player rank
+   */
+  private async advanceRank(): Promise<void> {
+    const player = usePlayer.getState();
+    const content = await this.contentRegistry.loadContent();
+    const ranks = content.ranks;
+    
+    player.incrementRank();
+    
+    // Check for act progression
+    const currentAct = await this.getCurrentAct();
+    if (currentAct && player.rank > currentAct.rankRange.max) {
+      this.currentAct++;
+      console.log(`[GameFacade] Advanced to Act ${this.currentAct}!`);
+      
+      // Generate new story missions for the new act
+      this.generateStoryMissions();
+    }
+    
+    this.saveProgressionData();
+  }
+  
+  /**
+   * Generate story missions for current act
+   */
+  private async generateStoryMissions(): Promise<void> {
+    const content = await this.contentRegistry.loadContent();
+    const currentAct = await this.getCurrentAct();
+    const allMissions = content.missions;
+    
+    if (!currentAct) return;
+    
+    const storyMissions = allMissions.filter((m: any) => 
+      m.type === 'story' && m.storyAct === this.currentAct && !this.completedStoryMissions.has(m.id)
+    );
+    
+    const missionsStore = usePlunderverseMissions.getState();
+    
+    // Add story missions to available missions
+    storyMissions.forEach((mission: any) => {
+      if (!missionsStore.availableMissions.find(m => m.id === mission.id)) {
+        missionsStore.availableMissions.push(mission);
+      }
+    });
+    
+    console.log(`[GameFacade] Generated ${storyMissions.length} story missions for Act ${this.currentAct}`);
+  }
+  
+  /**
+   * Track player choice and update morality
+   */
+  recordPlayerChoice(missionId: string, choiceId: string, moralityImpact: number = 0): void {
+    this.playerChoices.set(`${missionId}_choice`, choiceId);
+    this.moralityScore += moralityImpact;
+    
+    // Track specific choices that affect endings
+    if (choiceId.includes('betray')) {
+      this.storyProgress.set('betrayed_crew', true);
+      this.moralityScore -= 20;
+    }
+    
+    if (choiceId.includes('save') || choiceId.includes('rescue')) {
+      this.progressionMetrics.livesSaved++;
+      this.moralityScore += 10;
+    }
+    
+    if (choiceId.includes('kill') || choiceId.includes('destroy')) {
+      this.progressionMetrics.livesLost++;
+      this.moralityScore -= 15;
+    }
+    
+    this.saveProgressionData();
+  }
+  
+  /**
+   * Get available endings based on current state
+   */
+  async getAvailableEndings(): Promise<any[]> {
+    const content = await this.contentRegistry.loadContent();
+    const player = usePlayer.getState();
+    const crewManagement = useCrewManagement.getState();
+    const creditsStore = useCreditsStore.getState();
+    
+    const act4 = content.storyActs?.acts.find((act: any) => act.number === 4);
+    if (!act4) return [];
+    
+    const availableEndings = [];
+    
+    for (const ending of act4.endings) {
+      let isAvailable = true;
+      const req = ending.requirements;
+      
+      // Check notoriety requirement
+      if (req.notoriety && player.notoriety < req.notoriety) {
+        isAvailable = false;
+      }
+      
+      // Check faction reputation
+      if (req.outlawReputation && player.reputation.outlaws < req.outlawReputation) {
+        isAvailable = false;
+      }
+      if (req.independentReputation && player.reputation.independents < req.independentReputation) {
+        isAvailable = false;
+      }
+      if (req.corporateReputation && player.reputation.corporations < req.corporateReputation) {
+        isAvailable = false;
+      }
+      
+      // Check morality score
+      if (req.moralityScore !== undefined && this.moralityScore < req.moralityScore) {
+        isAvailable = false;
+      }
+      
+      // Check credits
+      if (req.credits && creditsStore.credits < req.credits) {
+        isAvailable = false;
+      }
+      
+      // Check crew loyalty
+      if (req.crewLoyalty) {
+        const avgLoyalty = crewManagement.crewMembers.reduce((sum, crew) => 
+          sum + (crew.loyalty || 50), 0) / crewManagement.crewMembers.length;
+        if (avgLoyalty < req.crewLoyalty) {
+          isAvailable = false;
+        }
+      }
+      
+      // Check special conditions
+      if (req.noFactionAbove) {
+        const maxRep = Math.max(...Object.values(player.reputation));
+        if (maxRep > req.noFactionAbove) {
+          isAvailable = false;
+        }
+      }
+      
+      if (req.savedLives && this.progressionMetrics.livesSaved < req.savedLives) {
+        isAvailable = false;
+      }
+      
+      if (isAvailable) {
+        availableEndings.push(ending);
+      }
+    }
+    
+    return availableEndings;
+  }
+  
+  /**
+   * Trigger game ending
+   */
+  async triggerEnding(endingId: string): Promise<{
+    success: boolean;
+    ending: any;
+    newGamePlusBonuses?: any[];
+  }> {
+    const endings = await this.getAvailableEndings();
+    const selectedEnding = endings.find(e => e.id === endingId);
+    
+    if (!selectedEnding) {
+      return { success: false, ending: null };
+    }
+    
+    // Mark game as complete
+    this.storyProgress.set('game_complete', true);
+    this.storyProgress.set('ending_achieved', endingId);
+    this.endingPath = endingId;
+    
+    // Calculate New Game+ bonuses
+    const content = await this.contentRegistry.loadContent();
+    const ngPlusBonuses = this.calculateNewGamePlusBonuses(content.storyActs?.newGamePlus);
+    
+    // Save final state
+    this.saveProgressionData();
+    
+    return {
+      success: true,
+      ending: selectedEnding,
+      newGamePlusBonuses: ngPlusBonuses
+    };
+  }
+  
+  /**
+   * Calculate New Game+ bonuses
+   */
+  private calculateNewGamePlusBonuses(ngPlusConfig: any): any[] {
+    if (!ngPlusConfig?.enabled) return [];
+    
+    const bonuses = [];
+    const creditsStore = useCreditsStore.getState();
+    const crewManagement = useCrewManagement.getState();
+    const player = usePlayer.getState();
+    
+    for (const bonus of ngPlusConfig.bonuses) {
+      let qualified = false;
+      let value: any = null;
+      
+      switch (bonus.id) {
+        case 'bonus_credits':
+          qualified = true;
+          value = Math.floor(creditsStore.credits * 0.1);
+          break;
+          
+        case 'bonus_crew':
+          const loyalCrew = crewManagement.crewMembers.find(c => (c.loyalty || 50) >= 90);
+          if (loyalCrew) {
+            qualified = true;
+            value = loyalCrew.name;
+          }
+          break;
+          
+        case 'bonus_ship':
+          if (this.endingPath) {
+            qualified = true;
+            value = 'upgraded_starter_ship';
+          }
+          break;
+          
+        case 'bonus_reputation':
+          const alliedFaction = Object.entries(player.reputation)
+            .find(([_, rep]) => rep >= 80);
+          if (alliedFaction) {
+            qualified = true;
+            value = { faction: alliedFaction[0], bonus: 10 };
+          }
+          break;
+      }
+      
+      if (qualified) {
+        bonuses.push({ ...bonus, value });
+      }
+    }
+    
+    return bonuses;
+  }
+  
+  /**
+   * Get story progression state for UI
+   */
+  getStoryProgressionState(): {
+    currentAct: number;
+    completedMissions: number;
+    totalStoryMissions: number;
+    moralityScore: number;
+    moralityAlignment: string;
+    progressionMetrics: any;
+    nextMilestone: string | null;
+    endingPath: string | null;
+  } {
+    const alignment = this.moralityScore >= 50 ? 'Hero' :
+                     this.moralityScore >= 20 ? 'Neutral' :
+                     this.moralityScore >= -20 ? 'Opportunist' :
+                     this.moralityScore >= -50 ? 'Villain' : 'Monster';
+    
+    // Determine next milestone
+    let nextMilestone = null;
+    const player = usePlayer.getState();
+    if (player.rank < 3) {
+      nextMilestone = 'Complete Act 1 betrayal';
+    } else if (player.rank < 6) {
+      nextMilestone = 'Pull off the Beaumonde Job';
+    } else if (player.rank < 8) {
+      nextMilestone = 'Choose your faction in the war';
+    } else if (player.rank < 10) {
+      nextMilestone = 'Prepare for the final battle';
+    }
+    
+    return {
+      currentAct: this.currentAct,
+      completedMissions: this.completedStoryMissions.size,
+      totalStoryMissions: 12, // Total story missions across all acts
+      moralityScore: this.moralityScore,
+      moralityAlignment: alignment,
+      progressionMetrics: {
+        ...this.progressionMetrics,
+        systemsVisited: Array.from(this.progressionMetrics.systemsVisited),
+        missionsByType: Object.fromEntries(this.progressionMetrics.missionsByType)
+      },
+      nextMilestone,
+      endingPath: this.endingPath
+    };
   }
   
   /**
@@ -1254,7 +1718,7 @@ export class GameFacade {
     }
   }
   
-  private checkRankProgression(): void {
+  private updateRankProgressionInternal(): void {
     const player = usePlayer.getState();
     const credits = useCreditsStore.getState();
     const missionsStore = usePlunderverseMissions.getState();

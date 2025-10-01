@@ -20,6 +20,7 @@ import { DevDebugOverlay } from "../debug/DevDebugOverlay";
 import { EconomicPressureHUD } from "../economy/EconomicPressureHUD";
 import { CrewManagementPanel } from "../ship/CrewManagementPanel";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
+import { StoryProgressionPanel } from "./StoryProgressionPanel";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
@@ -123,6 +124,9 @@ export function GameUI() {
       {/* Right Sidebar Panels */}
       <MissionsPanel />
       <ControlsHelp />
+      
+      {/* Story Progression Panel */}
+      <StoryProgressionPanel />
       
       {/* Cryptocurrency Components */}
       <CryptoWallet />

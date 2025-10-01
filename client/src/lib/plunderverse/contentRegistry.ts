@@ -324,7 +324,8 @@ class ContentRegistry {
       '../../content/plunderverse/nodes.json': 'nodes',
       '../../content/plunderverse/ranks.json': 'ranks',
       '../../content/plunderverse/items.json': 'items',
-      '../../content/plunderverse/tuning.json': 'tuning'
+      '../../content/plunderverse/tuning.json': 'tuning',
+      '../../content/plunderverse/story_acts.json': 'storyActs'
     };
 
     for (const [path, module] of Object.entries(contentModules)) {
@@ -473,7 +474,8 @@ class ContentRegistry {
           '../../content/plunderverse/nodes.json',
           '../../content/plunderverse/ranks.json',
           '../../content/plunderverse/items.json',
-          '../../content/plunderverse/tuning.json'
+          '../../content/plunderverse/tuning.json',
+          '../../content/plunderverse/story_acts.json'
         ],
         async () => {
           console.log('Plunderverse content changed, hot-reloading...');
