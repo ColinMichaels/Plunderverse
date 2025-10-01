@@ -107,6 +107,21 @@ export const AUDIO_CONFIG: AudioConfig = {
       name: "Orbit by Van Sandano",
       categories: ["space"],
     },
+    {
+      filename: "Galactic Marauder's Anthem.mp3",
+      name: "Galactic Marauder's Anthem",
+      categories: ["space"],
+    },
+    {
+      filename: "Galactic Plunderers v2.mp3",
+      name: "Galactic Plunderers v2",
+      categories: ["space", "atmospheric"],
+    },
+    {
+      filename: "Galactic Plunderers.mp3",
+      name: "Galactic Plunderers",
+      categories: ["space", "atmospheric"],
+    },
   ],
   globalVolume: 1.0,
   crossfadeDuration: 2000,
