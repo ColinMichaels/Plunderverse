@@ -15,6 +15,7 @@ import { ShipCoreStatus } from "./ShipCoreStatus";
 import { MissionContextHUD } from "./MissionContextHUD";
 import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
 import { ActionBar } from "./ActionBar";
+import { ObjectiveTracker } from "../economy/ObjectiveTracker";
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
@@ -95,6 +96,9 @@ export function GameUI() {
       {/* New Contextual HUD System */}
       {/* Top Left - Ship Core Status */}
       {uiZoneVisibility.topLeft && <ShipCoreStatus />}
+      
+      {/* Top Left - Objective Tracker (below ship status) */}
+      {uiZoneVisibility.topLeft && <ObjectiveTracker />}
 
       {/* Top Right - Mission Context */}
       {uiZoneVisibility.topRight && <MissionContextHUD />}
