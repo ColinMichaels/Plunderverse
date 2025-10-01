@@ -6,7 +6,6 @@ import { gameFacade } from "../../lib/plunderverse/gameFacade";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { DraggablePanel } from "../ui/DraggablePanel";
 import { 
   Select,
   SelectContent,
@@ -16,9 +15,7 @@ import {
 } from "../ui/select";
 
 export function MissionDebugPanel() {
-  console.log("[MISSION-DEBUG] MissionDebugPanel component initialized");
-  
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true); // Start visible for testing
   const [creditAmount, setCreditAmount] = useState("1000");
   const [reputationAmount, setReputationAmount] = useState("10");
   const [selectedFaction, setSelectedFaction] = useState("corporations");
@@ -30,8 +27,11 @@ export function MissionDebugPanel() {
   // Keyboard shortcut to toggle debug panel (`)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === "`") {
-        e.preventDefault(); // Prevent the backtick from being typed in input fields
+      console.log(`[MISSION-DEBUG] Key pressed: "${e.key}", code: "${e.code}"`);
+      
+      if (e.key === "`" || e.key === "~") {
+        e.preventDefault(); 
+        e.stopPropagation();
         setIsVisible(prev => {
           const newValue = !prev;
           console.log(`[MISSION-DEBUG] Debug panel toggled: ${prev} -> ${newValue}`);
@@ -40,22 +40,19 @@ export function MissionDebugPanel() {
       }
     };
 
-    window.addEventListener("keydown", handleKeyPress);
-    return () => window.removeEventListener("keydown", handleKeyPress);
+    window.addEventListener("keydown", handleKeyPress, true); // Use capture phase
+    return () => window.removeEventListener("keydown", handleKeyPress, true);
   }, []);
 
-  // Debug logging
-  console.log(`[MISSION-DEBUG] Render check - isVisible: ${isVisible}, DEV: ${import.meta.env.DEV}`);
-
   if (!import.meta.env.DEV) {
-    console.log("[MISSION-DEBUG] Not in dev mode, hiding panel");
     return null;
   }
 
   if (!isVisible) {
-    console.log("[MISSION-DEBUG] Panel hidden by visibility state");
     return null;
   }
+  
+  console.log("[MISSION-DEBUG] Rendering debug panel");
 
   const addCredits = () => {
     const amount = parseInt(creditAmount) || 1000;
@@ -174,12 +171,16 @@ export function MissionDebugPanel() {
   };
 
   return (
-    <DraggablePanel
-      title="Mission Debug Panel (`)"
-      onClose={() => setIsVisible(false)}
-      defaultPosition={{ x: 20, y: 150 }}
-      className="z-[9999]"
-    >
+    <div className="fixed bottom-4 right-4 z-[9999] bg-gray-900 border-2 border-cyan-400 rounded-lg shadow-2xl" style={{ zIndex: 99999 }}>
+      <div className="bg-cyan-600 text-white p-2 flex justify-between items-center">
+        <span className="font-bold">Mission Debug Panel (`)</span>
+        <button 
+          onClick={() => setIsVisible(false)}
+          className="text-white hover:text-gray-200 text-xl"
+        >
+          ×
+        </button>
+      </div>
       <div className="p-4 space-y-4 bg-gray-900 text-white min-w-[350px] max-h-[600px] overflow-y-auto">
         {/* Status Display */}
         <div className="bg-gray-800 p-3 rounded space-y-2">
@@ -303,6 +304,6 @@ export function MissionDebugPanel() {
           <div>F3 - Toggle main debug overlay</div>
         </div>
       </div>
-    </DraggablePanel>
+    </div>
   );
 }
