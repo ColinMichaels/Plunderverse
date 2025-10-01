@@ -37,12 +37,7 @@ export function SpaceUIPanel({
     });
 
     return () => unregisterPanel(id);
-  }, [id, title, icon, zone, priority, defaultExpanded, canCollapse, registerPanel, unregisterPanel]);
-
-  // Update children whenever they change (this fixes the stale children issue)
-  useEffect(() => {
-    updatePanel(id, { children });
-  }, [children, id, updatePanel]);
+  }, [id, title, icon, zone, priority, defaultExpanded, canCollapse, children, registerPanel, unregisterPanel]);
 
   // The actual rendering is handled by UILayoutManager
   return null;
