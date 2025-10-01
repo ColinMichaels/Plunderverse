@@ -198,7 +198,7 @@ export async function autoTestMissions() {
     console.log('✅ Player stats loaded');
     console.log('✅ Mission accept/complete flow tested');
     console.log('✅ Progression systems verified');
-    console.log('\n💡 Press Ctrl+Shift+M to open the Mission Debug Panel');
+    console.log('\n💡 Press ` (backtick) to open the Mission Debug Panel');
     console.log('💡 Run testMissionSystem() for detailed testing');
     
   } catch (error) {

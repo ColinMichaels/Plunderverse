@@ -25,10 +25,11 @@ export function MissionDebugPanel() {
   const player = usePlayer();
   const credits = useCreditsStore();
 
-  // Keyboard shortcut to toggle debug panel (Ctrl+Shift+M)
+  // Keyboard shortcut to toggle debug panel (`)
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.ctrlKey && e.shiftKey && e.key === "M") {
+      if (e.key === "`") {
+        e.preventDefault(); // Prevent the backtick from being typed in input fields
         setIsVisible(prev => !prev);
         console.log("[MISSION-DEBUG] Debug panel toggled");
       }
@@ -160,7 +161,7 @@ export function MissionDebugPanel() {
 
   return (
     <DraggablePanel
-      title="Mission Debug Panel (Ctrl+Shift+M)"
+      title="Mission Debug Panel (`)"
       onClose={() => setIsVisible(false)}
       defaultPosition={{ x: 20, y: 150 }}
       className="z-[9999]"
@@ -284,7 +285,7 @@ export function MissionDebugPanel() {
         {/* Keyboard Shortcuts */}
         <div className="bg-gray-800 p-3 rounded space-y-1 text-xs">
           <h3 className="font-bold text-yellow-400 mb-2">Shortcuts</h3>
-          <div>Ctrl+Shift+M - Toggle this panel</div>
+          <div>` (backtick) - Toggle this panel</div>
           <div>F3 - Toggle main debug overlay</div>
         </div>
       </div>

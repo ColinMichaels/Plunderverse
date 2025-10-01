@@ -102,7 +102,7 @@ export class MissionControlTest {
     console.log('%c━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━', 'color: #00ff00;');
     console.log('1. Press F1 to open Missions Panel');
     console.log('2. Accept a mission from Plunderverse tab');
-    console.log('3. Use Ctrl+Shift+M to open Debug Panel');
+    console.log('3. Use ` (backtick) to open Debug Panel');
     console.log('4. Complete mission with debug command');
     console.log('5. Check that credits increased');
     console.log('6. Switch to Stats tab - verify completion count');
