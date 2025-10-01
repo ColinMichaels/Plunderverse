@@ -4,18 +4,36 @@ import { useInventoryStore } from './inventory.store';
 import { EconomySelectors } from './types';
 
 // Direct data selectors for easier migration
-export const useCreditsData = () => useCreditsStore(state => state.credits);
+export const useCreditsData = () => {
+  const credits = useCreditsStore(state => state.credits);
+  const spendCredits = useCreditsStore(state => state.spendCredits);
+  const earnCredits = useCreditsStore(state => state.earnCredits);
+  const setCredits = useCreditsStore(state => state.setCredits);
+  
+  return {
+    credits,
+    spendCredits,
+    earnCredits,
+    setCredits
+  };
+};
+
 export const useInventoryDisplayData = () => {
   const items = useInventoryStore(state => state.items);
   const storageCapacity = useInventoryStore(state => state.storageCapacity);
-  const storageUsed = items.reduce((total, item) => total + item.quantity, 0);
   
-  return {
-    items,
-    storageCapacity,
-    storageUsed,
-    storagePercentage: (storageUsed / storageCapacity) * 100
-  };
+  return useMemo(() => {
+    const storageUsed = items.reduce((total, item) => total + item.quantity, 0);
+    const totalValue = items.reduce((total, item) => total + (item.value * item.quantity), 0);
+    
+    return {
+      items,
+      storageCapacity,
+      storageUsed,
+      totalValue,
+      storagePercentage: (storageUsed / storageCapacity) * 100
+    };
+  }, [items, storageCapacity]);
 };
 import {
   validateEconomyState,
@@ -146,40 +164,6 @@ export const useStorageInfo = () => {
 
 export const useCanAfford = (amount: number) => {
   return useCreditsStore(state => state.credits >= amount);
-};
-
-// Comprehensive selector for InventoryDisplay component
-export const useInventoryDisplayData = () => {
-  const items = useInventoryStore(state => state.items);
-  const storageCapacity = useInventoryStore(state => state.storageCapacity);
-  
-  return useMemo(() => {
-    const storageUsed = items.reduce((total, item) => total + item.quantity, 0);
-    const totalValue = items.reduce((total, item) => total + (item.value * item.quantity), 0);
-    
-    return {
-      items,
-      storageCapacity,
-      storageUsed,
-      totalValue,
-      storagePercentage: (storageUsed / storageCapacity) * 100
-    };
-  }, [items, storageCapacity]);
-};
-
-// Selector for components that only need credits information
-export const useCreditsData = () => {
-  const credits = useCreditsStore(state => state.credits);
-  const spendCredits = useCreditsStore(state => state.spendCredits);
-  const earnCredits = useCreditsStore(state => state.earnCredits);
-  const setCredits = useCreditsStore(state => state.setCredits);
-  
-  return {
-    credits,
-    spendCredits,
-    earnCredits,
-    setCredits
-  };
 };
 
 // Selector for trading interface specific data

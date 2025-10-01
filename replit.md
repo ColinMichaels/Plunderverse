@@ -77,6 +77,13 @@ Preferred communication style: Simple, everyday language.
 - **Extended Travel Time**: Reduced autopilot speed (4 units/sec) for more immersive space travel experience
 - **Navigation Integration**: Credit-based system with automatic target selection and UI management
 
+### UI Layout and Sidebar System (October 1, 2025)
+- **Right Sidebar Integration**: Missions Panel and Controls Help converted to SpaceUIPanel system
+- **Panel Ordering**: Right sidebar displays panels in priority order: Missions (📋), Controls (❓), Crypto Wallet (💰), Crypto Marketplace (🏪)
+- **State Persistence**: UILayoutManager preserves component state when panels are collapsed (tab selection, scroll position, form data)
+- **Draggable Panels**: DevDebugOverlay, SurfaceStatsPanel, MissionsPanel (legacy), and ControlsHelp (legacy) support drag-and-drop positioning
+- **Sidebar Controls**: F1 key toggles Controls Help, panel icons in sidebar for quick access
+
 ### Cryptocurrency Integration (September 30, 2025)
 - **Wallet System**: One-click wallet initialization with persistent player IDs stored in localStorage
 - **Mining Rewards**: Automatic cryptocurrency rewards (0.1% of resource value) for successful mining operations
