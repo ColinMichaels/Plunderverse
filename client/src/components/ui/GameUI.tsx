@@ -22,10 +22,11 @@ import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { planets } from "../../lib/planetData";
+import { TakeoffControls } from "../surface/TakeoffControls";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
-  
+
   // Initialize docking detection
   useDockingDetection();
   const { selectedPlanet, time } = useSolarSystem();
@@ -94,10 +95,10 @@ export function GameUI() {
       {/* New Contextual HUD System */}
       {/* Top Left - Ship Core Status */}
       {uiZoneVisibility.topLeft && <ShipCoreStatus />}
-      
+
       {/* Top Right - Mission Context */}
       {uiZoneVisibility.topRight && <MissionContextHUD />}
-      
+
       {/* Bottom Center - Primary Controls */}
       {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
 
@@ -119,7 +120,7 @@ export function GameUI() {
 
       {/* New Icon-Only Action Bar with Sliding Panels */}
       <ActionBar />
-      
+
       {/* Marketplace stays separate as it's not part of the action bar */}
       <CryptoMarketplace />
 
@@ -131,11 +132,15 @@ export function GameUI() {
         <FixedMiniMap />
       </div>
 
+      {/* Take Off Controls when landed */}
+      <div className="fixed bottom-4 left-40 z-30">
+        <TakeoffControls />
+      </div>
+
       {/* Music Player in bottom right corner */}
       <div className="fixed top-4 left-28 z-30">
         <MusicPlayer />
       </div>
-
 
       {/* Crew Recruitment Interface - Modal overlay */}
       {showCrewRecruitment && (
