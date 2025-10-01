@@ -16,6 +16,7 @@ interface ShootingState {
   addProjectile: (position: THREE.Vector3, direction: THREE.Vector3) => void;
   updateProjectiles: (delta: number) => void;
   removeProjectile: (id: string) => void;
+  reportEnemyDestroyed: (enemyType?: string, enemyFaction?: string) => void;
 }
 
 export const useShooting = create<ShootingState>((set, get) => ({
@@ -64,5 +65,23 @@ export const useShooting = create<ShootingState>((set, get) => ({
     set(state => ({
       projectiles: state.projectiles.filter(p => p.id !== id)
     }));
+  },
+  
+  reportEnemyDestroyed: (enemyType: string = 'pirate', enemyFaction?: string) => {
+    // Report combat trigger progress for missions
+    try {
+      import('../economy/useObjectiveTriggers').then(({ useObjectiveTriggers }) => {
+        const triggers = useObjectiveTriggers.getState();
+        triggers.reportProgress('combat', { 
+          enemyType, 
+          enemyFaction,
+          count: 1 
+        });
+        triggers.reportCombatProgress(enemyType, enemyFaction, 1);
+        console.log(`[OBJECTIVE-TRIGGER] Reported enemy destroyed: ${enemyType || enemyFaction} for mission objectives`);
+      });
+    } catch (error) {
+      console.error('[OBJECTIVE-TRIGGER] Error reporting enemy destruction:', error);
+    }
   }
 }));

@@ -2,6 +2,90 @@
   "$schema": "./schemas/missions.schema.json",
   "missions": [
     {
+      "id": "mission_trigger_test_001",
+      "title": "Integrated Trigger Test Mission",
+      "description": "A test mission demonstrating all integrated objective triggers",
+      "type": "mixed",
+      "difficulty": "easy",
+      "minRank": 0,
+      "requirements": {
+        "reputation": {
+          "independents": 0
+        }
+      },
+      "objectives": [
+        {
+          "id": "obj_land_mars",
+          "type": "travel",
+          "description": "Land on Mars",
+          "target": "Mars",
+          "triggerType": "location",
+          "triggerData": {
+            "type": "location",
+            "planet": "Mars",
+            "currentValue": 0,
+            "targetValue": 1
+          },
+          "dialogue": {
+            "arrival": "You've landed on the red planet. Time to explore!"
+          }
+        },
+        {
+          "id": "obj_mine_gold",
+          "type": "collection",
+          "description": "Mine 5 gold ore",
+          "triggerType": "collection",
+          "triggerData": {
+            "type": "collection",
+            "itemType": "gold ore",
+            "currentValue": 0,
+            "targetValue": 5
+          },
+          "dialogue": {
+            "completion": "Great work! You've collected enough gold ore."
+          }
+        },
+        {
+          "id": "obj_defeat_pirates",
+          "type": "combat",
+          "description": "Defeat 3 pirates",
+          "triggerType": "combat",
+          "triggerData": {
+            "type": "combat",
+            "enemyType": "pirate",
+            "currentValue": 0,
+            "targetValue": 3
+          },
+          "dialogue": {
+            "completion": "The space lanes are safer thanks to you!"
+          }
+        },
+        {
+          "id": "obj_trade_resources",
+          "type": "interaction",
+          "description": "Complete a trade at Trading Station",
+          "triggerType": "interaction",
+          "triggerData": {
+            "type": "interaction",
+            "interactionId": "trade",
+            "currentValue": 0,
+            "targetValue": 1
+          },
+          "dialogue": {
+            "completion": "Trading successful! Your business acumen is impressive."
+          }
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 5000,
+          "reputation": {
+            "independents": 15
+          }
+        }
+      }
+    },
+    {
       "id": "mission_delivery_001",
       "title": "Medical Supplies Run",
       "description": "Deliver vital medical supplies to a frontier moon colony",

@@ -41,6 +41,22 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
       console.log(result.message);
       // Reset quantity selection
       setSelectedQuantity(prev => ({ ...prev, [resourceType]: 1 }));
+      
+      // Report interaction trigger progress for missions
+      try {
+        import("../../lib/stores/economy/useObjectiveTriggers").then(({ useObjectiveTriggers }) => {
+          const triggers = useObjectiveTriggers.getState();
+          triggers.reportProgress('interaction', { 
+            action: 'trade',
+            target: 'Trading Station',
+            itemType: resourceType
+          });
+          triggers.reportInteractionProgress('trade');
+          console.log(`[OBJECTIVE-TRIGGER] Reported trade of ${quantity}x ${resourceType} for mission objectives`);
+        });
+      } catch (error) {
+        console.error('[OBJECTIVE-TRIGGER] Error reporting trade:', error);
+      }
     } else {
       console.log(result.message);
     }

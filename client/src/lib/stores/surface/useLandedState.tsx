@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { useObjectiveTriggers } from "../economy/useObjectiveTriggers";
 
 interface LandedState {
   isLanded: boolean;
@@ -23,6 +24,16 @@ export const useLandedState = create<LandedState>((set, get) => ({
       landingTime: Date.now()
     });
     console.log(`Successfully landed on ${planetName}`);
+    
+    // Report location trigger progress for missions
+    try {
+      const triggers = useObjectiveTriggers.getState();
+      triggers.reportProgress('location', { planet: planetName });
+      triggers.reportLocationProgress(undefined, undefined, planetName);
+      console.log(`[OBJECTIVE-TRIGGER] Reported landing on ${planetName} for mission objectives`);
+    } catch (error) {
+      console.error('[OBJECTIVE-TRIGGER] Error reporting landing:', error);
+    }
   },
   
   setNotLanded: () => {

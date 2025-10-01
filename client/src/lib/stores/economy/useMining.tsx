@@ -158,6 +158,26 @@ export const useMining = create<MiningState>((set, get) => ({
         state.currentPlanet || "Unknown"
       );
       
+      // Report collection trigger progress for missions
+      if (result.success) {
+        try {
+          const { useObjectiveTriggers } = await import('./useObjectiveTriggers');
+          const triggers = useObjectiveTriggers.getState();
+          triggers.reportProgress('collection', { 
+            itemType: state.targetResource!.type, 
+            amount: extractedAmount 
+          });
+          triggers.reportCollectionProgress(
+            state.targetResource!.type,
+            state.targetResource!.type,
+            extractedAmount
+          );
+          console.log(`[OBJECTIVE-TRIGGER] Reported mining ${extractedAmount}x ${state.targetResource!.type} for mission objectives`);
+        } catch (error) {
+          console.error('[OBJECTIVE-TRIGGER] Error reporting mining:', error);
+        }
+      }
+      
       return result;
     }
     
