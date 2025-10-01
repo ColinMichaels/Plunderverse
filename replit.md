@@ -69,15 +69,77 @@ Components are organized by gameplay mechanics and features for easier navigatio
 - **`shared/`** - Shared/Info Components
   - PlanetInfo
 
+### Store Organization (October 1, 2025)
+Zustand stores are organized by feature to match the component structure:
+
+- **`space/`** - Space & Celestial Bodies State
+  - useSolarSystem (planetary orbits, time)
+  - useAsteroids (asteroid field state)
+
+- **`navigation/`** - Navigation & Autopilot
+  - useAutopilot (autopilot control, orbit tracking)
+
+- **`surface/`** - Planet Surface State
+  - useLandedState (landing status)
+  - useLandingWarning (landing warnings)
+  - useFlashlight (flashlight control)
+  - useSurfaceCollision (surface collision detection)
+
+- **`combat/`** - Combat Systems
+  - useShooting (shooting mechanics)
+
+- **`economy/`** - Economy & Trading
+  - useInventory (inventory management)
+  - useCredits (credit system)
+  - useMining (mining operations)
+  - useCrypto (cryptocurrency wallet)
+  - useMissions (missions system)
+
+- **`ship/`** - Ship Management
+  - useShipStatus (ship status)
+  - useEquipment (equipment management)
+
+- **`player/`** - Player State
+  - usePlayer (player stats and state)
+
+- **`ui/`** - UI State
+  - useGame (game lifecycle)
+  - useSettings (user settings)
+  - useHints (hint system)
+  - useMusicPlayer (music player)
+  - useAudio (audio controls)
+  - useRewards (rewards system)
+
+- **`debug/`** - Debug Tools
+  - useDebugTools (debug utilities)
+
+All stores are re-exported through `client/src/lib/stores/index.ts` for convenient imports.
+
+### Assets Organization (October 1, 2025)
+
+**Textures** (`client/public/textures/`):
+- **`planets/`** - Planet surface textures (2k resolution)
+  - Earth, Mars, Mercury, Venus, Jupiter, Saturn, Uranus, Neptune, Moon, Sun, Ceres
+- **`surfaces/`** - Special surface textures
+  - Moon detail textures
+- **`materials/`** - Material textures
+  - crystal_mineral.png, gold_ore.png, asphalt.png, wood.jpg
+- **`terrain/`** - Terrain textures
+  - earth_grass.png, grass.png, mars_terrain.png, moon_terrain.png, sand.jpg
+- **Root level**: sky.png
+
+**Audio** (`client/public/sounds/`):
+- **`music/`** - Background music tracks
+  - 9 ambient space music tracks
+- **Root level** - Sound effects
+  - thruster.mp3, space-lazer.mp3, hit.mp3, success.mp3, zap.mp3, etc.
+
+**Geometries** (`client/public/geometries/`):
+- 3D model files (FBX, GLTF)
+  - Asteroid_1b.fbx, heart.gltf
+
 ### State Management
-- **Zustand**: Lightweight state management for:
-  - Solar system time and planet selection (`useSolarSystem`)
-  - Audio controls and sound effects (`useAudio`)
-  - Game phases and lifecycle (`useGame`)
-  - Cryptocurrency wallet and marketplace (`useCrypto`)
-  - Economy and inventory management (`useInventoryStore`, `useCreditsStore`)
-  - Mining operations (`useMining`)
-  - Equipment and ship status (`useEquipment`)
+- **Zustand**: Lightweight state management organized by feature (see Store Organization above)
 
 ### 3D Graphics System
 - **Three.js**: Core 3D graphics engine
