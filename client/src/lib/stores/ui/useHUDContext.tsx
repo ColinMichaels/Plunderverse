@@ -50,6 +50,10 @@ interface HUDContextState {
   nearestPlanet: string | null;
   distanceToNearest: number;
   
+  // Manual override for panel visibility
+  manualPanelOverride: boolean;
+  panelOverrideTimeout: NodeJS.Timeout | null;
+  
   // Actions
   detectContext: () => void;
   setContext: (context: GameContext, smooth?: boolean) => void;
@@ -64,6 +68,10 @@ interface HUDContextState {
   registerDamage: () => void;
   registerShot: () => void;
   updateNearestPlanet: (planet: string | null, distance: number) => void;
+  
+  // Manual override actions
+  setManualPanelOverride: (override: boolean) => void;
+  refreshPanelOverrideTimeout: () => void;
 }
 
 export const useHUDContext = create<HUDContextState>((set, get) => ({
@@ -91,6 +99,10 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
   
   nearestPlanet: null,
   distanceToNearest: Infinity,
+  
+  // Manual override state
+  manualPanelOverride: false,
+  panelOverrideTimeout: null,
   
   detectContext: () => {
     const state = get();
@@ -174,10 +186,15 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
       // Delayed visibility update for smooth transition
       setTimeout(() => {
         const visibility = get().getContextVisibility(newContext);
+        // Preserve rightSidebar visibility if manual override is active
+        const finalVisibility = state.manualPanelOverride 
+          ? { ...visibility, rightSidebar: true } 
+          : visibility;
+        
         set({
           previousContext: state.currentContext,
           currentContext: newContext,
-          uiZoneVisibility: visibility,
+          uiZoneVisibility: finalVisibility,
           isTransitioning: false
         });
       }, 150);
@@ -334,6 +351,61 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
       nearestPlanet: planet,
       distanceToNearest: distance
     });
+  },
+  
+  setManualPanelOverride: (override: boolean) => {
+    const state = get();
+    
+    // Clear existing timeout if any
+    if (state.panelOverrideTimeout) {
+      clearTimeout(state.panelOverrideTimeout);
+    }
+    
+    if (override) {
+      // Set manual override and create auto-reset timeout
+      const timeout = setTimeout(() => {
+        console.log('[HUD Context] Auto-resetting manual panel override after 30s');
+        get().setManualPanelOverride(false);
+      }, 30000); // 30 seconds
+      
+      set({
+        manualPanelOverride: true,
+        panelOverrideTimeout: timeout,
+        uiZoneVisibility: {
+          ...state.uiZoneVisibility,
+          rightSidebar: true // Ensure panels are visible
+        }
+      });
+      
+      console.log('[HUD Context] Manual panel override activated');
+    } else {
+      set({
+        manualPanelOverride: false,
+        panelOverrideTimeout: null
+      });
+      
+      // Re-apply context visibility without override
+      const visibility = get().getContextVisibility(state.currentContext);
+      set({ uiZoneVisibility: visibility });
+      
+      console.log('[HUD Context] Manual panel override deactivated');
+    }
+  },
+  
+  refreshPanelOverrideTimeout: () => {
+    const state = get();
+    
+    if (state.manualPanelOverride && state.panelOverrideTimeout) {
+      // Clear and reset the timeout
+      clearTimeout(state.panelOverrideTimeout);
+      
+      const timeout = setTimeout(() => {
+        console.log('[HUD Context] Auto-resetting manual panel override after 30s');
+        get().setManualPanelOverride(false);
+      }, 30000);
+      
+      set({ panelOverrideTimeout: timeout });
+    }
   },
   
   startContextMonitoring: () => {

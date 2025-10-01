@@ -5,38 +5,28 @@ import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
 import { OrbitalInterface } from "../navigation/OrbitalInterface";
-import { InventoryDisplay } from "../economy/InventoryDisplay";
 import { FixedMiniMap } from "../navigation/MiniMap/FixedMiniMap";
 import { MusicPlayer } from "../screens/MusicPlayer";
-import { CryptoWallet } from "../economy/crypto/CryptoWallet";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
-import { MissionsPanel } from "../economy/MissionsPanel";
-import { ControlsHelp } from "../screens/ControlsHelp";
-import { SettingsPanel } from "../screens/SettingsPanel";
 import { DevDebugOverlay } from "../debug/DevDebugOverlay";
-import { CrewManagementPanel } from "../ship/CrewManagementPanel";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
-import { StoryProgressionPanel } from "./StoryProgressionPanel";
 // New HUD Components
 import { ShipCoreStatus } from "./ShipCoreStatus";
 import { MissionContextHUD } from "./MissionContextHUD";
 import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
+import { ActionBar } from "./ActionBar";
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
-import { usePanelKeyboardShortcuts, PanelShortcutsHint } from "../../hooks/usePanelKeyboardShortcuts";
 import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { planets } from "../../lib/planetData";
 
 export function GameUI() {
-  const [showSettings, setShowSettings] = useState(false);
-  const [showCrewManagement, setShowCrewManagement] = useState(false);
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
   
-  // Initialize panel keyboard shortcuts and docking detection
-  usePanelKeyboardShortcuts();
+  // Initialize docking detection
   useDockingDetection();
   const { selectedPlanet, time } = useSolarSystem();
   const {
@@ -110,9 +100,6 @@ export function GameUI() {
       
       {/* Bottom Center - Primary Controls */}
       {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
-      
-      {/* Panel Shortcuts Hint */}
-      <PanelShortcutsHint />
 
       {/* Landing Transition */}
       <LandingTransition />
@@ -130,20 +117,11 @@ export function GameUI() {
       {/* Orbital Interface - when orbiting a planet */}
       <OrbitalInterface />
 
-      {/* Right Sidebar Panels - Only show when visibility allows */}
-      {uiZoneVisibility.rightSidebar && (
-        <>
-          {/* Using SpaceUIPanel system with standardized order */}
-          <MissionsPanel />      {/* 📋 Missions */}
-          <InventoryDisplay />   {/* 💼 Inventory */}
-          <StoryProgressionPanel /> {/* 📖 Story */}
-          <ControlsHelp />       {/* ⌨️ Controls */}
-          
-          {/* Cryptocurrency Components */}
-          <CryptoWallet />
-          <CryptoMarketplace />
-        </>
-      )}
+      {/* New Icon-Only Action Bar with Sliding Panels */}
+      <ActionBar />
+      
+      {/* Marketplace stays separate as it's not part of the action bar */}
+      <CryptoMarketplace />
 
       {/* Mobile Controls - New Unified System */}
       <MobileHUD />
@@ -158,40 +136,6 @@ export function GameUI() {
         <MusicPlayer />
       </div>
 
-      {/* Settings button in top right corner */}
-      <button
-        onClick={() => setShowSettings(true)}
-        className="fixed top-4 right-4 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center justify-center"
-        title="Game Settings"
-      >
-        <span className="text-xl">⚙️</span>
-      </button>
-
-      {/* Settings Panel */}
-      <SettingsPanel open={showSettings} onOpenChange={setShowSettings} />
-
-      {/* Crew Management Button */}
-      <button
-        onClick={() => setShowCrewManagement(!showCrewManagement)}
-        className="fixed bottom-4 right-4 bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white px-4 py-2 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all z-40 backdrop-blur-sm flex items-center gap-2"
-        title="Crew Management"
-      >
-        <span className="text-xl">👥</span>
-        <span className="text-sm font-medium">Crew</span>
-      </button>
-
-      {/* Crew Management Panel - Modal overlay */}
-      {showCrewManagement && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <CrewManagementPanel
-            onClose={() => setShowCrewManagement(false)}
-            onOpenRecruitment={() => {
-              setShowCrewManagement(false);
-              setShowCrewRecruitment(true);
-            }}
-          />
-        </div>
-      )}
 
       {/* Crew Recruitment Interface - Modal overlay */}
       {showCrewRecruitment && (
