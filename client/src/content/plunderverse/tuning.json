@@ -109,6 +109,50 @@
       "daily_mission_refresh": 3,
       "max_active_missions": 5
     },
+    "reputation_system": {
+      "thresholds": {
+        "hated": { "min": -100, "max": -50, "description": "Kill on sight, maximum hostility" },
+        "hostile": { "min": -50, "max": -20, "description": "Active aggression, denied services" },
+        "unfriendly": { "min": -20, "max": -5, "description": "Distrusted, higher prices" },
+        "neutral": { "min": -5, "max": 5, "description": "Unknown, standard treatment" },
+        "friendly": { "min": 5, "max": 20, "description": "Known ally, minor benefits" },
+        "allied": { "min": 20, "max": 50, "description": "Trusted partner, significant benefits" },
+        "revered": { "min": 50, "max": 100, "description": "Hero status, maximum benefits" }
+      },
+      "price_modifiers": {
+        "hated": 2.0,
+        "hostile": 1.5,
+        "unfriendly": 1.2,
+        "neutral": 1.0,
+        "friendly": 0.95,
+        "allied": 0.8,
+        "revered": 0.6
+      },
+      "mission_reward_modifiers": {
+        "hated": 0.5,
+        "hostile": 0.75,
+        "unfriendly": 0.9,
+        "neutral": 1.0,
+        "friendly": 1.1,
+        "allied": 1.25,
+        "revered": 1.5
+      },
+      "decay": {
+        "rate_per_day": 1,
+        "target": 0,
+        "min_threshold": 0.5,
+        "description": "Reputation decays by 1 point per game day toward neutral"
+      },
+      "change_caps": {
+        "per_mission": 20,
+        "per_action": 5,
+        "critical_event": 50
+      },
+      "black_market_access": {
+        "outlaws_min_reputation": 10,
+        "corporations_max_reputation": -20
+      }
+    },
     "heat_system": {
       "max_heat": 100,
       "heat_generation": {

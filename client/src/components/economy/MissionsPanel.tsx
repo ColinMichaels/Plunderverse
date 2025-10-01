@@ -32,7 +32,15 @@ export function MissionsPanel() {
       gameFacade.applyHeatDecay();
     }, 60000); // Every minute
     
-    return () => clearInterval(heatDecayTimer);
+    // Set up reputation decay timer (once per game day)
+    const repDecayTimer = setInterval(() => {
+      gameFacade.applyReputationDecay();
+    }, 300000); // Every 5 minutes represents a game day
+    
+    return () => {
+      clearInterval(heatDecayTimer);
+      clearInterval(repDecayTimer);
+    };
   }, []);
 
   const getDifficultyColor = (difficulty: string) => {
@@ -67,6 +75,15 @@ export function MissionsPanel() {
       default: return '📋';
     }
   };
+  
+  const getFactionIcon = (faction: string) => {
+    switch (faction) {
+      case 'corporations': return '🏢';
+      case 'independents': return '🌍';
+      case 'outlaws': return '☠️';
+      default: return '❓';
+    }
+  };
 
   const getLegalityColor = (mission: Mission) => {
     if (mission.type === 'smuggling' || mission.type === 'bounty') {
@@ -76,6 +93,45 @@ export function MissionsPanel() {
     } else {
       return 'border-green-600/50'; // Legal - green
     }
+  };
+  
+  const checkMissionAvailability = (mission: Mission) => {
+    // Check reputation requirements
+    if (mission.requirements?.reputation) {
+      for (const [faction, required] of Object.entries(mission.requirements.reputation)) {
+        const playerRep = player.reputation[faction as FactionId];
+        if (playerRep < required) {
+          const diff = required - playerRep;
+          const level = gameFacade.getReputationLevel(faction as FactionId);
+          return {
+            available: false,
+            reason: `Requires ${required} reputation with ${faction} (need ${diff} more)`,
+            close: diff <= 10,
+            faction: faction as FactionId
+          };
+        }
+      }
+    }
+    
+    // Check credit requirements
+    if (mission.requirements?.credits && credits < mission.requirements.credits) {
+      const diff = mission.requirements.credits - credits;
+      return {
+        available: false,
+        reason: `Requires ${mission.requirements.credits} credits (need ${diff} more)`,
+        close: diff <= 500,
+        faction: null
+      };
+    }
+    
+    return { available: true, reason: null, close: false, faction: null };
+  };
+  
+  const getMissionAvailabilityColor = (mission: Mission) => {
+    const availability = checkMissionAvailability(mission);
+    if (availability.available) return '';
+    if (availability.close) return 'bg-yellow-900/20 border-yellow-600/50 opacity-90';
+    return 'bg-red-900/20 border-red-600/30 opacity-75';
   };
 
   const getReputationColor = (faction: FactionId) => {
@@ -128,17 +184,34 @@ export function MissionsPanel() {
 
   const renderMissionCard = (mission: Mission, isActive: boolean = false) => {
     const legalityColor = getLegalityColor(mission);
+    const availability = checkMissionAvailability(mission);
+    const availabilityStyle = getMissionAvailabilityColor(mission);
     
     return (
       <div 
         key={mission.id} 
-        className={`bg-gray-800 p-3 rounded border ${legalityColor} cursor-pointer hover:bg-gray-700 transition-colors`}
+        className={`bg-gray-800 p-3 rounded border ${legalityColor} ${availabilityStyle} cursor-pointer hover:bg-gray-700 transition-colors relative`}
         onClick={() => setSelectedMission(mission)}
       >
-        <div className="flex items-start justify-between mb-2">
+        {/* Availability banner */}
+        {!availability.available && (
+          <div className={`absolute top-0 left-0 right-0 px-2 py-1 text-xs font-medium text-center ${
+            availability.close ? 'bg-yellow-600/80 text-yellow-100' : 'bg-red-600/80 text-red-100'
+          }`}>
+            🔒 {availability.reason}
+          </div>
+        )}
+        
+        <div className={`flex items-start justify-between mb-2 ${!availability.available ? 'mt-6' : ''}`}>
           <div className="flex items-center space-x-2">
             <span className="text-lg">{getMissionTypeIcon(mission.type)}</span>
             <h3 className="font-semibold text-white">{mission.title}</h3>
+            {/* Show faction icon if mission has faction association */}
+            {mission.rewards?.base?.reputation && (
+              <span className="text-sm opacity-75">
+                {Object.keys(mission.rewards.base.reputation).map(f => getFactionIcon(f)).join('')}
+              </span>
+            )}
           </div>
           <div className="flex items-center space-x-1">
             <span className={getDifficultyColor(mission.difficulty)}>
@@ -370,6 +443,49 @@ export function MissionsPanel() {
 
           {activeTab === 'reputation' && (
             <div className="space-y-4">
+              {/* Current Status Card */}
+              <div className="bg-gray-800 p-3 rounded border border-gray-600">
+                <h3 className="font-semibold text-white mb-2 text-sm">Current Status</h3>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center space-x-2">
+                    <span>🏪 Price Modifier:</span>
+                    <span className={`font-mono ${
+                      gameFacade.getFactionPriceModifier(gameFacade.getCurrentFaction()) < 1 
+                        ? 'text-green-400' : gameFacade.getFactionPriceModifier(gameFacade.getCurrentFaction()) > 1 
+                        ? 'text-red-400' : 'text-gray-400'
+                    }`}>
+                      {(gameFacade.getFactionPriceModifier(gameFacade.getCurrentFaction()) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span>🎁 Reward Bonus:</span>
+                    <span className={`font-mono ${
+                      gameFacade.getFactionRewardModifier(gameFacade.getCurrentFaction()) > 1 
+                        ? 'text-green-400' : gameFacade.getFactionRewardModifier(gameFacade.getCurrentFaction()) < 1 
+                        ? 'text-red-400' : 'text-gray-400'
+                    }`}>
+                      {(gameFacade.getFactionRewardModifier(gameFacade.getCurrentFaction()) * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span>🔥 Heat Decay:</span>
+                    <span className={`font-mono ${
+                      gameFacade.getFactionHeatModifier('corporations') > 1 
+                        ? 'text-green-400' : gameFacade.getFactionHeatModifier('corporations') < 1 
+                        ? 'text-red-400' : 'text-gray-400'
+                    }`}>
+                      {(gameFacade.getFactionHeatModifier('corporations') * 100).toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <span>🏴‍☠️ Black Market:</span>
+                    <span className={gameFacade.canAccessBlackMarket() ? 'text-green-400' : 'text-red-400'}>
+                      {gameFacade.canAccessBlackMarket() ? '✓ Access' : '✗ Locked'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
               <div className="bg-gray-800 p-4 rounded border border-gray-600">
                 <h3 className="font-semibold text-white mb-3">Faction Standings</h3>
                 

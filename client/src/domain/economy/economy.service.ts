@@ -6,6 +6,9 @@ import { useAudio } from '../../lib/stores/ui/useAudio';
 import { useCrypto } from '../../lib/stores/economy/useCrypto';
 import { ResourceData } from '../../lib/planetData';
 import { economyEvents } from './events';
+import { gameFacade } from '../../lib/plunderverse/gameFacade';
+import { useLandedState } from '../../lib/stores/surface/useLandedState';
+import type { FactionId } from '../../lib/plunderverse/types';
 import {
   createTransactionContext,
   completeTransactionContext,
@@ -89,14 +92,51 @@ class EconomyService {
       return result;
     }
     
-    // Calculate total value
-    const totalValue = item.value * quantity;
+    // Get current location's faction and apply price modifier
+    const landedState = useLandedState.getState();
+    const currentLocation = landedState.landedPlanet || 'Earth'; // Default to Earth
+    let faction: FactionId = 'corporations'; // Default faction
+    
+    // Map common planet names to factions
+    const locationFactionMap: Record<string, FactionId> = {
+      'earth': 'corporations',
+      'mars': 'corporations', 
+      'europa': 'independents',
+      'titan': 'independents',
+      'ceres': 'outlaws',
+      'mercury': 'corporations',
+      'venus': 'corporations',
+      'jupiter': 'independents',
+      'saturn': 'independents',
+      'uranus': 'outlaws',
+      'neptune': 'outlaws'
+    };
+    
+    // Get faction for current location
+    const locationKey = currentLocation.toLowerCase();
+    if (locationFactionMap[locationKey]) {
+      faction = locationFactionMap[locationKey];
+    }
+    
+    // Apply faction price modifier (selling gets inverted - good rep = better sell prices)
+    const priceModifier = 2.0 - gameFacade.getFactionPriceModifier(faction);
+    const baseValue = item.value * quantity;
+    const totalValue = Math.round(baseValue * priceModifier);
+    
     checkpoint('Transaction calculations', { 
+      baseValue,
+      priceModifier,
       totalValue, 
       itemValue: item.value, 
       quantity,
+      faction,
       transactionId: txContext.id
     });
+    
+    // Log faction modifier if significant
+    if (Math.abs(priceModifier - 1.0) > 0.01) {
+      console.log(`[Economy] Faction price modifier applied: ${faction} = ${(priceModifier * 100).toFixed(0)}% (${priceModifier > 1 ? '+' : ''}${Math.round((priceModifier - 1) * baseValue)} credits)`);
+    }
     
     // Perform atomic transaction with detailed logging
     console.log(`${DEBUG_PREFIXES.TRANSACTION} Executing atomic sellResource transaction:`, {

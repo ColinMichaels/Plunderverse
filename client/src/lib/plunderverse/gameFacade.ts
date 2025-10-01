@@ -324,14 +324,157 @@ export class GameFacade {
   }
   
   /**
-   * Apply heat decay (call periodically)
+   * Apply heat decay (call periodically) with faction modifiers
    */
   async applyHeatDecay(): Promise<void> {
     const player = usePlayer.getState();
     const economy = usePlunderverseEconomy.getState();
     
-    const newHeat = economy.calculateHeatDecay(player.heat);
+    let newHeat = economy.calculateHeatDecay(player.heat);
+    
+    // Modify heat decay based on corporation reputation
+    const corpModifier = this.getFactionHeatModifier('corporations');
+    const decayAmount = player.heat - newHeat;
+    const modifiedDecay = decayAmount * corpModifier;
+    newHeat = player.heat - modifiedDecay;
+    
     player.updateHeat(newHeat - player.heat);
+  }
+  
+  /**
+   * Apply reputation decay toward neutral
+   */
+  async applyReputationDecay(): Promise<void> {
+    const player = usePlayer.getState();
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    if (!tuning?.reputation_system?.decay) return;
+    
+    const decayRate = tuning.reputation_system.decay.rate_per_day;
+    const target = tuning.reputation_system.decay.target;
+    const minThreshold = tuning.reputation_system.decay.min_threshold;
+    
+    // Apply decay to each faction
+    Object.keys(player.reputation).forEach((faction) => {
+      const currentRep = player.reputation[faction as keyof typeof player.reputation];
+      
+      // Only decay if above threshold
+      if (Math.abs(currentRep - target) > minThreshold) {
+        const newRep = currentRep > target 
+          ? Math.max(target, currentRep - decayRate)
+          : Math.min(target, currentRep + decayRate);
+          
+        if (newRep !== currentRep) {
+          player.updateReputation(faction as 'corporations' | 'independents' | 'outlaws', newRep - currentRep);
+          console.log(`[GameFacade] ${faction} reputation decayed from ${currentRep} to ${newRep}`);
+        }
+      }
+    });
+  }
+  
+  /**
+   * Get reputation level for a faction
+   */
+  getReputationLevel(faction: FactionId): string {
+    const player = usePlayer.getState();
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const rep = player.reputation[faction];
+    
+    if (!tuning?.reputation_system?.thresholds) return 'neutral';
+    
+    for (const [level, threshold] of Object.entries(tuning.reputation_system.thresholds)) {
+      if (rep >= threshold.min && rep <= threshold.max) {
+        return level;
+      }
+    }
+    
+    return 'neutral';
+  }
+  
+  /**
+   * Get faction-based price modifier
+   */
+  getFactionPriceModifier(faction: FactionId): number {
+    const level = this.getReputationLevel(faction);
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    if (!tuning?.reputation_system?.price_modifiers) return 1.0;
+    
+    return tuning.reputation_system.price_modifiers[level] || 1.0;
+  }
+  
+  /**
+   * Get faction-based mission reward modifier
+   */
+  getFactionRewardModifier(faction: FactionId): number {
+    const level = this.getReputationLevel(faction);
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    if (!tuning?.reputation_system?.mission_reward_modifiers) return 1.0;
+    
+    return tuning.reputation_system.mission_reward_modifiers[level] || 1.0;
+  }
+  
+  /**
+   * Get faction-based heat reduction modifier
+   */
+  getFactionHeatModifier(faction: FactionId): number {
+    const level = this.getReputationLevel(faction);
+    
+    // Allied with law enforcement (corporations) reduces heat faster
+    if (faction === 'corporations') {
+      switch(level) {
+        case 'revered': return 3.0;
+        case 'allied': return 2.0;
+        case 'friendly': return 1.5;
+        case 'neutral': return 1.0;
+        case 'unfriendly': return 0.8;
+        case 'hostile': return 0.5;
+        case 'hated': return 0.25;
+        default: return 1.0;
+      }
+    }
+    
+    return 1.0;
+  }
+  
+  /**
+   * Check if player can access black market
+   */
+  canAccessBlackMarket(): boolean {
+    const player = usePlayer.getState();
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    
+    if (!tuning?.reputation_system?.black_market_access) return false;
+    
+    const outlawRep = player.reputation.outlaws;
+    const corpRep = player.reputation.corporations;
+    
+    // Need minimum reputation with outlaws OR be hostile with corporations
+    return outlawRep >= tuning.reputation_system.black_market_access.outlaws_min_reputation ||
+           corpRep <= tuning.reputation_system.black_market_access.corporations_max_reputation;
+  }
+  
+  /**
+   * Log reputation change with reason
+   */
+  logReputationChange(faction: FactionId, change: number, reason: string): void {
+    const player = usePlayer.getState();
+    const oldRep = player.reputation[faction];
+    const oldLevel = this.getReputationLevel(faction);
+    
+    player.updateReputation(faction, change);
+    const newRep = player.reputation[faction];
+    const newLevel = this.getReputationLevel(faction);
+    
+    console.log(`[GameFacade] Reputation change: ${faction} ${change > 0 ? '+' : ''}${change} (${reason})`);
+    console.log(`[GameFacade] ${faction}: ${oldRep} → ${newRep} (${oldLevel} → ${newLevel})`);
+    
+    // Alert on major threshold crossings
+    if (oldLevel !== newLevel) {
+      console.log(`[GameFacade] ⚡ ${faction} reputation level changed: ${oldLevel} → ${newLevel}`);
+      // Could trigger UI notification here
+    }
   }
   
   // ============================================================================
@@ -631,7 +774,7 @@ export class GameFacade {
     };
   }
   
-  private getCurrentFaction(): FactionId {
+  getCurrentFaction(): FactionId {
     const factions: Record<string, FactionId> = {
       'Earth': 'corporations',
       'Mars': 'corporations',

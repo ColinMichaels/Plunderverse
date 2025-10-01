@@ -3,6 +3,7 @@ import { useTradingData } from "../../domain/economy/selectors";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { economyService } from "../../domain/economy/economy.service";
+import { gameFacade } from "../../lib/plunderverse/gameFacade";
 
 interface TradingInterfaceProps {
   isVisible: boolean;
@@ -15,6 +16,20 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
   const { drillPower, extractorLevel } = useMining();
   const [activeTab, setActiveTab] = useState<'sell' | 'fuel' | 'repairs' | 'upgrades'>('sell');
   const [selectedQuantity, setSelectedQuantity] = useState<{ [key: string]: number }>({});
+
+  // Check black market access
+  const hasBlackMarketAccess = gameFacade.canAccessBlackMarket();
+  
+  // Define illegal/contraband resources
+  const illegalResources = ['crystals', 'alien artifacts', 'quantum cores', 'dark matter'];
+  const grayMarketResources = ['rare minerals', 'fusion cells', 'plasma'];
+  
+  const getResourceLegality = (resourceType: string) => {
+    const lowerType = resourceType.toLowerCase();
+    if (illegalResources.some(illegal => lowerType.includes(illegal))) return 'illegal';
+    if (grayMarketResources.some(gray => lowerType.includes(gray))) return 'gray';
+    return 'legal';
+  };
 
   if (!isVisible) return null;
 
@@ -140,15 +155,35 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
                 </div>
               ) : (
                 <div className="space-y-3">
+                  {!hasBlackMarketAccess && (
+                    <div className="bg-red-900/30 border border-red-400 rounded-lg p-3 mb-4">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-red-400">🔒</span>
+                        <span className="text-red-400 text-sm">
+                          Black market access required for illegal goods. Need Outlaws reputation ≥10 or Corporation reputation ≤-20
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {items.map((item, index) => {
                     const quantity = getQuantityToSell(item.type, item.quantity);
                     const totalValue = item.value * quantity;
+                    const legality = getResourceLegality(item.type);
+                    const isBlocked = legality === 'illegal' && !hasBlackMarketAccess;
+                    
+                    const borderColor = legality === 'illegal' ? 'border-red-600' : 
+                                       legality === 'gray' ? 'border-yellow-600' : 
+                                       'border-gray-600';
                     
                     return (
-                      <div key={index} className="bg-gray-800 border border-gray-600 rounded-lg p-4">
+                      <div key={index} className={`bg-gray-800 border ${borderColor} rounded-lg p-4 ${isBlocked ? 'opacity-50' : ''}`}>
                         <div className="flex justify-between items-start mb-3">
                           <div>
-                            <h4 className="font-semibold text-white">{item.type}</h4>
+                            <div className="flex items-center space-x-2">
+                              <h4 className="font-semibold text-white">{item.type}</h4>
+                              {legality === 'illegal' && <span className="text-red-400 text-xs">☠️ ILLEGAL</span>}
+                              {legality === 'gray' && <span className="text-yellow-400 text-xs">⚠️ GRAY</span>}
+                            </div>
                             <p className="text-gray-400 text-sm">From {item.planetSource}</p>
                             <p className="text-gray-300 text-xs">{item.description}</p>
                           </div>
@@ -175,9 +210,14 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
                           </div>
                           <button
                             onClick={() => handleSellResource(item.type, item.value, item.quantity)}
-                            className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white rounded font-semibold"
+                            disabled={isBlocked}
+                            className={`px-4 py-2 rounded font-semibold ${
+                              isBlocked 
+                                ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
+                                : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                            }`}
                           >
-                            Sell
+                            {isBlocked ? 'Locked' : 'Sell'}
                           </button>
                         </div>
                       </div>
