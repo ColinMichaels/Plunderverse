@@ -13,6 +13,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { planets } from "../../lib/planetData";
+import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
+import * as THREE from "three";
 
 export function MissionDebugPanel() {
   const [isVisible, setIsVisible] = useState(true); // Start visible for testing
@@ -23,6 +28,10 @@ export function MissionDebugPanel() {
   const missionsStore = usePlunderverseMissions();
   const player = usePlayer();
   const credits = useCreditsStore();
+  const { isLanded, landedPlanet, setLanded, setNotLanded } = useLandedState();
+  const { time, setCameraPosition, setSelectedPlanet } = useSolarSystem();
+  const [selectedTravelPlanet, setSelectedTravelPlanet] = useState<string>("");
+  const crew = useCrewManagement();
 
   // Keyboard shortcut to toggle debug panel (`)
   useEffect(() => {
@@ -170,6 +179,44 @@ export function MissionDebugPanel() {
     console.log("[MISSION-DEBUG] ====================");
   };
 
+  // Quick travel to planet
+  const quickTravelToPlanet = (planetName: string) => {
+    const planet = planets.find(p => p.name === planetName);
+    if (planet) {
+      const angle = time * planet.orbitalSpeed;
+      const planetPos = new THREE.Vector3(
+        Math.cos(angle) * planet.distance,
+        0,
+        Math.sin(angle) * planet.distance
+      );
+      
+      setSelectedPlanet(planetName);
+      
+      // Position camera near planet for viewing
+      const viewDistance = planet.size * 8;
+      const cameraPos = planetPos.clone().add(
+        new THREE.Vector3(viewDistance, 5, viewDistance)
+      );
+      
+      setCameraPosition(cameraPos);
+      console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
+    }
+  };
+
+  // Land on current planet
+  const landOnPlanet = () => {
+    if (selectedTravelPlanet) {
+      setLanded(selectedTravelPlanet);
+      console.log(`[MISSION-DEBUG] Landed on ${selectedTravelPlanet}`);
+    }
+  };
+
+  // Takeoff from planet
+  const takeoffFromPlanet = () => {
+    setNotLanded();
+    console.log(`[MISSION-DEBUG] Took off from ${landedPlanet}`);
+  };
+
   return (
     <div className="fixed bottom-4 right-4 z-[9999] bg-gray-900 border-2 border-cyan-400 rounded-lg shadow-2xl" style={{ zIndex: 99999 }}>
       <div className="bg-cyan-600 text-white p-2 flex justify-between items-center">
@@ -295,6 +342,147 @@ export function MissionDebugPanel() {
           >
             Log Current State to Console
           </Button>
+        </div>
+
+        {/* Quick Travel Controls */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold text-yellow-400">Quick Travel & Navigation</h3>
+          <div className="space-y-2">
+            <Select value={selectedTravelPlanet} onValueChange={setSelectedTravelPlanet}>
+              <SelectTrigger className="w-full bg-gray-800 text-white text-xs">
+                <SelectValue placeholder="Select planet..." />
+              </SelectTrigger>
+              <SelectContent className="bg-gray-800 text-white">
+                {planets.map(planet => (
+                  <SelectItem key={planet.name} value={planet.name}>
+                    {planet.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="grid grid-cols-3 gap-2">
+              <Button
+                onClick={() => quickTravelToPlanet(selectedTravelPlanet)}
+                className="bg-purple-600 hover:bg-purple-700 text-xs"
+                size="sm"
+                disabled={!selectedTravelPlanet}
+              >
+                Travel
+              </Button>
+              <Button
+                onClick={landOnPlanet}
+                className="bg-green-600 hover:bg-green-700 text-xs"
+                size="sm"
+                disabled={!selectedTravelPlanet || isLanded}
+              >
+                Land
+              </Button>
+              <Button
+                onClick={takeoffFromPlanet}
+                className="bg-orange-600 hover:bg-orange-700 text-xs"
+                size="sm"
+                disabled={!isLanded}
+              >
+                Takeoff
+              </Button>
+            </div>
+            {isLanded && (
+              <div className="text-xs text-green-400">
+                Currently landed on: {landedPlanet}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Heat & Notoriety Controls */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold text-yellow-400">Heat & Notoriety</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => {
+                player.updateHeat(25);
+                console.log(`[MISSION-DEBUG] Added 25 heat. Current: ${player.heat}`);
+              }}
+              className="bg-red-600 hover:bg-red-700 text-xs"
+              size="sm"
+            >
+              +25 Heat
+            </Button>
+            <Button
+              onClick={() => {
+                player.updateHeat(-25);
+                console.log(`[MISSION-DEBUG] Removed 25 heat. Current: ${player.heat}`);
+              }}
+              className="bg-blue-600 hover:bg-blue-700 text-xs"
+              size="sm"
+            >
+              -25 Heat
+            </Button>
+            <Button
+              onClick={() => {
+                player.updateNotoriety(15);
+                console.log(`[MISSION-DEBUG] Added 15 notoriety. Current: ${player.notoriety}`);
+              }}
+              className="bg-purple-600 hover:bg-purple-700 text-xs"
+              size="sm"
+            >
+              +15 Notoriety
+            </Button>
+            <Button
+              onClick={() => {
+                player.updateNotoriety(-15);
+                console.log(`[MISSION-DEBUG] Removed 15 notoriety. Current: ${player.notoriety}`);
+              }}
+              className="bg-green-600 hover:bg-green-700 text-xs"
+              size="sm"
+            >
+              -15 Notoriety
+            </Button>
+          </div>
+          <div className="text-xs">
+            <div>Heat: <span className={player.heat > 50 ? 'text-red-400' : 'text-orange-400'}>{player.heat}/100</span></div>
+            <div>Notoriety: <span className="text-purple-400">{player.notoriety}/100</span></div>
+          </div>
+        </div>
+
+        {/* Crew Management */}
+        <div className="space-y-2">
+          <h3 className="text-sm font-bold text-yellow-400">Crew Testing</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => {
+                const availableCrew = crew.availableCrew.filter(c => !c.isActive);
+                if (availableCrew.length > 0) {
+                  const result = crew.hireCrew(availableCrew[0].id);
+                  console.log(`[MISSION-DEBUG] Hire crew result:`, result.message);
+                } else {
+                  console.log("[MISSION-DEBUG] No available crew to hire");
+                }
+              }}
+              className="bg-cyan-600 hover:bg-cyan-700 text-xs"
+              size="sm"
+            >
+              Hire Crew
+            </Button>
+            <Button
+              onClick={() => {
+                const activeCrew = crew.activeCrew;
+                if (activeCrew.length > 0) {
+                  const result = crew.fireCrew(activeCrew[0].id);
+                  console.log(`[MISSION-DEBUG] Fire crew result:`, result.message);
+                } else {
+                  console.log("[MISSION-DEBUG] No crew to fire");
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-xs"
+              size="sm"
+            >
+              Fire Crew
+            </Button>
+          </div>
+          <div className="text-xs text-gray-400">
+            Crew: {crew.activeCrew.length} hired
+          </div>
         </div>
 
         {/* Keyboard Shortcuts */}
