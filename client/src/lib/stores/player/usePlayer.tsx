@@ -42,6 +42,17 @@ interface PlayerState {
   totalJumps: number;
   timeInSpace: number; // Total time spent in space (hours)
   
+  // Plunderverse Stats
+  rank: number; // Plunderverse rank (1-10)
+  rankTitle: string; // Current rank title
+  notoriety: number; // How notorious you are (0-100)
+  heat: number; // Law enforcement attention (0-100)
+  reputation: {
+    corporations: number; // -100 to 100
+    independents: number; // -100 to 100
+    outlaws: number; // -100 to 100
+  };
+  
   // Status flags
   isAlive: boolean;
   needsMedicalAttention: boolean;
@@ -63,6 +74,13 @@ interface PlayerState {
   getPlayerStatus: () => string; // Overall status for display
   getOxygenTimeRemaining: () => number; // Minutes of oxygen remaining
   levelUp: () => void;
+  
+  // Plunderverse Actions
+  updateRank: (newRank: number, newTitle: string) => void;
+  updateNotoriety: (change: number) => void;
+  updateHeat: (change: number) => void;
+  updateReputation: (faction: 'corporations' | 'independents' | 'outlaws', change: number) => void;
+  getReputationStatus: (faction: 'corporations' | 'independents' | 'outlaws') => string;
 }
 
 export const usePlayer = create<PlayerState>((set, get) => ({
@@ -103,6 +121,17 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   totalJumps: 0,
   timeInSpace: 0,
   
+  // Plunderverse Stats
+  rank: 1,
+  rankTitle: 'Space Drifter',
+  notoriety: 0,
+  heat: 0,
+  reputation: {
+    corporations: 0,
+    independents: 0,
+    outlaws: 0
+  },
+  
   // Status
   isAlive: true,
   needsMedicalAttention: false,
@@ -138,6 +167,15 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       totalMiningOperations: 0,
       totalJumps: 0,
       timeInSpace: 0,
+      rank: 1,
+      rankTitle: 'Space Drifter',
+      notoriety: 0,
+      heat: 0,
+      reputation: {
+        corporations: 0,
+        independents: 0,
+        outlaws: 0
+      },
       isAlive: true,
       needsMedicalAttention: false,
       suitStatus: 'OK'
@@ -323,6 +361,51 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       skillPoints: state.skillPoints + 1,
       points: state.points + 500
     }));
+  },
+  
+  // Plunderverse Actions
+  updateRank: (newRank, newTitle) => {
+    set({
+      rank: newRank,
+      rankTitle: newTitle
+    });
+    console.log(`Rank updated: ${newTitle} (Rank ${newRank})`);
+  },
+  
+  updateNotoriety: (change) => {
+    set(state => ({
+      notoriety: Math.max(0, Math.min(100, state.notoriety + change))
+    }));
+  },
+  
+  updateHeat: (change) => {
+    set(state => {
+      const newHeat = Math.max(0, Math.min(100, state.heat + change));
+      // Heat decays over time (can be called periodically)
+      return { heat: newHeat };
+    });
+  },
+  
+  updateReputation: (faction, change) => {
+    set(state => ({
+      reputation: {
+        ...state.reputation,
+        [faction]: Math.max(-100, Math.min(100, state.reputation[faction] + change))
+      }
+    }));
+  },
+  
+  getReputationStatus: (faction) => {
+    const rep = get().reputation[faction];
+    if (rep >= 80) return 'Revered';
+    if (rep >= 60) return 'Honored';
+    if (rep >= 40) return 'Friendly';
+    if (rep >= 20) return 'Liked';
+    if (rep > -20) return 'Neutral';
+    if (rep > -40) return 'Disliked';
+    if (rep > -60) return 'Unfriendly';
+    if (rep > -80) return 'Hostile';
+    return 'Hated';
   }
 }));
 
