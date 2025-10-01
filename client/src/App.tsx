@@ -15,6 +15,7 @@ import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionCont
 import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
+import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
 import "@fontsource/inter";
 
 // Main App component
@@ -124,6 +125,7 @@ function App() {
             <PlanetSurfaceScene />
             <TakeoffControls />
             <HintModal />
+            {import.meta.env.DEV && <MissionDebugPanel />}
           </KeyboardControls>
         )}
       </div>

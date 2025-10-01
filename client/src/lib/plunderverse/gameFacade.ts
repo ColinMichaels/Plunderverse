@@ -111,18 +111,28 @@ export class GameFacade {
    * Initialize the game facade
    */
   async initialize(): Promise<void> {
-    if (this.initialized) return;
+    if (this.initialized) {
+      console.log('[GameFacade] Already initialized, skipping');
+      return;
+    }
+    
+    console.log('[GameFacade] 🚀 Starting initialization...');
     
     try {
       // Load content from registry
+      console.log('[GameFacade] Loading content registry...');
       await this.contentRegistry.loadContent();
+      console.log('[GameFacade] ✅ Content loaded successfully');
       
       // Load economy tuning
+      console.log('[GameFacade] Loading economy tuning...');
       await usePlunderverseEconomy.getState().loadTuning();
+      console.log('[GameFacade] ✅ Economy tuning loaded');
       
       // Initialize economy with persistent player seed
       const playerId = this.getPlayerId();
       const gameDay = this.getGameDay();
+      console.log(`[GameFacade] Initializing RNG with player ID: ${playerId}`);
       usePlunderverseEconomy.getState().initializeRNG(playerId);
       
       // Initialize crew system and make it globally accessible
@@ -132,13 +142,26 @@ export class GameFacade {
       // Make crew management accessible globally for other systems
       (window as any).crewManagement = crewManagement;
       
-      console.log('[GameFacade] Crew system initialized');
+      console.log('[GameFacade] ✅ Crew system initialized');
+      
+      // Check credits status
+      const credits = useCreditsStore.getState();
+      console.log(`[GameFacade] 💰 Initial credits: ${credits.credits}`);
       
       // Generate initial missions for starting location
       const player = usePlayer.getState();
       const seed = `${playerId}:${this.currentLocation}:${gameDay}`;
-      console.log(`[GameFacade] Generating initial missions with seed: ${seed}`);
+      console.log(`[GameFacade] 📋 Generating initial missions...`);
+      console.log(`[GameFacade] Location: ${this.currentLocation}, Rank: ${player.rank}, Seed: ${seed}`);
+      
       usePlunderverseMissions.getState().generateMissions(this.currentLocation, player.rank, seed);
+      
+      const missionsState = usePlunderverseMissions.getState();
+      console.log(`[GameFacade] ✅ Missions generated: ${missionsState.availableMissions.length} available, ${missionsState.activeMissions.length} active`);
+      
+      if (missionsState.availableMissions.length > 0) {
+        console.log('[GameFacade] Sample mission:', missionsState.availableMissions[0]);
+      }
       
       this.initialized = true;
       console.log('[GameFacade] Initialized successfully with deterministic seeding');

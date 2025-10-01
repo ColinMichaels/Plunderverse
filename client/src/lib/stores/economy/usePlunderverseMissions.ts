@@ -110,15 +110,19 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     const mission = state.availableMissions.find(m => m.id === missionId);
     
     if (!mission) {
-      console.warn(`Mission ${missionId} not found`);
+      console.warn(`[MISSION-ACCEPT] ❌ Mission ${missionId} not found`);
       return false;
     }
     
     // Check if we already have too many active missions (max 5)
     if (state.activeMissions.length >= 5) {
-      console.warn('Too many active missions');
+      console.warn(`[MISSION-ACCEPT] ❌ Too many active missions (${state.activeMissions.length}/5)`);
       return false;
     }
+    
+    console.log(`[MISSION-ACCEPT] 📋 Accepting mission: ${mission.title}`);
+    console.log(`[MISSION-ACCEPT] Type: ${mission.type}, Difficulty: ${mission.difficulty}`);
+    console.log(`[MISSION-ACCEPT] Objectives:`, mission.objectives.map(o => o.description).join(', '));
     
     // Move mission from available to active
     const activeMission = { ...mission, active: true };
@@ -127,6 +131,7 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     // Initialize objective progress
     activeMission.objectives.forEach(obj => {
       objectiveProgress.set(obj.id, 0);
+      console.log(`[MISSION-ACCEPT] Initialized objective progress: ${obj.id} = 0%`);
     });
     
     const newObjectiveProgress = new Map(state.currentObjectiveProgress);
@@ -139,7 +144,8 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
       currentObjectiveProgress: newObjectiveProgress
     });
     
-    console.log(`Accepted mission: ${mission.title}`);
+    console.log(`[MISSION-ACCEPT] ✅ Mission accepted successfully: ${mission.title}`);
+    console.log(`[MISSION-ACCEPT] Active missions count: ${state.activeMissions.length + 1}`);
     return true;
   },
   
@@ -165,12 +171,24 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     const state = get();
     const mission = state.activeMissions.find(m => m.id === missionId);
     
-    if (!mission) return;
+    if (!mission) {
+      console.warn(`[OBJECTIVE-PROGRESS] ❌ Mission ${missionId} not found`);
+      return;
+    }
     
     const missionProgress = state.currentObjectiveProgress.get(missionId);
-    if (!missionProgress) return;
+    if (!missionProgress) {
+      console.warn(`[OBJECTIVE-PROGRESS] ❌ No progress tracking for mission ${missionId}`);
+      return;
+    }
     
-    missionProgress.set(objectiveId, Math.min(100, Math.max(0, progress)));
+    const oldProgress = missionProgress.get(objectiveId) || 0;
+    const newProgress = Math.min(100, Math.max(0, progress));
+    
+    console.log(`[OBJECTIVE-PROGRESS] 📈 Updating objective for "${mission.title}"`);
+    console.log(`[OBJECTIVE-PROGRESS] Objective ${objectiveId}: ${oldProgress}% -> ${newProgress}%`);
+    
+    missionProgress.set(objectiveId, newProgress);
     
     const newObjectiveProgress = new Map(state.currentObjectiveProgress);
     newObjectiveProgress.set(missionId, missionProgress);
@@ -178,7 +196,8 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     set({ currentObjectiveProgress: newObjectiveProgress });
     
     // Check if objective is complete
-    if (progress >= 100) {
+    if (newProgress >= 100 && oldProgress < 100) {
+      console.log(`[OBJECTIVE-PROGRESS] ✅ Objective ${objectiveId} completed!`);
       get().completeObjective(missionId, objectiveId);
     }
   },
@@ -202,13 +221,14 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     
     set({ activeMissions: updatedMissions });
     
-    console.log(`Completed objective: ${objective.description}`);
+    console.log(`[OBJECTIVE-COMPLETE] Completed objective: ${objective.description}`);
     
     // Check if all objectives are complete
     const allComplete = mission.objectives.every(o => o.completed);
     if (allComplete && mission.choices.length === 0) {
-      // Auto-complete mission if no choices required
-      get().completeMission(missionId);
+      console.log(`[OBJECTIVE-COMPLETE] All objectives complete for mission "${mission.title}"`);
+      // Don't auto-complete - let gameFacade handle it
+      console.log(`[OBJECTIVE-COMPLETE] Mission ready for completion (use gameFacade.resolveMission)`);
     }
   },
   
@@ -229,11 +249,24 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     const state = get();
     const mission = state.activeMissions.find(m => m.id === missionId);
     
-    if (!mission) return undefined;
+    if (!mission) {
+      console.warn(`[MISSION-COMPLETE] ❌ Mission ${missionId} not found in active missions`);
+      return undefined;
+    }
+    
+    console.log(`[MISSION-COMPLETE] 🎯 Completing mission: ${mission.title}`);
+    console.log(`[MISSION-COMPLETE] Mission type: ${mission.type}, Difficulty: ${mission.difficulty}`);
+    console.log(`[MISSION-COMPLETE] Rewards:`, {
+      credits: mission.rewards?.base?.credits || 0,
+      reputation: mission.rewards?.base?.reputation || {},
+      items: mission.rewards?.base?.items || []
+    });
     
     // Remove from active missions
     const newObjectiveProgress = new Map(state.currentObjectiveProgress);
     newObjectiveProgress.delete(missionId);
+    
+    const prevCompletedCount = state.completedMissionIds.size;
     
     set({
       activeMissions: state.activeMissions.filter(m => m.id !== missionId),
@@ -242,7 +275,10 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
       currentObjectiveProgress: newObjectiveProgress
     });
     
-    console.log(`Completed mission: ${mission.title}`);
+    console.log(`[MISSION-COMPLETE] ✅ Mission completed successfully: ${mission.title}`);
+    console.log(`[MISSION-COMPLETE] Total completed missions: ${prevCompletedCount} -> ${prevCompletedCount + 1}`);
+    console.log(`[MISSION-COMPLETE] Active missions remaining: ${state.activeMissions.length - 1}`);
+    
     return mission.rewards;
   },
   
