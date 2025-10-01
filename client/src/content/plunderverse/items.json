@@ -1,0 +1,418 @@
+{
+  "$schema": "./schemas/items.schema.json",
+  "items": {
+    "trade_goods": [
+      {
+        "id": "food",
+        "name": "Food Supplies",
+        "category": "supplies",
+        "basePrice": 100,
+        "weight": 1,
+        "legal": true,
+        "description": "Basic foodstuffs and rations",
+        "icon": "🥫"
+      },
+      {
+        "id": "water",
+        "name": "Water",
+        "category": "supplies",
+        "basePrice": 50,
+        "weight": 2,
+        "legal": true,
+        "description": "Purified water for colonies",
+        "icon": "💧"
+      },
+      {
+        "id": "medical_supplies",
+        "name": "Medical Supplies",
+        "category": "supplies",
+        "basePrice": 500,
+        "weight": 0.5,
+        "legal": true,
+        "description": "Medicine, bandages, and medical equipment",
+        "icon": "🏥"
+      },
+      {
+        "id": "technology",
+        "name": "Tech Components",
+        "category": "technology",
+        "basePrice": 1000,
+        "weight": 0.3,
+        "legal": true,
+        "description": "Computer chips and electronic components",
+        "icon": "💻"
+      },
+      {
+        "id": "weapons",
+        "name": "Weapons",
+        "category": "military",
+        "basePrice": 2000,
+        "weight": 1.5,
+        "legal": false,
+        "restricted": true,
+        "description": "Small arms and personal weapons",
+        "icon": "🔫"
+      },
+      {
+        "id": "luxury_goods",
+        "name": "Luxury Items",
+        "category": "luxury",
+        "basePrice": 3000,
+        "weight": 0.8,
+        "legal": true,
+        "description": "High-end consumer goods",
+        "icon": "💎"
+      },
+      {
+        "id": "minerals",
+        "name": "Common Minerals",
+        "category": "resources",
+        "basePrice": 300,
+        "weight": 3,
+        "legal": true,
+        "description": "Iron, copper, and basic ores",
+        "icon": "⛏️"
+      },
+      {
+        "id": "rare_minerals",
+        "name": "Rare Minerals",
+        "category": "resources",
+        "basePrice": 5000,
+        "weight": 2,
+        "legal": true,
+        "description": "Platinum, titanium, and exotic materials",
+        "icon": "💠"
+      },
+      {
+        "id": "fuel_cells",
+        "name": "Fuel Cells",
+        "category": "supplies",
+        "basePrice": 200,
+        "weight": 1,
+        "legal": true,
+        "description": "Standard starship fuel",
+        "icon": "⚡"
+      },
+      {
+        "id": "contraband",
+        "name": "Contraband",
+        "category": "illegal",
+        "basePrice": 5000,
+        "weight": 0.5,
+        "legal": false,
+        "description": "Various illegal goods",
+        "icon": "📦",
+        "heatGeneration": 10
+      },
+      {
+        "id": "stolen_goods",
+        "name": "Stolen Cargo",
+        "category": "illegal",
+        "basePrice": 0,
+        "weight": 1,
+        "legal": false,
+        "description": "Goods of questionable origin",
+        "icon": "🎭",
+        "fenceValue": 0.5,
+        "heatGeneration": 5
+      },
+      {
+        "id": "black_market_stims",
+        "name": "Black Market Stims",
+        "category": "illegal",
+        "basePrice": 8000,
+        "weight": 0.1,
+        "legal": false,
+        "description": "Performance enhancing drugs",
+        "icon": "💊",
+        "heatGeneration": 15
+      },
+      {
+        "id": "corporate_data",
+        "name": "Corporate Data",
+        "category": "illegal",
+        "basePrice": 10000,
+        "weight": 0.01,
+        "legal": false,
+        "description": "Stolen corporate secrets",
+        "icon": "💾",
+        "heatGeneration": 25
+      },
+      {
+        "id": "alien_artifacts",
+        "name": "Alien Artifacts",
+        "category": "exotic",
+        "basePrice": 50000,
+        "weight": 1,
+        "legal": true,
+        "restricted": true,
+        "description": "Mysterious alien technology",
+        "icon": "🛸",
+        "rarity": "legendary"
+      }
+    ],
+    "ship_modules": [
+      {
+        "id": "basic_scanner",
+        "name": "Basic Scanner",
+        "category": "utility",
+        "slot": "sensor",
+        "basePrice": 5000,
+        "weight": 5,
+        "effects": {
+          "scanRange": 100,
+          "detectHidden": false
+        },
+        "description": "Standard ship scanner",
+        "icon": "📡"
+      },
+      {
+        "id": "advanced_scanner",
+        "name": "Advanced Scanner",
+        "category": "utility",
+        "slot": "sensor",
+        "basePrice": 15000,
+        "weight": 8,
+        "effects": {
+          "scanRange": 250,
+          "detectHidden": true,
+          "identifyCargo": true
+        },
+        "description": "Military-grade scanning system",
+        "icon": "🛰️"
+      },
+      {
+        "id": "hidden_compartment",
+        "name": "Hidden Cargo Bay",
+        "category": "smuggling",
+        "slot": "cargo",
+        "basePrice": 10000,
+        "weight": 10,
+        "effects": {
+          "hiddenCargoSpace": 10,
+          "scanResistance": 0.5
+        },
+        "description": "Concealed storage for contraband",
+        "icon": "📦",
+        "illegal": true
+      },
+      {
+        "id": "combat_shields",
+        "name": "Combat Shields",
+        "category": "defense",
+        "slot": "shield",
+        "basePrice": 20000,
+        "weight": 15,
+        "effects": {
+          "shieldStrength": 150,
+          "rechargeRate": 10
+        },
+        "description": "Heavy duty shield generator",
+        "icon": "🛡️"
+      },
+      {
+        "id": "stealth_module",
+        "name": "Stealth System",
+        "category": "stealth",
+        "slot": "special",
+        "basePrice": 30000,
+        "weight": 12,
+        "effects": {
+          "stealthRating": 0.7,
+          "heatSignature": -50
+        },
+        "description": "Reduces ship detectability",
+        "icon": "👤",
+        "powerConsumption": "high"
+      },
+      {
+        "id": "turbo_thrusters",
+        "name": "Turbo Thrusters",
+        "category": "propulsion",
+        "slot": "engine",
+        "basePrice": 25000,
+        "weight": 20,
+        "effects": {
+          "speed": 1.5,
+          "fuelEfficiency": 0.8
+        },
+        "description": "High-performance engine upgrade",
+        "icon": "🚀"
+      },
+      {
+        "id": "mining_laser",
+        "name": "Mining Laser",
+        "category": "tools",
+        "slot": "weapon",
+        "basePrice": 8000,
+        "weight": 10,
+        "effects": {
+          "miningEfficiency": 2.0,
+          "combatDamage": 20
+        },
+        "description": "Dual-purpose mining and combat laser",
+        "icon": "⛏️"
+      },
+      {
+        "id": "plasma_cannon",
+        "name": "Plasma Cannon",
+        "category": "weapons",
+        "slot": "weapon",
+        "basePrice": 35000,
+        "weight": 25,
+        "effects": {
+          "combatDamage": 100,
+          "armorPiercing": true
+        },
+        "description": "Heavy assault weapon",
+        "icon": "💥",
+        "restricted": true
+      },
+      {
+        "id": "repair_drones",
+        "name": "Repair Drones",
+        "category": "utility",
+        "slot": "special",
+        "basePrice": 15000,
+        "weight": 8,
+        "effects": {
+          "autoRepair": 5,
+          "repairEfficiency": 1.5
+        },
+        "description": "Automated repair system",
+        "icon": "🤖"
+      },
+      {
+        "id": "cargo_expander",
+        "name": "Cargo Bay Extension",
+        "category": "cargo",
+        "slot": "cargo",
+        "basePrice": 12000,
+        "weight": 5,
+        "effects": {
+          "cargoCapacity": 20
+        },
+        "description": "Increases cargo capacity",
+        "icon": "📦"
+      },
+      {
+        "id": "emp_generator",
+        "name": "EMP Generator",
+        "category": "weapons",
+        "slot": "special",
+        "basePrice": 40000,
+        "weight": 18,
+        "effects": {
+          "disableShips": true,
+          "range": 50,
+          "cooldown": 60
+        },
+        "description": "Disables enemy electronics",
+        "icon": "⚡",
+        "illegal": true
+      },
+      {
+        "id": "jump_drive",
+        "name": "Jump Drive",
+        "category": "propulsion",
+        "slot": "special",
+        "basePrice": 100000,
+        "weight": 30,
+        "effects": {
+          "hyperJump": true,
+          "jumpRange": 500
+        },
+        "description": "Emergency FTL escape system",
+        "icon": "🌌",
+        "rarity": "rare"
+      }
+    ],
+    "special_items": [
+      {
+        "id": "forged_manifest",
+        "name": "Forged Shipping Manifest",
+        "category": "document",
+        "basePrice": 2000,
+        "weight": 0,
+        "consumable": true,
+        "effects": {
+          "bypassScan": 0.7
+        },
+        "description": "Fake paperwork for smuggling",
+        "icon": "📋"
+      },
+      {
+        "id": "corporate_id",
+        "name": "Corporate ID Badge",
+        "category": "document",
+        "basePrice": 5000,
+        "weight": 0,
+        "effects": {
+          "corporateAccess": true
+        },
+        "description": "Access to Corporate facilities",
+        "icon": "🆔"
+      },
+      {
+        "id": "pirate_flag",
+        "name": "Jolly Roger",
+        "category": "cosmetic",
+        "basePrice": 1000,
+        "weight": 0.1,
+        "effects": {
+          "intimidation": 10,
+          "pirateRespect": 5
+        },
+        "description": "Traditional pirate colors",
+        "icon": "🏴‍☠️"
+      },
+      {
+        "id": "nav_charts",
+        "name": "Secret Nav Charts",
+        "category": "navigation",
+        "basePrice": 10000,
+        "weight": 0,
+        "effects": {
+          "revealHiddenNodes": true
+        },
+        "description": "Maps to hidden locations",
+        "icon": "🗺️"
+      },
+      {
+        "id": "emergency_beacon",
+        "name": "Emergency Beacon",
+        "category": "safety",
+        "basePrice": 1500,
+        "weight": 0.5,
+        "consumable": true,
+        "effects": {
+          "callRescue": true
+        },
+        "description": "Calls for emergency assistance",
+        "icon": "🚨"
+      }
+    ]
+  },
+  "item_mechanics": {
+    "weight_limits": {
+      "description": "Ships have cargo weight limits",
+      "overweight_penalty": {
+        "speed": 0.8,
+        "fuel_consumption": 1.5
+      }
+    },
+    "contraband_detection": {
+      "base_chance": 0.5,
+      "modifiers": {
+        "hidden_compartment": -0.3,
+        "stealth_module": -0.2,
+        "high_heat": 0.3
+      }
+    },
+    "market_dynamics": {
+      "supply_demand": true,
+      "price_fluctuation": 0.2,
+      "events_affect_prices": true
+    }
+  }
+}

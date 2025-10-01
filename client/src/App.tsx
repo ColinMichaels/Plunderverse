@@ -13,6 +13,7 @@ import { useSettings } from "./lib/stores/ui/useSettings";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
+import contentRegistry from "./lib/plunderverse/contentRegistry";
 import "@fontsource/inter";
 
 // Main App component
@@ -30,6 +31,13 @@ function App() {
       keyboardMapRef.current = useSettings.getState().getKeyboardMap();
     });
     return unsubscribe;
+  }, []);
+
+  // Initialize Plunderverse content
+  useEffect(() => {
+    contentRegistry.loadContent().catch(error => {
+      console.error('Failed to load Plunderverse content:', error);
+    });
   }, []);
 
   // Initialize audio and show canvas

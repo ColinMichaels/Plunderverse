@@ -1,0 +1,256 @@
+{
+  "$schema": "./schemas/ranks.schema.json",
+  "ranks": [
+    {
+      "id": "rank_0",
+      "level": 0,
+      "title": "Stowaway",
+      "description": "Fresh off the transport, trying to make it in the black",
+      "requirements": {
+        "credits": 0,
+        "missionsCompleted": 0,
+        "notoriety": 0
+      },
+      "benefits": {
+        "cargoCapacity": 10,
+        "crewSlots": 1,
+        "missionDifficultyMax": "easy"
+      },
+      "icon": "👤"
+    },
+    {
+      "id": "rank_1",
+      "level": 1,
+      "title": "Deckhand",
+      "description": "Learning the ropes, taking whatever work comes",
+      "requirements": {
+        "credits": 5000,
+        "missionsCompleted": 3,
+        "notoriety": 10
+      },
+      "benefits": {
+        "cargoCapacity": 15,
+        "crewSlots": 2,
+        "missionDifficultyMax": "easy",
+        "shipUpgrade": "basic_scanner"
+      },
+      "icon": "⚓"
+    },
+    {
+      "id": "rank_2",
+      "level": 2,
+      "title": "Smuggler",
+      "description": "Running contraband and dodging the law",
+      "requirements": {
+        "credits": 15000,
+        "missionsCompleted": 10,
+        "notoriety": 25,
+        "specialRequirement": "Complete at least 2 smuggling missions"
+      },
+      "benefits": {
+        "cargoCapacity": 25,
+        "crewSlots": 3,
+        "missionDifficultyMax": "medium",
+        "shipUpgrade": "hidden_compartment",
+        "blackMarketAccess": true
+      },
+      "icon": "📦"
+    },
+    {
+      "id": "rank_3",
+      "level": 3,
+      "title": "Privateer",
+      "description": "Taking bigger risks for bigger rewards",
+      "requirements": {
+        "credits": 35000,
+        "missionsCompleted": 20,
+        "notoriety": 40,
+        "combatVictories": 5
+      },
+      "benefits": {
+        "cargoCapacity": 35,
+        "crewSlots": 4,
+        "missionDifficultyMax": "medium",
+        "shipUpgrade": "combat_shields",
+        "combatBonus": 1.2
+      },
+      "icon": "⚔️"
+    },
+    {
+      "id": "rank_4",
+      "level": 4,
+      "title": "Corsair",
+      "description": "A feared name in Corporate shipping logs",
+      "requirements": {
+        "credits": 60000,
+        "missionsCompleted": 35,
+        "notoriety": 60,
+        "combatVictories": 15,
+        "specialRequirement": "Raid a Corporate convoy"
+      },
+      "benefits": {
+        "cargoCapacity": 45,
+        "crewSlots": 5,
+        "missionDifficultyMax": "hard",
+        "shipUpgrade": "advanced_weapons",
+        "combatBonus": 1.5,
+        "intimidation": true
+      },
+      "icon": "🏴‍☠️"
+    },
+    {
+      "id": "rank_5",
+      "level": 5,
+      "title": "Captain",
+      "description": "Commander of your own ship and crew",
+      "requirements": {
+        "credits": 100000,
+        "missionsCompleted": 50,
+        "notoriety": 75,
+        "combatVictories": 25,
+        "crewLoyalty": 80
+      },
+      "benefits": {
+        "cargoCapacity": 60,
+        "crewSlots": 7,
+        "missionDifficultyMax": "hard",
+        "shipUpgrade": "captain_quarters",
+        "crewEfficiency": 1.3,
+        "fleetCommand": 1
+      },
+      "icon": "👨‍✈️"
+    },
+    {
+      "id": "rank_6",
+      "level": 6,
+      "title": "Notorious Captain",
+      "description": "Your name alone makes traders nervous",
+      "requirements": {
+        "credits": 175000,
+        "missionsCompleted": 75,
+        "notoriety": 90,
+        "combatVictories": 40,
+        "infamousDeeds": 3
+      },
+      "benefits": {
+        "cargoCapacity": 75,
+        "crewSlots": 9,
+        "missionDifficultyMax": "legendary",
+        "shipUpgrade": "fear_generator",
+        "intimidationBonus": 2.0,
+        "fleetCommand": 2,
+        "legendaryMissions": true
+      },
+      "icon": "💀"
+    },
+    {
+      "id": "rank_7",
+      "level": 7,
+      "title": "Dread Pirate",
+      "description": "Corporate fleets change course when you're spotted",
+      "requirements": {
+        "credits": 300000,
+        "missionsCompleted": 100,
+        "notoriety": 100,
+        "combatVictories": 60,
+        "corporateShipsDestroyed": 20
+      },
+      "benefits": {
+        "cargoCapacity": 90,
+        "crewSlots": 12,
+        "missionDifficultyMax": "legendary",
+        "shipUpgrade": "dreadnought_armor",
+        "combatBonus": 2.0,
+        "fleetCommand": 3,
+        "fearAura": true
+      },
+      "icon": "☠️"
+    },
+    {
+      "id": "rank_8",
+      "level": 8,
+      "title": "Scourge of the Stars",
+      "description": "A living legend among pirates and outlaws",
+      "requirements": {
+        "credits": 500000,
+        "missionsCompleted": 150,
+        "notoriety": 125,
+        "combatVictories": 100,
+        "legendaryDeeds": 5
+      },
+      "benefits": {
+        "cargoCapacity": 110,
+        "crewSlots": 15,
+        "missionDifficultyMax": "legendary",
+        "shipUpgrade": "legendary_systems",
+        "allBonuses": 2.5,
+        "fleetCommand": 5,
+        "pirateFleetRespect": true
+      },
+      "icon": "🔥"
+    },
+    {
+      "id": "rank_9",
+      "level": 9,
+      "title": "Space Pirate Supreme",
+      "description": "The undisputed ruler of the lawless void",
+      "requirements": {
+        "credits": 1000000,
+        "missionsCompleted": 200,
+        "notoriety": 150,
+        "combatVictories": 150,
+        "controlSystems": 3,
+        "specialRequirement": "Unite the pirate clans"
+      },
+      "benefits": {
+        "cargoCapacity": 150,
+        "crewSlots": 20,
+        "missionDifficultyMax": "legendary",
+        "shipUpgrade": "flagship_status",
+        "allBonuses": 3.0,
+        "fleetCommand": 10,
+        "pirateKing": true,
+        "tributeSystem": true
+      },
+      "icon": "👑",
+      "special": {
+        "title": "Achievement unlocked",
+        "description": "You've become the stuff of legends. Ships surrender at the mere mention of your name.",
+        "rewards": [
+          "Unique ship skin: 'Terror of the Void'",
+          "Access to secret pirate capital",
+          "Ability to declare war on factions",
+          "Passive income from pirate tributes"
+        ]
+      }
+    }
+  ],
+  "progressionMechanics": {
+    "notorietyGain": {
+      "combatVictory": 5,
+      "smugglingSuccess": 3,
+      "bountyComplete": 7,
+      "corporateRaid": 10,
+      "infamousDeed": 15
+    },
+    "notorietyLoss": {
+      "missionFailure": -10,
+      "captured": -25,
+      "betrayal": -50
+    },
+    "specialDeeds": {
+      "infamous": [
+        "Destroy a Corporate flagship",
+        "Steal classified Corporate data",
+        "Free a pirate from maximum security",
+        "Raid the Luna Station vault"
+      ],
+      "legendary": [
+        "Single-handedly defeat a Corporate fleet",
+        "Discover the lost pirate treasure",
+        "Unite rival pirate factions",
+        "Establish a new pirate haven"
+      ]
+    }
+  }
+}

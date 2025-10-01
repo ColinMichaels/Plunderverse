@@ -1,0 +1,200 @@
+{
+  "$schema": "./schemas/factions.schema.json",
+  "factions": [
+    {
+      "id": "corporations",
+      "name": "The Corporate Alliance",
+      "description": "Megacorporations that control most of civilized space through economic and military might",
+      "color": "#FFD700",
+      "traits": {
+        "lawful": true,
+        "authoritarian": true,
+        "wealthy": true
+      },
+      "reputationLevels": [
+        { "min": -100, "max": -75, "name": "Enemy of the State", "description": "Kill on sight orders issued" },
+        { "min": -74, "max": -50, "name": "Wanted Criminal", "description": "Active bounties, denied docking" },
+        { "min": -49, "max": -25, "name": "Blacklisted", "description": "No trade, increased security checks" },
+        { "min": -24, "max": -10, "name": "Suspicious", "description": "Higher prices, frequent scans" },
+        { "min": -9, "max": 9, "name": "Neutral", "description": "Standard treatment" },
+        { "min": 10, "max": 24, "name": "Registered Trader", "description": "Minor discounts, expedited clearance" },
+        { "min": 25, "max": 49, "name": "Preferred Contractor", "description": "Good discounts, exclusive contracts" },
+        { "min": 50, "max": 74, "name": "Corporate Partner", "description": "Major benefits, protection services" },
+        { "min": 75, "max": 100, "name": "Board Member", "description": "Executive privileges, private security" }
+      ],
+      "reactionModifiers": {
+        "trading": {
+          "priceMultiplier": {
+            "formula": "1.5 - (reputation * 0.01)",
+            "min": 0.5,
+            "max": 1.5
+          }
+        },
+        "security": {
+          "scanChance": {
+            "formula": "0.8 - (reputation * 0.005)",
+            "min": 0.1,
+            "max": 0.9
+          },
+          "responseTime": {
+            "formula": "30 - (reputation * 0.2)",
+            "min": 10,
+            "max": 60
+          }
+        }
+      },
+      "territories": [
+        "earth",
+        "mars",
+        "luna_station",
+        "corporate_checkpoint_alpha",
+        "mining_station_7"
+      ],
+      "relationships": {
+        "outlaws": -75,
+        "independents": -25
+      },
+      "shopInventory": {
+        "focus": ["high_tech", "weapons", "shields"],
+        "forbidden": ["contraband", "stolen_goods"],
+        "exclusive": ["corporate_id", "security_clearance"]
+      }
+    },
+    {
+      "id": "independents",
+      "name": "Independent Colonies",
+      "description": "Frontier settlements and free stations trying to survive on the edges of space",
+      "color": "#4CAF50",
+      "traits": {
+        "neutral": true,
+        "resourceful": true,
+        "diverse": true
+      },
+      "reputationLevels": [
+        { "min": -100, "max": -50, "name": "Pariah", "description": "Unwelcome, may be expelled" },
+        { "min": -49, "max": -25, "name": "Distrusted", "description": "Limited services, watched closely" },
+        { "min": -24, "max": -10, "name": "Outsider", "description": "Higher prices, basic services only" },
+        { "min": -9, "max": 9, "name": "Drifter", "description": "Standard treatment" },
+        { "min": 10, "max": 24, "name": "Known Trader", "description": "Fair prices, occasional tips" },
+        { "min": 25, "max": 49, "name": "Friend", "description": "Discounts, insider information" },
+        { "min": 50, "max": 74, "name": "Hero", "description": "Free repairs, community support" },
+        { "min": 75, "max": 100, "name": "Legend", "description": "Welcome anywhere, deep discounts" }
+      ],
+      "reactionModifiers": {
+        "trading": {
+          "priceMultiplier": {
+            "formula": "1.2 - (reputation * 0.006)",
+            "min": 0.6,
+            "max": 1.2
+          },
+          "barterBonus": {
+            "formula": "reputation * 0.5",
+            "min": 0,
+            "max": 25
+          }
+        },
+        "information": {
+          "rumorAccess": {
+            "threshold": 10,
+            "description": "Access to local rumors and tips"
+          },
+          "secretAccess": {
+            "threshold": 50,
+            "description": "Learn about hidden opportunities"
+          }
+        }
+      },
+      "territories": [
+        "haven_colony",
+        "frontier_outpost",
+        "neutral_zone",
+        "trading_post_alpha",
+        "refugee_station"
+      ],
+      "relationships": {
+        "corporations": -25,
+        "outlaws": 10
+      },
+      "shopInventory": {
+        "focus": ["supplies", "repairs", "fuel"],
+        "forbidden": ["military_grade"],
+        "exclusive": ["colony_surplus", "handmade_goods"]
+      }
+    },
+    {
+      "id": "outlaws",
+      "name": "The Outer Rim Outlaws",
+      "description": "Pirates, smugglers, and rebels united by their rejection of Corporate rule",
+      "color": "#FF4444",
+      "traits": {
+        "chaotic": true,
+        "opportunistic": true,
+        "freedom": true
+      },
+      "reputationLevels": [
+        { "min": -100, "max": -50, "name": "Marked for Death", "description": "Betrayer, hunted by all crews" },
+        { "min": -49, "max": -25, "name": "Rat", "description": "Known snitch, not trusted" },
+        { "min": -24, "max": -10, "name": "Unproven", "description": "Viewed with suspicion" },
+        { "min": -9, "max": 9, "name": "Nobody", "description": "Just another spacer" },
+        { "min": 10, "max": 24, "name": "Associate", "description": "Access to black market" },
+        { "min": 25, "max": 49, "name": "Made Member", "description": "Trusted with smuggling runs" },
+        { "min": 50, "max": 74, "name": "Captain", "description": "Command respect, crew available" },
+        { "min": 75, "max": 100, "name": "Pirate Lord", "description": "Fleet commander, feared and respected" }
+      ],
+      "reactionModifiers": {
+        "trading": {
+          "blackMarketAccess": {
+            "threshold": 10,
+            "description": "Can trade in illegal goods"
+          },
+          "fenceMultiplier": {
+            "formula": "0.3 + (reputation * 0.005)",
+            "min": 0.3,
+            "max": 0.8,
+            "description": "Percentage of value for stolen goods"
+          }
+        },
+        "combat": {
+          "intimidation": {
+            "formula": "reputation * 0.5",
+            "min": 0,
+            "max": 50,
+            "description": "Chance enemies flee without fighting"
+          },
+          "crewMorale": {
+            "formula": "50 + (reputation * 0.5)",
+            "min": 50,
+            "max": 100
+          }
+        }
+      },
+      "territories": [
+        "tortuga_station",
+        "asteroid_hideout",
+        "smugglers_den",
+        "pirate_base",
+        "lawless_zone"
+      ],
+      "relationships": {
+        "corporations": -75,
+        "independents": 10
+      },
+      "shopInventory": {
+        "focus": ["contraband", "weapons", "stolen_goods"],
+        "forbidden": ["corporate_goods"],
+        "exclusive": ["pirate_tech", "illegal_mods"]
+      },
+      "specialMechanics": {
+        "notorietyDecay": {
+          "description": "Heat level decreases faster in outlaw territory",
+          "rate": 2
+        },
+        "safehouse": {
+          "description": "Can lay low to reduce heat",
+          "cost": 1000,
+          "heatReduction": 25
+        }
+      }
+    }
+  ]
+}

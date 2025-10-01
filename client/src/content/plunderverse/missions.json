@@ -1,0 +1,359 @@
+{
+  "$schema": "./schemas/missions.schema.json",
+  "missions": [
+    {
+      "id": "mission_delivery_001",
+      "title": "Medical Supplies Run",
+      "description": "Deliver vital medical supplies to a frontier moon colony",
+      "type": "delivery",
+      "difficulty": "easy",
+      "minRank": 0,
+      "requirements": {
+        "reputation": {
+          "independents": 0
+        },
+        "cargoSpace": 10
+      },
+      "objectives": [
+        {
+          "id": "obj_pickup",
+          "type": "travel",
+          "description": "Pick up medical supplies from Luna Station",
+          "target": "luna_station",
+          "dialogue": {
+            "arrival": "The dock worker hands you the sealed crates. 'Don't open these. Some folks pay good money for what's inside, if you catch my drift.'"
+          }
+        },
+        {
+          "id": "obj_deliver",
+          "type": "delivery",
+          "description": "Deliver supplies to Haven Colony",
+          "target": "haven_colony",
+          "cargo": "medical_supplies",
+          "quantity": 10,
+          "dialogue": {
+            "arrival": "The colony doctor rushes to meet you. 'Thank the stars you made it! We've got sick kids here.'"
+          }
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_inspect",
+          "text": "Inspect the cargo before delivery",
+          "appears": "obj_pickup",
+          "outcomes": [
+            {
+              "type": "discovery",
+              "description": "You find the crates contain both medicine and black market stims",
+              "effects": {
+                "notoriety": 5,
+                "knowledge": ["smuggling_opportunity"]
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_sell_black_market",
+          "text": "Sell half the supplies to smugglers",
+          "requires": ["knowledge:smuggling_opportunity"],
+          "outcomes": [
+            {
+              "type": "reward",
+              "credits": 5000,
+              "reputation": {
+                "outlaws": 10,
+                "independents": -20,
+                "corporations": -5
+              },
+              "description": "You made a profit, but the colony will remember this betrayal"
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 2500,
+          "reputation": {
+            "independents": 10
+          }
+        },
+        "bonus": {
+          "condition": "no_detours",
+          "credits": 500,
+          "reputation": {
+            "independents": 5
+          }
+        }
+      },
+      "failureConsequences": {
+        "reputation": {
+          "independents": -15
+        },
+        "description": "The colony won't forget you failed them when they needed help most"
+      }
+    },
+    {
+      "id": "mission_smuggling_001",
+      "title": "Contraband Run",
+      "description": "Transport 'agricultural equipment' past Corporate checkpoints",
+      "type": "smuggling",
+      "difficulty": "medium",
+      "minRank": 1,
+      "requirements": {
+        "reputation": {
+          "outlaws": 10
+        },
+        "cargoSpace": 15,
+        "heatLevel": {
+          "max": 50
+        }
+      },
+      "objectives": [
+        {
+          "id": "obj_pickup_contraband",
+          "type": "travel",
+          "description": "Meet your contact at the Asteroid Belt",
+          "target": "asteroid_hideout",
+          "dialogue": {
+            "arrival": "A scarred woman in a patched flight suit approaches. 'You didn't see me, I didn't see you. Cargo's in Bay 7. Don't get scanned.'"
+          }
+        },
+        {
+          "id": "obj_checkpoint",
+          "type": "choice",
+          "description": "Pass through Corporate checkpoint",
+          "target": "corporate_checkpoint_alpha"
+        },
+        {
+          "id": "obj_deliver_contraband",
+          "type": "delivery",
+          "description": "Deliver the goods to Miranda Station",
+          "target": "miranda_station",
+          "cargo": "contraband",
+          "quantity": 15
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_bribe",
+          "text": "Bribe the checkpoint officer (2000 credits)",
+          "appears": "obj_checkpoint",
+          "requires": ["credits:2000"],
+          "outcomes": [
+            {
+              "type": "cost",
+              "credits": 2000,
+              "description": "The officer waves you through without inspection"
+            }
+          ]
+        },
+        {
+          "id": "choice_fake_manifest",
+          "text": "Use forged shipping manifest",
+          "appears": "obj_checkpoint",
+          "requires": ["item:forged_manifest"],
+          "outcomes": [
+            {
+              "type": "skillCheck",
+              "skill": "deception",
+              "difficulty": 15,
+              "success": {
+                "description": "Your paperwork passes inspection",
+                "reputation": {
+                  "outlaws": 5
+                }
+              },
+              "failure": {
+                "description": "They spot the forgery! Prepare for combat or surrender",
+                "combat": true,
+                "heatLevel": 25
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_run_checkpoint",
+          "text": "Gun it and run the blockade",
+          "appears": "obj_checkpoint",
+          "outcomes": [
+            {
+              "type": "combat",
+              "description": "Corporate security opens fire!",
+              "enemies": ["corporate_patrol"],
+              "heatLevel": 50,
+              "reputation": {
+                "corporations": -25,
+                "outlaws": 15
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "base": {
+          "credits": 7500,
+          "reputation": {
+            "outlaws": 15,
+            "corporations": -10
+          }
+        },
+        "stealth": {
+          "condition": "no_combat",
+          "credits": 2500,
+          "reputation": {
+            "outlaws": 10
+          },
+          "item": "stealth_module"
+        }
+      }
+    },
+    {
+      "id": "mission_bounty_001",
+      "title": "Dead or Alive",
+      "description": "Track down the pirate captain 'Red Jack' Morrison",
+      "type": "bounty",
+      "difficulty": "hard",
+      "minRank": 2,
+      "requirements": {
+        "reputation": {
+          "corporations": 20
+        },
+        "combatRating": 3
+      },
+      "objectives": [
+        {
+          "id": "obj_investigate",
+          "type": "investigation",
+          "description": "Gather intel on Red Jack's whereabouts",
+          "locations": ["tortuga_station", "smugglers_den", "neutral_zone"],
+          "dialogue": {
+            "tortuga_station": "The bartender slides you a drink. 'Red Jack? Haven't seen him in weeks. But his crew was asking about fuel cells for a long haul...'",
+            "smugglers_den": "An old smuggler chuckles. 'Jack owes me money. Last I heard, he was hiding in the Outer Rim, near the derelict fleet.'",
+            "neutral_zone": "A nervous trader whispers, 'Red Jack's been hitting Corporate convoys. They say he's got a base in the asteroid field.'"
+          }
+        },
+        {
+          "id": "obj_track",
+          "type": "travel",
+          "description": "Track Red Jack to his hideout",
+          "target": "pirate_base",
+          "dynamic": true
+        },
+        {
+          "id": "obj_confront",
+          "type": "choice",
+          "description": "Confront Red Jack"
+        }
+      ],
+      "choices": [
+        {
+          "id": "choice_attack",
+          "text": "Attack immediately - Dead bounty (10,000 credits)",
+          "appears": "obj_confront",
+          "outcomes": [
+            {
+              "type": "combat",
+              "description": "Red Jack and his crew fight to the death",
+              "enemies": ["red_jack", "pirate_crew"],
+              "rewards": {
+                "credits": 10000,
+                "reputation": {
+                  "corporations": 25,
+                  "outlaws": -30
+                }
+              }
+            }
+          ]
+        },
+        {
+          "id": "choice_negotiate",
+          "text": "Try to bring him in alive - Higher bounty (15,000 credits)",
+          "appears": "obj_confront",
+          "outcomes": [
+            {
+              "type": "dialogue",
+              "character": "Red Jack",
+              "text": "You've got guts coming here alone. Tell you what - I'll come quietly if you let my crew go. They're just trying to survive, like everyone else.",
+              "playerOptions": [
+                {
+                  "text": "Deal. Your crew goes free.",
+                  "outcome": {
+                    "credits": 15000,
+                    "reputation": {
+                      "corporations": 30,
+                      "outlaws": -10,
+                      "independents": 10
+                    },
+                    "description": "Red Jack surrenders peacefully. His crew escapes."
+                  }
+                },
+                {
+                  "text": "No deal. You all come with me.",
+                  "outcome": {
+                    "type": "combat",
+                    "description": "Negotiations break down into a firefight",
+                    "enemies": ["red_jack", "pirate_crew"],
+                    "rewards": {
+                      "credits": 12000,
+                      "reputation": {
+                        "corporations": 35,
+                        "outlaws": -40
+                      }
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "id": "choice_join",
+          "text": "Listen to his side of the story",
+          "appears": "obj_confront",
+          "requires": ["reputation:outlaws:25"],
+          "outcomes": [
+            {
+              "type": "dialogue",
+              "character": "Red Jack",
+              "text": "The Corporations destroyed my colony for their mining operation. Killed everyone. My wife, my daughter... I'm just returning the favor. Join me, and we can make them pay.",
+              "playerOptions": [
+                {
+                  "text": "You're right. The Corps need to pay.",
+                  "outcome": {
+                    "missionBranch": "mission_revenge_001",
+                    "reputation": {
+                      "outlaws": 50,
+                      "corporations": -75
+                    },
+                    "description": "You join Red Jack's crusade against the Corporations"
+                  }
+                },
+                {
+                  "text": "I understand, but this isn't the way.",
+                  "outcome": {
+                    "description": "Red Jack respects your position but won't surrender",
+                    "combatOptional": true
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "rewards": {
+        "variable": true,
+        "description": "Rewards depend on how you handle Red Jack"
+      },
+      "specialEvents": [
+        {
+          "id": "event_ambush",
+          "trigger": "obj_track",
+          "chance": 0.3,
+          "description": "Red Jack's scouts spotted you! They're setting an ambush!",
+          "type": "combat",
+          "enemies": ["pirate_scouts"]
+        }
+      ]
+    }
+  ]
+}
