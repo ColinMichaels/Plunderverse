@@ -24,6 +24,12 @@ export { useMining } from './economy/useMining';
 export { useCrypto } from './economy/useCrypto';
 export { useMissions } from './economy/useMissions';
 
+// Objective Trigger system
+export { useObjectiveTriggers } from './economy/useObjectiveTriggers';
+export { useLocationTrigger } from './economy/useLocationTrigger';
+export { useCollectionTrigger } from './economy/useCollectionTrigger';
+export { useCombatTrigger } from './economy/useCombatTrigger';
+
 // Ship stores
 export { useShipStatus } from './ship/useShipStatus';
 export { useEquipment } from './ship/useEquipment';

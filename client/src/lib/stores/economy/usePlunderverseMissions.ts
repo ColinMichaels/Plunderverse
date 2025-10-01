@@ -6,8 +6,11 @@ import {
   ChoiceOutcome,
   MissionRewards,
   FactionId,
-  DifficultyLevel
+  DifficultyLevel,
+  ObjectiveTriggerType,
+  ObjectiveTriggerData
 } from '../../plunderverse/types';
+import { useObjectiveTriggers } from './useObjectiveTriggers';
 
 interface PlunderverseMissionsState {
   // Mission state
@@ -144,6 +147,13 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
       currentObjectiveProgress: newObjectiveProgress
     });
     
+    // Register objectives with the trigger system
+    const triggerSystem = useObjectiveTriggers.getState();
+    activeMission.objectives.forEach(objective => {
+      triggerSystem.registerObjective(activeMission, objective);
+      console.log(`[MISSION-ACCEPT] Registered objective trigger: ${objective.id}`);
+    });
+    
     console.log(`[MISSION-ACCEPT] ✅ Mission accepted successfully: ${mission.title}`);
     console.log(`[MISSION-ACCEPT] Active missions count: ${state.activeMissions.length + 1}`);
     return true;
@@ -157,6 +167,10 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     
     const newObjectiveProgress = new Map(state.currentObjectiveProgress);
     newObjectiveProgress.delete(missionId);
+    
+    // Unregister objectives from the trigger system
+    const triggerSystem = useObjectiveTriggers.getState();
+    triggerSystem.unregisterMission(missionId);
     
     set({
       activeMissions: state.activeMissions.filter(m => m.id !== missionId),
@@ -404,12 +418,86 @@ function generateObjectives(random: () => number): MissionObjective[] {
   const count = 1 + Math.floor(random() * 3);
   const objectives: MissionObjective[] = [];
   
+  const objectiveTypes: Array<{ 
+    type: MissionObjective['type'], 
+    triggerType: ObjectiveTriggerType,
+    descriptions: string[],
+    generateTriggerData: () => ObjectiveTriggerData
+  }> = [
+    {
+      type: 'travel',
+      triggerType: 'location',
+      descriptions: [
+        'Navigate to the target location',
+        'Reach the designated coordinates',
+        'Travel to the specified planet'
+      ],
+      generateTriggerData: () => ({
+        type: 'location',
+        planet: ['Mars', 'Earth', 'Jupiter', 'Saturn'][Math.floor(random() * 4)],
+        targetValue: 1
+      })
+    },
+    {
+      type: 'delivery',
+      triggerType: 'collection',
+      descriptions: [
+        'Collect the required cargo',
+        'Gather necessary supplies',
+        'Acquire the specified items'
+      ],
+      generateTriggerData: () => ({
+        type: 'collection',
+        itemType: ['cargo', 'supplies', 'minerals'][Math.floor(random() * 3)],
+        targetValue: Math.ceil(random() * 5) * 10,
+        currentValue: 0
+      })
+    },
+    {
+      type: 'combat',
+      triggerType: 'combat',
+      descriptions: [
+        'Defeat hostile targets',
+        'Eliminate enemy forces',
+        'Neutralize the threat'
+      ],
+      generateTriggerData: () => ({
+        type: 'combat',
+        enemyType: ['pirate', 'drone', 'raider'][Math.floor(random() * 3)],
+        targetValue: Math.ceil(random() * 3),
+        currentValue: 0
+      })
+    },
+    {
+      type: 'investigation',
+      triggerType: 'interaction',
+      descriptions: [
+        'Investigate the anomaly',
+        'Scan the target object',
+        'Examine the mysterious signal'
+      ],
+      generateTriggerData: () => ({
+        type: 'interaction',
+        interactionId: `interact_${Math.floor(random() * 1000)}`,
+        targetValue: 1,
+        currentValue: 0
+      })
+    }
+  ];
+  
   for (let i = 0; i < count; i++) {
+    const objType = objectiveTypes[Math.floor(random() * objectiveTypes.length)];
+    const description = objType.descriptions[Math.floor(random() * objType.descriptions.length)];
+    
     objectives.push({
       id: `obj_${i}`,
-      type: 'travel',
-      description: `Objective ${i + 1}`,
-      completed: false
+      type: objType.type,
+      description,
+      completed: false,
+      triggerType: objType.triggerType,
+      triggerData: objType.generateTriggerData(),
+      progress: 0,
+      autoComplete: true
     });
   }
   

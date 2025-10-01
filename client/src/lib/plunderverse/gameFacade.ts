@@ -6,6 +6,7 @@ import { useCreditsStore } from '../../domain/economy/credits.store';
 import { useEquipment } from '../stores/ship/useEquipment';
 import { useSurvival } from '../stores/economy/useSurvival';
 import { useCrewManagement } from '../stores/ship/useCrewManagement';
+import { useObjectiveTriggers } from '../stores/economy/useObjectiveTriggers';
 import { ContentRegistry } from './contentRegistry';
 import { toast } from 'sonner';
 import { missionControlTest } from '../tests/missionControlTest';
@@ -164,6 +165,14 @@ export class GameFacade {
       if (missionsState.availableMissions.length > 0) {
         console.log('[GameFacade] Sample mission:', missionsState.availableMissions[0]);
       }
+      
+      // Initialize the objective trigger system
+      const triggerSystem = useObjectiveTriggers.getState();
+      triggerSystem.initializeFromMissions(missionsState.activeMissions);
+      console.log('[GameFacade] ✅ Objective trigger system initialized');
+      
+      // Make trigger system globally accessible for debugging
+      (window as any).objectiveTriggers = triggerSystem;
       
       this.initialized = true;
       console.log('[GameFacade] Initialized successfully with deterministic seeding');

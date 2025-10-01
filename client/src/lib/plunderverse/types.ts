@@ -153,6 +153,34 @@ export interface MissionRequirements {
   items?: string[];
 }
 
+// Trigger types for objectives
+export type ObjectiveTriggerType = 
+  | 'location'     // Player reaches specific coordinates or planet
+  | 'collection'   // Player collects X amount of items
+  | 'combat'       // Player defeats X enemies
+  | 'interaction'  // Player interacts with specific object
+  | 'custom'       // Any custom condition
+  | 'travel'       // Legacy compatibility - travel to location
+  | 'delivery'     // Legacy compatibility - deliver items
+  | 'choice'       // Legacy compatibility - make a choice
+  | 'investigation'; // Legacy compatibility - investigate something
+
+export interface ObjectiveTriggerData {
+  type: ObjectiveTriggerType;
+  location?: string;           // For location triggers
+  coordinates?: Coordinate3D;   // For precise location triggers
+  radius?: number;             // Distance threshold for location triggers
+  planet?: string;             // Specific planet name
+  itemId?: string;            // For collection triggers
+  itemType?: string;          // For collection triggers by type
+  enemyType?: string;         // For combat triggers
+  enemyFaction?: FactionId;  // For combat triggers by faction
+  interactionId?: string;     // For interaction triggers
+  customCondition?: string;   // For custom triggers
+  currentValue?: number;      // Current progress value
+  targetValue?: number;       // Target value to complete
+}
+
 export interface MissionObjective {
   id: string;
   type: 'travel' | 'combat' | 'delivery' | 'choice' | 'investigation';
@@ -164,6 +192,11 @@ export interface MissionObjective {
   dialogue?: Record<string, string>;
   dynamic?: boolean;
   completed: boolean;
+  // New trigger system fields
+  triggerType?: ObjectiveTriggerType;
+  triggerData?: ObjectiveTriggerData;
+  progress?: number; // 0-100 percentage
+  autoComplete?: boolean; // Whether to auto-complete when trigger conditions are met
 }
 
 export interface MissionChoice {
