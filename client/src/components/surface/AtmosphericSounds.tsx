@@ -82,7 +82,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         windSoundRef.current = null;
       }
     };
-  }, [planetName, windIntensity, soundVolume, safeWindIntensity]);
+  }, [planetName, windIntensity, soundVolume]);
   
   // Storm sounds
   useEffect(() => {
