@@ -72,7 +72,7 @@ export function FlashlightSystem() {
         ref={spotLightRef}
         color="#ffffff"
         intensity={100}
-        distance={1000} // Effective range of the flashlight
+        distance={100} // Effective range of the flashlight
         angle={Math.PI / 4.5} // 30-degree cone (typical flashlight beam)
         penumbra={0.3} // Soft edge falloff
         decay={0.1} // Realistic light falloff
