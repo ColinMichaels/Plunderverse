@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Howl } from "howler";
 import { useWind } from "../../lib/stores/surface/useWind";
 import { useSettings } from "../../lib/stores/ui/useSettings";
@@ -124,11 +124,13 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
   }, [stormActive, planetName, soundVolume]);
   
   // Rain sounds for Earth
+  const [rainDecision] = useState(() => Math.random() > 0.7); // Decide once on mount
+  
   useEffect(() => {
     if (soundVolume === 0) return;
     
     const timeOfDay = (time * 10) % 24;
-    const isRaining = planetName === "Earth" && Math.random() > 0.7 && timeOfDay > 10 && timeOfDay < 18;
+    const isRaining = planetName === "Earth" && rainDecision && timeOfDay > 10 && timeOfDay < 18;
     
     if (isRaining && !rainSoundRef.current) {
       // Use hit sound in loop as rain
