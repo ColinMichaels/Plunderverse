@@ -59,7 +59,8 @@ export function AsteroidField() {
     projectiles.forEach(projectile => {
       asteroids.forEach(asteroid => {
         const distance = projectile.position.distanceTo(asteroid.position);
-        if (distance < asteroid.size + 1) { // Hit detection
+        const visualSize = asteroid.size * 0.15; // Match the visual scale from Asteroid.tsx
+        if (distance < visualSize + 0.5) { // Hit detection with smaller radius
           // Damage asteroid
           const destroyed = damageAsteroid(asteroid.id, 1);
           
@@ -76,7 +77,8 @@ export function AsteroidField() {
     // Check collisions between asteroids and ship
     asteroids.forEach(asteroid => {
       const distance = cameraPosition.distanceTo(asteroid.position);
-      if (distance < asteroid.size + 2) { // Ship collision radius
+      const visualSize = asteroid.size * 0.15; // Match the visual scale from Asteroid.tsx
+      if (distance < visualSize + 1) { // Ship collision radius adjusted for visual size
         // Ship takes damage
         takeDamage(15, "Asteroid Impact");
         

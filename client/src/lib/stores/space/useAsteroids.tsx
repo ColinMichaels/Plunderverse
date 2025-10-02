@@ -48,7 +48,7 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
         Math.random() * 0.02,
         Math.random() * 0.02
       ),
-      size: 2 + Math.random() * 4, // 2-6 units radius
+      size: 1 + Math.random() * 2, // 1-3 units radius (smaller asteroids)
       health: 3,
       maxHealth: 3
     };

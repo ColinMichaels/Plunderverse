@@ -36,7 +36,7 @@ export function Asteroid({ asteroid }: AsteroidProps) {
   return (
     <FBXAsteroid
       ref={meshRef}
-      scale={asteroid.size * 0.3} // Scale down to make small rock-like asteroids (couple feet size)
+      scale={asteroid.size * 0.15} // Scale down to make smaller rock-like asteroids
       color={`#${damageColor}`}
       roughness={0.9}
       metalness={0.1}
