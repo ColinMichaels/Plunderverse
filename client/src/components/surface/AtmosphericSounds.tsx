@@ -10,9 +10,12 @@ interface AtmosphericSoundsProps {
 }
 
 export function AtmosphericSounds({ planetName, stormActive = false }: AtmosphericSoundsProps) {
-  const { soundVolume } = useSettings();
+  const { soundVolume: rawSoundVolume } = useSettings();
   const { intensity: windIntensity } = useWind();
   const { time } = useSolarSystem();
+  
+  // Ensure soundVolume is always a valid finite number
+  const soundVolume = isFinite(rawSoundVolume) ? rawSoundVolume : 0.5;
   
   const windSoundRef = useRef<Howl | null>(null);
   const stormSoundRef = useRef<Howl | null>(null);
@@ -90,10 +93,11 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
     
     if (stormActive && !stormSoundRef.current) {
       // Use thruster sound as storm base
+      const stormVolume = isFinite(0.6 * soundVolume) ? 0.6 * soundVolume : 0.3;
       stormSoundRef.current = new Howl({
         src: ["/sounds/thruster.mp3"],
         loop: true,
-        volume: 0.6 * soundVolume,
+        volume: Math.max(0, Math.min(1, stormVolume)),
         rate: 0.3, // Slow it down for rumbling effect
       });
       stormSoundRef.current.play();
@@ -128,10 +132,11 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
     
     if (isRaining && !rainSoundRef.current) {
       // Use hit sound in loop as rain
+      const rainVolume = isFinite(0.2 * soundVolume) ? 0.2 * soundVolume : 0.1;
       rainSoundRef.current = new Howl({
         src: ["/sounds/hit.mp3"],
         loop: true,
-        volume: 0.2 * soundVolume,
+        volume: Math.max(0, Math.min(1, rainVolume)),
         rate: 2.0, // Speed up for rain patter
       });
       rainSoundRef.current.play();
