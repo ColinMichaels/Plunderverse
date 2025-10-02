@@ -72,7 +72,7 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
         .filter(asteroid => {
           // Remove asteroids that are too far from player (cleanup)
           const distance = asteroid.position.distanceTo(playerPosition);
-          return distance < 500; // Keep asteroids within 500 units
+          return distance < 800; // Keep asteroids within 800 units (since they spawn up to 600 away)
         })
     }));
   },
@@ -147,9 +147,9 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
   
   spawnRandomAsteroid: (playerPosition, staggerDelay) => {
     // Spawn asteroid at random position around player
-    const distance = 100 + Math.random() * 200; // 100-300 units away
+    const distance = 250 + Math.random() * 350; // 250-600 units away
     const angle = Math.random() * Math.PI * 2;
-    const height = (Math.random() - 0.5) * 100; // Random height variation
+    const height = (Math.random() - 0.5) * 200; // Random height variation
     
     const spawnPosition = new THREE.Vector3(
       playerPosition.x + Math.cos(angle) * distance,
