@@ -540,35 +540,77 @@ class ResourceManager {
   }
 
   /**
-   * Log current memory status
+   * Log current memory status with enhanced GPU and WebGL information
    */
   public logMemoryStatus(): void {
     const stats = this.getStats();
     
-    console.group('[ResourceManager] Memory Status');
-    console.log(`Geometries: ${stats.geometries}`);
-    console.log(`Materials: ${stats.materials}`);
-    console.log(`Textures: ${stats.textures}`);
-    console.log(`Meshes: ${stats.meshes}`);
-    console.log(`Audio: ${stats.audio}`);
-    console.log(`Total Resources: ${this.resources.size}`);
-    console.log(`Tags in use: ${this.tagIndex.size}`);
-    console.log(`Estimated Memory: ${(stats.totalMemoryEstimate / 1024 / 1024).toFixed(2)} MB`);
+    // Enhanced memory status with color coding
+    console.group('%c[ResourceManager] Enhanced Memory Status', 'color: #4a90e2; font-weight: bold');
     
+    // Resource counts with trends
+    const prevResourceCount = (this as any).prevResourceCount || 0;
+    const resourceCountDelta = this.resources.size - prevResourceCount;
+    const trendColor = resourceCountDelta > 0 ? '#ff0000' : resourceCountDelta < 0 ? '#00ff00' : '#888888';
+    const trendArrow = resourceCountDelta > 0 ? '↑' : resourceCountDelta < 0 ? '↓' : '→';
+    
+    console.log('%cResource Counts:', 'font-weight: bold');
+    console.log(`  Geometries: ${stats.geometries}`);
+    console.log(`  Materials: ${stats.materials}`);
+    console.log(`  Textures: ${stats.textures}`);
+    console.log(`  Meshes: ${stats.meshes}`);
+    console.log(`  Audio: ${stats.audio}`);
+    console.log(`  %cTotal Resources: ${this.resources.size} ${trendArrow} (${resourceCountDelta >= 0 ? '+' : ''}${resourceCountDelta})`, `color: ${trendColor}`);
+    console.log(`  Tags in use: ${this.tagIndex.size}`);
+    
+    // Memory estimates including GPU
+    console.log('\n%cMemory Estimates:', 'font-weight: bold');
+    const cpuMemory = stats.totalMemoryEstimate / 1024 / 1024;
+    const gpuMemoryEstimate = this.estimateGPUMemory();
+    const totalMemory = cpuMemory + gpuMemoryEstimate;
+    
+    console.log(`  CPU Memory: ${cpuMemory.toFixed(2)} MB`);
+    console.log(`  GPU Memory (est): ${gpuMemoryEstimate.toFixed(2)} MB`);
+    console.log(`  %cTotal Estimated: ${totalMemory.toFixed(2)} MB`, 'color: #ffa500; font-weight: bold');
+    
+    // WebGL context information
+    console.log('\n%cWebGL Context Information:', 'font-weight: bold');
+    const webglInfo = this.getWebGLInfo();
+    console.log(`  Active WebGL Contexts: ${webglInfo.contextCount}`);
+    console.log(`  Max Texture Size: ${webglInfo.maxTextureSize}px`);
+    console.log(`  Max Render Buffer Size: ${webglInfo.maxRenderBufferSize}px`);
+    console.log(`  Available Extensions: ${webglInfo.extensions}`);
+    
+    if (webglInfo.memoryInfo) {
+      console.log(`  GPU Memory Total: ${(webglInfo.memoryInfo.totalMemory / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`  GPU Memory Available: ${(webglInfo.memoryInfo.availableMemory / 1024 / 1024).toFixed(2)} MB`);
+    }
+    
+    // Resource age information
     if (stats.oldestResource > 0) {
       const ageMs = Date.now() - stats.oldestResource;
-      console.log(`Oldest Resource Age: ${(ageMs / 1000).toFixed(1)} seconds`);
+      console.log(`\n%cResource Age:`, 'font-weight: bold');
+      console.log(`  Oldest: ${(ageMs / 1000).toFixed(1)} seconds`);
+      console.log(`  Newest: ${((Date.now() - stats.newestResource) / 1000).toFixed(1)} seconds`);
     }
+    
+    // Resource trends (keep track of previous values)
+    (this as any).prevResourceCount = this.resources.size;
     
     // Log resources by tag
     if (this.tagIndex.size > 0) {
-      console.log('\nResources by Tag:');
-      this.tagIndex.forEach((ids, tag) => {
-        console.log(`  ${tag}: ${ids.size} resources`);
+      console.log('\n%cResources by Tag:', 'font-weight: bold');
+      const sortedTags = Array.from(this.tagIndex.entries())
+        .sort((a, b) => b[1].size - a[1].size)
+        .slice(0, 10); // Top 10 tags
+        
+      sortedTags.forEach(([tag, ids]) => {
+        const percentage = ((ids.size / this.resources.size) * 100).toFixed(1);
+        console.log(`  ${tag}: ${ids.size} resources (${percentage}%)`);
       });
     }
     
-    // Log long-lived resources (older than 5 minutes)
+    // Long-lived resources (potential memory leaks)
     const longLivedThreshold = 5 * 60 * 1000; // 5 minutes
     const now = Date.now();
     const longLived: string[] = [];
@@ -580,11 +622,106 @@ class ResourceManager {
     });
     
     if (longLived.length > 0) {
-      console.log('\nLong-lived Resources (>5 min):');
-      longLived.forEach(resource => console.log(`  ${resource}`));
+      console.log(`\n%cPotential Memory Leaks (>5 min):`, 'color: #ff0000; font-weight: bold');
+      longLived.slice(0, 5).forEach(resource => console.log(`  ${resource}`));
+      if (longLived.length > 5) {
+        console.log(`  ... and ${longLived.length - 5} more`);
+      }
+    }
+    
+    // Performance memory API if available
+    if (performance && (performance as any).memory) {
+      const memory = (performance as any).memory;
+      console.log('\n%cBrowser Memory (performance.memory):', 'font-weight: bold');
+      console.log(`  JS Heap Used: ${(memory.usedJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`  JS Heap Total: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
+      console.log(`  JS Heap Limit: ${(memory.jsHeapSizeLimit / 1024 / 1024).toFixed(2)} MB`);
+      const heapUsage = (memory.usedJSHeapSize / memory.jsHeapSizeLimit) * 100;
+      const heapColor = heapUsage > 90 ? '#ff0000' : heapUsage > 70 ? '#ffa500' : '#00ff00';
+      console.log(`  %cHeap Usage: ${heapUsage.toFixed(1)}%`, `color: ${heapColor}`);
     }
     
     console.groupEnd();
+  }
+
+  /**
+   * Estimate GPU memory usage
+   */
+  private estimateGPUMemory(): number {
+    let gpuMemory = 0;
+    
+    // Estimate based on textures (main GPU memory consumer)
+    this.resources.forEach(entry => {
+      if (entry.type === 'texture') {
+        // Textures typically use more memory on GPU than CPU estimate
+        gpuMemory += this.estimateTextureMemory(entry.resource as THREE.Texture) * 1.5;
+      } else if (entry.type === 'geometry') {
+        // Vertex buffers also consume GPU memory
+        gpuMemory += this.estimateGeometryMemory(entry.resource as THREE.BufferGeometry) * 0.5;
+      }
+    });
+    
+    return gpuMemory / 1024 / 1024; // Convert to MB
+  }
+
+  /**
+   * Get WebGL context information
+   */
+  private getWebGLInfo(): {
+    contextCount: number;
+    maxTextureSize: number;
+    maxRenderBufferSize: number;
+    extensions: number;
+    memoryInfo?: { totalMemory: number; availableMemory: number };
+  } {
+    const canvases = document.querySelectorAll('canvas');
+    let contextCount = 0;
+    let maxTextureSize = 0;
+    let maxRenderBufferSize = 0;
+    let extensions = 0;
+    let memoryInfo: { totalMemory: number; availableMemory: number } | undefined;
+    
+    canvases.forEach(canvas => {
+      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
+      if (gl) {
+        contextCount++;
+        
+        // Get WebGL capabilities
+        if (maxTextureSize === 0) {
+          maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+          maxRenderBufferSize = gl.getParameter(gl.MAX_RENDERBUFFER_SIZE);
+          
+          // Count available extensions
+          const availableExtensions = gl.getSupportedExtensions();
+          if (availableExtensions) {
+            extensions = availableExtensions.length;
+          }
+          
+          // Try to get memory info from WEBGL_debug_renderer_info
+          const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+          if (debugInfo) {
+            const renderer = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+            // Some browsers expose memory info in the renderer string
+            const memMatch = renderer.match(/(\d+)\s*MB/);
+            if (memMatch) {
+              const totalMem = parseInt(memMatch[1]) * 1024 * 1024;
+              memoryInfo = {
+                totalMemory: totalMem,
+                availableMemory: totalMem * 0.7 // Rough estimate
+              };
+            }
+          }
+        }
+      }
+    });
+    
+    return {
+      contextCount,
+      maxTextureSize,
+      maxRenderBufferSize,
+      extensions,
+      memoryInfo
+    };
   }
 
   /**

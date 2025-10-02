@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { useObjectiveTriggers } from "../economy/useObjectiveTriggers";
+import { memoryProfiler } from "../../utils/MemoryProfiler";
 
 interface LandedState {
   isLanded: boolean;
@@ -18,12 +19,25 @@ export const useLandedState = create<LandedState>((set, get) => ({
   landingTime: null,
   
   setLanded: (planetName) => {
+    // Memory profiling: Before landing
+    if (import.meta.env.DEV) {
+      memoryProfiler.logCurrentStatus(`Before landing on ${planetName}`);
+    }
+    
     set({
       isLanded: true,
       landedPlanet: planetName,
       landingTime: Date.now()
     });
     console.log(`Successfully landed on ${planetName}`);
+    
+    // Memory profiling: After landing
+    if (import.meta.env.DEV) {
+      setTimeout(() => {
+        memoryProfiler.logCurrentStatus(`After landing on ${planetName}`);
+        memoryProfiler.logSceneTransition('space', `${planetName}-surface`);
+      }, 100);
+    }
     
     // Report location trigger progress for missions
     try {
@@ -41,6 +55,11 @@ export const useLandedState = create<LandedState>((set, get) => ({
     if (state.isLanded && state.landedPlanet) {
       const duration = state.getLandedDuration();
       console.log(`Took off from ${state.landedPlanet} after ${Math.round(duration / 1000)} seconds`);
+      
+      // Memory profiling: Before takeoff
+      if (import.meta.env.DEV) {
+        memoryProfiler.logCurrentStatus(`Before takeoff from ${state.landedPlanet}`);
+      }
     }
     
     set({
@@ -48,6 +67,15 @@ export const useLandedState = create<LandedState>((set, get) => ({
       landedPlanet: null,
       landingTime: null
     });
+    
+    // Memory profiling: After takeoff
+    if (import.meta.env.DEV && state.landedPlanet) {
+      const planetName = state.landedPlanet;
+      setTimeout(() => {
+        memoryProfiler.logCurrentStatus(`After takeoff from ${planetName}`);
+        memoryProfiler.logSceneTransition(`${planetName}-surface`, 'space');
+      }, 100);
+    }
   },
   
   getLandedDuration: () => {

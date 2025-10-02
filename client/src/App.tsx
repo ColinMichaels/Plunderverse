@@ -17,7 +17,9 @@ import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
+import { MemoryStatsOverlay } from "./components/debug/MemoryStatsOverlay";
 import ResourceManager from "./lib/utils/ResourceManager";
+import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import "@fontsource/inter";
 
@@ -44,17 +46,33 @@ function App() {
     const resourceManager = ResourceManager.getInstance();
     
     if (isLanded) {
+      // Memory profiling: Track memory before and after landing
+      memoryProfiler.logCurrentStatus('Before landing cleanup');
+      
       // Cleanup space scene resources when landing
       console.log('[SCENE-MANAGER] Landing detected, disposing space-scene resources');
-      resourceManager.disposeByTag('space-scene');
+      const disposedCount = resourceManager.disposeByTag('space-scene');
+      
+      // Record cleanup and log scene transition
+      memoryProfiler.recordCleanup(disposedCount);
+      memoryProfiler.logSceneTransition('space', 'planet-surface');
+      resourceManager.logMemoryStatus();
     } else {
+      // Memory profiling: Track memory before and after takeoff
+      memoryProfiler.logCurrentStatus('Before takeoff cleanup');
+      
       // Cleanup planet surface resources when taking off
       console.log('[SCENE-MANAGER] Takeoff detected, disposing planet-surface resources');
-      resourceManager.disposeByTag('planet-surface');
+      const disposedCount = resourceManager.disposeByTag('planet-surface');
+      
+      // Record cleanup and log scene transition
+      memoryProfiler.recordCleanup(disposedCount);
+      memoryProfiler.logSceneTransition('planet-surface', 'space');
+      resourceManager.logMemoryStatus();
     }
   }, [isLanded]);
 
-  // Initialize Plunderverse content
+  // Initialize Plunderverse content and developer tools
   useEffect(() => {
     contentRegistry.loadContent().catch(error => {
       console.error('Failed to load Plunderverse content:', error);
@@ -63,6 +81,57 @@ function App() {
     // Add terrain cache test to window for debugging
     (window as any).testTerrainCacheManagement = testTerrainCacheManagement;
     console.log('[TERRAIN-CACHE] Test function available: Run `testTerrainCacheManagement()` in the browser console to test terrain cache management.');
+    
+    // Add memory profiling console commands (development only)
+    if (import.meta.env.DEV) {
+      const resourceManager = ResourceManager.getInstance();
+      
+      // Memory profile command - shows current memory state
+      (window as any).memoryProfile = () => {
+        console.log('%c[DEVELOPER COMMAND] Memory Profile', 'color: #00ff00; font-weight: bold');
+        memoryProfiler.logCurrentStatus('Manual Profile');
+        resourceManager.logMemoryStatus();
+        return 'Memory profile complete';
+      };
+      
+      // Force cleanup command - manually triggers resource cleanup
+      (window as any).forceCleanup = () => {
+        console.log('%c[DEVELOPER COMMAND] Force Cleanup', 'color: #ffa500; font-weight: bold');
+        const oldResourcesCleanedCount = resourceManager.cleanupOldResources(5 * 60 * 1000); // Cleanup resources older than 5 minutes
+        memoryProfiler.recordCleanup(oldResourcesCleanedCount);
+        resourceManager.logMemoryStatus();
+        return `Cleaned up ${oldResourcesCleanedCount} old resources`;
+      };
+      
+      // Show memory trend command - displays memory usage over time
+      (window as any).showMemoryTrend = () => {
+        console.log('%c[DEVELOPER COMMAND] Memory Trend', 'color: #4a90e2; font-weight: bold');
+        memoryProfiler.logTrend();
+        return 'Memory trend displayed';
+      };
+      
+      // Export memory data command - exports profiling data for analysis
+      (window as any).exportMemoryData = () => {
+        const data = memoryProfiler.exportData();
+        console.log('%c[DEVELOPER COMMAND] Memory Data Export', 'color: #4a90e2; font-weight: bold');
+        console.log(data);
+        return data;
+      };
+      
+      // Reset memory profiler command
+      (window as any).resetMemoryProfiler = () => {
+        console.log('%c[DEVELOPER COMMAND] Reset Memory Profiler', 'color: #ff0000; font-weight: bold');
+        memoryProfiler.reset();
+        return 'Memory profiler reset';
+      };
+      
+      console.log('%c[MEMORY-PROFILER] Developer commands available:', 'color: #00ff00');
+      console.log('  - window.memoryProfile() : Show current memory profile');
+      console.log('  - window.forceCleanup() : Force resource cleanup');
+      console.log('  - window.showMemoryTrend() : Display memory usage trend');
+      console.log('  - window.exportMemoryData() : Export profiling data');
+      console.log('  - window.resetMemoryProfiler() : Reset profiler data');
+    }
   }, []);
 
   // Initialize audio and show canvas
@@ -160,6 +229,9 @@ function App() {
         
         {/* Debug panel available even on splash screen in dev mode */}
         {import.meta.env.DEV && <MissionDebugPanel />}
+        
+        {/* Memory stats overlay in dev mode */}
+        {import.meta.env.DEV && <MemoryStatsOverlay />}
       </div>
     </UILayoutProvider>
   );
