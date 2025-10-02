@@ -18,6 +18,7 @@ import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
 import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
 import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
+import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
@@ -548,6 +549,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 function SurfaceLighting() {
   const { landedPlanet } = useLandedState();
   const { time } = useSolarSystem();
+  const surfaceLighting = useSurfaceLighting();
 
   const planet = useMemo(() => {
     return planets.find((p) => p.name === landedPlanet);
@@ -556,12 +558,13 @@ function SurfaceLighting() {
   const surfaceColor = planet?.color || "#8C7853";
 
   // Calculate realistic sun position and intensity based on orbital mechanics and planet rotation
-  const lightingData = useMemo(() => {
+  const automaticLightingData = useMemo(() => {
     if (!planet)
       return {
         sunPosition: new THREE.Vector3(50, 200, 50),
         sunIntensity: 0.9,
         distanceBasedIntensity: 1.0,
+        ambientIntensity: 0.02,
       };
 
     const calculateOrbitPosition = (
@@ -653,36 +656,40 @@ function SurfaceLighting() {
     };
   }, [planet, time]);
 
+  // Get final lighting data (manual override or automatic)
+  const lightingData = surfaceLighting.getCurrentLightingData(automaticLightingData);
   const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
 
   // Add debug logging for lighting changes
   useEffect(() => {
     if (
       planet &&
-      lightingData &&
-      typeof lightingData.sunElevation === "number" &&
+      automaticLightingData &&
+      typeof automaticLightingData.sunElevation === "number" &&
       typeof ambientIntensity === "number"
     ) {
-      const elevationDegrees = (
-        (lightingData.sunElevation * 180) /
-        Math.PI
-      ).toFixed(1);
-      const timeOfDay =
-        lightingData.sunElevation < -0.3
+      const elevationDegrees = surfaceLighting.manualOverride 
+        ? surfaceLighting.sunElevation.toFixed(1)
+        : ((automaticLightingData.sunElevation * 180) / Math.PI).toFixed(1);
+      const timeOfDay = surfaceLighting.manualOverride
+        ? surfaceLighting.currentTimeOfDay
+        : automaticLightingData.sunElevation < -0.3
           ? "NIGHT"
-          : lightingData.sunElevation < 0.0
+          : automaticLightingData.sunElevation < 0.0
             ? "DAWN/DUSK"
-            : lightingData.sunElevation < 0.5
+            : automaticLightingData.sunElevation < 0.5
               ? "MORNING"
               : "MIDDAY";
       console.log(
-        `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°`,
+        `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°${surfaceLighting.manualOverride ? " (MANUAL)" : ""}`,
       );
     }
-  }, [planet?.name, sunIntensity, ambientIntensity, lightingData]);
+  }, [planet?.name, sunIntensity, ambientIntensity, automaticLightingData, surfaceLighting.manualOverride, surfaceLighting.sunElevation, surfaceLighting.currentTimeOfDay]);
 
   // Calculate sky colors based on time of day
-  const sunElevation = lightingData.sunElevation ?? 0;
+  const sunElevation = surfaceLighting.manualOverride 
+    ? (surfaceLighting.sunElevation * Math.PI / 180)
+    : (automaticLightingData.sunElevation ?? 0);
   const skyColor =
     sunElevation < -0.3
       ? "#000814" // Night: very dark blue
@@ -710,7 +717,7 @@ function SurfaceLighting() {
       <directionalLight
         position={[sunPosition.x, sunPosition.y, sunPosition.z]}
         intensity={sunIntensity}
-        color="#FDB813"
+        color={lightingData.sunColor || "#FDB813"}
         castShadow
         shadow-mapSize-width={4096}
         shadow-mapSize-height={4096}

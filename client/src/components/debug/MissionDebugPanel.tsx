@@ -19,6 +19,8 @@ import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets } from "../../lib/planetData";
 import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
+import { useSurfaceLighting, TIME_OF_DAY_PRESETS } from "../../lib/stores/surface/useSurfaceLighting";
+import { Slider } from "../ui/slider";
 import * as THREE from "three";
 
 export function MissionDebugPanel() {
@@ -40,6 +42,7 @@ export function MissionDebugPanel() {
   const [interactionId, setInteractionId] = useState("trade_merchant");
   const [customValue, setCustomValue] = useState("50");
   const crew = useCrewManagement();
+  const lighting = useSurfaceLighting();
 
   // Keyboard shortcut to toggle debug panel (`)
   useEffect(() => {
@@ -548,6 +551,170 @@ export function MissionDebugPanel() {
             Crew: {crew.activeCrew.length} hired
           </div>
         </div>
+
+        {/* Lighting Controls (Only visible when landed) */}
+        {isLanded && (
+          <div className="space-y-2 border-2 border-yellow-600 p-3 rounded">
+            <h3 className="text-sm font-bold text-yellow-400">☀️ Lighting Controls</h3>
+            
+            {/* Current Status */}
+            <div className="bg-gray-800 p-2 rounded text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-400">Mode:</span>
+                <span className={lighting.manualOverride ? 'text-orange-400' : 'text-green-400'}>
+                  {lighting.manualOverride ? 'MANUAL' : 'AUTOMATIC'}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-400">Time of Day:</span>
+                <span className="text-cyan-400">{lighting.currentTimeOfDay}</span>
+              </div>
+            </div>
+
+            {/* Manual Override Toggle */}
+            <div className="flex items-center justify-between">
+              <Label className="text-xs text-gray-400">Manual Override</Label>
+              <Button
+                onClick={() => {
+                  lighting.setManualOverride(!lighting.manualOverride);
+                  console.log(`[LIGHTING-DEBUG] Manual override: ${!lighting.manualOverride}`);
+                }}
+                className={lighting.manualOverride ? 'bg-orange-600 hover:bg-orange-700' : 'bg-gray-600 hover:bg-gray-700'}
+                size="sm"
+              >
+                {lighting.manualOverride ? 'ON' : 'OFF'}
+              </Button>
+            </div>
+
+            {/* Time of Day Presets */}
+            <div className="space-y-2">
+              <Label className="text-xs text-gray-400">Time of Day Presets</Label>
+              <div className="grid grid-cols-3 gap-1">
+                {TIME_OF_DAY_PRESETS.map(preset => (
+                  <Button
+                    key={preset.name}
+                    onClick={() => {
+                      lighting.applyPreset(preset);
+                      if (!lighting.manualOverride) {
+                        lighting.setManualOverride(true);
+                      }
+                      console.log(`[LIGHTING-DEBUG] Applied preset: ${preset.name}`);
+                    }}
+                    className={`text-xs ${
+                      lighting.currentTimeOfDay === preset.name 
+                        ? 'bg-yellow-600 hover:bg-yellow-700' 
+                        : 'bg-blue-600 hover:bg-blue-700'
+                    }`}
+                    size="sm"
+                  >
+                    {preset.name}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Manual Controls (Only visible when override is ON) */}
+            {lighting.manualOverride && (
+              <div className="space-y-3 pt-2 border-t border-gray-700">
+                {/* Sun Azimuth */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <Label className="text-xs text-gray-400">Sun Azimuth</Label>
+                    <span className="text-xs text-cyan-400">{lighting.sunAzimuth.toFixed(0)}°</span>
+                  </div>
+                  <Slider
+                    value={[lighting.sunAzimuth]}
+                    onValueChange={([value]) => lighting.setSunAzimuth(value)}
+                    min={0}
+                    max={360}
+                    step={5}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Sun Elevation */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <Label className="text-xs text-gray-400">Sun Elevation</Label>
+                    <span className="text-xs text-cyan-400">{lighting.sunElevation.toFixed(0)}°</span>
+                  </div>
+                  <Slider
+                    value={[lighting.sunElevation]}
+                    onValueChange={([value]) => lighting.setSunElevation(value)}
+                    min={-90}
+                    max={90}
+                    step={5}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Sun Intensity */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <Label className="text-xs text-gray-400">Sun Intensity</Label>
+                    <span className="text-xs text-cyan-400">{lighting.sunIntensity.toFixed(1)}</span>
+                  </div>
+                  <Slider
+                    value={[lighting.sunIntensity]}
+                    onValueChange={([value]) => lighting.setSunIntensity(value)}
+                    min={0}
+                    max={5}
+                    step={0.1}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Ambient Intensity */}
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <Label className="text-xs text-gray-400">Ambient Intensity</Label>
+                    <span className="text-xs text-cyan-400">{lighting.ambientIntensity.toFixed(2)}</span>
+                  </div>
+                  <Slider
+                    value={[lighting.ambientIntensity]}
+                    onValueChange={([value]) => lighting.setAmbientIntensity(value)}
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    className="w-full"
+                  />
+                </div>
+
+                {/* Sun Color Picker */}
+                <div className="space-y-1">
+                  <Label className="text-xs text-gray-400">Sun Color</Label>
+                  <Input
+                    type="color"
+                    value={lighting.sunColor}
+                    onChange={(e) => lighting.setSunColor(e.target.value)}
+                    className="w-full h-8 cursor-pointer bg-gray-800"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Debug Info Button */}
+            <Button
+              onClick={() => {
+                const position = lighting.calculateSunPosition();
+                console.log('[LIGHTING-DEBUG] === Current Lighting State ===');
+                console.log('[LIGHTING-DEBUG] Manual Override:', lighting.manualOverride);
+                console.log('[LIGHTING-DEBUG] Sun Azimuth:', lighting.sunAzimuth);
+                console.log('[LIGHTING-DEBUG] Sun Elevation:', lighting.sunElevation);
+                console.log('[LIGHTING-DEBUG] Sun Intensity:', lighting.sunIntensity);
+                console.log('[LIGHTING-DEBUG] Ambient Intensity:', lighting.ambientIntensity);
+                console.log('[LIGHTING-DEBUG] Sun Color:', lighting.sunColor);
+                console.log('[LIGHTING-DEBUG] Sun Position:', position);
+                console.log('[LIGHTING-DEBUG] Time of Day:', lighting.currentTimeOfDay);
+                console.log('[LIGHTING-DEBUG] ================================');
+              }}
+              className="w-full bg-gray-600 hover:bg-gray-700 text-xs"
+              size="sm"
+            >
+              📊 Log Lighting State
+            </Button>
+          </div>
+        )}
 
         {/* Objective Trigger Testing */}
         <div className="space-y-2 border-2 border-purple-600 p-3 rounded">
