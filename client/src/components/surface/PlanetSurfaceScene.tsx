@@ -31,6 +31,7 @@ import { useWind } from "../../lib/stores/surface/useWind";
 import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
+import { DebugLighting } from "../debug/DebugLighting";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -639,7 +640,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
 function SurfaceLighting() {
   const { landedPlanet } = useLandedState();
-  const { time } = useSolarSystem();
+  const { getUniverseTime, updateUniverseTime } = useSolarSystem();
   const surfaceLighting = useSurfaceLighting();
 
   const planet = useMemo(() => {
@@ -648,7 +649,12 @@ function SurfaceLighting() {
 
   const surfaceColor = planet?.color || "#8C7853";
 
-  // Calculate realistic sun position and intensity based on orbital mechanics and planet rotation
+  // Update universe time every frame
+  useFrame((state, delta) => {
+    updateUniverseTime(delta);
+  });
+
+  // Calculate realistic sun position and intensity based on universe time and planet rotation
   const automaticLightingData = useMemo(() => {
     if (!planet)
       return {
@@ -656,100 +662,120 @@ function SurfaceLighting() {
         sunIntensity: 0.9,
         distanceBasedIntensity: 1.0,
         ambientIntensity: 0.02,
+        sunColor: "#FFFFFF",
       };
 
-    const calculateOrbitPosition = (
-      distance: number,
-      speed: number,
-      time: number,
-    ) => {
-      const angle = speed * time;
+    // Get current universe time in seconds
+    const universeTime = getUniverseTime();
+
+    // Calculate sun angle based on planet's rotation speed
+    // For retrograde rotation (negative speed), sun moves in opposite direction
+    const sunAngle = (planet.rotationSpeed * universeTime) % (2 * Math.PI);
+    
+    // Calculate sun position: rises in the east (positive X), sets in the west (negative X)
+    const sunDistance = 400; // Distance from origin for sun
+    const sunX = Math.cos(sunAngle) * sunDistance;
+    const sunY = Math.sin(sunAngle) * sunDistance; // Can go below horizon (negative y)
+    const sunZ = 0; // Sun moves in X-Y plane
+
+    const sunLightPosition = new THREE.Vector3(sunX, sunY, sunZ);
+
+    // Calculate sun elevation (how high in the sky)
+    const sunElevation = Math.asin(Math.max(-1, Math.min(1, sunY / sunDistance)));
+
+    // Calculate intensity and color based on sun elevation
+    let sunIntensity = 0;
+    let ambientIntensity = 0.02;
+    let sunColor = "#FFFFFF";
+
+    // Calculate distance-based intensity for planet (distance from actual sun)
+    const calculatePlanetPosition = (planet: any, time: number) => {
+      const angle = planet.orbitalSpeed * time;
       return new THREE.Vector3(
-        Math.cos(angle) * distance,
+        Math.cos(angle) * planet.distance,
         0,
-        Math.sin(angle) * distance,
+        Math.sin(angle) * planet.distance,
       );
     };
-
-    const calculatePlanetPosition = (planet: any, time: number) => {
-      return calculateOrbitPosition(planet.distance, planet.orbitalSpeed, time);
-    };
-
-    // Get planet's orbital position
-    const currentPlanetPosition = calculatePlanetPosition(planet, time);
-
-    // Calculate distance-based intensity using inverse square law
-    // Base intensity on Earth's distance (75 units) as reference (30 * 2.5 from planetData)
+    
+    const currentPlanetPosition = calculatePlanetPosition(planet, universeTime);
     const earthDistance = 75;
     const distanceFromSun = currentPlanetPosition.length();
     const distanceBasedIntensity = Math.pow(earthDistance / distanceFromSun, 2);
 
-    // Add planet rotation for local day/night cycle
-    const rotationAngle = time * planet.rotationSpeed * 15; // Scale rotation for visible effect
-    const localTimeOfDay = rotationAngle % (2 * Math.PI);
-
-    // Sun direction from planet (sun is at origin)
-    const sunDirection = currentPlanetPosition.clone().negate().normalize();
-
-    // Apply planet rotation to determine local sun position
-    // Rotate around planet's Y-axis to simulate planet rotation
-    const rotatedSunDirection = sunDirection.clone();
-    rotatedSunDirection.applyAxisAngle(
-      new THREE.Vector3(0, 1, 0),
-      localTimeOfDay,
-    );
-
-    // Position the directional light further away for better shadows
-    const sunLightPosition = rotatedSunDirection.clone().multiplyScalar(400);
-
-    // Calculate sun elevation based on rotated position
-    const sunElevation = Math.asin(
-      Math.max(-1, Math.min(1, rotatedSunDirection.y)),
-    );
-
-    // Calculate intensity based on sun elevation with improved day/night transitions
-    let sunIntensity = 0;
-    let ambientIntensity = 0.02; // Base ambient
-
     if (sunElevation < -0.3) {
-      // Deep night - complete darkness, flashlight essential
-      sunIntensity = 0.0;
-      ambientIntensity = 0.01; // Very dark ambient
-    } else if (sunElevation < 0.0) {
-      // Dawn/dusk transition - smooth gradient from night to day
-      const transitionFactor = (sunElevation + 0.3) / 0.3; // 0 to 1
-      const smoothTransition = transitionFactor * transitionFactor; // Ease-in curve
-      sunIntensity = smoothTransition * 0.3; // Gentle increase
-      ambientIntensity = 0.01 + smoothTransition * 0.04; // Ambient grows with sun
+      // Deep night - very dim blue light
+      sunIntensity = 0.02;
+      ambientIntensity = 0.01;
+      sunColor = "#1a1a2e"; // Very dim blue
+    } else if (sunElevation < -0.1) {
+      // Early dawn/late dusk - transition to orange
+      const transitionFactor = (sunElevation + 0.3) / 0.2;
+      sunIntensity = 0.02 + transitionFactor * 0.3;
+      ambientIntensity = 0.01 + transitionFactor * 0.04;
+      // Interpolate from blue to deep orange
+      const r = Math.floor(26 + (255 - 26) * transitionFactor);
+      const g = Math.floor(26 + (165 - 26) * transitionFactor);
+      const b = Math.floor(46 + (0 - 46) * transitionFactor);
+      sunColor = `rgb(${r}, ${g}, ${b})`;
+    } else if (sunElevation < 0.1) {
+      // Dawn/dusk - warm orange tones
+      const transitionFactor = (sunElevation + 0.1) / 0.2;
+      sunIntensity = 0.32 + transitionFactor * 0.5;
+      ambientIntensity = 0.05 + transitionFactor * 0.1;
+      sunColor = "#FFA500"; // Orange
     } else if (sunElevation < 0.5) {
-      // Morning to midday - building to full brightness
-      const dayFactor = sunElevation / 0.5; // 0 to 1
-      sunIntensity = 0.3 + dayFactor * 1.2; // 0.3 to 1.5
-      ambientIntensity = 0.05 + dayFactor * 0.15; // Bright ambient during day
+      // Morning/afternoon - transition to white
+      const transitionFactor = (sunElevation - 0.1) / 0.4;
+      sunIntensity = 0.82 + transitionFactor * 0.68;
+      ambientIntensity = 0.15 + transitionFactor * 0.1;
+      // Interpolate from orange to white
+      const r = 255;
+      const g = Math.floor(165 + (255 - 165) * transitionFactor);
+      const b = Math.floor(0 + (255 - 0) * transitionFactor);
+      sunColor = `rgb(${r}, ${g}, ${b})`;
     } else {
-      // Full daylight - maximum brightness, flashlight unnecessary
-      const peakFactor = Math.sin(sunElevation * 1.2); // Peaks at high sun
-      sunIntensity = 1.5 + peakFactor * 1.5; // 1.5 to 3.0
-      ambientIntensity = 0.2 + peakFactor * 0.1; // Bright ambient
+      // Noon - bright white
+      const peakFactor = Math.sin(sunElevation * Math.PI);
+      sunIntensity = 1.5 + peakFactor * 1.5;
+      ambientIntensity = 0.25 + peakFactor * 0.1;
+      sunColor = "#FFFFFF"; // White
     }
 
-    // Apply distance-based scaling with realistic intensity differences
+    // Apply distance-based scaling
     const finalIntensity = sunIntensity * distanceBasedIntensity;
-    const finalAmbient = ambientIntensity * Math.sqrt(distanceBasedIntensity); // Less affected by distance
+    const finalAmbient = ambientIntensity * Math.sqrt(distanceBasedIntensity);
+
+    // Determine time of day for display
+    let timeOfDay = "Night";
+    if (sunElevation >= 0.5) timeOfDay = "Noon";
+    else if (sunElevation >= 0.1) timeOfDay = "Morning";
+    else if (sunElevation >= -0.1) timeOfDay = "Dawn";
+    else if (sunElevation >= -0.3) timeOfDay = "Dusk";
 
     return {
       sunPosition: sunLightPosition,
-      sunIntensity: Math.max(0, Math.min(6.0, finalIntensity)), // Higher cap for brighter days
+      sunIntensity: Math.max(0, Math.min(6.0, finalIntensity)),
       ambientIntensity: finalAmbient,
       distanceBasedIntensity,
       sunElevation,
       planetName: planet.name,
+      sunColor,
+      timeOfDay,
+      sunAngle,
     };
-  }, [planet, time]);
+  }, [planet, getUniverseTime]);
 
   // Get final lighting data (manual override or automatic)
   const lightingData = surfaceLighting.getCurrentLightingData(automaticLightingData);
   const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
+
+  // Update time of day in the lighting store
+  useEffect(() => {
+    if (!surfaceLighting.manualOverride && automaticLightingData?.timeOfDay) {
+      surfaceLighting.setCurrentTimeOfDay(automaticLightingData.timeOfDay);
+    }
+  }, [automaticLightingData?.timeOfDay, surfaceLighting.manualOverride]);
 
   // Add debug logging for lighting changes
   useEffect(() => {
@@ -764,15 +790,12 @@ function SurfaceLighting() {
         : ((automaticLightingData.sunElevation * 180) / Math.PI).toFixed(1);
       const timeOfDay = surfaceLighting.manualOverride
         ? surfaceLighting.currentTimeOfDay
-        : automaticLightingData.sunElevation < -0.3
-          ? "NIGHT"
-          : automaticLightingData.sunElevation < 0.0
-            ? "DAWN/DUSK"
-            : automaticLightingData.sunElevation < 0.5
-              ? "MORNING"
-              : "MIDDAY";
+        : automaticLightingData.timeOfDay;
+      const angleDegrees = automaticLightingData.sunAngle 
+        ? ((automaticLightingData.sunAngle * 180) / Math.PI).toFixed(1)
+        : "0";
       console.log(
-        `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°${surfaceLighting.manualOverride ? " (MANUAL)" : ""}`,
+        `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°, Angle: ${angleDegrees}°${surfaceLighting.manualOverride ? " (MANUAL)" : ""}`,
       );
     }
   }, [planet?.name, sunIntensity, ambientIntensity, automaticLightingData, surfaceLighting.manualOverride, surfaceLighting.sunElevation, surfaceLighting.currentTimeOfDay]);
@@ -1388,6 +1411,9 @@ export function PlanetSurfaceScene() {
 
       {/* Unified collapsible stats panel */}
       <SurfaceStatsPanel />
+
+      {/* Lighting debug panel */}
+      <DebugLighting />
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />
