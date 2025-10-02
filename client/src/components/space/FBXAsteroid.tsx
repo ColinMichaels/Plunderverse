@@ -19,6 +19,28 @@ const asteroidModels = [
   "/geometries/_asteroid_010.fbx",
 ];
 
+// Pre-load all asteroid models to prevent stuttering on first spawn
+// This runs once when the module is loaded
+let preloadInitiated = false;
+export const preloadAsteroidModels = () => {
+  if (!preloadInitiated) {
+    preloadInitiated = true;
+    console.log("[FBXAsteroid] Pre-loading asteroid models...");
+    
+    // Pre-load each model using useFBX.preload
+    asteroidModels.forEach((model, index) => {
+      try {
+        useFBX.preload(model);
+        console.log(`[FBXAsteroid] Pre-loaded model ${index + 1}/${asteroidModels.length}: ${model}`);
+      } catch (error) {
+        console.warn(`[FBXAsteroid] Failed to pre-load model: ${model}`, error);
+      }
+    });
+    
+    console.log("[FBXAsteroid] Pre-loading complete!");
+  }
+};
+
 interface FBXAsteroidProps {
   position?: [number, number, number];
   rotation?: [number, number, number];
@@ -57,40 +79,59 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
     // Generate a unique ID for this asteroid instance
     const asteroidId = useRef(`asteroid-${Math.random().toString(36).substr(2, 9)}`).current;
     
+    // Select random model once per component instance using useMemo
+    const randomModel = useMemo(() => {
+      const modelIndex = Math.floor(Math.random() * asteroidModels.length);
+      return asteroidModels[modelIndex];
+    }, []); // Empty dependency array ensures this only runs once per instance
+    
     // Load the FBX model
-    const randomModel =
-      asteroidModels[Math.floor(Math.random() * asteroidModels.length)];
     const fbxModel = useFBX(randomModel);
 
     // Clone and configure the model for reuse
     const configuredModel = useMemo(() => {
       const clone = fbxModel.clone();
+      
+      // Create shared material once for all meshes
+      const materialId = `${asteroidId}-material`;
+      let sharedMaterial = resourceManager.getResource<THREE.Material>(materialId);
+      
+      if (!sharedMaterial) {
+        sharedMaterial = new THREE.MeshStandardMaterial({
+          color: new THREE.Color(color),
+          roughness,
+          metalness,
+          emissive: new THREE.Color(emissive),
+          emissiveIntensity,
+        });
+        
+        // Register the material with ResourceManager once
+        resourceManager.registerMaterial(materialId, sharedMaterial, ['space-scene', 'asteroids']);
+      }
+
+      // Track which geometries we've already registered to avoid duplicates
+      const registeredGeometries = new Set<string>();
 
       // Traverse and apply materials to all meshes
       clone.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          // Create and register material for this asteroid
-          const material = new THREE.MeshStandardMaterial({
-            color: new THREE.Color(color),
-            roughness,
-            metalness,
-            emissive: new THREE.Color(emissive),
-            emissiveIntensity,
-          });
-          
-          // Register the material with ResourceManager
-          resourceManager.registerMaterial(`${asteroidId}-material`, material, ['space-scene', 'asteroids']);
-          
-          // Apply the material to the mesh
-          child.material = material;
+          // Apply the shared material to this mesh
+          child.material = sharedMaterial;
 
           // Configure shadows
           child.castShadow = castShadow;
           child.receiveShadow = receiveShadow;
           
-          // Register the geometry if it exists
+          // Register unique geometries only once
           if (child.geometry) {
-            resourceManager.registerGeometry(`${asteroidId}-geometry`, child.geometry, ['space-scene', 'asteroids']);
+            // Create a unique ID for this specific geometry
+            const geometryHash = child.geometry.uuid;
+            const geometryId = `${asteroidId}-geometry-${geometryHash}`;
+            
+            if (!registeredGeometries.has(geometryHash) && !resourceManager.hasResource(geometryId)) {
+              resourceManager.registerGeometry(geometryId, child.geometry, ['space-scene', 'asteroids']);
+              registeredGeometries.add(geometryHash);
+            }
           }
         }
       });
@@ -116,7 +157,15 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
         console.log(`[FBXAsteroid ${asteroidId}] Cleaning up resources`);
         // Dispose asteroid-specific resources
         resourceManager.disposeResource(`${asteroidId}-material`);
-        resourceManager.disposeResource(`${asteroidId}-geometry`);
+        
+        // Dispose all geometry resources for this asteroid
+        // Since we create unique geometry IDs with UUIDs, we need to dispose by tag
+        const asteroidResources = resourceManager.getResourcesByTag('asteroids');
+        asteroidResources.forEach(resourceId => {
+          if (resourceId.startsWith(`${asteroidId}-geometry-`)) {
+            resourceManager.disposeResource(resourceId);
+          }
+        });
       };
     }, [asteroidId]);
 

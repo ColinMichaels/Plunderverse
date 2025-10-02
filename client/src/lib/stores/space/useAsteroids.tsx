@@ -16,6 +16,7 @@ export interface Asteroid {
 interface AsteroidState {
   asteroids: Asteroid[];
   asteroidsDestroyed: number;
+  pendingSpawns: Array<{ position: THREE.Vector3; timeToSpawn: number }>;
   
   // Actions
   addAsteroid: (position: THREE.Vector3) => void;
@@ -23,13 +24,15 @@ interface AsteroidState {
   damageAsteroid: (id: string, damage: number) => boolean; // returns true if destroyed
   removeAsteroid: (id: string) => void;
   clearAsteroids: () => void;
-  spawnRandomAsteroid: (playerPosition: THREE.Vector3) => void;
+  spawnRandomAsteroid: (playerPosition: THREE.Vector3, staggerDelay?: number) => void;
+  processPendingSpawns: (delta: number) => void;
   cleanup: () => void; // Clean up store state and timers
 }
 
 export const useAsteroids = create<AsteroidState>((set, get) => ({
   asteroids: [],
   asteroidsDestroyed: 0,
+  pendingSpawns: [],
   
   addAsteroid: (position) => {
     const newAsteroid: Asteroid = {
@@ -139,10 +142,10 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
   },
   
   clearAsteroids: () => {
-    set({ asteroids: [] });
+    set({ asteroids: [], pendingSpawns: [] });
   },
   
-  spawnRandomAsteroid: (playerPosition) => {
+  spawnRandomAsteroid: (playerPosition, staggerDelay) => {
     // Spawn asteroid at random position around player
     const distance = 100 + Math.random() * 200; // 100-300 units away
     const angle = Math.random() * Math.PI * 2;
@@ -154,14 +157,50 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
       playerPosition.z + Math.sin(angle) * distance
     );
     
-    get().addAsteroid(spawnPosition);
+    // If staggerDelay is provided, add to pending spawns instead of immediate spawn
+    if (staggerDelay !== undefined && staggerDelay > 0) {
+      set(state => ({
+        pendingSpawns: [...state.pendingSpawns, { position: spawnPosition, timeToSpawn: staggerDelay }]
+      }));
+      console.log(`Asteroid spawn queued with ${staggerDelay.toFixed(2)}s delay`);
+    } else {
+      // Immediate spawn
+      get().addAsteroid(spawnPosition);
+    }
+  },
+  
+  processPendingSpawns: (delta) => {
+    const state = get();
+    const readyToSpawn: THREE.Vector3[] = [];
+    const stillPending: Array<{ position: THREE.Vector3; timeToSpawn: number }> = [];
+    
+    // Process pending spawns
+    state.pendingSpawns.forEach(spawn => {
+      const newTime = spawn.timeToSpawn - delta;
+      if (newTime <= 0) {
+        readyToSpawn.push(spawn.position);
+      } else {
+        stillPending.push({ ...spawn, timeToSpawn: newTime });
+      }
+    });
+    
+    // Spawn ready asteroids
+    readyToSpawn.forEach(position => {
+      get().addAsteroid(position);
+    });
+    
+    // Update pending spawns
+    if (readyToSpawn.length > 0 || stillPending.length !== state.pendingSpawns.length) {
+      set({ pendingSpawns: stillPending });
+    }
   },
   
   cleanup: () => {
     console.log("[useAsteroids] Cleanup: Clearing all asteroids and resetting state");
     set({
       asteroids: [],
-      asteroidsDestroyed: 0
+      asteroidsDestroyed: 0,
+      pendingSpawns: []
     });
   }
 }));

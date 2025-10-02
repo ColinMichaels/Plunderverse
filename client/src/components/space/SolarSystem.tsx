@@ -6,6 +6,7 @@ import { Planet } from "./Planet";
 import { Moon } from "./Moon";
 import { Starfield } from "./Starfield";
 import { AsteroidField } from "./AsteroidField";
+import { preloadAsteroidModels } from "./FBXAsteroid";
 import { CameraController } from "../navigation/CameraController";
 import { ShootingSystem } from "../combat/ShootingSystem";
 import { planets } from "../../lib/planetData";
@@ -22,6 +23,9 @@ export function SolarSystem() {
   // Cleanup resources on unmount
   useEffect(() => {
     console.log("[SolarSystem] Component mounted, space scene resources will be tagged");
+    
+    // Pre-load all asteroid models to prevent stuttering on first spawn
+    preloadAsteroidModels();
     
     return () => {
       console.log("[SolarSystem] Component unmounting, cleaning up space-scene resources and stores");
