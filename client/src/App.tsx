@@ -18,6 +18,7 @@ import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
 import ResourceManager from "./lib/utils/ResourceManager";
+import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import "@fontsource/inter";
 
 // Main App component
@@ -58,6 +59,10 @@ function App() {
     contentRegistry.loadContent().catch(error => {
       console.error('Failed to load Plunderverse content:', error);
     });
+    
+    // Add terrain cache test to window for debugging
+    (window as any).testTerrainCacheManagement = testTerrainCacheManagement;
+    console.log('[TERRAIN-CACHE] Test function available: Run `testTerrainCacheManagement()` in the browser console to test terrain cache management.');
   }, []);
 
   // Initialize audio and show canvas
