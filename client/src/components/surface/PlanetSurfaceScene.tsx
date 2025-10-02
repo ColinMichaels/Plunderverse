@@ -69,7 +69,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     if (surfaceTexture) {
       surfaceTexture.wrapS = THREE.RepeatWrapping;
       surfaceTexture.wrapT = THREE.RepeatWrapping;
-      surfaceTexture.repeat.set(16, 16); // Repeat the texture 8x8 times for detail
+      surfaceTexture.repeat.set(8, 8); // Repeat the texture 8x8 times for detail
       surfaceTexture.anisotropy = 16; // Improve texture quality at angles
     }
   }, [surfaceTexture]);
@@ -85,8 +85,8 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
       <meshStandardMaterial
         map={surfaceTexture}
         color={surfaceColor}
-        roughness={0.9}
-        metalness={0.1}
+        roughness={1.9}
+        metalness={0.0}
       />
     </mesh>
   );
@@ -109,7 +109,7 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
   // Generate rock positions using useMemo
   const rockPositions = useMemo(() => {
     const positions = [];
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       const x = (Math.random() - 0.5) * 100;
       const z = (Math.random() - 0.5) * 100;
       const terrainHeight = terrainHeightAt(x, z);
@@ -185,6 +185,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   };
 
   // Load all planet textures for sky rendering
+  // we should have these in the planet store
   const earthTexture = useTexture("/textures/planets/2k_earth_daymap.jpg");
   const marsTexture = useTexture("/textures/planets/2k_mars.jpg");
   const venusTexture = useTexture("/textures/planets/2k_venus_surface.jpg");
@@ -290,7 +291,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
         return {
           horizonColor: "#87CEEB",
           zenithColor: "#191970",
-          atmosphereIntensity: 0.8,
+          atmosphereIntensity: 0.3,
         };
       case "Mars":
         return {
