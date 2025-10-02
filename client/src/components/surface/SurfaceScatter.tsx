@@ -322,8 +322,13 @@ function ScatterInstancedMesh({
   }, [instances]);
 
   // LOD system - update visibility based on distance
+  const frameCounter = useRef(0);
   useFrame(() => {
     if (!meshRef.current) return;
+    
+    // Only update every 15 frames to significantly reduce CPU load
+    frameCounter.current++;
+    if (frameCounter.current % 15 !== 0) return;
 
     const mesh = meshRef.current;
     const cameraPosition = camera.position;
@@ -421,20 +426,22 @@ export function SurfaceScatter({ planetName, planetColor = '#808080' }: SurfaceS
     Object.entries(config.categories).forEach(([category, catConfig]) => {
       instances[category] = [];
       
-      // Create Poisson disk sampler
+      // Create Poisson disk sampler with much smaller area for performance
       const sampler = new PoissonDiskSampling({
-        width: 300, // Reduced from terrain size for performance
-        height: 300,
-        minDistance: config.minSpacing,
+        width: 100, // Significantly reduced for better performance
+        height: 100,
+        minDistance: config.minSpacing * 2, // Increase spacing to reduce density
         densityFunction,
-        existingObjects
+        existingObjects,
+        maxTries: 10 // Reduce max tries for faster generation
       });
       
       // Generate samples
       const samples = sampler.generateSamples();
       
-      // Limit to configured count
-      const limitedSamples = samples.slice(0, catConfig.count);
+      // Limit to much smaller count for better performance
+      const maxCount = Math.min(catConfig.count, 200); // Cap at 200 objects per category
+      const limitedSamples = samples.slice(0, maxCount);
       
       // Create instances from samples
       limitedSamples.forEach(sample => {

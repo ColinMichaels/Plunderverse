@@ -56,7 +56,7 @@ export const ScreenEffects: React.FC = () => {
       // Flash effect
       if (flashRef.current && enabled) {
         const flashIntensity = 0.3 + (progress * 0.4);
-        flashRef.current.style.backgroundColor = effects.flash;
+        flashRef.current.style.backgroundColor = effects.flash || '#ffffff';
         flashRef.current.style.opacity = (flashIntensity * intensity).toString();
         
         setTimeout(() => {
@@ -193,7 +193,7 @@ export const ScreenEffects: React.FC = () => {
         }}
       />
       
-      <style jsx>{`
+      <style>{`
         @keyframes distortion {
           0% { transform: translateX(0); }
           25% { transform: translateX(-2px); }
