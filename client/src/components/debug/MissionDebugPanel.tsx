@@ -72,8 +72,6 @@ export function MissionDebugPanel() {
     return null;
   }
   
-  console.log("[MISSION-DEBUG] Rendering debug panel");
-
   const addCredits = () => {
     const amount = parseInt(creditAmount) || 1000;
     credits.earnCredits(amount);

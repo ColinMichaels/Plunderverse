@@ -116,10 +116,8 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     }
   }, [surfaceTexture, currentTerrainData, planetName]);
 
-  // Show loading indicator or placeholder
-  if (isLoading) {
-    console.log(`[TERRAIN] Loading terrain for ${planetName}...`);
-  }
+  // Loading state is handled by the isLoading flag
+  // No need to log on every render frame
 
   return (
     <>
