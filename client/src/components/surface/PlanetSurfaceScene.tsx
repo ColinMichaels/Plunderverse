@@ -124,7 +124,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
       <mesh
         ref={meshRef}
         geometry={terrainGeometry}
-        rotation={[-Math.PI / 2, 0, 0]}
+        rotation={[0, 0, 0]}
         position={[0, 0, 0]}
         receiveShadow={true}
         castShadow={true}
@@ -143,7 +143,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
       {currentTerrainData && (
         <mesh
           geometry={terrainGeometry}
-          rotation={[-Math.PI / 2, 0, 0]}
+          rotation={[0, 0, 0]}
           position={[0, 0.01, 0]} // Slightly above main terrain to avoid z-fighting
           receiveShadow={true}
         >
