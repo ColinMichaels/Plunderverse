@@ -16,6 +16,7 @@ import { MiningLaser } from "./MiningLaser";
 import { ResourceNode } from "./EnhancedResourceNode";
 import { ScreenEffects } from "./ScreenEffects";
 import { CameraShake } from "./CameraShake";
+import { ResourceManager } from "../../lib/utils/ResourceManager";
 import * as THREE from "three";
 
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -34,6 +35,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const { loadTerrainForPlanet, currentTerrainData } = useTerrain();
   const [isLoading, setIsLoading] = useState(true);
+  const resourceManager = ResourceManager.getInstance();
 
   // Get planet data for surface color
   const planet = planets.find((p) => p.name === planetName);
@@ -59,10 +61,17 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   // Load the texture
   const surfaceTexture = useTexture(texturePath);
   
-  // Log when texture loads successfully
+  // Register texture with ResourceManager and log when loaded
   useEffect(() => {
     if (surfaceTexture) {
-      console.log(`[TEXTURE] Successfully loaded surface texture for ${planetName}: ${texturePath}`);
+      const textureId = `surface-texture-${planetName}`;
+      console.log(`[ResourceManager] Registering surface texture for ${planetName}: ${texturePath}`);
+      resourceManager.registerTexture(textureId, surfaceTexture, ['planet-surface', planetName]);
+      
+      return () => {
+        console.log(`[ResourceManager] Disposing surface texture for ${planetName}`);
+        resourceManager.disposeResource(textureId);
+      };
     }
   }, [surfaceTexture, planetName, texturePath]);
   
@@ -111,6 +120,23 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     
     return geometry;
   }, [currentTerrainData]);
+
+  // Register and dispose terrain geometry
+  useEffect(() => {
+    if (terrainGeometry) {
+      const geometryId = `terrain-geometry-${planetName}`;
+      console.log(`[ResourceManager] Registering terrain geometry for ${planetName}`);
+      resourceManager.registerGeometry(geometryId, terrainGeometry, ['planet-surface', planetName]);
+      
+      return () => {
+        console.log(`[ResourceManager] Disposing terrain geometry for ${planetName}`);
+        // Check if resource still exists before disposing (might already be disposed)
+        if (resourceManager.hasResource(geometryId)) {
+          resourceManager.disposeResource(geometryId);
+        }
+      };
+    }
+  }, [terrainGeometry, planetName]);
 
   // Configure texture with dynamic repeat based on terrain complexity
   useEffect(() => {
@@ -187,6 +213,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
   const starfieldRef = useRef<THREE.Points>(null);
   const planetsRef = useRef<THREE.Group>(null);
+  const resourceManager = ResourceManager.getInstance();
 
   // Orbital calculation utilities
   const calculatePlanetPosition = (planet: any, time: number) => {
@@ -209,6 +236,40 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   const uranusTexture = useTexture("/textures/planets/2k_uranus.jpg");
   const neptuneTexture = useTexture("/textures/planets/2k_neptune.jpg");
   const moonTexture = useTexture("/textures/planets/2k_moon.jpg");
+
+  // Register planet textures with ResourceManager
+  useEffect(() => {
+    const textures = [
+      { name: 'earth', texture: earthTexture },
+      { name: 'mars', texture: marsTexture },
+      { name: 'venus', texture: venusTexture },
+      { name: 'mercury', texture: mercuryTexture },
+      { name: 'jupiter', texture: jupiterTexture },
+      { name: 'saturn', texture: saturnTexture },
+      { name: 'uranus', texture: uranusTexture },
+      { name: 'neptune', texture: neptuneTexture },
+      { name: 'moon', texture: moonTexture }
+    ];
+
+    textures.forEach(({ name, texture }) => {
+      if (texture) {
+        const textureId = `sky-planet-texture-${name}-${planetName}`;
+        console.log(`[ResourceManager] Registering sky planet texture: ${name} for ${planetName}`);
+        resourceManager.registerTexture(textureId, texture, ['planet-surface', 'sky-textures', planetName]);
+      }
+    });
+
+    return () => {
+      textures.forEach(({ name }) => {
+        const textureId = `sky-planet-texture-${name}-${planetName}`;
+        console.log(`[ResourceManager] Disposing sky planet texture: ${name} for ${planetName}`);
+        if (resourceManager.hasResource(textureId)) {
+          resourceManager.disposeResource(textureId);
+        }
+      });
+    };
+  }, [earthTexture, marsTexture, venusTexture, mercuryTexture, jupiterTexture, 
+      saturnTexture, uranusTexture, neptuneTexture, moonTexture, planetName]);
 
   // Get planet texture by name
   const getPlanetTexture = (planetName: string) => {
@@ -427,6 +488,22 @@ function SurfaceSky({ planetName }: { planetName: string }) {
     texture.needsUpdate = true;
     return texture;
   }, [atmosphericData]);
+
+  // Register and dispose gradient texture
+  useEffect(() => {
+    if (gradientTexture) {
+      const textureId = `gradient-texture-${planetName}`;
+      console.log(`[ResourceManager] Registering gradient texture for ${planetName}`);
+      resourceManager.registerTexture(textureId, gradientTexture, ['planet-surface', 'gradient-textures', planetName]);
+      
+      return () => {
+        console.log(`[ResourceManager] Disposing gradient texture for ${planetName}`);
+        if (resourceManager.hasResource(textureId)) {
+          resourceManager.disposeResource(textureId);
+        }
+      };
+    }
+  }, [gradientTexture, planetName]);
 
   // Subtle animation for stars
   useFrame((state) => {
@@ -1241,6 +1318,25 @@ function PostProcessingEffects() {
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
   const { isFlashlightOn } = useFlashlight();
+  const resourceManager = ResourceManager.getInstance();
+
+  // Cleanup all planet surface resources when component unmounts or planet changes
+  useEffect(() => {
+    console.log(`[ResourceManager] PlanetSurfaceScene mounted for planet: ${landedPlanet}`);
+    
+    return () => {
+      console.log(`[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources`);
+      // Dispose all resources tagged with 'planet-surface'
+      const disposedCount = resourceManager.disposeByTag('planet-surface');
+      console.log(`[ResourceManager] Disposed ${disposedCount} planet-surface resources`);
+      
+      // Also dispose resources specific to this planet
+      if (landedPlanet) {
+        const planetDisposedCount = resourceManager.disposeByTag(landedPlanet);
+        console.log(`[ResourceManager] Disposed ${planetDisposedCount} resources specific to ${landedPlanet}`);
+      }
+    };
+  }, [landedPlanet]);
 
   if (!isLanded || !landedPlanet) return null;
 
