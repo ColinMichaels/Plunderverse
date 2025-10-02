@@ -51,9 +51,7 @@ function LaserSpark({
     <mesh ref={meshRef}>
       <sphereGeometry args={[0.1, 8, 8]} />
       <meshBasicMaterial 
-        color={color} 
-        emissive={color}
-        emissiveIntensity={2}
+        color={color}
       />
     </mesh>
   );
