@@ -19,7 +19,7 @@ class ParticlePool {
   private activeParticles: Particle[] = [];
   private maxParticles: number;
 
-  constructor(maxParticles: number = 50) {  // Reduced from 200 for performance
+  constructor(maxParticles: number = 20) {  // Drastically reduced to 20 particles max
     this.maxParticles = maxParticles;
   }
 
@@ -337,7 +337,6 @@ function FragmentParticles({ particles, color }: { particles: Particle[]; color:
         color={color}
         roughness={0.8}
         metalness={0.3}
-        vertexColors
       />
     </instancedMesh>
   );
@@ -456,7 +455,6 @@ function DustParticles({ particles, color }: { particles: Particle[]; color: THR
         metalness={0}
         transparent
         opacity={0.4}
-        vertexColors
         depthWrite={false}
       />
     </instancedMesh>
@@ -503,7 +501,6 @@ function DropletParticles({ particles, color }: { particles: Particle[]; color: 
         metalness={0.8}
         transparent
         opacity={0.7}
-        vertexColors
       />
     </instancedMesh>
   );
@@ -517,7 +514,7 @@ interface MiningFragmentsProps {
 }
 
 export function MiningFragments({ resource, position, progress, isActive }: MiningFragmentsProps) {
-  const particlePoolRef = useRef(new ParticlePool(100)); // Reduced to 100 particles for performance
+  const particlePoolRef = useRef(new ParticlePool(20)); // Drastically reduced to 20 particles for performance
   const lastSpawnTimeRef = useRef(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const { equipment } = useEquipment();
@@ -557,10 +554,10 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
       return;
     }
     
-    // Calculate spawn rate based on progress and mining efficiency (optimized for performance)
-    const baseSpawnRate = 0.2; // Increased interval for less frequent spawning
-    const progressMultiplier = 1 + progress * 1.5; // Reduced multiplier
-    const efficiencyMultiplier = 0.5 + miningEfficiency * 0.3;
+    // Calculate spawn rate based on progress and mining efficiency (drastically optimized for performance)
+    const baseSpawnRate = 0.5; // Much higher interval for less frequent spawning
+    const progressMultiplier = 1 + progress * 0.5; // Minimal multiplier
+    const efficiencyMultiplier = 0.7 + miningEfficiency * 0.1;
     const spawnInterval = baseSpawnRate / (progressMultiplier * efficiencyMultiplier);
     
     // Spawn new particles
@@ -573,10 +570,10 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
         position[2] + (Math.random() - 0.5) * 0.5
       );
       
-      // Spawn sparks (reduced probability and count)
-      if (particleBehavior.sparkCount > 0 && Math.random() < 0.4) {
-        const sparkCount = Math.max(1, Math.floor(particleBehavior.sparkCount * 0.3 * (0.5 + progress * 0.5)));
-        for (let i = 0; i < sparkCount; i++) {
+      // Spawn sparks (drastically reduced probability and count)
+      if (particleBehavior.sparkCount > 0 && Math.random() < 0.2) {
+        const sparkCount = Math.max(1, Math.floor(particleBehavior.sparkCount * 0.1 * (0.5 + progress * 0.5)));
+        for (let i = 0; i < Math.min(sparkCount, 2); i++) {  // Max 2 sparks at a time
           const angle = Math.random() * Math.PI * 2;
           const pitch = (Math.random() - 0.5) * Math.PI * 0.5;
           const speed = particleBehavior.sparkSpeed * (0.5 + Math.random());
@@ -601,10 +598,10 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
         }
       }
       
-      // Spawn fragments (reduced probability and count)
-      if (particleBehavior.fragmentCount > 0 && Math.random() < 0.3) {
-        const fragmentCount = Math.max(1, Math.floor(particleBehavior.fragmentCount * 0.4 * (0.3 + progress * 0.7)));
-        for (let i = 0; i < fragmentCount; i++) {
+      // Spawn fragments (drastically reduced probability and count)
+      if (particleBehavior.fragmentCount > 0 && Math.random() < 0.15) {
+        const fragmentCount = Math.max(1, Math.floor(particleBehavior.fragmentCount * 0.15 * (0.3 + progress * 0.7)));
+        for (let i = 0; i < Math.min(fragmentCount, 3); i++) {  // Max 3 fragments at a time
           const angle = Math.random() * Math.PI * 2;
           const speed = particleBehavior.fragmentSpeed * (0.5 + Math.random());
           
@@ -632,10 +629,10 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
         }
       }
       
-      // Spawn dust (reduced count for performance)
-      if (particleBehavior.dustCount > 0 && Math.random() < 0.5) {
-        const dustCount = Math.max(1, Math.floor(particleBehavior.dustCount * 0.3 * (0.5 + progress * 0.5)));
-        for (let i = 0; i < dustCount; i++) {
+      // Spawn dust (drastically reduced count for performance)
+      if (particleBehavior.dustCount > 0 && Math.random() < 0.2) {
+        const dustCount = Math.max(1, Math.floor(particleBehavior.dustCount * 0.1 * (0.5 + progress * 0.5)));
+        for (let i = 0; i < Math.min(dustCount, 2); i++) {  // Max 2 dust particles at a time
           const angle = Math.random() * Math.PI * 2;
           const speed = 1 + Math.random() * 2;
           
@@ -660,9 +657,9 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
       }
       
       // Spawn droplets for liquids
-      if (particleBehavior.dropletCount > 0 && Math.random() < 0.8) {
-        const dropletCount = Math.floor(particleBehavior.dropletCount * (0.5 + progress * 0.5));
-        for (let i = 0; i < dropletCount; i++) {
+      if (particleBehavior.dropletCount > 0 && Math.random() < 0.3) {
+        const dropletCount = Math.floor(particleBehavior.dropletCount * 0.2 * (0.5 + progress * 0.5));
+        for (let i = 0; i < Math.min(dropletCount, 3); i++) {  // Max 3 droplets at a time
           const angle = Math.random() * Math.PI * 2;
           const speed = 2 + Math.random() * 4;
           
