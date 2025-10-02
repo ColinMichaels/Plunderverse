@@ -525,9 +525,11 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
   
   // Get mining efficiency modifiers
   const miningEfficiency = useMemo(() => {
-    const drillLevel = equipment.drill?.level || 1;
-    const extractorLevel = equipment.extractor?.level || 1;
-    return (drillLevel + extractorLevel) / 2;
+    const drill = equipment.find(item => item.type === 'drill');
+    const extractor = equipment.find(item => item.type === 'extractor');
+    const drillPerformance = drill?.performanceLevel || 1;
+    const extractorPerformance = extractor?.performanceLevel || 1;
+    return (drillPerformance + extractorPerformance) / 2;
   }, [equipment]);
   
   // Get particle behavior based on resource type
