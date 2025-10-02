@@ -4,6 +4,7 @@ import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
 import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
 import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
+import { useSurfacePlayer } from "../../lib/stores/surface/useSurfacePlayer";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 
@@ -37,6 +38,7 @@ export function SurfaceMovementController() {
   const { checkCollision } = useSurfaceCollision();
   const { isActive: isMining, currentNodeId } = useMining();
   const { playHit } = useAudio();
+  const { setPosition, setRotation } = useSurfacePlayer();
   const lastCollisionSoundRef = useRef(0);
   const lastCollisionTimeRef = useRef(0);
 
@@ -218,6 +220,10 @@ export function SurfaceMovementController() {
       // No collision - apply movement normally
       positionRef.current.copy(newPosition);
     }
+    
+    // Update global surface player position for other components
+    setPosition(positionRef.current);
+    setRotation(rotationRef.current);
 
     // Update camera shake
     if (shake.active) {

@@ -12,6 +12,7 @@ import { FBXAsteroid } from "../space/FBXAsteroid";
 import { FlashlightSystem } from "./FlashlightSystem";
 import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
+import { MiningLaser } from "./MiningLaser";
 import * as THREE from "three";
 
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -1187,6 +1188,10 @@ function ResourceNodes({ planetName }: { planetName: string }) {
                 isActive={isBeingMined}
                 color={getResourceColor(node.resource.rarity)}
                 position={node.position}
+              />
+              <MiningLaser
+                targetPosition={node.position}
+                nodeId={node.id}
               />
             </group>
           );
