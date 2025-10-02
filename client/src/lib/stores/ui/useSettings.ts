@@ -11,6 +11,11 @@ interface SettingsState {
   enableParticles: boolean;
   enableBloom: boolean;
   
+  // Mining effect settings
+  miningEffectsIntensity: number; // 0-1 overall intensity
+  enableScreenShake: boolean;
+  enableVisualEffects: boolean;
+  
   setSensitivity: (sensitivity: number) => void;
   setInvertY: (invert: boolean) => void;
   updateKeybind: (action: string, keys: string[]) => void;
@@ -18,13 +23,25 @@ interface SettingsState {
   setEnableDynamicLights: (enable: boolean) => void;
   setEnableParticles: (enable: boolean) => void;
   setEnableBloom: (enable: boolean) => void;
+  
+  // Mining effect setters
+  setMiningEffectsIntensity: (intensity: number) => void;
+  setEnableScreenShake: (enable: boolean) => void;
+  setEnableVisualEffects: (enable: boolean) => void;
+  
   resetToDefaults: () => void;
   getKeyboardMap: () => Array<{ name: Controls; keys: string[] }>;
 }
 
 export const useSettings = create<SettingsState>()(
   persist(
-    (set, get) => ({
+    (set, get) => {
+      // Store reference for other systems to access settings
+      if (typeof window !== 'undefined') {
+        (window as any).settingsStore = get;
+      }
+      
+      return {
       sensitivity: 0.001,
       invertY: false,
       keybinds: { ...DEFAULT_KEYBINDS },
@@ -32,6 +49,11 @@ export const useSettings = create<SettingsState>()(
       enableDynamicLights: true,
       enableParticles: true,
       enableBloom: true,
+      
+      // Mining effect defaults
+      miningEffectsIntensity: 1.0,
+      enableScreenShake: true,
+      enableVisualEffects: true,
 
       setSensitivity: (sensitivity: number) => {
         set({ sensitivity });
@@ -72,6 +94,18 @@ export const useSettings = create<SettingsState>()(
         set({ enableBloom: enable });
       },
 
+      setMiningEffectsIntensity: (intensity: number) => {
+        set({ miningEffectsIntensity: Math.max(0, Math.min(1, intensity)) });
+      },
+
+      setEnableScreenShake: (enable: boolean) => {
+        set({ enableScreenShake: enable });
+      },
+
+      setEnableVisualEffects: (enable: boolean) => {
+        set({ enableVisualEffects: enable });
+      },
+
       resetToDefaults: () => {
         set({
           sensitivity: 0.001,
@@ -81,6 +115,9 @@ export const useSettings = create<SettingsState>()(
           enableDynamicLights: true,
           enableParticles: true,
           enableBloom: true,
+          miningEffectsIntensity: 1.0,
+          enableScreenShake: true,
+          enableVisualEffects: true,
         });
       },
 
@@ -91,7 +128,8 @@ export const useSettings = create<SettingsState>()(
           keys,
         }));
       },
-    }),
+    };
+    },
     {
       name: "settings",
     }

@@ -15,6 +15,8 @@ import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import { MiningLaser } from "./MiningLaser";
 import { ResourceNode } from "./EnhancedResourceNode";
+import { ScreenEffects } from "./ScreenEffects";
+import { CameraShake } from "./CameraShake";
 import * as THREE from "three";
 
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -1339,9 +1341,14 @@ export function PlanetSurfaceScene() {
             flashlightOn={isFlashlightOn}
           />
           <DebugCollisionBoxes />
+          {/* Camera shake effect for mining feedback */}
+          <CameraShake />
           <PostProcessingEffects />
         </Canvas>
       </KeyboardControls>
+      
+      {/* Screen effects overlay for mining feedback */}
+      <ScreenEffects />
 
       {/* Unified collapsible stats panel */}
       <SurfaceStatsPanel />

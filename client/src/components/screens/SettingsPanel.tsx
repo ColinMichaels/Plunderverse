@@ -41,6 +41,12 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
     setInvertY,
     updateKeybind,
     resetToDefaults,
+    miningEffectsIntensity,
+    enableScreenShake,
+    enableVisualEffects,
+    setMiningEffectsIntensity,
+    setEnableScreenShake,
+    setEnableVisualEffects,
   } = useSettings();
 
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
@@ -132,6 +138,66 @@ export function SettingsPanel({ open, onOpenChange }: SettingsPanelProps) {
               checked={invertY}
               onCheckedChange={setInvertY}
             />
+          </div>
+
+          {/* Mining Effects Section */}
+          <div className="space-y-3 border-t border-cyan-700 pt-4">
+            <h3 className="text-cyan-300 font-semibold text-sm uppercase pb-1">
+              ⛏️ Mining Effects
+            </h3>
+            
+            {/* Effects Intensity */}
+            <div className="space-y-2">
+              <Label htmlFor="mining-intensity" className="text-cyan-300 font-semibold">
+                Mining Effects Intensity: {Math.round((miningEffectsIntensity ?? 1) * 100)}%
+              </Label>
+              <Slider
+                id="mining-intensity"
+                min={0}
+                max={1}
+                step={0.1}
+                value={[miningEffectsIntensity ?? 1]}
+                onValueChange={([value]) => setMiningEffectsIntensity?.(value)}
+                className="w-full"
+              />
+              <p className="text-xs text-gray-400">
+                Adjust the overall intensity of mining feedback effects
+              </p>
+            </div>
+            
+            {/* Screen Shake */}
+            <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
+              <div className="space-y-0.5">
+                <Label htmlFor="screen-shake" className="text-cyan-300 font-semibold">
+                  Screen Shake
+                </Label>
+                <p className="text-xs text-gray-400">
+                  Camera shake when mining resources
+                </p>
+              </div>
+              <Switch
+                id="screen-shake"
+                checked={enableScreenShake ?? true}
+                onCheckedChange={setEnableScreenShake}
+              />
+            </div>
+            
+            {/* Visual Effects */}
+            <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
+              <div className="space-y-0.5">
+                <Label htmlFor="visual-effects" className="text-cyan-300 font-semibold">
+                  Visual Effects
+                </Label>
+                <p className="text-xs text-gray-400">
+                  Flash, vignette, and color effects during mining
+                </p>
+              </div>
+              <Switch
+                id="visual-effects"
+                checked={enableVisualEffects ?? true}
+                onCheckedChange={setEnableVisualEffects}
+              />
+            </div>
           </div>
 
           {/* Keybindings */}

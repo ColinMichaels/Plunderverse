@@ -38,12 +38,50 @@ export const useAudio = create<AudioState>((set, get) => ({
   thrusterSound: null,
   isMuted: false, // Start muted by default
 
-  setBackgroundMusic: (music) => set({ backgroundMusic: music }),
-  setAmbientMusic: (music) => set({ ambientMusic: music }),
-  setHitSound: (sound) => set({ hitSound: sound }),
-  setSuccessSound: (sound) => set({ successSound: sound }),
-  setLaserSound: (sound) => set({ laserSound: sound }),
-  setThrusterSound: (sound) => set({ thrusterSound: sound }),
+  setBackgroundMusic: (music) => {
+    set({ backgroundMusic: music });
+    // Store reference for mining effects system
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.backgroundMusic = music;
+    }
+  },
+  setAmbientMusic: (music) => {
+    set({ ambientMusic: music });
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.ambientMusic = music;
+    }
+  },
+  setHitSound: (sound) => {
+    set({ hitSound: sound });
+    // Store reference for mining effects system to use
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.hitSound = sound;
+    }
+  },
+  setSuccessSound: (sound) => {
+    set({ successSound: sound });
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.successSound = sound;
+    }
+  },
+  setLaserSound: (sound) => {
+    set({ laserSound: sound });
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.laserSound = sound;
+    }
+  },
+  setThrusterSound: (sound) => {
+    set({ thrusterSound: sound });
+    if (typeof window !== 'undefined') {
+      (window as any).audioStore = (window as any).audioStore || {};
+      (window as any).audioStore.thrusterSound = sound;
+    }
+  },
 
   toggleMute: () => {
     const { isMuted } = get();

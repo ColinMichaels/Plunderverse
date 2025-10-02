@@ -89,13 +89,28 @@ export const useMining = create<MiningState>((set, get) => ({
     
     console.log(`Mining click ${newClicksCompleted}/${state.clicksRequired} on ${state.targetResource!.type}`);
     
-    // Play hit sound at milestone crossings (25%, 50%, 75%)
-    const { playHit, playSuccess } = useAudio.getState();
-    const milestones = [25, 50, 75];
+    // Trigger enhanced mining effects (screen shake, dynamic audio, visual effects)
+    import('../surface/useMiningEffects').then(({ useMiningEffects }) => {
+      const effectsStore = useMiningEffects.getState();
+      const equipmentStore = useEquipment.getState();
+      
+      // Scale effects based on equipment efficiency
+      const drillPerformance = equipmentStore.getPerformanceMultiplier('drill-mk1');
+      const equipmentScale = 0.5 + (drillPerformance * 0.5); // 0.5 to 1.0 scale
+      
+      effectsStore.setEffectsIntensity(equipmentScale);
+      effectsStore.triggerMiningImpact(state.targetResource!, newProgress / 100);
+    }).catch(err => {
+      console.warn('[MINING-EFFECTS] Could not load mining effects:', err);
+      // Fallback to basic audio
+      const { playHit } = useAudio.getState();
+      playHit();
+    });
     
+    // Keep milestone logging for debugging
+    const milestones = [25, 50, 75];
     for (const milestone of milestones) {
       if (previousProgress < milestone && newProgress >= milestone) {
-        playHit();
         console.log(`[MINING-AUDIO] Hit milestone: ${milestone}%`);
         break;
       }
