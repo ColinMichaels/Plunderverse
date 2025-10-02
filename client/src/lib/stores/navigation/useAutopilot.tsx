@@ -1,12 +1,24 @@
 import { create } from "zustand";
 import * as THREE from "three";
 
+// Easing functions for smooth orbital mechanics
+const easeInOutCubic = (t: number): number => {
+  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+};
+
+const easeOutCubic = (t: number): number => {
+  return 1 - Math.pow(1 - t, 3);
+};
+
 interface AutopilotState {
   isActive: boolean;
   target: THREE.Vector3 | null;
   isOrbiting: boolean;
   orbitRadius: number;
   orbitAngle: number;
+  approachProgress: number; // Track approach progress for easing
+  orbitSway: number; // Camera sway for realism during orbit
+  orbitSpeed: number; // Variable orbit speed for cinematic effect
   
   // Actions
   activate: (target: THREE.Vector3) => void;
@@ -14,6 +26,9 @@ interface AutopilotState {
   setTarget: (target: THREE.Vector3 | null) => void;
   enterOrbit: (radius: number) => void;
   updateThrusterVolume: () => void;
+  updateApproachProgress: (progress: number) => void;
+  updateOrbitSway: (delta: number) => void;
+  getEasedSpeed: (baseSpeed: number, distance: number, targetDistance: number) => number;
 }
 
 export const useAutopilot = create<AutopilotState>((set, get) => ({
@@ -22,13 +37,19 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
   isOrbiting: false,
   orbitRadius: 50,
   orbitAngle: 0,
+  approachProgress: 0,
+  orbitSway: 0,
+  orbitSpeed: 0.15,
   
   activate: (target) => {
     set({
       isActive: true,
       target: target.clone(),
       isOrbiting: false,
-      orbitAngle: 0
+      orbitAngle: 0,
+      approachProgress: 0,
+      orbitSway: 0,
+      orbitSpeed: 0.15
     });
     console.log("Autopilot activated!");
     
@@ -47,7 +68,9 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
       isActive: false,
       target: null,
       isOrbiting: false,
-      orbitAngle: 0
+      orbitAngle: 0,
+      approachProgress: 0,
+      orbitSway: 0
     });
     console.log("Autopilot deactivated!");
     
@@ -91,5 +114,30 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
         }
       });
     });
+  },
+  
+  updateApproachProgress: (progress) => {
+    set({ approachProgress: progress });
+  },
+  
+  updateOrbitSway: (delta) => {
+    const state = get();
+    // Add subtle camera sway during orbit for realism
+    const swayAmount = Math.sin(Date.now() * 0.001) * 0.05;
+    set({ orbitSway: swayAmount });
+  },
+  
+  getEasedSpeed: (baseSpeed, distance, targetDistance) => {
+    // Calculate progress (0 to 1) as we approach target
+    const progress = 1 - Math.min(distance / targetDistance, 1);
+    
+    // Use cubic easing for smooth deceleration
+    const easedProgress = easeOutCubic(progress);
+    
+    // Apply easing to speed (slow down as we get closer)
+    const minSpeed = baseSpeed * 0.2; // Minimum 20% of base speed
+    const speed = baseSpeed * (1 - easedProgress * 0.8) + minSpeed;
+    
+    return speed;
   }
 }));

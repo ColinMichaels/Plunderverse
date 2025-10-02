@@ -1,5 +1,5 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useKeyboardControls } from "@react-three/drei";
+import { useKeyboardControls, PerspectiveCamera } from "@react-three/drei";
 import { useRef, useState, useEffect } from "react";
 import * as THREE from "three";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
@@ -37,6 +37,13 @@ export function CameraController() {
   const lastForwardPressRef = useRef(0);
   const forwardDoubleClickRef = useRef(false);
   const warpSpeedMultiplierRef = useRef(1);
+  
+  // Dynamic FOV state for smooth camera adjustments
+  const currentFOVRef = useRef(75);
+  const targetFOVRef = useRef(75);
+  const defaultFOV = 75;
+  const minFOV = 50;
+  const maxFOV = 90; // For warp mode
 
   // Mobile control states
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
@@ -138,7 +145,7 @@ export function CameraController() {
   const { isActive: isMining } = useMining();
 
   // Landed state - prevent movement when landed on surface
-  const { isLanded } = useLandedState();
+  const { isLanded, isTakingOff } = useLandedState();
 
   // Proximity camera state for manual planet approach
   const [isProximityCameraActive, setProximityCameraActive] = useState(false);
@@ -640,11 +647,51 @@ export function CameraController() {
           // Very slow, subtle camera rotation to look at planet - not jarring
           camera.quaternion.slerp(targetQuaternion, delta * 0.25);
         }
+        
+        // Dynamic FOV adjustment based on distance to planet
+        // Use distance thresholds: far (>100 units) = 75 FOV, close (<20 units) = 50 FOV
+        const farDistance = 100;
+        const nearDistance = 20;
+        
+        if (distanceToPlanet <= farDistance) {
+          // Calculate FOV based on distance (linear interpolation)
+          const t = THREE.MathUtils.clamp(
+            (distanceToPlanet - nearDistance) / (farDistance - nearDistance),
+            0,
+            1
+          );
+          targetFOVRef.current = THREE.MathUtils.lerp(minFOV, defaultFOV, t);
+        } else {
+          targetFOVRef.current = defaultFOV;
+        }
       }
     } else if (isProximityCameraActive) {
       // Deactivate proximity camera if any blocking state is active
       setProximityCameraActive(false);
       console.log(`[PROXIMITY] Proximity camera deactivated due to state change`);
+    }
+    
+    // Warp mode FOV adjustment - expand FOV for speed effect
+    if (isWarpMode) {
+      targetFOVRef.current = maxFOV;
+    }
+    
+    // Takeoff FOV adjustment - reset to default during takeoff
+    if (isTakingOff) {
+      targetFOVRef.current = defaultFOV;
+    }
+    
+    // Smooth FOV lerping to avoid jarring transitions
+    currentFOVRef.current = THREE.MathUtils.lerp(
+      currentFOVRef.current,
+      targetFOVRef.current,
+      delta * 2.0 // Smooth transition speed
+    );
+    
+    // Apply the current FOV to the camera
+    if (camera instanceof THREE.PerspectiveCamera) {
+      (camera as THREE.PerspectiveCamera).fov = currentFOVRef.current;
+      (camera as THREE.PerspectiveCamera).updateProjectionMatrix();
     }
 
     // Clamp maximum velocity (after all thrust sources computed)

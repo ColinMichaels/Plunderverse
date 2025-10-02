@@ -6,10 +6,9 @@ import { planets } from "../../lib/planetData";
 import * as THREE from "three";
 
 export function TakeoffControls() {
-  const { isLanded, landedPlanet, setNotLanded } = useLandedState();
+  const { isLanded, landedPlanet, setIsTakingOff, isTakingOff } = useLandedState();
   const { isActive: isMining, stopMining } = useMining();
   const { playSuccess } = useAudio();
-  const { time, setCameraPosition } = useSolarSystem();
 
   if (!isLanded) return null;
 
@@ -19,33 +18,10 @@ export function TakeoffControls() {
       console.log("Mining operations stopped for takeoff");
     }
     
-    // Find the planet we're taking off from
-    const planet = planets.find((p) => p.name === landedPlanet);
-    
-    if (planet) {
-      // Calculate the planet's current orbital position
-      const angle = time * planet.orbitalSpeed;
-      const orbitX = Math.cos(angle) * planet.distance;
-      const orbitZ = Math.sin(angle) * planet.distance;
-      
-      // Position player slightly above and offset from planet in its orbit
-      // Using planet size to ensure we're just outside the planet
-      const orbitOffset = planet.size * 8; // 8x planet radius for comfortable viewing distance
-      const orbitY = 10; // Slight elevation above orbital plane
-      
-      const takeoffPosition = new THREE.Vector3(
-        orbitX + Math.cos(angle) * orbitOffset,
-        orbitY,
-        orbitZ + Math.sin(angle) * orbitOffset
-      );
-      
-      // Set camera to orbital position
-      setCameraPosition(takeoffPosition);
-      console.log(`Taking off from ${landedPlanet} to orbital position:`, takeoffPosition);
-    }
-    
-    setNotLanded();
+    // Trigger the takeoff sequence
+    setIsTakingOff(true);
     playSuccess();
+    console.log(`Initiating takeoff sequence from ${landedPlanet}`);
   };
 
   return (
@@ -65,8 +41,9 @@ export function TakeoffControls() {
         
         <button
           onClick={handleTakeoff}
-          className="bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center"
-          title="Take Off"
+          disabled={isTakingOff}
+          className={`bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center ${isTakingOff ? 'opacity-50 cursor-not-allowed' : ''}`}
+          title={isTakingOff ? "Taking off..." : "Take Off"}
         >
           <span className="text-xl">🚀</span>
         </button>

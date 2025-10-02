@@ -81,6 +81,11 @@ export function Planet({ data, time }: PlanetProps) {
   const lightIntensity = useRef(1.0);
   const atmosphereRef = useRef<THREE.MeshBasicMaterial>(null);
   const atmosphereOuterRef = useRef<THREE.MeshBasicMaterial>(null);
+  
+  // Proximity-based scaling state
+  const [scaleMultiplier, setScaleMultiplier] = useState(1.0);
+  const targetScaleRef = useRef(1.0);
+  const currentScaleRef = useRef(1.0);
 
   // Calculate orbital position and sun-based lighting
   useFrame(() => {
@@ -128,6 +133,32 @@ export function Planet({ data, time }: PlanetProps) {
       if (selectedPlanet === data.name) {
         setDistanceToTarget(distance);
       }
+      
+      // Proximity-based planet scaling - scale up when camera is within 50 units
+      const scalingDistance = 50;
+      const minScale = 1.0;
+      const maxScale = 1.2; // 20% larger when very close
+      
+      if (distance <= scalingDistance) {
+        // Calculate scale based on distance (closer = larger)
+        const t = THREE.MathUtils.clamp(1 - (distance / scalingDistance), 0, 1);
+        // Use smooth interpolation for gradual scaling
+        targetScaleRef.current = THREE.MathUtils.lerp(minScale, maxScale, t * t); // Squared for smoother curve
+      } else {
+        targetScaleRef.current = minScale;
+      }
+      
+      // Smooth lerp to avoid pop-in effects
+      currentScaleRef.current = THREE.MathUtils.lerp(
+        currentScaleRef.current,
+        targetScaleRef.current,
+        0.05 // Slow interpolation for smooth transitions
+      );
+      
+      // Apply the scale to the planet and its components
+      if (Math.abs(currentScaleRef.current - scaleMultiplier) > 0.001) {
+        setScaleMultiplier(currentScaleRef.current);
+      }
     }
   });
 
@@ -147,7 +178,7 @@ export function Planet({ data, time }: PlanetProps) {
       {/* Planet */}
       <Sphere
         ref={meshRef}
-        args={[data.size, 32, 32]}
+        args={[data.size * scaleMultiplier, 32, 32]}
         onClick={handleClick}
         onPointerEnter={() => setHovered(true)}
         onPointerLeave={() => setHovered(false)}
@@ -168,7 +199,7 @@ export function Planet({ data, time }: PlanetProps) {
       {/* Selection ring - reduced opacity */}
       {isSelected && (
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.1, 0]}>
-          <ringGeometry args={[data.size * 1.2, data.size * 1.4, 32]} />
+          <ringGeometry args={[data.size * 1.2 * scaleMultiplier, data.size * 1.4 * scaleMultiplier, 32]} />
           <meshBasicMaterial color="#ffffff" transparent opacity={0.25} />
         </mesh>
       )}
@@ -177,7 +208,7 @@ export function Planet({ data, time }: PlanetProps) {
       {materialProps.atmosphericGlow && (
         <>
           {/* Primary atmospheric layer */}
-          <Sphere args={[data.size * 1.08, 32, 32]}>
+          <Sphere args={[data.size * 1.08 * scaleMultiplier, 32, 32]}>
             <meshBasicMaterial
               color={data.color}
               transparent
@@ -188,7 +219,7 @@ export function Planet({ data, time }: PlanetProps) {
           </Sphere>
           {/* Outer atmospheric layer for gas giants */}
           {(data.name === "Jupiter" || data.name === "Saturn" || data.name === "Uranus" || data.name === "Neptune") && (
-            <Sphere args={[data.size * 1.15, 32, 32]}>
+            <Sphere args={[data.size * 1.15 * scaleMultiplier, 32, 32]}>
               <meshBasicMaterial
                 color={data.color}
                 transparent
@@ -201,12 +232,12 @@ export function Planet({ data, time }: PlanetProps) {
         </>
       )}
 
-      {/* Enhanced Saturn's rings with realistic lighting */}
+      {/* Enhanced Saturn's rings with realistic lighting - scale proportionally */}
       {data.name === "Saturn" && (
         <>
           {/* Main ring structure */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[data.size * 1.15, data.size * 1.8, 64]} />
+            <ringGeometry args={[data.size * 1.15 * scaleMultiplier, data.size * 1.8 * scaleMultiplier, 64]} />
             <meshStandardMaterial
               color="#D4AF37"
               transparent
@@ -218,7 +249,7 @@ export function Planet({ data, time }: PlanetProps) {
           </mesh>
           {/* Outer ring layer */}
           <mesh rotation={[-Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[data.size * 1.9, data.size * 2.2, 64]} />
+            <ringGeometry args={[data.size * 1.9 * scaleMultiplier, data.size * 2.2 * scaleMultiplier, 64]} />
             <meshStandardMaterial
               color="#C4A037"
               transparent

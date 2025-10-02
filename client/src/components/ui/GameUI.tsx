@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as THREE from "three";
 import { LandingTransition } from "../surface/LandingTransition";
+import { TakeoffSequence } from "../surface/TakeoffSequence";
 import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
@@ -108,6 +109,9 @@ export function GameUI() {
 
       {/* Landing Transition */}
       <LandingTransition />
+
+      {/* Takeoff Sequence */}
+      <TakeoffSequence />
 
       {/* Landing Warning Dialog */}
       <LandingWarning

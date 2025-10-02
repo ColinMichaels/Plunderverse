@@ -6,17 +6,20 @@ interface LandedState {
   isLanded: boolean;
   landedPlanet: string | null;
   landingTime: number | null;
+  isTakingOff: boolean;
   
   // Actions
   setLanded: (planetName: string) => void;
   setNotLanded: () => void;
   getLandedDuration: () => number;
+  setIsTakingOff: (takingOff: boolean) => void;
 }
 
 export const useLandedState = create<LandedState>((set, get) => ({
   isLanded: false,
   landedPlanet: null,
   landingTime: null,
+  isTakingOff: false,
   
   setLanded: (planetName) => {
     // Memory profiling: Before landing
@@ -82,5 +85,12 @@ export const useLandedState = create<LandedState>((set, get) => ({
     const state = get();
     if (!state.landingTime) return 0;
     return Date.now() - state.landingTime;
+  },
+  
+  setIsTakingOff: (takingOff) => {
+    set({ isTakingOff: takingOff });
+    if (takingOff) {
+      console.log(`Initiating takeoff sequence from ${get().landedPlanet}`);
+    }
   }
 }));
