@@ -25,6 +25,7 @@ import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting"
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
+import { SurfaceScatter } from "./SurfaceScatter";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -1324,6 +1325,10 @@ export function PlanetSurfaceScene() {
           <SurfaceSky planetName={landedPlanet} />
           <SurfaceTerrain planetName={landedPlanet} />
           <SurfaceRocks planetName={landedPlanet} />
+          <SurfaceScatter 
+            planetName={landedPlanet} 
+            planetColor={planets.find(p => p.name === landedPlanet)?.color}
+          />
           <ResourceNodes planetName={landedPlanet} />
           <SurfaceMovementController />
           <DebugCollisionBoxes />

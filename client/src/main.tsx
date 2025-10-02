@@ -4,10 +4,12 @@ import "./index.css";
 import { testMissionSystem } from "./testMissionSystem";
 import "./autoTestMissions"; // This will auto-run after 5 seconds
 import { testTerrainGeneration } from "./testTerrainGeneration";
+import { testSurfaceScatter } from "./testSurfaceScatter";
 
 // Make test available in console for debugging
 (window as any).testMissionSystem = testMissionSystem;
 (window as any).testTerrainGeneration = testTerrainGeneration;
+(window as any).testSurfaceScatter = testSurfaceScatter;
 
 // Run test after 3 seconds to let the game initialize
 if (import.meta.env.DEV) {
@@ -21,6 +23,12 @@ if (import.meta.env.DEV) {
     console.log('[DEV] Testing terrain generation system...');
     testTerrainGeneration();
   }, 7000);
+  
+  // Test surface scatter after 9 seconds
+  setTimeout(() => {
+    console.log('[DEV] Testing surface scatter system...');
+    testSurfaceScatter();
+  }, 9000);
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
