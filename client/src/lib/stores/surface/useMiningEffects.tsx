@@ -65,14 +65,14 @@ export const useMiningEffects = create<MiningEffectsState>((set, get) => ({
     const screenShakeEnabled = settingsStore?.enableScreenShake ?? state.screenShakeEnabled;
     const effectsIntensity = settingsStore?.miningEffectsIntensity ?? state.effectsIntensity;
     
-    // Calculate shake intensity based on resource and progress
-    let baseIntensity = 0.1;
-    let duration = 200;
-    let frequency = 15;
+    // Calculate shake intensity based on resource and progress (REDUCED for better control)
+    let baseIntensity = 0.02;  // Reduced from 0.1 to 0.02 (80% reduction)
+    let duration = 100;  // Reduced from 200 to 100ms
+    let frequency = 10;  // Reduced from 15 to 10
     let pattern: ScreenShakeConfig['pattern'] = 'standard';
     
-    // Resource complexity affects base intensity
-    const complexityMultiplier = Math.min(2.0, resource.complexity / 10);
+    // Resource complexity affects base intensity (reduced multiplier)
+    const complexityMultiplier = Math.min(1.2, resource.complexity / 20);  // Reduced max from 2.0 to 1.2
     baseIntensity *= complexityMultiplier;
     
     // Progress milestones
@@ -80,36 +80,36 @@ export const useMiningEffects = create<MiningEffectsState>((set, get) => ({
     const isMilestone = milestones.some(m => Math.abs(progress - m) < 0.01);
     
     if (isMilestone) {
-      baseIntensity *= 2.0;
-      duration = 400;
+      baseIntensity *= 1.3;  // Reduced from 2.0 to 1.3
+      duration = 150;  // Reduced from 400 to 150ms
       
       if (progress >= 1.0) {
-        baseIntensity *= 1.5;
-        duration = 600;
+        baseIntensity *= 1.2;  // Reduced from 1.5 to 1.2
+        duration = 200;  // Reduced from 600 to 200ms
         pattern = 'heavy';
       }
     }
     
-    // Resource type specific patterns
+    // Resource type specific patterns (all reduced)
     const resourceType = resource.type.toLowerCase();
     
     if (resourceType.includes('metal') || resourceType.includes('iron')) {
       pattern = 'heavy';
-      frequency = 20;
-      baseIntensity *= 1.2;
+      frequency = 15;  // Reduced from 20
+      baseIntensity *= 1.1;  // Reduced from 1.2
     } else if (resourceType.includes('crystal') || resourceType.includes('gem')) {
       pattern = 'pulse';
-      frequency = 25;
-      baseIntensity *= 0.8;
+      frequency = 18;  // Reduced from 25
+      baseIntensity *= 0.7;  // Reduced from 0.8
     } else if (resourceType.includes('liquid') || resourceType.includes('gas')) {
       pattern = 'light';
-      frequency = 10;
-      baseIntensity *= 0.6;
+      frequency = 8;  // Reduced from 10
+      baseIntensity *= 0.5;  // Reduced from 0.6
     } else if (resource.rarity === 'legendary') {
       pattern = 'random';
-      frequency = 30;
-      baseIntensity *= 1.5;
-      duration *= 1.5;
+      frequency = 20;  // Reduced from 30
+      baseIntensity *= 1.2;  // Reduced from 1.5
+      duration *= 1.2;  // Reduced from 1.5
     }
     
     // Apply overall intensity setting from user preferences
