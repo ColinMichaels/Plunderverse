@@ -6,10 +6,18 @@ interface SettingsState {
   sensitivity: number;
   invertY: boolean;
   keybinds: Record<string, string[]>;
+  graphicsQuality: 'low' | 'medium' | 'high';
+  enableDynamicLights: boolean;
+  enableParticles: boolean;
+  enableBloom: boolean;
   
   setSensitivity: (sensitivity: number) => void;
   setInvertY: (invert: boolean) => void;
   updateKeybind: (action: string, keys: string[]) => void;
+  setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => void;
+  setEnableDynamicLights: (enable: boolean) => void;
+  setEnableParticles: (enable: boolean) => void;
+  setEnableBloom: (enable: boolean) => void;
   resetToDefaults: () => void;
   getKeyboardMap: () => Array<{ name: Controls; keys: string[] }>;
 }
@@ -20,6 +28,10 @@ export const useSettings = create<SettingsState>()(
       sensitivity: 0.001,
       invertY: false,
       keybinds: { ...DEFAULT_KEYBINDS },
+      graphicsQuality: 'medium',
+      enableDynamicLights: true,
+      enableParticles: true,
+      enableBloom: true,
 
       setSensitivity: (sensitivity: number) => {
         set({ sensitivity });
@@ -38,11 +50,37 @@ export const useSettings = create<SettingsState>()(
         }));
       },
 
+      setGraphicsQuality: (quality: 'low' | 'medium' | 'high') => {
+        set({ 
+          graphicsQuality: quality,
+          // Auto-adjust features based on quality
+          enableDynamicLights: quality !== 'low',
+          enableParticles: quality !== 'low',
+          enableBloom: quality === 'high'
+        });
+      },
+
+      setEnableDynamicLights: (enable: boolean) => {
+        set({ enableDynamicLights: enable });
+      },
+
+      setEnableParticles: (enable: boolean) => {
+        set({ enableParticles: enable });
+      },
+
+      setEnableBloom: (enable: boolean) => {
+        set({ enableBloom: enable });
+      },
+
       resetToDefaults: () => {
         set({
           sensitivity: 0.001,
           invertY: false,
           keybinds: { ...DEFAULT_KEYBINDS },
+          graphicsQuality: 'medium',
+          enableDynamicLights: true,
+          enableParticles: true,
+          enableBloom: true,
         });
       },
 

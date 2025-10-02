@@ -1,6 +1,7 @@
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useTexture } from "@react-three/drei";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { useAudio } from "../../lib/stores/ui/useAudio";
@@ -13,7 +14,7 @@ import { FlashlightSystem } from "./FlashlightSystem";
 import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import { MiningLaser } from "./MiningLaser";
-import { ResourceNode } from "./ResourceNode";
+import { ResourceNode } from "./EnhancedResourceNode";
 import * as THREE from "three";
 
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -21,6 +22,7 @@ import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
 import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
 import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
 import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting";
+import { useSettings } from "../../lib/stores/ui/useSettings";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
@@ -1205,6 +1207,29 @@ function SurfaceControls({ planetName }: { planetName: string }) {
   );
 }
 
+// Post-processing effects component
+function PostProcessingEffects() {
+  const { enableBloom, graphicsQuality } = useSettings();
+  
+  // Only render bloom on medium/high quality settings when enabled
+  if (!enableBloom || graphicsQuality === 'low') {
+    return null;
+  }
+  
+  return (
+    <EffectComposer>
+      <Bloom 
+        intensity={graphicsQuality === 'high' ? 1.5 : 0.8}
+        luminanceThreshold={0.6}
+        luminanceSmoothing={0.9}
+        radius={0.8}
+        levels={graphicsQuality === 'high' ? 7 : 5}
+        mipmapBlur
+      />
+    </EffectComposer>
+  );
+}
+
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
 
@@ -1234,6 +1259,7 @@ export function PlanetSurfaceScene() {
           <ResourceNodes planetName={landedPlanet} />
           <SurfaceMovementController />
           <DebugCollisionBoxes />
+          <PostProcessingEffects />
         </Canvas>
       </KeyboardControls>
 
