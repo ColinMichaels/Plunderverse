@@ -1,9 +1,10 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, moonData } from "../../lib/planetData";
+import { resourceManager } from "../../lib/utils/ResourceManager";
 
 export function Moon() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -18,6 +19,24 @@ export function Moon() {
 
   // Moon texture from moonData
   const moonTexture = moonData.texture ? useTexture(moonData.texture) : null;
+
+  // Register resources with ResourceManager
+  useEffect(() => {
+    console.log("[Moon] Registering resources with ResourceManager");
+    
+    // Register moon texture if it exists
+    if (moonTexture) {
+      resourceManager.registerTexture("moon-texture", moonTexture, ['space-scene', 'moon']);
+    }
+    
+    return () => {
+      console.log("[Moon] Cleaning up resources");
+      // Dispose moon-specific resources
+      if (moonTexture) {
+        resourceManager.disposeResource("moon-texture");
+      }
+    };
+  }, [moonTexture]);
 
   // Moon properties from moonData
   const moonSize = moonData.size;

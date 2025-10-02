@@ -308,13 +308,13 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
       resourceManager.disposeByTag(`planet-${planetName}-atmosphere`);
       
       // Dispose specific resource IDs
-      resourceManager.disposeById(particleGeometryIdRef.current);
-      resourceManager.disposeById(particleMaterialIdRef.current);
-      resourceManager.disposeById(heatShimmerMaterialIdRef.current);
+      resourceManager.disposeResource(particleGeometryIdRef.current);
+      resourceManager.disposeResource(particleMaterialIdRef.current);
+      resourceManager.disposeResource(heatShimmerMaterialIdRef.current);
       
       // Dispose fog plane materials
       fogPlaneMaterialIdsRef.current.forEach(id => {
-        resourceManager.disposeById(id);
+        resourceManager.disposeResource(id);
       });
       fogPlaneMaterialIdsRef.current = [];
     };
@@ -556,7 +556,7 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
         <mesh position={[0, 5, 0]} scale={[100, 20, 100]}>
           <planeGeometry args={[1, 1, 32, 32]} />
           <heatShimmerMaterial
-            ref={(material) => {
+            ref={(material: any) => {
               heatShimmerRef.current = material;
               if (material && !resourceManager.hasResource(heatShimmerMaterialIdRef.current)) {
                 resourceManager.registerMaterial(heatShimmerMaterialIdRef.current, material, 

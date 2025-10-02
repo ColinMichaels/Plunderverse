@@ -1,7 +1,8 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { resourceManager } from "../../lib/utils/ResourceManager";
 
 export function Sun() {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -10,6 +11,20 @@ export function Sun() {
   
   // Load sun texture
   const sunTexture = useTexture("/textures/planets/2k_sun.jpg");
+
+  // Register resources with ResourceManager
+  useEffect(() => {
+    console.log("[Sun] Registering resources with ResourceManager");
+    
+    // Register sun texture
+    resourceManager.registerTexture("sun-texture", sunTexture, ['space-scene', 'sun']);
+    
+    return () => {
+      console.log("[Sun] Cleaning up resources");
+      // Dispose sun-specific resources
+      resourceManager.disposeResource("sun-texture");
+    };
+  }, [sunTexture]);
 
   useFrame((state) => {
     // Rotate the sun slowly

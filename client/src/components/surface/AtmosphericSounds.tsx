@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Howl } from "howler";
 import { useWind } from "../../lib/stores/surface/useWind";
-import { useSettings } from "../../lib/stores/ui/useSettings";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { ResourceManager } from "../../lib/utils/ResourceManager";
 
@@ -11,7 +10,8 @@ interface AtmosphericSoundsProps {
 }
 
 export function AtmosphericSounds({ planetName, stormActive = false }: AtmosphericSoundsProps) {
-  const { soundVolume: rawSoundVolume } = useSettings();
+  // TODO: Add soundVolume to Settings when audio settings are implemented
+  let rawSoundVolume = 0.5; // Default volume for now
   const { intensity: windIntensity } = useWind();
   const { time } = useSolarSystem();
   
@@ -98,7 +98,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         console.log(`[AtmosphericSounds] Disposing wind sound for ${planetName}`);
         windSoundRef.current.stop();
         windSoundRef.current.unload();
-        resourceManager.disposeById(windSoundIdRef.current);
+        resourceManager.disposeResource(windSoundIdRef.current);
         windSoundRef.current = null;
       }
     };
@@ -136,7 +136,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         console.log(`[AtmosphericSounds] Disposing storm sound for ${planetName}`);
         stormSoundRef.current?.stop();
         stormSoundRef.current?.unload();
-        resourceManager.disposeById(stormSoundIdRef.current);
+        resourceManager.disposeResource(stormSoundIdRef.current);
         stormSoundRef.current = null;
         stormTimeoutRef.current = null;
       }, 2000);
@@ -154,7 +154,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         console.log(`[AtmosphericSounds] Cleanup disposing storm sound for ${planetName}`);
         stormSoundRef.current.stop();
         stormSoundRef.current.unload();
-        resourceManager.disposeById(stormSoundIdRef.current);
+        resourceManager.disposeResource(stormSoundIdRef.current);
         stormSoundRef.current = null;
       }
     };
@@ -197,7 +197,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         console.log(`[AtmosphericSounds] Disposing rain sound for ${planetName}`);
         rainSoundRef.current?.stop();
         rainSoundRef.current?.unload();
-        resourceManager.disposeById(rainSoundIdRef.current);
+        resourceManager.disposeResource(rainSoundIdRef.current);
         rainSoundRef.current = null;
         rainTimeoutRef.current = null;
       }, 3000);
@@ -213,7 +213,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         console.log(`[AtmosphericSounds] Cleanup disposing rain sound for ${planetName}`);
         rainSoundRef.current.stop();
         rainSoundRef.current.unload();
-        resourceManager.disposeById(rainSoundIdRef.current);
+        resourceManager.disposeResource(rainSoundIdRef.current);
         rainSoundRef.current = null;
       }
     };

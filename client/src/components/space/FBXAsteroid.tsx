@@ -1,6 +1,7 @@
-import { useRef, forwardRef, useMemo } from "react";
+import { useRef, forwardRef, useMemo, useEffect } from "react";
 import { useFBX } from "@react-three/drei";
 import * as THREE from "three";
+import { resourceManager } from "../../lib/utils/ResourceManager";
 
 /* want to randomize the asteroid model and color used for the Astroid FBX files. Create an array of the different models to randomly place  */
 
@@ -53,6 +54,9 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
     },
     ref,
   ) => {
+    // Generate a unique ID for this asteroid instance
+    const asteroidId = useRef(`asteroid-${Math.random().toString(36).substr(2, 9)}`).current;
+    
     // Load the FBX model
     const randomModel =
       asteroidModels[Math.floor(Math.random() * asteroidModels.length)];
@@ -65,18 +69,29 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
       // Traverse and apply materials to all meshes
       clone.traverse((child) => {
         if (child instanceof THREE.Mesh) {
-          // Apply the custom material properties
-          child.material = new THREE.MeshStandardMaterial({
+          // Create and register material for this asteroid
+          const material = new THREE.MeshStandardMaterial({
             color: new THREE.Color(color),
             roughness,
             metalness,
             emissive: new THREE.Color(emissive),
             emissiveIntensity,
           });
+          
+          // Register the material with ResourceManager
+          resourceManager.registerMaterial(`${asteroidId}-material`, material, ['space-scene', 'asteroids']);
+          
+          // Apply the material to the mesh
+          child.material = material;
 
           // Configure shadows
           child.castShadow = castShadow;
           child.receiveShadow = receiveShadow;
+          
+          // Register the geometry if it exists
+          if (child.geometry) {
+            resourceManager.registerGeometry(`${asteroidId}-geometry`, child.geometry, ['space-scene', 'asteroids']);
+          }
         }
       });
 
@@ -90,7 +105,20 @@ export const FBXAsteroid = forwardRef<THREE.Group, FBXAsteroidProps>(
       emissiveIntensity,
       castShadow,
       receiveShadow,
+      asteroidId,
     ]);
+
+    // Cleanup resources on unmount
+    useEffect(() => {
+      console.log(`[FBXAsteroid ${asteroidId}] Component mounted`);
+      
+      return () => {
+        console.log(`[FBXAsteroid ${asteroidId}] Cleaning up resources`);
+        // Dispose asteroid-specific resources
+        resourceManager.disposeResource(`${asteroidId}-material`);
+        resourceManager.disposeResource(`${asteroidId}-geometry`);
+      };
+    }, [asteroidId]);
 
     return (
       <group

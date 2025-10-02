@@ -1317,7 +1317,7 @@ function PostProcessingEffects() {
 
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
-  const { isFlashlightOn } = useFlashlight();
+  const { isOn: isFlashlightOn } = useFlashlight();
   const resourceManager = ResourceManager.getInstance();
 
   // Cleanup all planet surface resources when component unmounts or planet changes

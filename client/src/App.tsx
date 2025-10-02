@@ -18,7 +18,7 @@ import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
 import { MemoryStatsOverlay } from "./components/debug/MemoryStatsOverlay";
-import ResourceManager from "./lib/utils/ResourceManager";
+import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import "@fontsource/inter";

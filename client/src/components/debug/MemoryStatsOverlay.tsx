@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { memoryProfiler } from '../../lib/utils/MemoryProfiler';
-import ResourceManager from '../../lib/utils/ResourceManager';
+import { ResourceManager } from '../../lib/utils/ResourceManager';
 
 /**
  * MemoryStatsOverlay - Development-only overlay showing real-time memory statistics

@@ -390,8 +390,8 @@ function ScatterInstancedMesh({
     return () => {
       // Dispose of resources when component unmounts
       console.log(`[SurfaceScatter] Disposing resources for ${category}`);
-      resourceManager.disposeById(geometryIdRef.current);
-      resourceManager.disposeById(materialIdRef.current);
+      resourceManager.disposeResource(geometryIdRef.current);
+      resourceManager.disposeResource(materialIdRef.current);
     };
   }, [category]);
 

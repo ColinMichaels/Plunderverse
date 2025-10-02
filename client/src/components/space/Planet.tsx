@@ -1,10 +1,11 @@
 import { useFrame, useThree } from "@react-three/fiber";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Sphere, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { PlanetData } from "../../lib/planetData";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useDebugWireframe } from "../debug/DebugWireframeWrapper";
+import { resourceManager } from "../../lib/utils/ResourceManager";
 
 interface PlanetProps {
   data: PlanetData;
@@ -38,6 +39,25 @@ export function Planet({ data, time }: PlanetProps) {
 
   const textureUrl = getTextureForPlanet(data.name);
   const planetTexture = textureUrl ? useTexture(textureUrl) : null;
+
+  // Register resources with ResourceManager
+  useEffect(() => {
+    console.log(`[Planet ${data.name}] Registering resources with ResourceManager`);
+    
+    // Register planet texture if it exists
+    if (planetTexture) {
+      resourceManager.registerTexture(`planet-texture-${data.name}`, planetTexture, ['space-scene', 'planets', data.name]);
+    }
+    
+    // Cleanup will happen automatically when materials/geometries are disposed by Three.js
+    return () => {
+      console.log(`[Planet ${data.name}] Cleaning up resources`);
+      // Dispose specific planet resources
+      if (planetTexture) {
+        resourceManager.disposeResource(`planet-texture-${data.name}`);
+      }
+    };
+  }, [data.name, planetTexture]);
 
   // Enhanced material properties based on planet type
   const getPlanetMaterialProperties = (planetName: string) => {

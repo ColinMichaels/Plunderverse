@@ -1,6 +1,7 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
+import { resourceManager } from "../../lib/utils/ResourceManager";
 
 export function Starfield() {
   const meshRef = useRef<THREE.Points>(null);
@@ -47,6 +48,20 @@ export function Starfield() {
     }
 
     return { positions, colors };
+  }, []);
+
+  // Register resources with ResourceManager
+  useEffect(() => {
+    console.log("[Starfield] Registering particle resources with ResourceManager");
+    
+    // Note: Buffer geometries and materials created by drei components are managed automatically
+    // We just tag the component for tracking
+    resourceManager.addTag("starfield-particles-main", "space-scene");
+    resourceManager.addTag("starfield-particles-background", "space-scene");
+    
+    return () => {
+      console.log("[Starfield] Component unmounting, resources will be cleaned automatically");
+    };
   }, []);
 
   // Subtle twinkling animation

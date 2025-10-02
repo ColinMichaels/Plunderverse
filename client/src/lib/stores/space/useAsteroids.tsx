@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import * as THREE from "three";
-import { useMissions } from "./useMissions";
-import { useCredits } from "./useCredits";
+import { useMissions } from "../economy/useMissions";
+import { useCredits } from "../economy/useCredits";
 
 export interface Asteroid {
   id: string;
