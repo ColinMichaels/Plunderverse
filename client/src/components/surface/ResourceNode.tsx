@@ -4,6 +4,8 @@ import * as THREE from "three";
 import { shaderMaterial } from "@react-three/drei";
 import { ResourceData } from "../../lib/planetData";
 import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
+import { MiningFragments } from "./MiningFragments";
+import { useMining } from "../../lib/stores/economy/useMining";
 
 // Vertex shader for progressive deformation
 const vertexShader = `
@@ -163,163 +165,6 @@ const CrackMaterial = shaderMaterial(
 
 // Extend THREE namespace to include the custom material
 extend({ CrackMaterial });
-
-// Debris particle component
-function DebrisParticle({
-  position,
-  velocity,
-  color,
-  scale,
-}: {
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
-  color: string;
-  scale: number;
-}) {
-  const meshRef = useRef<THREE.Mesh>(null);
-  const [currentPos] = useState(() => position.clone());
-  const [currentVel] = useState(() => velocity.clone());
-  const [lifetime, setLifetime] = useState(1);
-  const gravity = new THREE.Vector3(0, -9.8, 0);
-
-  useFrame((state, delta) => {
-    if (meshRef.current && lifetime > 0) {
-      // Apply physics
-      currentVel.addScaledVector(gravity, delta);
-      currentPos.addScaledVector(currentVel, delta);
-      
-      // Ground collision
-      if (currentPos.y <= 0.1) {
-        currentPos.y = 0.1;
-        currentVel.y = Math.abs(currentVel.y) * 0.5; // Bounce with energy loss
-        currentVel.multiplyScalar(0.8); // Friction
-      }
-      
-      meshRef.current.position.copy(currentPos);
-      meshRef.current.rotation.x += delta * 2;
-      meshRef.current.rotation.y += delta * 3;
-      
-      // Fade out
-      const newLifetime = lifetime - delta * 0.5;
-      setLifetime(newLifetime);
-      meshRef.current.scale.setScalar(scale * newLifetime);
-      
-      if (meshRef.current.material instanceof THREE.MeshStandardMaterial) {
-        meshRef.current.material.opacity = newLifetime;
-      }
-    }
-  });
-
-  if (lifetime <= 0) return null;
-
-  return (
-    <mesh ref={meshRef} position={currentPos} castShadow>
-      <boxGeometry args={[0.15, 0.15, 0.15]} />
-      <meshStandardMaterial
-        color={color}
-        roughness={0.8}
-        metalness={0.2}
-        transparent
-        opacity={lifetime}
-      />
-    </mesh>
-  );
-}
-
-// Debris system component
-function DebrisSystem({
-  isActive,
-  progress,
-  position,
-  color,
-}: {
-  isActive: boolean;
-  progress: number;
-  position: [number, number, number];
-  color: string;
-}) {
-  const [particles, setParticles] = useState<Array<{
-    id: string;
-    position: THREE.Vector3;
-    velocity: THREE.Vector3;
-    scale: number;
-  }>>([]);
-  const lastSpawnTime = useRef(0);
-  const particleIdCounter = useRef(0);
-
-  useFrame((state) => {
-    if (!isActive) {
-      setParticles([]);
-      return;
-    }
-
-    const now = state.clock.elapsedTime;
-    
-    // Spawn rate based on progress stage
-    let spawnInterval = 1.0;
-    if (progress > 0.75) {
-      spawnInterval = 0.1; // Very frequent in final stage
-    } else if (progress > 0.5) {
-      spawnInterval = 0.3;
-    } else if (progress > 0.25) {
-      spawnInterval = 0.5;
-    } else {
-      return; // No debris in first stage
-    }
-
-    if (now - lastSpawnTime.current > spawnInterval) {
-      lastSpawnTime.current = now;
-      
-      // Spawn new debris particles
-      const numParticles = progress > 0.75 ? 3 : progress > 0.5 ? 2 : 1;
-      const newParticles: Array<{
-        id: string;
-        position: THREE.Vector3;
-        velocity: THREE.Vector3;
-        scale: number;
-      }> = [];
-      
-      for (let i = 0; i < numParticles; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const force = 2 + Math.random() * 3;
-        const velocity = new THREE.Vector3(
-          Math.cos(angle) * force,
-          3 + Math.random() * 2,
-          Math.sin(angle) * force
-        );
-        
-        const particlePos = new THREE.Vector3(
-          position[0] + (Math.random() - 0.5) * 0.5,
-          position[1] + Math.random() * 0.5,
-          position[2] + (Math.random() - 0.5) * 0.5
-        );
-        
-        newParticles.push({
-          id: `debris-${particleIdCounter.current++}`,
-          position: particlePos,
-          velocity,
-          scale: 0.5 + Math.random() * 0.5,
-        });
-      }
-      
-      setParticles(prev => [...prev, ...newParticles].slice(-20)); // Keep max 20 particles
-    }
-  });
-
-  return (
-    <>
-      {particles.map(particle => (
-        <DebrisParticle
-          key={particle.id}
-          position={particle.position}
-          velocity={particle.velocity}
-          color={color}
-          scale={particle.scale}
-        />
-      ))}
-    </>
-  );
-}
 
 interface ResourceNodeProps {
   resource: ResourceData;
@@ -519,15 +364,13 @@ export function ResourceNode({
         )}
       </mesh>
       
-      {/* Debris system for solid resources */}
-      {!resource.type.includes("Water") && !resource.type.includes("Gas") && (
-        <DebrisSystem
-          isActive={progress > 0.25}
-          progress={progress}
-          position={position}
-          color={resourceColor}
-        />
-      )}
+      {/* Advanced mining particle effects */}
+      <MiningFragments
+        resource={resource}
+        position={position}
+        progress={progress}
+        isActive={progress > 0}
+      />
     </group>
   );
 }
