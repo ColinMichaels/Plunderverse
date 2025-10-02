@@ -7,6 +7,7 @@ import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollisio
 import { useSurfacePlayer } from "../../lib/stores/surface/useSurfacePlayer";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useTerrain } from "../../lib/stores/surface/useTerrain";
 
 enum SurfaceControls {
   forward = "forward",
@@ -19,12 +20,10 @@ enum SurfaceControls {
   charge = "charge",
 }
 
-// Function to calculate terrain height at any x,z position (matches terrain generation)
+// Function to calculate terrain height at any x,z position (uses new terrain system)
 function terrainHeightAt(x: number, z: number): number {
-  return (
-    Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 +
-    Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5
-  );
+  const terrainStore = useTerrain.getState();
+  return terrainStore.getHeightAt(x, z);
 }
 
 export function SurfaceMovementController() {

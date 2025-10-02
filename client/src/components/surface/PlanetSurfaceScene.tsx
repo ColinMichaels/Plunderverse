@@ -24,9 +24,12 @@ import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
 import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting";
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
+import { useTerrain } from "../../lib/stores/surface/useTerrain";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
+  const { loadTerrainForPlanet, currentTerrainData } = useTerrain();
+  const [isLoading, setIsLoading] = useState(true);
 
   // Get planet data for surface color
   const planet = planets.find((p) => p.name === planetName);
@@ -49,60 +52,118 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   // Load surface texture based on planet
   const surfaceTexture = useTexture(getTextureForPlanet(planetName));
 
-  // Generate terrain vertices using useMemo to avoid recreating on every render
-  const terrainGeometry = useMemo(() => {
-    const geometry = new THREE.PlaneGeometry(400, 400, 50, 50);
-    const vertices = geometry.attributes.position.array as Float32Array;
+  // Load terrain data when planet changes
+  useEffect(() => {
+    setIsLoading(true);
+    loadTerrainForPlanet(planetName).then(() => {
+      setIsLoading(false);
+    });
+  }, [planetName, loadTerrainForPlanet]);
 
-    // Add some height variation to make it look like terrain
-    for (let i = 0; i < vertices.length; i += 3) {
-      const x = vertices[i];
-      const z = vertices[i + 1];
-      // Simple noise-like function for terrain height
-      const height =
-        Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 +
-        Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
-      vertices[i + 2] = height;
+  // Generate terrain geometry from terrain data
+  const terrainGeometry = useMemo(() => {
+    if (!currentTerrainData) {
+      // Fallback to simple geometry while loading
+      const geometry = new THREE.PlaneGeometry(400, 400, 50, 50);
+      const vertices = geometry.attributes.position.array as Float32Array;
+      
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const z = vertices[i + 1];
+        const height =
+          Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 +
+          Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
+        vertices[i + 2] = height;
+      }
+      
+      geometry.computeVertexNormals();
+      return geometry;
     }
 
-    geometry.computeVertexNormals();
+    // Create geometry from terrain data
+    const geometry = new THREE.BufferGeometry();
+    
+    // Set attributes from terrain data
+    geometry.setAttribute('position', new THREE.BufferAttribute(currentTerrainData.vertices, 3));
+    geometry.setAttribute('normal', new THREE.BufferAttribute(currentTerrainData.normals, 3));
+    geometry.setAttribute('uv', new THREE.BufferAttribute(currentTerrainData.uvs, 2));
+    geometry.setIndex(new THREE.BufferAttribute(currentTerrainData.indices, 1));
+    
+    geometry.computeBoundingSphere();
+    geometry.computeBoundingBox();
+    
     return geometry;
-  }, []);
+  }, [currentTerrainData]);
 
-  // Configure texture
+  // Configure texture with dynamic repeat based on terrain complexity
   useEffect(() => {
-    if (surfaceTexture) {
+    if (surfaceTexture && currentTerrainData) {
       surfaceTexture.wrapS = THREE.RepeatWrapping;
       surfaceTexture.wrapT = THREE.RepeatWrapping;
-      surfaceTexture.repeat.set(8, 8); // Repeat the texture 8x8 times for detail
-      surfaceTexture.anisotropy = 16; // Improve texture quality at angles
+      
+      // Adjust texture repeat based on planet type for better visual quality
+      const textureScale = planetName === "Moon" || planetName === "Mercury" ? 12 : 
+                          planetName === "Mars" ? 10 : 
+                          planetName === "Earth" ? 8 : 6;
+      
+      surfaceTexture.repeat.set(textureScale, textureScale);
+      surfaceTexture.anisotropy = 16;
     }
-  }, [surfaceTexture]);
+  }, [surfaceTexture, currentTerrainData, planetName]);
+
+  // Show loading indicator or placeholder
+  if (isLoading) {
+    console.log(`[TERRAIN] Loading terrain for ${planetName}...`);
+  }
 
   return (
-    <mesh
-      ref={meshRef}
-      geometry={terrainGeometry}
-      rotation={[-Math.PI / 2, 0, 0]}
-      position={[0, 0, 0]}
-      receiveShadow={true}
-    >
-      <meshStandardMaterial
-        map={surfaceTexture}
-        color={surfaceColor}
-        roughness={1.9}
-        metalness={0.0}
-      />
-    </mesh>
+    <>
+      <mesh
+        ref={meshRef}
+        geometry={terrainGeometry}
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0, 0]}
+        receiveShadow={true}
+        castShadow={true}
+      >
+        <meshStandardMaterial
+          map={surfaceTexture}
+          color={surfaceColor}
+          roughness={planetName === "Moon" || planetName === "Mercury" ? 0.95 : 
+                     planetName === "Mars" ? 0.9 : 
+                     planetName === "Venus" ? 0.7 : 0.8}
+          metalness={planetName === "Mercury" ? 0.1 : 0.0}
+        />
+      </mesh>
+      
+      {/* Add detail mesh for close-up viewing with higher resolution texture */}
+      {currentTerrainData && (
+        <mesh
+          geometry={terrainGeometry}
+          rotation={[-Math.PI / 2, 0, 0]}
+          position={[0, 0.01, 0]} // Slightly above main terrain to avoid z-fighting
+          receiveShadow={true}
+        >
+          <meshStandardMaterial
+            map={surfaceTexture}
+            color={surfaceColor}
+            roughness={0.95}
+            metalness={0.0}
+            transparent={true}
+            opacity={0.3}
+            alphaTest={0.1}
+          />
+        </mesh>
+      )}
+    </>
   );
 }
 
 // Function to calculate terrain height (shared with SurfaceMovementController)
 function terrainHeightAt(x: number, z: number): number {
-  return (
-    Math.sin(x * 0.01) * Math.cos(z * 0.01) * 2 +
-    Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5
-  );
+  // Use the terrain store to get accurate height
+  const terrainStore = useTerrain.getState();
+  return terrainStore.getHeightAt(x, z);
 }
 
 function SurfaceRocks({ planetName }: { planetName: string }) {
@@ -110,13 +171,20 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
   const rockColor = planet?.color || "#666666";
   const { registerCollisionObject, unregisterCollisionObject } =
     useSurfaceCollision();
+  const { currentTerrainData } = useTerrain();
 
   // Generate rock positions using useMemo
   const rockPositions = useMemo(() => {
     const positions = [];
-    for (let i = 0; i < 40; i++) {
-      const x = (Math.random() - 0.5) * 100;
-      const z = (Math.random() - 0.5) * 100;
+    
+    // Vary rock count based on planet type
+    const rockCount = planetName === "Moon" || planetName === "Mercury" ? 60 :
+                     planetName === "Mars" ? 45 :
+                     planetName === "Earth" ? 30 : 40;
+    
+    for (let i = 0; i < rockCount; i++) {
+      const x = (Math.random() - 0.5) * 150;
+      const z = (Math.random() - 0.5) * 150;
       const terrainHeight = terrainHeightAt(x, z);
 
       // Pre-calculate final render scale to match collision radius
@@ -134,7 +202,7 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
       });
     }
     return positions;
-  }, [planetName]);
+  }, [planetName, currentTerrainData]); // Regenerate when terrain changes
 
   // Register rock collision objects
   useEffect(() => {
