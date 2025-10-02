@@ -161,6 +161,7 @@ export const useMining = create<MiningState>((set, get) => ({
       console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} after ${newClicksCompleted} clicks`);
       
       // Play success sound at 100% completion
+      const { playSuccess } = useAudio.getState();
       playSuccess();
       console.log(`[MINING-AUDIO] Mining completed at 100%`);
       // TODO: Add more elaborate completion sound effect (e.g., resource collection chime, inventory update sound)

@@ -838,8 +838,8 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   const { playHit } = useAudio();
 
   // Use persistent store for destroyed nodes instead of local state
-  const { destroyNode, getDestroyedNodes } = useDestroyedNodes();
-  const destroyedNodes = getDestroyedNodes(planetName);
+  // IMPORTANT: Subscribe reactively to destroyed nodes so UI updates when nodes are destroyed
+  const destroyedNodes = useDestroyedNodes((state) => state.getDestroyedNodes(planetName));
 
   // Calculate current mining progress (0 to 1)
   const miningProgress =
@@ -946,11 +946,10 @@ function ResourceNodes({ planetName }: { planetName: string }) {
                 `[MINING-DEBUG] Earned ${result.details.creditsEarned} credits from mining`,
               );
             }
-
-            // Destroy the mined resource node since mining was successful
-            destroyNode(planetName, nodeId);
+            
+            // Node destruction is now handled in the mining store after successful transaction
             console.log(
-              `[MINING-DEBUG] Resource node ${nodeId} on ${planetName} destroyed after successful mining`,
+              `[MINING-DEBUG] Mining successful - node destruction handled by mining store`,
             );
           } else {
             // Transaction failed - handle failure case
