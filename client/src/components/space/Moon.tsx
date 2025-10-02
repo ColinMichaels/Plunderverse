@@ -45,17 +45,18 @@ export function Moon() {
   const rotationSpeed = moonData.rotationSpeed;
 
   // Calculate orbital position around Earth
-  useFrame(({ clock }) => {
+  useFrame(() => {
     if (groupRef.current && earth) {
-      const time = clock.getElapsedTime();
+      // Use universe time for consistent orbital positions
+      const universeTime = useSolarSystem.getState().getUniverseTime();
       
       // Calculate Earth's current position
-      const earthAngle = time * earth.orbitalSpeed;
+      const earthAngle = universeTime * earth.orbitalSpeed;
       const earthX = Math.cos(earthAngle) * earth.distance;
       const earthZ = Math.sin(earthAngle) * earth.distance;
       
       // Calculate Moon's orbit around Earth
-      const moonAngle = time * orbitalSpeed;
+      const moonAngle = universeTime * orbitalSpeed;
       const moonX = earthX + Math.cos(moonAngle) * moonDistance;
       const moonZ = earthZ + Math.sin(moonAngle) * moonDistance;
       

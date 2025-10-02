@@ -8,7 +8,7 @@ type TakeoffStage = "preparing" | "igniting" | "ascending" | "breaking_atmospher
 
 export function TakeoffSequence() {
   const { isTakingOff, setIsTakingOff, setNotLanded, landedPlanet } = useLandedState();
-  const { setCameraPosition, time } = useSolarSystem();
+  const { setCameraPosition, getUniverseTime } = useSolarSystem();
   const [stage, setStage] = useState<TakeoffStage>("preparing");
   const [progress, setProgress] = useState(0);
   const cameraAnimationRef = useRef<NodeJS.Timeout>();
@@ -114,8 +114,9 @@ export function TakeoffSequence() {
                 // Camera pull-back effect - position camera in orbit around planet
                 const planet = planets.find((p) => p.name === landedPlanet);
                 if (planet) {
-                  // Calculate the planet's current orbital position
-                  const angle = time * planet.orbitalSpeed;
+                  // Calculate the planet's current orbital position using universe time
+                  const universeTime = getUniverseTime();
+                  const angle = universeTime * planet.orbitalSpeed;
                   const orbitX = Math.cos(angle) * planet.distance;
                   const orbitZ = Math.sin(angle) * planet.distance;
                   
@@ -164,7 +165,7 @@ export function TakeoffSequence() {
       if (progressInterval) clearInterval(progressInterval);
       if (cameraAnimationRef.current) clearInterval(cameraAnimationRef.current);
     };
-  }, [isTakingOff, setIsTakingOff, setNotLanded, landedPlanet, setCameraPosition, time]);
+  }, [isTakingOff, setIsTakingOff, setNotLanded, landedPlanet, setCameraPosition, getUniverseTime]);
 
   if (!isTakingOff) return null;
 

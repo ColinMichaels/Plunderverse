@@ -151,8 +151,37 @@ export function CameraController() {
   // Proximity camera state for manual planet approach
   const [isProximityCameraActive, setProximityCameraActive] = useState(false);
 
+  // Track takeoff state to trigger positioning
+  const [hasTakeoffPending, setHasTakeoffPending] = useState(false);
+
+  // Check for pending takeoff on mount and when takeoffPlanetName changes
+  useEffect(() => {
+    const checkForTakeoff = () => {
+      const takeoffPlanetName = useLandedState.getState().takeoffPlanetName;
+      if (takeoffPlanetName) {
+        setHasTakeoffPending(true);
+      }
+    };
+    
+    // Check immediately on mount
+    checkForTakeoff();
+    
+    // Subscribe to changes in landed state
+    const unsubscribe = useLandedState.subscribe(
+      (state) => {
+        if (state.takeoffPlanetName) {
+          setHasTakeoffPending(true);
+        }
+      }
+    );
+    
+    return unsubscribe;
+  }, []);
+
   // Handle ship positioning after takeoff from planet surface
   useEffect(() => {
+    if (!hasTakeoffPending) return;
+    
     // Check if we need to position ship after takeoff
     const takeoffPosition = getTakeoffOrbitPosition();
     
@@ -177,8 +206,11 @@ export function CameraController() {
         velocity: takeoffPosition.velocity,
         planet: takeoffPlanetName
       });
+      
+      // Clear the pending takeoff flag
+      setHasTakeoffPending(false);
     }
-  }, []); // Run once on mount
+  }, [hasTakeoffPending, camera, setCameraPosition, getTakeoffOrbitPosition]);
 
   useFrame((state, delta) => {
     const controls = get();
