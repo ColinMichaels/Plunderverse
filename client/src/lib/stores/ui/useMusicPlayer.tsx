@@ -21,6 +21,7 @@ interface MusicPlayerState {
   nextPlayTime: number | null;
   showPlaylist: boolean;
   crossfadeTimeout: NodeJS.Timeout | null;
+  fadeIntervals: Set<NodeJS.Timeout>;
   playbackMode: "random" | "sequential";
   lastPlayedTracks: number[];
   hasPlayedInitialTrack: boolean;
@@ -41,6 +42,7 @@ interface MusicPlayerState {
   getCurrentTrack: () => Track | null;
   getRandomTrackIndex: (isOnSurface?: boolean) => number;
   getFilteredTracks: (isOnSurface: boolean) => Track[];
+  cleanup: () => void;
 }
 
 // Random delay between tracks (2-10 minutes in milliseconds)
@@ -58,6 +60,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   nextPlayTime: null,
   showPlaylist: false,
   crossfadeTimeout: null,
+  fadeIntervals: new Set(),
   playbackMode: "random",
   lastPlayedTracks: [],
   hasPlayedInitialTrack: false,
@@ -231,7 +234,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   },
 
   scheduleNextTrack: () => {
-    const { crossfadeTimeout, hasPlayedInitialTrack } = get();
+    const { crossfadeTimeout, hasPlayedInitialTrack, fadeIntervals } = get();
 
     // Clear existing timeout
     if (crossfadeTimeout) {
@@ -257,11 +260,11 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     const timeDesc = hasPlayedInitialTrack 
       ? `${Math.round(delay / 1000)} seconds (random)` 
       : "30 seconds (initial auto-play)";
-    console.log(`Next track scheduled in ${timeDesc}`);
+    console.log(`[MusicPlayer] Next track scheduled in ${timeDesc}`);
   },
 
   crossfadeToTrack: (trackIndex: number) => {
-    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks, hasPlayedInitialTrack } =
+    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks, hasPlayedInitialTrack, fadeIntervals } =
       get();
     const { isMuted } = useAudio.getState();
 
@@ -270,6 +273,10 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
 
     const currentTrack = tracks[currentTrackIndex];
     const nextTrack = tracks[trackIndex];
+
+    // Clear all existing fade intervals
+    fadeIntervals.forEach(interval => clearInterval(interval));
+    fadeIntervals.clear();
 
     // Update last played tracks history
     const updatedHistory = [...lastPlayedTracks, currentTrackIndex].slice(-5); // Keep last 5 tracks
@@ -286,6 +293,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
           currentTrack.audio!.pause();
           currentTrack.audio!.currentTime = 0;
           clearInterval(fadeOutInterval);
+          fadeIntervals.delete(fadeOutInterval);
           
           // Add a gap before starting next track (500ms silence)
           setTimeout(() => {
@@ -293,6 +301,9 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
           }, 500);
         }
       }, 50);
+      
+      fadeIntervals.add(fadeOutInterval);
+      set({ fadeIntervals });
     } else if (currentTrack?.audio) {
       currentTrack.audio.pause();
       currentTrack.audio.currentTime = 0;
@@ -328,14 +339,16 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
               } else {
                 nextTrack.audio!.volume = volume;
                 clearInterval(fadeInInterval);
+                fadeIntervals.delete(fadeInInterval);
               }
             }, 100);
-
-            set({ isPlaying: true });
-            console.log(`Crossfaded to: ${nextTrack.name} ${!hasPlayedInitialTrack ? "(initial auto-play)" : ""}`);
+            
+            fadeIntervals.add(fadeInInterval);
+            set({ isPlaying: true, fadeIntervals });
+            console.log(`[MusicPlayer] Crossfaded to: ${nextTrack.name} ${!hasPlayedInitialTrack ? "(initial auto-play)" : ""}`);
           })
           .catch((error) => {
-            console.log("Music crossfade prevented:", error);
+            console.log("[MusicPlayer] Music crossfade prevented:", error);
           });
       }
 
@@ -423,6 +436,35 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       Math.floor(Math.random() * availableIndices.length)
     ];
   },
+  
+  cleanup: () => {
+    const { tracks, currentTrackIndex, crossfadeTimeout, fadeIntervals } = get();
+    
+    console.log("[MusicPlayer] Cleanup: Stopping all music and clearing timers");
+    
+    // Stop current track if playing
+    if (tracks[currentTrackIndex]?.audio) {
+      tracks[currentTrackIndex].audio!.pause();
+      tracks[currentTrackIndex].audio!.currentTime = 0;
+      tracks[currentTrackIndex].audio!.volume = get().volume;
+    }
+    
+    // Clear crossfade timeout
+    if (crossfadeTimeout) {
+      clearTimeout(crossfadeTimeout);
+    }
+    
+    // Clear all fade intervals
+    fadeIntervals.forEach(interval => clearInterval(interval));
+    
+    // Reset state
+    set({
+      isPlaying: false,
+      crossfadeTimeout: null,
+      fadeIntervals: new Set(),
+      nextPlayTime: null
+    });
+  }
 }));
 
 // Auto-load tracks when the store is first accessed

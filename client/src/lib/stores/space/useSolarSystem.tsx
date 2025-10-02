@@ -14,6 +14,7 @@ interface SolarSystemState {
   setIsLanding: (landing: boolean) => void;
   setCameraPosition: (position: THREE.Vector3) => void;
   setDistanceToTarget: (distance: number) => void;
+  cleanup: () => void; // Clean up store state and reset
 }
 
 export const useSolarSystem = create<SolarSystemState>((set) => ({
@@ -28,4 +29,15 @@ export const useSolarSystem = create<SolarSystemState>((set) => ({
   setIsLanding: (landing) => set({ isLanding: landing }),
   setCameraPosition: (position) => set({ cameraPosition: position.clone() }),
   setDistanceToTarget: (distance) => set({ distanceToTarget: distance }),
+  
+  cleanup: () => {
+    console.log("[useSolarSystem] Cleanup: Resetting solar system state");
+    set({
+      time: 0,
+      selectedPlanet: null,
+      isLanding: false,
+      cameraPosition: new THREE.Vector3(0, 10, 50),
+      distanceToTarget: 0
+    });
+  }
 }));

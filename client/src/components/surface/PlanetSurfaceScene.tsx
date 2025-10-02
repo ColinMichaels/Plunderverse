@@ -27,6 +27,7 @@ import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting"
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
+import { useWind } from "../../lib/stores/surface/useWind";
 import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
@@ -1325,7 +1326,12 @@ export function PlanetSurfaceScene() {
     console.log(`[ResourceManager] PlanetSurfaceScene mounted for planet: ${landedPlanet}`);
     
     return () => {
-      console.log(`[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources`);
+      console.log(`[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources and stores`);
+      
+      // Clean up surface-related stores
+      useWind.getState().cleanup();
+      console.log("[PlanetSurfaceScene] Wind store cleanup complete");
+      
       // Dispose all resources tagged with 'planet-surface'
       const disposedCount = resourceManager.disposeByTag('planet-surface');
       console.log(`[ResourceManager] Disposed ${disposedCount} planet-surface resources`);

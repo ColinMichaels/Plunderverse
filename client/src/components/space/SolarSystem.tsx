@@ -10,6 +10,7 @@ import { CameraController } from "../navigation/CameraController";
 import { ShootingSystem } from "../combat/ShootingSystem";
 import { planets } from "../../lib/planetData";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useAsteroids } from "../../lib/stores/space/useAsteroids";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 import { resourceManager } from "../../lib/utils/ResourceManager";
 
@@ -23,9 +24,13 @@ export function SolarSystem() {
     console.log("[SolarSystem] Component mounted, space scene resources will be tagged");
     
     return () => {
-      console.log("[SolarSystem] Component unmounting, cleaning up space-scene resources");
-      // Note: Individual components handle their own resource registration and cleanup
-      // This is just for logging the lifecycle
+      console.log("[SolarSystem] Component unmounting, cleaning up space-scene resources and stores");
+      
+      // Clean up space-related stores
+      useSolarSystem.getState().cleanup();
+      useAsteroids.getState().cleanup();
+      
+      console.log("[SolarSystem] Store cleanup complete");
     };
   }, []);
 

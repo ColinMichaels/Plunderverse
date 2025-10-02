@@ -24,6 +24,7 @@ interface AsteroidState {
   removeAsteroid: (id: string) => void;
   clearAsteroids: () => void;
   spawnRandomAsteroid: (playerPosition: THREE.Vector3) => void;
+  cleanup: () => void; // Clean up store state and timers
 }
 
 export const useAsteroids = create<AsteroidState>((set, get) => ({
@@ -154,5 +155,13 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
     );
     
     get().addAsteroid(spawnPosition);
+  },
+  
+  cleanup: () => {
+    console.log("[useAsteroids] Cleanup: Clearing all asteroids and resetting state");
+    set({
+      asteroids: [],
+      asteroidsDestroyed: 0
+    });
   }
 }));

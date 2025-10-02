@@ -17,6 +17,7 @@ interface WindState {
   triggerStorm: () => void;
   stopStorm: () => void;
   getWindVector: () => THREE.Vector3;
+  cleanup: () => void; // Clean up store state and reset
 }
 
 export const useWind = create<WindState>((set, get) => ({
@@ -123,5 +124,17 @@ export const useWind = create<WindState>((set, get) => ({
   getWindVector: () => {
     const state = get();
     return state.direction.clone().multiplyScalar(state.intensity);
+  },
+  
+  cleanup: () => {
+    console.log("[useWind] Cleanup: Resetting wind state");
+    set({
+      direction: new THREE.Vector3(1, 0, 0),
+      intensity: 0.5,
+      gustStrength: 0.2,
+      turbulence: 0.1,
+      planetName: "Earth",
+      timeFactor: 0
+    });
   }
 }))

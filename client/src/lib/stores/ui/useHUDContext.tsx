@@ -54,6 +54,9 @@ interface HUDContextState {
   manualPanelOverride: boolean;
   panelOverrideTimeout: NodeJS.Timeout | null;
   
+  // Context monitoring interval
+  monitoringInterval: NodeJS.Timeout | null;
+  
   // Actions
   detectContext: () => void;
   setContext: (context: GameContext, smooth?: boolean) => void;
@@ -61,6 +64,8 @@ interface HUDContextState {
   getContextPriority: (context: GameContext) => number;
   getContextVisibility: (context: GameContext) => UIZoneVisibility;
   startContextMonitoring: () => void;
+  stopContextMonitoring: () => void;
+  cleanup: () => void;
   
   // New actions for enhanced detection
   setDocked: (docked: boolean, stationName?: string) => void;
@@ -103,6 +108,9 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
   // Manual override state
   manualPanelOverride: false,
   panelOverrideTimeout: null,
+  
+  // Context monitoring interval
+  monitoringInterval: null,
   
   detectContext: () => {
     const state = get();
@@ -409,6 +417,14 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
   },
   
   startContextMonitoring: () => {
+    const state = get();
+    
+    // Clear any existing monitoring interval
+    if (state.monitoringInterval) {
+      clearInterval(state.monitoringInterval);
+      console.log('[HUD Context] Cleared existing monitoring interval');
+    }
+    
     // Start automatic context detection
     const intervalId = setInterval(() => {
       get().detectContext();
@@ -440,12 +456,57 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
       }
     }, 100); // Check context every 100ms
     
-    // Store interval ID for cleanup if needed
-    if (typeof window !== 'undefined') {
-      (window as any).__hudContextInterval = intervalId;
-    }
+    // Store interval ID in state
+    set({ monitoringInterval: intervalId });
     
     console.log('[HUD Context] Started context monitoring');
+  },
+  
+  stopContextMonitoring: () => {
+    const state = get();
+    
+    if (state.monitoringInterval) {
+      clearInterval(state.monitoringInterval);
+      set({ monitoringInterval: null });
+      console.log('[HUD Context] Stopped context monitoring');
+    }
+    
+    // Also clear panel override timeout if exists
+    if (state.panelOverrideTimeout) {
+      clearTimeout(state.panelOverrideTimeout);
+      set({ panelOverrideTimeout: null });
+    }
+  },
+  
+  cleanup: () => {
+    const state = get();
+    console.log('[HUD Context] Cleanup: Stopping monitoring and resetting state');
+    
+    // Stop monitoring
+    get().stopContextMonitoring();
+    
+    // Reset state
+    set({
+      currentContext: 'space-flight',
+      previousContext: null,
+      uiZoneVisibility: {
+        topLeft: true,
+        topRight: true,
+        bottomCenter: true,
+        rightSidebar: true
+      },
+      isInCombat: false,
+      isInWarp: false,
+      isDocked: false,
+      isInMinigame: false,
+      dockedStationName: null,
+      lastDamageTime: 0,
+      lastShotTime: 0,
+      isTransitioning: false,
+      nearestPlanet: null,
+      distanceToNearest: Infinity,
+      manualPanelOverride: false
+    });
   }
 }));
 
