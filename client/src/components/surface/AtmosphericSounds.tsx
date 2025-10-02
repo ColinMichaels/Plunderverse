@@ -18,6 +18,9 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
   const stormSoundRef = useRef<Howl | null>(null);
   const rainSoundRef = useRef<Howl | null>(null);
   
+  // Ensure windIntensity is a valid finite number
+  const safeWindIntensity = (isFinite(windIntensity) ? windIntensity : 0.5);
+  
   // Initialize wind sound
   useEffect(() => {
     if (soundVolume === 0) return;
@@ -29,21 +32,21 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
     switch (planetName) {
       case "Mars":
         shouldPlayWind = true;
-        windVolume = 0.4 + windIntensity * 0.3;
+        windVolume = 0.4 + safeWindIntensity * 0.3;
         break;
       case "Venus":
         shouldPlayWind = true;
         windVolume = 0.2; // Muffled due to thick atmosphere
         break;
       case "Earth":
-        shouldPlayWind = windIntensity > 0.3;
-        windVolume = 0.2 + windIntensity * 0.2;
+        shouldPlayWind = safeWindIntensity > 0.3;
+        windVolume = 0.2 + safeWindIntensity * 0.2;
         break;
       case "Jupiter":
       case "Saturn":
       case "Neptune":
         shouldPlayWind = true;
-        windVolume = 0.5 + windIntensity * 0.4; // Strong winds
+        windVolume = 0.5 + safeWindIntensity * 0.4; // Strong winds
         break;
       case "Moon":
       case "Mercury":
@@ -53,18 +56,23 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
     
     if (shouldPlayWind && !windSoundRef.current) {
       // Create a wind sound using the space ambience as a base
+      // Ensure all values are finite
+      const safeVolume = isFinite(windVolume * soundVolume) ? windVolume * soundVolume : 0.3;
+      const safeRate = isFinite(0.5 + safeWindIntensity * 0.5) ? 0.5 + safeWindIntensity * 0.5 : 0.5;
+      
       windSoundRef.current = new Howl({
         src: ["/sounds/space-ambience.mp3"],
         loop: true,
-        volume: windVolume * soundVolume,
-        rate: 0.5 + windIntensity * 0.5, // Vary pitch with intensity
+        volume: Math.max(0, Math.min(1, safeVolume)),
+        rate: Math.max(0.1, Math.min(4, safeRate)), // Vary pitch with intensity
       });
       windSoundRef.current.play();
     }
     
     // Update wind volume based on intensity
     if (windSoundRef.current) {
-      windSoundRef.current.volume(windVolume * soundVolume);
+      const updateVolume = isFinite(windVolume * soundVolume) ? windVolume * soundVolume : 0.3;
+      windSoundRef.current.volume(Math.max(0, Math.min(1, updateVolume)));
     }
     
     return () => {
@@ -74,7 +82,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         windSoundRef.current = null;
       }
     };
-  }, [planetName, windIntensity, soundVolume]);
+  }, [planetName, windIntensity, soundVolume, safeWindIntensity]);
   
   // Storm sounds
   useEffect(() => {
