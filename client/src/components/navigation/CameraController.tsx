@@ -95,8 +95,9 @@ export function CameraController() {
         return;
       }
 
-      // Calculate planet position and distance
-      const angle = time * targetPlanet.orbitalSpeed;
+      // Calculate planet position and distance using universe time
+      const universeTime = useSolarSystem.getState().getUniverseTime();
+      const angle = universeTime * targetPlanet.orbitalSpeed;
       const planetX = Math.cos(angle) * targetPlanet.distance;
       const planetZ = Math.sin(angle) * targetPlanet.distance;
       const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
@@ -145,10 +146,39 @@ export function CameraController() {
   const { isActive: isMining } = useMining();
 
   // Landed state - prevent movement when landed on surface
-  const { isLanded, isTakingOff } = useLandedState();
+  const { isLanded, isTakingOff, getTakeoffOrbitPosition } = useLandedState();
 
   // Proximity camera state for manual planet approach
   const [isProximityCameraActive, setProximityCameraActive] = useState(false);
+
+  // Handle ship positioning after takeoff from planet surface
+  useEffect(() => {
+    // Check if we need to position ship after takeoff
+    const takeoffPosition = getTakeoffOrbitPosition();
+    
+    if (takeoffPosition) {
+      console.log("[TAKEOFF] Positioning ship in orbit after takeoff");
+      
+      // Position camera at orbital location
+      camera.position.copy(takeoffPosition.position);
+      setCameraPosition(takeoffPosition.position);
+      
+      // Set initial velocity for orbital motion
+      velocityRef.current.copy(takeoffPosition.velocity);
+      
+      // Select the planet we took off from
+      const takeoffPlanetName = useLandedState.getState().takeoffPlanetName;
+      if (takeoffPlanetName) {
+        useSolarSystem.getState().setSelectedPlanet(takeoffPlanetName);
+      }
+      
+      console.log("[TAKEOFF] Ship positioned successfully:", {
+        position: takeoffPosition.position,
+        velocity: takeoffPosition.velocity,
+        planet: takeoffPlanetName
+      });
+    }
+  }, []); // Run once on mount
 
   useFrame((state, delta) => {
     const controls = get();
@@ -320,8 +350,9 @@ export function CameraController() {
       const proposedPosition = camera.position.clone().add(velocity.clone().multiplyScalar(delta));
       
       for (const planetData of planets) {
-        // Calculate planet's current orbital position
-        const angle = time * planetData.orbitalSpeed;
+        // Calculate planet's current orbital position using universe time
+        const universeTime = useSolarSystem.getState().getUniverseTime();
+        const angle = universeTime * planetData.orbitalSpeed;
         const planetX = Math.cos(angle) * planetData.distance;
         const planetZ = Math.sin(angle) * planetData.distance;
         const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
@@ -364,8 +395,9 @@ export function CameraController() {
         const planetData = planets.find((p) => p.name === selectedPlanet);
 
         if (planetData) {
-          // Calculate planet's current orbital position
-          const angle = time * planetData.orbitalSpeed;
+          // Calculate planet's current orbital position using universe time
+          const universeTime = useSolarSystem.getState().getUniverseTime();
+          const angle = universeTime * planetData.orbitalSpeed;
           const planetX = Math.cos(angle) * planetData.distance;
           const planetZ = Math.sin(angle) * planetData.distance;
           const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
@@ -483,8 +515,9 @@ export function CameraController() {
       // Calculate current planet position dynamically
       const planetData = planets.find((p) => p.name === selectedPlanet);
       if (planetData) {
-        // Calculate planet's current orbital position around the sun
-        const angle = time * planetData.orbitalSpeed;
+        // Calculate planet's current orbital position around the sun using universe time
+        const universeTime = useSolarSystem.getState().getUniverseTime();
+        const angle = universeTime * planetData.orbitalSpeed;
         const planetX = Math.cos(angle) * planetData.distance;
         const planetZ = Math.sin(angle) * planetData.distance;
         const currentPlanetPosition = new THREE.Vector3(planetX, 0, planetZ);
@@ -616,8 +649,9 @@ export function CameraController() {
     if (!isAutopilotActive && selectedPlanet && !isMining && !isLanding && !isLanded) {
       const planetData = planets.find((p) => p.name === selectedPlanet);
       if (planetData) {
-        // Calculate planet's current orbital position
-        const angle = time * planetData.orbitalSpeed;
+        // Calculate planet's current orbital position using universe time
+        const universeTime = useSolarSystem.getState().getUniverseTime();
+        const angle = universeTime * planetData.orbitalSpeed;
         const planetX = Math.cos(angle) * planetData.distance;
         const planetZ = Math.sin(angle) * planetData.distance;
         const currentPlanetPosition = new THREE.Vector3(planetX, 0, planetZ);

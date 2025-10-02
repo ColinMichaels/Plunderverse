@@ -17,12 +17,15 @@ import { resourceManager } from "../../lib/utils/ResourceManager";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);
-  const { time, setTime } = useSolarSystem();
+  const { time, setTime, initializeUniverseTime, updateUniverseTime, getUniverseTime } = useSolarSystem();
   const timeScale = useDebugTools((state) => state.timeScale);
 
-  // Cleanup resources on unmount
+  // Initialize universe time and cleanup resources on unmount
   useEffect(() => {
-    console.log("[SolarSystem] Component mounted, space scene resources will be tagged");
+    console.log("[SolarSystem] Component mounted, initializing universe time");
+    
+    // Initialize universe time if not already initialized
+    initializeUniverseTime();
     
     // Pre-load all asteroid models to prevent stuttering on first spawn
     preloadAsteroidModels();
@@ -30,7 +33,7 @@ export function SolarSystem() {
     return () => {
       console.log("[SolarSystem] Component unmounting, cleaning up space-scene resources and stores");
       
-      // Clean up space-related stores
+      // Clean up space-related stores (but preserve universe time)
       useSolarSystem.getState().cleanup();
       useAsteroids.getState().cleanup();
       
@@ -38,9 +41,13 @@ export function SolarSystem() {
     };
   }, []);
 
-  // Update orbital mechanics
+  // Update orbital mechanics and universe time
   useFrame((state, delta) => {
+    // Update local time for animations
     setTime(time + delta * 0.1 * timeScale);
+    
+    // Update persistent universe time
+    updateUniverseTime(delta);
   });
 
   return (

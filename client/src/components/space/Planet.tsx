@@ -9,14 +9,14 @@ import { resourceManager } from "../../lib/utils/ResourceManager";
 
 interface PlanetProps {
   data: PlanetData;
-  time: number;
+  time: number; // Keep for compatibility but use universe time internally
 }
 
 export function Planet({ data, time }: PlanetProps) {
   const meshRef = useRef<THREE.Mesh>(null);
   const groupRef = useRef<THREE.Group>(null);
   const { camera } = useThree();
-  const { setSelectedPlanet, selectedPlanet, setDistanceToTarget } =
+  const { setSelectedPlanet, selectedPlanet, setDistanceToTarget, getUniverseTime } =
     useSolarSystem();
   const [hovered, setHovered] = useState(false);
   const showWireframes = useDebugWireframe();
@@ -90,7 +90,9 @@ export function Planet({ data, time }: PlanetProps) {
   // Calculate orbital position and sun-based lighting
   useFrame(() => {
     if (groupRef.current) {
-      const angle = time * data.orbitalSpeed;
+      // Use universe time for consistent orbital positions
+      const universeTime = getUniverseTime();
+      const angle = universeTime * data.orbitalSpeed;
       const x = Math.cos(angle) * data.distance;
       const z = Math.sin(angle) * data.distance;
       groupRef.current.position.set(x, 0, z);
