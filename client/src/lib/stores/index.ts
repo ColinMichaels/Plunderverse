@@ -14,6 +14,10 @@ export { useLandingWarning } from './surface/useLandingWarning';
 export { useFlashlight } from './surface/useFlashlight';
 export { useSurfaceCollision } from './surface/useSurfaceCollision';
 export { useDestroyedNodes } from './surface/useDestroyedNodes';
+export { useTerrain } from './surface/useTerrain';
+export { useSurfaceLighting } from './surface/useSurfaceLighting';
+export { useSurfacePlayer } from './surface/useSurfacePlayer';
+export { useWind } from './surface/useWind';
 
 // Combat stores
 export { useShooting } from './combat/useShooting';

@@ -26,6 +26,8 @@ import { useSettings } from "../../lib/stores/ui/useSettings";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
 import { SurfaceScatter } from "./SurfaceScatter";
+import { AtmosphericEffects } from "./AtmosphericEffects";
+import { AtmosphericSounds } from "./AtmosphericSounds";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -1301,6 +1303,7 @@ function PostProcessingEffects() {
 
 export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
+  const { isFlashlightOn } = useFlashlight();
 
   if (!isLanded || !landedPlanet) return null;
 
@@ -1331,6 +1334,10 @@ export function PlanetSurfaceScene() {
           />
           <ResourceNodes planetName={landedPlanet} />
           <SurfaceMovementController />
+          <AtmosphericEffects 
+            planetName={landedPlanet}
+            flashlightOn={isFlashlightOn}
+          />
           <DebugCollisionBoxes />
           <PostProcessingEffects />
         </Canvas>
@@ -1344,6 +1351,12 @@ export function PlanetSurfaceScene() {
 
       {/* Surface controls and mining interface */}
       <SurfaceControls planetName={landedPlanet} />
+      
+      {/* Atmospheric sounds */}
+      <AtmosphericSounds 
+        planetName={landedPlanet} 
+        stormActive={false}
+      />
     </div>
   );
 }
