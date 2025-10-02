@@ -121,16 +121,7 @@ export function Moon() {
         </mesh>
       )}
 
-      {/* Orbit path visualization */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[moonDistance - 0.02, moonDistance + 0.02, 64]} />
-        <meshBasicMaterial
-          color="#444444"
-          transparent
-          opacity={0.2}
-          side={THREE.DoubleSide}
-        />
-      </mesh>
+      {/* Orbit path visualization - removed for more natural look */}
     </group>
   );
 }

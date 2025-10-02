@@ -142,11 +142,7 @@ export function Planet({ data, time }: PlanetProps) {
 
   return (
     <group ref={groupRef}>
-      {/* Orbital path visualization */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[data.distance - 0.1, data.distance + 0.1, 64]} />
-        <meshBasicMaterial color="#333333" transparent opacity={0.3} />
-      </mesh>
+      {/* Orbital path visualization - removed for more natural look */}
 
       {/* Planet */}
       <Sphere
