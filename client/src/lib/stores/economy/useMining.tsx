@@ -4,6 +4,7 @@ import { useEquipment } from "../ship/useEquipment";
 import { useLandedState } from "../surface/useLandedState";
 import { economyService, TransactionResult } from "../../../domain/economy/economy.service";
 import { useAudio } from "../ui/useAudio";
+import { useDestroyedNodes } from "../surface/useDestroyedNodes";
 
 interface MiningState {
   isActive: boolean;
@@ -195,6 +196,13 @@ export const useMining = create<MiningState>((set, get) => ({
           console.log(`[OBJECTIVE-TRIGGER] Reported mining ${extractedAmount}x ${state.targetResource!.type} for mission objectives`);
         } catch (error) {
           console.error('[OBJECTIVE-TRIGGER] Error reporting mining:', error);
+        }
+        
+        // Destroy the node after successful mining
+        if (completedNodeId && state.currentPlanet) {
+          const destroyedNodesStore = useDestroyedNodes.getState();
+          destroyedNodesStore.destroyNode(state.currentPlanet, completedNodeId);
+          console.log(`[MINING] Successfully destroyed node ${completedNodeId} on ${state.currentPlanet}`);
         }
       }
       
