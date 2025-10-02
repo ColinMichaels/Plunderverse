@@ -123,6 +123,13 @@ export function MiningLaser({ targetPosition, nodeId }: MiningLaserProps) {
   } = useMining();
   const { position: playerPosition } = useSurfacePlayer();
   
+  // TODO: Sound effects needed:
+  // 1. Laser beam activation sound (continuous hum/buzz while active)
+  // 2. Laser impact sound (crackling/sizzling at the target)
+  // 3. Power-up sound when laser intensity increases with progress
+  // 4. Power-down sound when mining stops
+  // 5. Different laser sounds based on resource rarity (higher pitch for legendary)
+  
   const beamRef = useRef<THREE.Mesh>(null);
   const glowRef = useRef<THREE.Mesh>(null);
   const sparksRef = useRef<{ progress: number }[]>([

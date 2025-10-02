@@ -162,9 +162,10 @@ export const useMining = create<MiningState>((set, get) => ({
       // Play success sound at 100% completion
       playSuccess();
       console.log(`[MINING-AUDIO] Mining completed at 100%`);
+      // TODO: Add more elaborate completion sound effect (e.g., resource collection chime, inventory update sound)
       
-      // Reset mining state
-      get().stopMining();
+      // Store the nodeId before resetting state
+      const completedNodeId = state.currentNodeId;
       
       // Use EconomyService to handle all mining yield processing (resources, credits, equipment wear, sounds, events)
       const result = await economyService.applyMiningYield(
@@ -172,6 +173,10 @@ export const useMining = create<MiningState>((set, get) => ({
         extractedAmount,
         state.currentPlanet || "Unknown"
       );
+      
+      // Reset mining state AFTER processing the result
+      // This ensures the node destruction happens properly
+      get().stopMining();
       
       // Report collection trigger progress for missions
       if (result.success) {
