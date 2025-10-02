@@ -11,11 +11,13 @@ import { PatrolEncounter } from "./components/space/PatrolEncounter";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
 import { useSettings } from "./lib/stores/ui/useSettings";
+import { useLandedState } from "./lib/stores/surface/useLandedState";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
+import ResourceManager from "./lib/utils/ResourceManager";
 import "@fontsource/inter";
 
 // Main App component
@@ -23,6 +25,7 @@ function App() {
   const [showCanvas, setShowCanvas] = useState(false);
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
+  const { isLanded } = useLandedState();
   
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
@@ -34,6 +37,21 @@ function App() {
     });
     return unsubscribe;
   }, []);
+
+  // Handle resource cleanup on scene transitions
+  useEffect(() => {
+    const resourceManager = ResourceManager.getInstance();
+    
+    if (isLanded) {
+      // Cleanup space scene resources when landing
+      console.log('[SCENE-MANAGER] Landing detected, disposing space-scene resources');
+      resourceManager.disposeByTag('space-scene');
+    } else {
+      // Cleanup planet surface resources when taking off
+      console.log('[SCENE-MANAGER] Takeoff detected, disposing planet-surface resources');
+      resourceManager.disposeByTag('planet-surface');
+    }
+  }, [isLanded]);
 
   // Initialize Plunderverse content
   useEffect(() => {
@@ -98,31 +116,38 @@ function App() {
         {/* Show game when playing */}
         {phase === "playing" && showCanvas && (
           <KeyboardControls map={keyboardMapRef.current}>
-            <TouchPropulsionControls>
-              <Canvas
-                shadows
-                camera={{
-                  position: [0, 10, 50],
-                  fov: 90,
-                  near: 0.1,
-                  far: 10000,
-                }}
-                gl={{
-                  antialias: true,
-                  powerPreference: "high-performance",
-                }}
-              >
-                <color attach="background" args={["#000000"]} />
+            {/* Conditionally render EITHER space scene OR planet surface scene */}
+            {!isLanded ? (
+              // Space scene - only rendered when not landed
+              <TouchPropulsionControls>
+                <Canvas
+                  shadows
+                  camera={{
+                    position: [0, 10, 50],
+                    fov: 90,
+                    near: 0.1,
+                    far: 10000,
+                  }}
+                  gl={{
+                    antialias: true,
+                    powerPreference: "high-performance",
+                  }}
+                >
+                  <color attach="background" args={["#000000"]} />
 
-                <Suspense fallback={null}>
-                  <SolarSystem />
-                </Suspense>
-              </Canvas>
-            </TouchPropulsionControls>
+                  <Suspense fallback={null}>
+                    <SolarSystem />
+                  </Suspense>
+                </Canvas>
+              </TouchPropulsionControls>
+            ) : (
+              // Planet surface scene - only rendered when landed
+              <PlanetSurfaceScene />
+            )}
 
+            {/* Common UI elements that persist across both scenes */}
             <GameUI />
             <PatrolEncounter />
-            <PlanetSurfaceScene />
             <TakeoffControls />
             <HintModal />
           </KeyboardControls>
