@@ -54,7 +54,20 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   };
 
   // Load surface texture based on planet
-  const surfaceTexture = useTexture(getTextureForPlanet(planetName));
+  const texturePath = getTextureForPlanet(planetName);
+  
+  // Load the texture
+  const surfaceTexture = useTexture(texturePath);
+  
+  // Log when texture loads successfully
+  useEffect(() => {
+    if (surfaceTexture) {
+      console.log(`[TEXTURE] Successfully loaded surface texture for ${planetName}: ${texturePath}`);
+    }
+  }, [surfaceTexture, planetName, texturePath]);
+  
+  // Use the loaded texture
+  const finalTexture = surfaceTexture;
 
   // Load terrain data when planet changes
   useEffect(() => {
@@ -101,19 +114,19 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
 
   // Configure texture with dynamic repeat based on terrain complexity
   useEffect(() => {
-    if (surfaceTexture && currentTerrainData) {
-      surfaceTexture.wrapS = THREE.RepeatWrapping;
-      surfaceTexture.wrapT = THREE.RepeatWrapping;
+    if (finalTexture && currentTerrainData) {
+      finalTexture.wrapS = THREE.RepeatWrapping;
+      finalTexture.wrapT = THREE.RepeatWrapping;
       
       // Adjust texture repeat based on planet type for better visual quality
       const textureScale = planetName === "Moon" || planetName === "Mercury" ? 12 : 
                           planetName === "Mars" ? 10 : 
                           planetName === "Earth" ? 8 : 6;
       
-      surfaceTexture.repeat.set(textureScale, textureScale);
-      surfaceTexture.anisotropy = 16;
+      finalTexture.repeat.set(textureScale, textureScale);
+      finalTexture.anisotropy = 16;
     }
-  }, [surfaceTexture, currentTerrainData, planetName]);
+  }, [finalTexture, currentTerrainData, planetName]);
 
   // Loading state is handled by the isLoading flag
   // No need to log on every render frame
@@ -129,7 +142,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
         castShadow={true}
       >
         <meshStandardMaterial
-          map={surfaceTexture}
+          map={finalTexture}
           color={surfaceColor}
           roughness={planetName === "Moon" || planetName === "Mercury" ? 0.95 : 
                      planetName === "Mars" ? 0.9 : 
@@ -147,7 +160,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
           receiveShadow={true}
         >
           <meshStandardMaterial
-            map={surfaceTexture}
+            map={finalTexture}
             color={surfaceColor}
             roughness={0.95}
             metalness={0.0}
