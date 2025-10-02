@@ -410,10 +410,12 @@ export function SurfaceScatter({ planetName, planetColor = '#808080' }: SurfaceS
     );
     
     // Prepare existing objects for collision avoidance
-    const existingObjects = collisionObjects.map(obj => ({
-      position: obj.position,
-      radius: obj.radius + 0.5 // Add buffer
-    }));
+    const existingObjects = collisionObjects
+      .filter(obj => obj && obj.position) // Filter out objects without valid positions
+      .map(obj => ({
+        position: obj.position,
+        radius: obj.radius + 0.5 // Add buffer
+      }));
     
     // Generate samples for each category
     Object.entries(config.categories).forEach(([category, catConfig]) => {

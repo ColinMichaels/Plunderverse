@@ -134,6 +134,10 @@ export class PoissonDiskSampling {
     
     // Check against existing collision objects
     for (const obj of this.existingObjects) {
+      // Skip objects without valid positions
+      if (!obj || !obj.position) {
+        continue;
+      }
       const distance2D = Math.sqrt(
         Math.pow(x - obj.position.x, 2) + 
         Math.pow(z - obj.position.z, 2)
@@ -219,6 +223,9 @@ export function createTerrainDensityFunction(
       // Check proximity to craters (higher density on crater floors)
       if (terrainData.features.craters) {
         for (const crater of terrainData.features.craters) {
+          // Skip craters without valid center
+          if (!crater || !crater.center) continue;
+          
           const dist = Math.sqrt(
             Math.pow(x - crater.center.x, 2) + 
             Math.pow(z - crater.center.z, 2)
@@ -232,6 +239,9 @@ export function createTerrainDensityFunction(
       // Check proximity to valleys (higher density in valleys)
       if (terrainData.features.valleys) {
         for (const valley of terrainData.features.valleys) {
+          // Skip valleys without valid center
+          if (!valley || !valley.center) continue;
+          
           // Simple distance check to valley center
           const dist = Math.sqrt(
             Math.pow(x - valley.center.x, 2) + 
