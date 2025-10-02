@@ -133,19 +133,7 @@ export function MiningLaser({ targetPosition, nodeId }: MiningLaserProps) {
     { progress: 0.66 }
   ]);
   
-  // Only render if this node is being mined
-  if (!isActive || currentNodeId !== nodeId || !targetResource) {
-    return null;
-  }
-  
-  // Calculate mining progress
-  const miningProgress = clicksRequired > 0 ? clicksCompleted / clicksRequired : 0;
-  
-  // Get color based on resource rarity
-  const laserColor = getRarityColor(targetResource.rarity);
-  const laserColorThree = new THREE.Color(laserColor);
-  
-  // Calculate beam start and end positions
+  // Calculate beam start and end positions (hooks must be called unconditionally)
   const startPos = useMemo(() => {
     return new THREE.Vector3(
       playerPosition.x, 
@@ -172,8 +160,30 @@ export function MiningLaser({ targetPosition, nodeId }: MiningLaserProps) {
     return new THREE.Vector3().lerpVectors(startPos, endPos, 0.5);
   }, [startPos, endPos]);
   
+  // Calculate rotation to align cylinder with beam direction
+  const quaternion = useMemo(() => {
+    const quaternion = new THREE.Quaternion();
+    const up = new THREE.Vector3(0, 1, 0);
+    quaternion.setFromUnitVectors(up, beamDirection);
+    return quaternion;
+  }, [beamDirection]);
+  
+  // Calculate mining progress and color (conditionally)
+  const miningProgress = (isActive && currentNodeId === nodeId && clicksRequired > 0) 
+    ? clicksCompleted / clicksRequired 
+    : 0;
+  
+  const laserColor = targetResource 
+    ? getRarityColor(targetResource.rarity)
+    : '#00ff00';
+  
+  const laserColorThree = new THREE.Color(laserColor);
+  
   // Update beam animation
   useFrame((state) => {
+    // Only update if actively mining this node
+    if (!isActive || currentNodeId !== nodeId || !targetResource) return;
+    
     const time = state.clock.elapsedTime;
     
     // Update main beam
@@ -211,13 +221,10 @@ export function MiningLaser({ targetPosition, nodeId }: MiningLaserProps) {
     });
   });
   
-  // Calculate rotation to align cylinder with beam direction
-  const quaternion = useMemo(() => {
-    const quaternion = new THREE.Quaternion();
-    const up = new THREE.Vector3(0, 1, 0);
-    quaternion.setFromUnitVectors(up, beamDirection);
-    return quaternion;
-  }, [beamDirection]);
+  // Only render if this node is being mined
+  if (!isActive || currentNodeId !== nodeId || !targetResource) {
+    return null;
+  }
   
   return (
     <group>
