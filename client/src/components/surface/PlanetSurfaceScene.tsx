@@ -17,6 +17,7 @@ import * as THREE from "three";
 import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
 import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
+import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
@@ -991,8 +992,9 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   } = useMining();
   const { playHit } = useAudio();
 
-  // Track destroyed resource nodes per planet
-  const [destroyedNodes, setDestroyedNodes] = useState<Set<string>>(new Set());
+  // Use persistent store for destroyed nodes instead of local state
+  const { destroyNode, getDestroyedNodes } = useDestroyedNodes();
+  const destroyedNodes = getDestroyedNodes(planetName);
 
   // Calculate current mining progress (0 to 1)
   const miningProgress =
@@ -1101,11 +1103,9 @@ function ResourceNodes({ planetName }: { planetName: string }) {
             }
 
             // Destroy the mined resource node since mining was successful
-            setDestroyedNodes(
-              (prev) => new Set(Array.from(prev).concat(nodeId)),
-            );
+            destroyNode(planetName, nodeId);
             console.log(
-              `[MINING-DEBUG] Resource node ${nodeId} destroyed after successful mining`,
+              `[MINING-DEBUG] Resource node ${nodeId} on ${planetName} destroyed after successful mining`,
             );
           } else {
             // Transaction failed - handle failure case

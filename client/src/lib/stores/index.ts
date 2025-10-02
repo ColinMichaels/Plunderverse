@@ -13,6 +13,7 @@ export { useLandedState } from './surface/useLandedState';
 export { useLandingWarning } from './surface/useLandingWarning';
 export { useFlashlight } from './surface/useFlashlight';
 export { useSurfaceCollision } from './surface/useSurfaceCollision';
+export { useDestroyedNodes } from './surface/useDestroyedNodes';
 
 // Combat stores
 export { useShooting } from './combat/useShooting';
