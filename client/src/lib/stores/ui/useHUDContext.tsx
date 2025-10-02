@@ -214,7 +214,7 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
           topLeft: true,   // Ship status still important
           topRight: false, // Hide missions on surface
           bottomCenter: true, // Show surface controls
-          rightSidebar: false // Hide most panels
+          rightSidebar: true // Show panels on surface for access to inventory/ship/etc
         };
         
       case 'mining':

@@ -20,6 +20,8 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
   const windSoundRef = useRef<Howl | null>(null);
   const stormSoundRef = useRef<Howl | null>(null);
   const rainSoundRef = useRef<Howl | null>(null);
+  const stormTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const rainTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // Ensure windIntensity is a valid finite number
   const safeWindIntensity = (isFinite(windIntensity) ? windIntensity : 0.5);
@@ -104,17 +106,28 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
       
       console.log(`[ATMOSPHERE-SOUND] Storm sound started on ${planetName}`);
     } else if (!stormActive && stormSoundRef.current) {
+      // Clear any existing timeout
+      if (stormTimeoutRef.current) {
+        clearTimeout(stormTimeoutRef.current);
+      }
+      
       stormSoundRef.current.fade(stormSoundRef.current.volume(), 0, 2000);
-      setTimeout(() => {
+      stormTimeoutRef.current = setTimeout(() => {
         stormSoundRef.current?.stop();
         stormSoundRef.current?.unload();
         stormSoundRef.current = null;
+        stormTimeoutRef.current = null;
       }, 2000);
       
       console.log(`[ATMOSPHERE-SOUND] Storm sound stopped on ${planetName}`);
     }
     
     return () => {
+      // Clear timeout on cleanup
+      if (stormTimeoutRef.current) {
+        clearTimeout(stormTimeoutRef.current);
+        stormTimeoutRef.current = null;
+      }
       if (stormSoundRef.current) {
         stormSoundRef.current.stop();
         stormSoundRef.current.unload();
@@ -145,15 +158,26 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
       
       console.log("[ATMOSPHERE-SOUND] Rain sound started on Earth");
     } else if (!isRaining && rainSoundRef.current) {
+      // Clear any existing timeout
+      if (rainTimeoutRef.current) {
+        clearTimeout(rainTimeoutRef.current);
+      }
+      
       rainSoundRef.current.fade(rainSoundRef.current.volume(), 0, 3000);
-      setTimeout(() => {
+      rainTimeoutRef.current = setTimeout(() => {
         rainSoundRef.current?.stop();
         rainSoundRef.current?.unload();
         rainSoundRef.current = null;
+        rainTimeoutRef.current = null;
       }, 3000);
     }
     
     return () => {
+      // Clear timeout on cleanup
+      if (rainTimeoutRef.current) {
+        clearTimeout(rainTimeoutRef.current);
+        rainTimeoutRef.current = null;
+      }
       if (rainSoundRef.current) {
         rainSoundRef.current.stop();
         rainSoundRef.current.unload();
