@@ -60,7 +60,7 @@ class AtmosphericParticlePool {
   private activeCount: number = 0;
   private maxParticles: number;
   
-  constructor(maxParticles: number = 1000) {
+  constructor(maxParticles: number = 50) {  // Drastically reduced from 1000 to 50
     this.maxParticles = maxParticles;
     // Pre-allocate particles
     for (let i = 0; i < maxParticles; i++) {
@@ -169,7 +169,7 @@ const getPlanetAtmosphere = (planetName: string, timeOfDay: number) => {
         fogColor: new THREE.Color("#CD5C5C"),
         fogDensity: 0.002 + (Math.random() * 0.001), // Variable dust
         particleTypes: ["dust", "dust", "dust"], // Mostly dust
-        particleCount: 800,
+        particleCount: 30,  // Reduced from 800 to 30
         particleColor: new THREE.Color("#8B4513"),
         particleSpeed: 2.0,
         particleSize: 0.3,
@@ -183,7 +183,7 @@ const getPlanetAtmosphere = (planetName: string, timeOfDay: number) => {
         fogColor: new THREE.Color("#FFA500"),
         fogDensity: 0.008, // Very thick atmosphere
         particleTypes: ["acid", "fog", "ash"],
-        particleCount: 600,
+        particleCount: 25,  // Reduced from 600 to 25
         particleColor: new THREE.Color("#FFD700"),
         particleSpeed: 0.5,
         particleSize: 0.2,
@@ -197,7 +197,7 @@ const getPlanetAtmosphere = (planetName: string, timeOfDay: number) => {
         fogColor: new THREE.Color(isMorning ? "#E0F7FA" : "#87CEEB"),
         fogDensity: isDawn ? 0.003 : isMorning ? 0.001 : 0.0005,
         particleTypes: isMorning ? ["pollen", "fog"] : ["rain"],
-        particleCount: isMorning ? 400 : 300,
+        particleCount: isMorning ? 20 : 15,  // Reduced from 400/300 to 20/15
         particleColor: new THREE.Color(isMorning ? "#FFFFCC" : "#4A90E2"),
         particleSpeed: 1.0,
         particleSize: isMorning ? 0.1 : 0.15,
@@ -213,7 +213,7 @@ const getPlanetAtmosphere = (planetName: string, timeOfDay: number) => {
         fogColor: new THREE.Color(planetName === "Neptune" ? "#4B70DD" : "#D8CA9D"),
         fogDensity: 0.005,
         particleTypes: ["fog", "fog", "dust"],
-        particleCount: 1000,
+        particleCount: 40,  // Reduced from 1000 to 40
         particleColor: new THREE.Color(planetName === "Neptune" ? "#4B70DD" : "#FAD5A5"),
         particleSpeed: 3.0, // High wind speeds
         particleSize: 0.4,
@@ -243,7 +243,7 @@ const getPlanetAtmosphere = (planetName: string, timeOfDay: number) => {
         fogColor: new THREE.Color("#CCCCCC"),
         fogDensity: 0.001,
         particleTypes: ["dust"],
-        particleCount: 200,
+        particleCount: 15,  // Reduced from 200 to 15
         particleColor: new THREE.Color("#888888"),
         particleSpeed: 1.0,
         particleSize: 0.2,
@@ -279,8 +279,8 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
   
   // Initialize particle pool
   useEffect(() => {
-    const maxParticles = graphicsQuality === "high" ? 1000 : 
-                        graphicsQuality === "medium" ? 500 : 200;
+    const maxParticles = graphicsQuality === "high" ? 50 : 
+                        graphicsQuality === "medium" ? 30 : 20;  // Drastically reduced
     particlePoolRef.current = new AtmosphericParticlePool(maxParticles);
     
     return () => {
