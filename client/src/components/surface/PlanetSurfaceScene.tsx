@@ -9,7 +9,6 @@ import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, ResourceData } from "../../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
-import { FBXAsteroid } from "../space/FBXAsteroid";
 import { FlashlightSystem } from "./FlashlightSystem";
 import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
@@ -228,17 +227,27 @@ function SurfaceRocks({ planetName }: { planetName: string }) {
   return (
     <>
       {rockPositions.map((rock, index) => (
-        <FBXAsteroid
+        <mesh
           key={rock.id}
           position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale} // Use pre-calculated final scale
-          rotation={[0, rock.rotationY, 0]}
-          color={rockColor}
-          roughness={0.8}
-          metalness={0.1}
+          scale={rock.scale * 2} // Adjusted scale for proper visibility
+          rotation={[
+            Math.random() * 0.3 - 0.15, // Slight random tilt
+            rock.rotationY,
+            Math.random() * 0.3 - 0.15
+          ]}
           castShadow
           receiveShadow
-        />
+        >
+          {/* Use a dodecahedron for natural rock appearance */}
+          <dodecahedronGeometry args={[1.5, 1]} />
+          <meshStandardMaterial
+            color={rockColor}
+            roughness={0.9}
+            metalness={0.05}
+            envMapIntensity={0.3}
+          />
+        </mesh>
       ))}
     </>
   );
