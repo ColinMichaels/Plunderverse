@@ -839,7 +839,14 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 
   // Use persistent store for destroyed nodes instead of local state
   // IMPORTANT: Subscribe reactively to destroyed nodes so UI updates when nodes are destroyed
-  const destroyedNodes = useDestroyedNodes((state) => state.getDestroyedNodes(planetName));
+  // Use a stable selector to avoid infinite loops
+  const destroyedNodeIds = useDestroyedNodes((state) => {
+    const planetNodes = state.destroyedNodesByPlanet.get(planetName);
+    return planetNodes ? Array.from(planetNodes) : [];
+  });
+  
+  // Convert to Set for efficient lookup
+  const destroyedNodes = useMemo(() => new Set(destroyedNodeIds), [destroyedNodeIds]);
 
   // Calculate current mining progress (0 to 1)
   const miningProgress =
