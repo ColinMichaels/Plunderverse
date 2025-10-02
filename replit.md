@@ -82,3 +82,43 @@ Preferred communication style: Simple, everyday language.
 
 ### Audio Assets
 - Background music and sound effects from `/public/sounds/` (MP3, OGG, WAV).
+
+## Recent Planet Surface Improvements (October 2, 2025)
+
+### Debug Lighting Controls
+- **Manual Override System**: Toggle between automatic orbital mechanics and manual control
+- **Sun Position Control**: Azimuth (0-360°) and Elevation (-90 to 90°) sliders
+- **Intensity Adjustment**: Sun intensity (0-5) and ambient light (0-1) controls
+- **Time of Day Presets**: Quick buttons for Dawn, Morning, Noon, Dusk, and Night
+- **Sun Color Customization**: Color picker for artistic lighting control
+
+### Enhanced Mining Visuals
+- **Mining Laser Beam**: Dynamic energy beam connecting player to resource node with rarity-based colors (green/blue/purple/orange)
+- **Progressive Node Deformation**: Resources gradually crack, wobble, and break apart during extraction with custom GLSL shaders
+- **Advanced Particle System**: 300+ physics-based particles with sparks, dust clouds, debris, and resource-specific behaviors
+- **Resource Glow System**: Dynamic emission and rim lighting based on rarity, with particle auras for legendary items
+- **Mining Feedback**: Screen shake, varied sound pitch/volume, and visual overlays (flash, vignette, distortion) based on resource properties
+
+### Improved Terrain Generation
+- **Planet-Specific Features**: 
+  - Earth: Rolling hills, valleys, mountains
+  - Mars: Canyons, ancient riverbeds, impact craters
+  - Moon/Mercury: Heavy cratering with mare regions
+  - Venus: Volcanic features with lava flows
+  - Gas Giants: Dense atmospheric simulation
+- **Advanced Terrain Algorithm**: Multiple noise octaves, FBM, ridge noise, turbulence
+- **Terrain Features**: Craters (25-30 per suitable planet), mountain ridges, valleys, plateaus
+- **Performance**: Terrain caching system with instant retrieval
+
+### Surface Details & Atmosphere
+- **Procedural Scatter System**: 2800-4200 objects per planet using Poisson disk sampling
+  - Small rocks, pebbles, debris
+  - Planet-specific objects (ice chunks, dust drifts, volcanic rocks)
+  - LOD system for performance
+- **Atmospheric Effects**: 
+  - Mars: Dust storms with visibility reduction
+  - Venus: Thick fog, acid rain, heat shimmer
+  - Earth: Morning fog, pollen, rain effects
+  - Dynamic wind system affecting particles
+- **Heat Shimmer**: Custom GPU shaders for heat distortion on hot planets
+- **Weather System**: Time-of-day variations and storm events with atmospheric sounds
