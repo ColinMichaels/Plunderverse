@@ -837,16 +837,9 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   } = useMining();
   const { playHit } = useAudio();
 
-  // Use persistent store for destroyed nodes instead of local state
-  // IMPORTANT: Subscribe reactively to destroyed nodes so UI updates when nodes are destroyed
-  // Use a stable selector to avoid infinite loops
-  const destroyedNodeIds = useDestroyedNodes((state) => {
-    const planetNodes = state.destroyedNodesByPlanet.get(planetName);
-    return planetNodes ? Array.from(planetNodes) : [];
-  });
-  
-  // Convert to Set for efficient lookup
-  const destroyedNodes = useMemo(() => new Set(destroyedNodeIds), [destroyedNodeIds]);
+  // Use persistent store for destroyed nodes
+  // Access the isNodeDestroyed function directly to avoid selector issues
+  const { isNodeDestroyed } = useDestroyedNodes();
 
   // Calculate current mining progress (0 to 1)
   const miningProgress =
@@ -1011,7 +1004,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   return (
     <>
       {resourcePositions
-        .filter((node) => !destroyedNodes.has(node.id)) // Only show non-destroyed nodes
+        .filter((node) => !isNodeDestroyed(planetName, node.id)) // Only show non-destroyed nodes
         .map((node, index) => {
           // Check if THIS SPECIFIC node is currently being mined using its unique ID
           const isBeingMined = isActive && currentNodeId === node.id;
