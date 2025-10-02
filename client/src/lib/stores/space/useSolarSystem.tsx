@@ -31,7 +31,7 @@ interface SolarSystemState {
 export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   // Persistent universe time - survives scene changes
   universeStartTime: null,
-  timeScale: 10, // 1 real second = 10 game seconds
+  timeScale: 1, // 1 real second = 1 game second for realistic orbital periods
   accumulatedTime: 0,
   
   // Local scene time
