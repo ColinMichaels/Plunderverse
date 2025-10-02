@@ -8,6 +8,7 @@ import { useWind } from "../../lib/stores/surface/useWind";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
+import { ResourceManager } from "../../lib/utils/ResourceManager";
 
 // Create custom heat shimmer material
 const HeatShimmerMaterial = shaderMaterial(
@@ -267,6 +268,12 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
   const lastSpawnTime = useRef(0);
   const [isStormActive, setIsStormActive] = useState(false);
   
+  const resourceManager = ResourceManager.getInstance();
+  const particleGeometryIdRef = useRef<string>(`particle-geometry-${planetName}-${Date.now()}`);
+  const particleMaterialIdRef = useRef<string>(`particle-material-${planetName}-${Date.now()}`);
+  const heatShimmerMaterialIdRef = useRef<string>(`heat-shimmer-material-${planetName}-${Date.now()}`);
+  const fogPlaneMaterialIdsRef = useRef<string[]>([]);
+  
   // Calculate time of day (0-24 hours)
   const timeOfDay = useMemo(() => {
     return ((time * 10) % 24); // Convert game time to hours
@@ -277,16 +284,41 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
     return getPlanetAtmosphere(planetName, timeOfDay);
   }, [planetName, timeOfDay]);
   
-  // Initialize particle pool
+  // Initialize particle pool and cleanup resources
   useEffect(() => {
     const maxParticles = graphicsQuality === "high" ? 50 : 
                         graphicsQuality === "medium" ? 30 : 20;  // Drastically reduced
     particlePoolRef.current = new AtmosphericParticlePool(maxParticles);
+    console.log(`[AtmosphericEffects] Initialized particle pool for ${planetName} with ${maxParticles} particles`);
     
     return () => {
+      console.log(`[AtmosphericEffects] Clearing particle pool for ${planetName}`);
       particlePoolRef.current?.clear();
     };
-  }, [graphicsQuality]);
+  }, [graphicsQuality, planetName]);
+  
+  // Cleanup resources when planet changes or component unmounts
+  useEffect(() => {
+    console.log(`[AtmosphericEffects] Initializing atmospheric effects for planet: ${planetName}`);
+    
+    return () => {
+      console.log(`[AtmosphericEffects] Cleaning up atmospheric resources for planet: ${planetName}`);
+      // Dispose all resources tagged with atmospheric-effects
+      resourceManager.disposeByTag('atmospheric-effects');
+      resourceManager.disposeByTag(`planet-${planetName}-atmosphere`);
+      
+      // Dispose specific resource IDs
+      resourceManager.disposeById(particleGeometryIdRef.current);
+      resourceManager.disposeById(particleMaterialIdRef.current);
+      resourceManager.disposeById(heatShimmerMaterialIdRef.current);
+      
+      // Dispose fog plane materials
+      fogPlaneMaterialIdsRef.current.forEach(id => {
+        resourceManager.disposeById(id);
+      });
+      fogPlaneMaterialIdsRef.current = [];
+    };
+  }, [planetName]);
   
   // Set up fog for the scene
   useEffect(() => {
@@ -332,8 +364,13 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
     geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
     geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
     
+    // Register geometry with ResourceManager
+    resourceManager.registerGeometry(particleGeometryIdRef.current, geometry, 
+      ['atmospheric-effects', `planet-${planetName}-atmosphere`]);
+    console.log(`[AtmosphericEffects] Registered particle geometry: ${particleGeometryIdRef.current}`);
+    
     return geometry;
-  }, [atmosphere.particleCount]);
+  }, [atmosphere.particleCount, planetName]);
   
   // Update particles
   useFrame((state, delta) => {
@@ -497,6 +534,13 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
       {/* Atmospheric particles */}
       <points ref={particlesRef} geometry={particleGeometry}>
         <pointsMaterial
+          ref={(material) => {
+            if (material && !resourceManager.hasResource(particleMaterialIdRef.current)) {
+              resourceManager.registerMaterial(particleMaterialIdRef.current, material, 
+                ['atmospheric-effects', `planet-${planetName}-atmosphere`]);
+              console.log(`[AtmosphericEffects] Registered particle material: ${particleMaterialIdRef.current}`);
+            }
+          }}
           size={1}
           vertexColors
           sizeAttenuation
@@ -512,7 +556,14 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
         <mesh position={[0, 5, 0]} scale={[100, 20, 100]}>
           <planeGeometry args={[1, 1, 32, 32]} />
           <heatShimmerMaterial
-            ref={heatShimmerRef}
+            ref={(material) => {
+              heatShimmerRef.current = material;
+              if (material && !resourceManager.hasResource(heatShimmerMaterialIdRef.current)) {
+                resourceManager.registerMaterial(heatShimmerMaterialIdRef.current, material, 
+                  ['atmospheric-effects', `planet-${planetName}-atmosphere`, 'heat-shimmer']);
+                console.log(`[AtmosphericEffects] Registered heat shimmer material: ${heatShimmerMaterialIdRef.current}`);
+              }
+            }}
             transparent
             side={THREE.DoubleSide}
             depthWrite={false}
@@ -534,18 +585,32 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
       {/* Volumetric fog planes for thick atmospheres */}
       {atmosphere.fogDensity > 0.003 && (
         <>
-          {[0, 10, 20, 30].map((height, index) => (
-            <mesh key={index} position={[0, height, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-              <planeGeometry args={[200, 200]} />
-              <meshBasicMaterial
-                color={atmosphere.fogColor}
-                transparent
-                opacity={0.1 * (1 - height / 40)}
-                depthWrite={false}
-                side={THREE.DoubleSide}
-              />
-            </mesh>
-          ))}
+          {[0, 10, 20, 30].map((height, index) => {
+            const fogMaterialId = `fog-plane-material-${height}-${planetName}-${Date.now()}`;
+            if (!fogPlaneMaterialIdsRef.current.includes(fogMaterialId)) {
+              fogPlaneMaterialIdsRef.current.push(fogMaterialId);
+            }
+            
+            return (
+              <mesh key={index} position={[0, height, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+                <planeGeometry args={[200, 200]} />
+                <meshBasicMaterial
+                  ref={(material) => {
+                    if (material && !resourceManager.hasResource(fogMaterialId)) {
+                      resourceManager.registerMaterial(fogMaterialId, material, 
+                        ['atmospheric-effects', `planet-${planetName}-atmosphere`, 'fog-plane']);
+                      console.log(`[AtmosphericEffects] Registered fog plane material ${index}: ${fogMaterialId}`);
+                    }
+                  }}
+                  color={atmosphere.fogColor}
+                  transparent
+                  opacity={0.1 * (1 - height / 40)}
+                  depthWrite={false}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+            );
+          })}
         </>
       )}
     </group>

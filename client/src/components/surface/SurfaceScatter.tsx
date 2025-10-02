@@ -4,6 +4,7 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { useSurfaceCollision } from '../../lib/stores/surface/useSurfaceCollision';
 import { useTerrain } from '../../lib/stores/surface/useTerrain';
 import { PoissonDiskSampling, createTerrainDensityFunction } from '../../lib/poissonDiskSampling';
+import { ResourceManager } from '../../lib/utils/ResourceManager';
 
 // Planet-specific scatter configurations
 interface ScatterConfig {
@@ -275,24 +276,35 @@ function ScatterInstancedMesh({
 }: ScatterInstancedMeshProps) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const { camera } = useThree();
+  const resourceManager = ResourceManager.getInstance();
+  const geometryIdRef = useRef<string>(`scatter-geometry-${category}-${Date.now()}`);
+  const materialIdRef = useRef<string>(`scatter-material-${category}-${Date.now()}`);
   
   // Create geometry based on type
   const geometry = useMemo(() => {
-    switch (config.geometryType) {
-      case 'box':
-        return new THREE.BoxGeometry(1, 1, 1);
-      case 'sphere':
-        return new THREE.SphereGeometry(0.5, 6, 4);
-      case 'tetrahedron':
-        return new THREE.TetrahedronGeometry(0.6, 0);
-      case 'octahedron':
-        return new THREE.OctahedronGeometry(0.5, 0);
-      case 'cylinder':
-        return new THREE.CylinderGeometry(0.3, 0.4, 1, 5);
-      default:
-        return new THREE.BoxGeometry(1, 1, 1);
-    }
-  }, [config.geometryType]);
+    const geom = (() => {
+      switch (config.geometryType) {
+        case 'box':
+          return new THREE.BoxGeometry(1, 1, 1);
+        case 'sphere':
+          return new THREE.SphereGeometry(0.5, 6, 4);
+        case 'tetrahedron':
+          return new THREE.TetrahedronGeometry(0.6, 0);
+        case 'octahedron':
+          return new THREE.OctahedronGeometry(0.5, 0);
+        case 'cylinder':
+          return new THREE.CylinderGeometry(0.3, 0.4, 1, 5);
+        default:
+          return new THREE.BoxGeometry(1, 1, 1);
+      }
+    })();
+    
+    // Register geometry with ResourceManager
+    resourceManager.registerGeometry(geometryIdRef.current, geom, ['surface-scatter', category]);
+    console.log(`[SurfaceScatter] Registered geometry for ${category}: ${geometryIdRef.current}`);
+    
+    return geom;
+  }, [config.geometryType, category]);
 
   // Setup instance matrices and colors
   useEffect(() => {
@@ -368,6 +380,21 @@ function ScatterInstancedMesh({
     return base.lerp(planet, 0.3);
   }, [config.baseColor, planetColor]);
 
+  // Register material and cleanup
+  useEffect(() => {
+    if (meshRef.current && meshRef.current.material) {
+      resourceManager.registerMaterial(materialIdRef.current, meshRef.current.material, ['surface-scatter', category]);
+      console.log(`[SurfaceScatter] Registered material for ${category}: ${materialIdRef.current}`);
+    }
+    
+    return () => {
+      // Dispose of resources when component unmounts
+      console.log(`[SurfaceScatter] Disposing resources for ${category}`);
+      resourceManager.disposeById(geometryIdRef.current);
+      resourceManager.disposeById(materialIdRef.current);
+    };
+  }, [category]);
+
   return (
     <instancedMesh
       ref={meshRef}
@@ -393,9 +420,22 @@ interface SurfaceScatterProps {
 export function SurfaceScatter({ planetName, planetColor = '#808080' }: SurfaceScatterProps) {
   const { collisionObjects } = useSurfaceCollision();
   const { currentTerrainData, getHeightAt } = useTerrain();
+  const resourceManager = ResourceManager.getInstance();
   
   // Get configuration for this planet
   const config = PLANET_CONFIGS[planetName] || DEFAULT_CONFIG;
+  
+  // Cleanup resources when planet changes or component unmounts
+  useEffect(() => {
+    console.log(`[SurfaceScatter] Initializing scatter for planet: ${planetName}`);
+    
+    return () => {
+      console.log(`[SurfaceScatter] Cleaning up scatter resources for planet: ${planetName}`);
+      // Dispose all resources tagged with surface-scatter
+      resourceManager.disposeByTag('surface-scatter');
+      resourceManager.disposeByTag(`planet-${planetName}`);
+    };
+  }, [planetName]);
   
   // Generate scatter instances using Poisson disk sampling
   const scatterInstances = useMemo(() => {

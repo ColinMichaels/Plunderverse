@@ -3,6 +3,7 @@ import { Howl } from "howler";
 import { useWind } from "../../lib/stores/surface/useWind";
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { ResourceManager } from "../../lib/utils/ResourceManager";
 
 interface AtmosphericSoundsProps {
   planetName: string;
@@ -22,6 +23,12 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
   const rainSoundRef = useRef<Howl | null>(null);
   const stormTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const rainTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Resource Manager instance
+  const resourceManager = ResourceManager.getInstance();
+  const windSoundIdRef = useRef<string>(`wind-sound-${planetName}-${Date.now()}`);
+  const stormSoundIdRef = useRef<string>(`storm-sound-${planetName}-${Date.now()}`);
+  const rainSoundIdRef = useRef<string>(`rain-sound-${planetName}-${Date.now()}`);
   
   // Ensure windIntensity is a valid finite number
   const safeWindIntensity = (isFinite(windIntensity) ? windIntensity : 0.5);
@@ -71,6 +78,12 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         volume: Math.max(0, Math.min(1, safeVolume)),
         rate: Math.max(0.1, Math.min(4, safeRate)), // Vary pitch with intensity
       });
+      
+      // Register with ResourceManager
+      resourceManager.registerAudio(windSoundIdRef.current, windSoundRef.current, 
+        ['atmospheric-sounds', `planet-${planetName}-sounds`, 'wind']);
+      console.log(`[AtmosphericSounds] Registered wind sound: ${windSoundIdRef.current}`);
+      
       windSoundRef.current.play();
     }
     
@@ -82,8 +95,10 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
     
     return () => {
       if (windSoundRef.current) {
+        console.log(`[AtmosphericSounds] Disposing wind sound for ${planetName}`);
         windSoundRef.current.stop();
         windSoundRef.current.unload();
+        resourceManager.disposeById(windSoundIdRef.current);
         windSoundRef.current = null;
       }
     };
@@ -102,8 +117,13 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         volume: Math.max(0, Math.min(1, stormVolume)),
         rate: 0.3, // Slow it down for rumbling effect
       });
-      stormSoundRef.current.play();
       
+      // Register with ResourceManager
+      resourceManager.registerAudio(stormSoundIdRef.current, stormSoundRef.current, 
+        ['atmospheric-sounds', `planet-${planetName}-sounds`, 'storm']);
+      console.log(`[AtmosphericSounds] Registered storm sound: ${stormSoundIdRef.current}`);
+      
+      stormSoundRef.current.play();
       console.log(`[ATMOSPHERE-SOUND] Storm sound started on ${planetName}`);
     } else if (!stormActive && stormSoundRef.current) {
       // Clear any existing timeout
@@ -113,8 +133,10 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
       
       stormSoundRef.current.fade(stormSoundRef.current.volume(), 0, 2000);
       stormTimeoutRef.current = setTimeout(() => {
+        console.log(`[AtmosphericSounds] Disposing storm sound for ${planetName}`);
         stormSoundRef.current?.stop();
         stormSoundRef.current?.unload();
+        resourceManager.disposeById(stormSoundIdRef.current);
         stormSoundRef.current = null;
         stormTimeoutRef.current = null;
       }, 2000);
@@ -129,8 +151,10 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         stormTimeoutRef.current = null;
       }
       if (stormSoundRef.current) {
+        console.log(`[AtmosphericSounds] Cleanup disposing storm sound for ${planetName}`);
         stormSoundRef.current.stop();
         stormSoundRef.current.unload();
+        resourceManager.disposeById(stormSoundIdRef.current);
         stormSoundRef.current = null;
       }
     };
@@ -154,8 +178,13 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         volume: Math.max(0, Math.min(1, rainVolume)),
         rate: 2.0, // Speed up for rain patter
       });
-      rainSoundRef.current.play();
       
+      // Register with ResourceManager
+      resourceManager.registerAudio(rainSoundIdRef.current, rainSoundRef.current, 
+        ['atmospheric-sounds', `planet-${planetName}-sounds`, 'rain']);
+      console.log(`[AtmosphericSounds] Registered rain sound: ${rainSoundIdRef.current}`);
+      
+      rainSoundRef.current.play();
       console.log("[ATMOSPHERE-SOUND] Rain sound started on Earth");
     } else if (!isRaining && rainSoundRef.current) {
       // Clear any existing timeout
@@ -165,8 +194,10 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
       
       rainSoundRef.current.fade(rainSoundRef.current.volume(), 0, 3000);
       rainTimeoutRef.current = setTimeout(() => {
+        console.log(`[AtmosphericSounds] Disposing rain sound for ${planetName}`);
         rainSoundRef.current?.stop();
         rainSoundRef.current?.unload();
+        resourceManager.disposeById(rainSoundIdRef.current);
         rainSoundRef.current = null;
         rainTimeoutRef.current = null;
       }, 3000);
@@ -179,12 +210,26 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         rainTimeoutRef.current = null;
       }
       if (rainSoundRef.current) {
+        console.log(`[AtmosphericSounds] Cleanup disposing rain sound for ${planetName}`);
         rainSoundRef.current.stop();
         rainSoundRef.current.unload();
+        resourceManager.disposeById(rainSoundIdRef.current);
         rainSoundRef.current = null;
       }
     };
   }, [planetName, time, soundVolume]);
+  
+  // Cleanup all atmospheric sounds when component unmounts
+  useEffect(() => {
+    console.log(`[AtmosphericSounds] Initializing atmospheric sounds for planet: ${planetName}`);
+    
+    return () => {
+      console.log(`[AtmosphericSounds] Cleaning up all atmospheric sounds for planet: ${planetName}`);
+      // Dispose all resources tagged with atmospheric-sounds
+      resourceManager.disposeByTag('atmospheric-sounds');
+      resourceManager.disposeByTag(`planet-${planetName}-sounds`);
+    };
+  }, [planetName]);
   
   return null; // This component only handles sound, no visual output
 }
