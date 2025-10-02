@@ -168,90 +168,6 @@ function terrainHeightAt(x: number, z: number): number {
   return terrainStore.getHeightAt(x, z);
 }
 
-function SurfaceRocks({ planetName }: { planetName: string }) {
-  const planet = planets.find((p) => p.name === planetName);
-  const rockColor = planet?.color || "#666666";
-  const { registerCollisionObject, unregisterCollisionObject } =
-    useSurfaceCollision();
-  const { currentTerrainData } = useTerrain();
-
-  // Generate rock positions using useMemo
-  const rockPositions = useMemo(() => {
-    const positions = [];
-    
-    // Vary rock count based on planet type
-    const rockCount = planetName === "Moon" || planetName === "Mercury" ? 60 :
-                     planetName === "Mars" ? 45 :
-                     planetName === "Earth" ? 30 : 40;
-    
-    for (let i = 0; i < rockCount; i++) {
-      const x = (Math.random() - 0.5) * 150;
-      const z = (Math.random() - 0.5) * 150;
-      const terrainHeight = terrainHeightAt(x, z);
-
-      // Pre-calculate final render scale to match collision radius
-      const baseScale = 0.5 + Math.random() * 1.5;
-      const randomVariation = 0.8 + Math.random() * 0.4; // 0.8 to 1.2 variation
-      const finalScale = baseScale * 0.025 * randomVariation;
-
-      positions.push({
-        id: `rock-${planetName}-${i}`,
-        x,
-        y: terrainHeight + 0.3 + Math.random() * 0.5, // Sit on terrain with clearance
-        z,
-        scale: finalScale, // Store the final render scale
-        rotationY: Math.random() * Math.PI * 2,
-      });
-    }
-    return positions;
-  }, [planetName, currentTerrainData]); // Regenerate when terrain changes
-
-  // Register rock collision objects
-  useEffect(() => {
-    rockPositions.forEach((rock) => {
-      registerCollisionObject({
-        id: rock.id,
-        position: new THREE.Vector3(rock.x, rock.y, rock.z),
-        radius: rock.scale * 3, // Collision radius matches visual size
-        type: "rock",
-      });
-    });
-
-    return () => {
-      rockPositions.forEach((rock) => {
-        unregisterCollisionObject(rock.id);
-      });
-    };
-  }, [rockPositions]);
-
-  return (
-    <>
-      {rockPositions.map((rock, index) => (
-        <mesh
-          key={rock.id}
-          position={[rock.x, rock.y, rock.z]}
-          scale={rock.scale * 2} // Adjusted scale for proper visibility
-          rotation={[
-            Math.random() * 0.3 - 0.15, // Slight random tilt
-            rock.rotationY,
-            Math.random() * 0.3 - 0.15
-          ]}
-          castShadow
-          receiveShadow
-        >
-          {/* Use a dodecahedron for natural rock appearance */}
-          <dodecahedronGeometry args={[1.5, 1]} />
-          <meshStandardMaterial
-            color={rockColor}
-            roughness={0.9}
-            metalness={0.05}
-            envMapIntensity={0.3}
-          />
-        </mesh>
-      ))}
-    </>
-  );
-}
 
 function SurfaceSky({ planetName }: { planetName: string }) {
   const { time } = useSolarSystem();
@@ -1336,7 +1252,6 @@ export function PlanetSurfaceScene() {
           <FlashlightSystem />
           <SurfaceSky planetName={landedPlanet} />
           <SurfaceTerrain planetName={landedPlanet} />
-          <SurfaceRocks planetName={landedPlanet} />
           <SurfaceScatter 
             planetName={landedPlanet} 
             planetColor={planets.find(p => p.name === landedPlanet)?.color}
