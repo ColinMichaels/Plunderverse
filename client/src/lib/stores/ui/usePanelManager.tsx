@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type PanelId = 'missions' | 'inventory' | 'trading' | 'crew' | 'story' | 'controls' | 'settings' | 'crypto';
+export type PanelId = 'missions' | 'inventory' | 'trading' | 'crew' | 'story' | 'controls' | 'settings' | 'crypto' | 'navigation' | 'systems' | 'upgrades' | 'repair';
 
 export interface Panel {
   id: PanelId;
@@ -38,6 +38,10 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'controls', label: 'Controls', icon: '❓', isOpen: false, wasManuallyToggled: false, priority: 5 },
   { id: 'settings', label: 'Settings', icon: '⚙️', isOpen: false, wasManuallyToggled: false, priority: 6 },
   { id: 'crypto', label: 'Crypto', icon: '💰', isOpen: false, wasManuallyToggled: false, priority: 7 },
+  { id: 'navigation', label: 'Navigation', icon: '🧭', isOpen: false, wasManuallyToggled: false, priority: 8 },
+  { id: 'systems', label: 'Ship Systems', icon: '⚡', isOpen: false, wasManuallyToggled: false, priority: 9 },
+  { id: 'upgrades', label: 'Upgrades', icon: '🚀', isOpen: false, wasManuallyToggled: false, priority: 10 },
+  { id: 'repair', label: 'Quick Repair', icon: '🔧', isOpen: false, wasManuallyToggled: false, priority: 11 },
 ];
 
 export const usePanelManager = create<PanelManagerState>((set, get) => ({

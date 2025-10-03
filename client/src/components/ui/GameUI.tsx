@@ -6,6 +6,7 @@ import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
 import { OrbitalInterface } from "../navigation/OrbitalInterface";
+import { NavigationSidebar } from "../navigation/NavigationSidebar";
 import { FixedMiniMap } from "../navigation/MiniMap/FixedMiniMap";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
@@ -93,6 +94,9 @@ export function GameUI() {
     <>
       {/* Cockpit Overlay - background frame */}
       <CockpitOverlay />
+
+      {/* Navigation Sidebar - Desktop only, left side of screen */}
+      <NavigationSidebar />
 
       {/* New Contextual HUD System */}
       {/* Top Left - Ship Core Status */}
