@@ -32,7 +32,7 @@ export const MainMenu: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   
   const { user, isGuest, logout } = useAuthStore();
-  const { phase, pause, unpause } = useGame();
+  const { phase } = useGame();
   
   // Load saves when panel opens
   useEffect(() => {
@@ -46,17 +46,12 @@ export const MainMenu: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && phase === 'playing') {
         setIsOpen(!isOpen);
-        if (!isOpen) {
-          pause();
-        } else {
-          unpause();
-        }
       }
     };
     
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, phase, pause, unpause]);
+  }, [isOpen, phase]);
   
   // Load saves from server
   const loadSaves = async () => {
@@ -91,7 +86,6 @@ export const MainMenu: React.FC = () => {
       const gameState = await gameApi.getLatestSave();
       if (gameState) {
         await restoreGameState(gameState);
-        unpause();
         setIsOpen(false);
       } else {
         setError('No saves found');
@@ -117,7 +111,6 @@ export const MainMenu: React.FC = () => {
     try {
       const gameState = await gameApi.loadGame(slot);
       await restoreGameState(gameState);
-      unpause();
       setIsOpen(false);
     } catch (err: any) {
       setError('Failed to load save');
@@ -235,7 +228,6 @@ export const MainMenu: React.FC = () => {
       <button
         onClick={() => {
           setIsOpen(true);
-          pause();
         }}
         className="fixed top-4 right-4 p-2 bg-slate-900/80 border border-orange-600/30 rounded-lg text-orange-400 hover:bg-slate-800 transition-all z-40"
         title="Menu (ESC)"
@@ -261,7 +253,6 @@ export const MainMenu: React.FC = () => {
               <button
                 onClick={() => {
                   setIsOpen(false);
-                  unpause();
                 }}
                 className="text-gray-400 hover:text-white"
               >
@@ -345,7 +336,6 @@ export const MainMenu: React.FC = () => {
                 <button
                   onClick={() => {
                     setIsOpen(false);
-                    unpause();
                   }}
                   className="w-full py-3 px-4 bg-slate-800/50 text-gray-300 font-medium rounded-lg border border-slate-600 hover:bg-slate-800 hover:text-white transition-all"
                 >
