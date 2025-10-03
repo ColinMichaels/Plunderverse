@@ -26,8 +26,15 @@ import {
   MARKET_ITEMS,
   MarketItem,
   calculateFinalPrice,
-  generateMarketConditions
-} from '../../../lib/stores/economy/marketData';
+  generatePlanetMarketConditions,
+  getSupplyDemandIndicator,
+  getDemandIndicator,
+  getPriceTrend,
+  recordPurchase,
+  recordSale,
+  CATEGORY_CONFIG,
+  getItemById
+} from '../../../lib/stores/economy/enhancedMarketData';
 import { toast } from 'sonner';
 
 interface TradingPanelProps {
@@ -58,9 +65,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
   const { landedPlanet } = useLandedState();
   const tradeHistory = useTradeHistory();
   
-  // Generate market conditions
+  // Generate market conditions with planet economy
   const marketConditions = useMemo(() => {
-    return generateMarketConditions(landedPlanet || station);
+    return generatePlanetMarketConditions(landedPlanet || station);
   }, [landedPlanet, station]);
   
   // Get available items for buying
@@ -83,22 +90,17 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     }).filter(Boolean);
   }, [inventory.items]);
   
-  // Calculate price with all modifiers
+  // Calculate price with planet economy modifiers
   const getItemPrice = (item: MarketItem, isSelling = false): number => {
     const heatModifier = heatSystem.applyPriceModifiers(1);
-    const supplyDemandModifier = marketConditions.supplyDemand[item.id] || 1;
+    const planetName = landedPlanet || station;
     const specialDeal = marketConditions.specialDeals.find(d => d.itemId === item.id);
     
-    let price = calculateFinalPrice(item, faction, heatModifier, supplyDemandModifier);
+    let price = calculateFinalPrice(item, planetName, faction, heatModifier, isSelling);
     
     // Apply special deal discount for buying
     if (!isSelling && specialDeal) {
       price = Math.round(price * (1 - specialDeal.discount));
-    }
-    
-    // Selling prices are typically 70-90% of buying price
-    if (isSelling) {
-      price = Math.round(price * 0.8);
     }
     
     return price;
@@ -211,6 +213,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
         const added = inventory.addResource(resourceData, qty, landedPlanet || station);
         
         if (added) {
+          // Record purchase for supply/demand tracking
+          const planetName = landedPlanet || station;
+          recordPurchase(planetName, item.id, qty, pricePerUnit);
+          
           // Apply heat if contraband
           if (item.heatOnPurchase) {
             heatSystem.applyHeat('minor_smuggling', item.heatOnPurchase / 5);
@@ -226,7 +232,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
             totalPrice: totalCost,
             transactionType: 'buy',
             station,
-            planet: landedPlanet || station,
+            planet: planetName,
             faction,
             heatLevel: player.heat
           });
@@ -304,6 +310,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
       if (removed) {
         earnCredits(totalEarnings);
         
+        // Record sale for supply/demand tracking
+        const planetName = landedPlanet || station;
+        recordSale(planetName, item.id, qty, pricePerUnit);
+        
         // Record transaction
         tradeHistory.addTransaction({
           itemType: item.id,
@@ -313,7 +323,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
           totalPrice: totalEarnings,
           transactionType: 'sell',
           station,
-          planet: landedPlanet || station,
+          planet: planetName,
           profit,
           faction,
           heatLevel: player.heat
@@ -496,7 +506,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-xs mb-2">
           <div className="flex items-center gap-3">
             <span className="text-gray-400">Station: {station}</span>
             <span className="text-orange-400">Faction: {faction}</span>
@@ -508,6 +518,28 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
             </span>
           </div>
         </div>
+        
+        {/* Planet Economy Info */}
+        <div className="bg-slate-800/50 rounded-lg px-3 py-2 mt-2">
+          <div className="text-xs text-cyan-400 mb-1">{marketConditions.economyType?.toUpperCase()} ECONOMY</div>
+          <div className="text-xs text-gray-400">{marketConditions.description}</div>
+        </div>
+        
+        {/* Trade Routes */}
+        {marketConditions.tradeRoutes && marketConditions.tradeRoutes.length > 0 && (
+          <div className="mt-2 bg-green-900/20 border border-green-600/30 rounded-lg px-3 py-2">
+            <div className="text-xs font-semibold text-green-400 mb-1">🚀 Profitable Routes</div>
+            <div className="space-y-1">
+              {marketConditions.tradeRoutes.slice(0, 3).map((route, index) => (
+                <div key={index} className="text-xs text-gray-300">
+                  <span className="text-green-400">→ {route.to}</span>
+                  <span className="ml-2 text-gray-400">{route.item}</span>
+                  <span className="ml-2 text-yellow-400">+{route.profitMargin}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       
       {/* Tab Selector */}
@@ -591,6 +623,10 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
               const isSelected = selectedItem?.id === item.id;
               const isFavorite = tradeHistory.favoriteItems.includes(item.id);
               const specialDeal = marketConditions.specialDeals.find(d => d.itemId === item.id);
+              const planetName = landedPlanet || station;
+              const supplyIndicator = getSupplyDemandIndicator(planetName, item.id);
+              const demandIndicator = getDemandIndicator(planetName, item.id);
+              const priceTrend = getPriceTrend(planetName, item.id);
               
               return (
                 <motion.div
@@ -623,6 +659,33 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
                           <span>{item.rarity}</span>
                           {item.illegal && (
                             <span className="text-red-400">+{item.heatOnPurchase} heat</span>
+                          )}
+                        </div>
+                        {/* Supply/Demand Indicators */}
+                        <div className="flex items-center gap-2 mt-1">
+                          {supplyIndicator === 'abundant' && (
+                            <span className="text-xs text-green-400 flex items-center gap-1">
+                              <TrendingDown className="w-3 h-3" />
+                              Abundant
+                            </span>
+                          )}
+                          {supplyIndicator === 'scarce' && (
+                            <span className="text-xs text-red-400 flex items-center gap-1">
+                              <TrendingUp className="w-3 h-3" />
+                              Scarce
+                            </span>
+                          )}
+                          {demandIndicator === 'high' && (
+                            <span className="text-xs text-orange-400">High Demand</span>
+                          )}
+                          {demandIndicator === 'low' && (
+                            <span className="text-xs text-blue-400">Low Demand</span>
+                          )}
+                          {priceTrend === 'rising' && (
+                            <span className="text-xs text-yellow-400">📈</span>
+                          )}
+                          {priceTrend === 'falling' && (
+                            <span className="text-xs text-cyan-400">📉</span>
                           )}
                         </div>
                       </div>
