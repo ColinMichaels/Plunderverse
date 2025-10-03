@@ -1111,25 +1111,26 @@ export const StationDashboard: React.FC = () => {
         </div>
       </MobileSlidePanel>
 
-      {/* Heat Management Panel */}
+      {/* Heat Management Panel - Optimized for mobile */}
       <MobileSlidePanel
         isOpen={activePanel === 'heat'}
         onClose={() => setActivePanel(null)}
         title="Heat Management"
-        height="3/4"
+        height="full"  
       >
-        <div className="space-y-4">
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400">Heat Level</span>
-              <span className={`font-mono ${
+        <div className="space-y-3 pb-4">
+          {/* Compact Heat Level Display */}
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-400 text-sm">Heat Level</span>
+              <span className={`font-mono text-sm ${
                 player.heat < 30 ? 'text-blue-400' :
                 player.heat < 70 ? 'text-orange-400' : 'text-red-400'
               }`}>
                 {player.heat} / 100
               </span>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className={`h-full ${
                   player.heat < 30 ? 'bg-blue-500' :
@@ -1140,19 +1141,21 @@ export const StationDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-3">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="text-2xl">{heatSystem.wantedLevelInfo.icon}</span>
-              <div>
-                <p className="text-white font-semibold">{heatSystem.wantedLevelInfo.name}</p>
-                <p className="text-xs text-gray-400">{heatSystem.wantedLevelInfo.description}</p>
+          {/* Compact Wanted Level */}
+          <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">{heatSystem.wantedLevelInfo.icon}</span>
+              <div className="flex-1">
+                <p className="text-white text-sm font-semibold">{heatSystem.wantedLevelInfo.name}</p>
+                <p className="text-xs text-gray-400 line-clamp-1">{heatSystem.wantedLevelInfo.description}</p>
               </div>
             </div>
           </div>
           
-          <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-400">Consequences</h3>
-            <div className="space-y-1 text-sm">
+          {/* Compact Consequences */}
+          <div className="bg-slate-800/30 rounded-lg p-2">
+            <h3 className="text-xs font-semibold text-gray-400 mb-1">Consequences</h3>
+            <div className="space-y-0.5 text-xs">
               <div className="flex justify-between">
                 <span className="text-gray-500">Patrol encounters</span>
                 <span className="text-orange-400">{(heatSystem.wantedLevelInfo.encounterChance * 100).toFixed(0)}%</span>
@@ -1170,38 +1173,38 @@ export const StationDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="space-y-3 pt-3 border-t border-slate-700">
-            <h3 className="text-sm font-semibold text-gray-400">Lay Low</h3>
+          {/* Compact Lay Low Section */}
+          <div className="space-y-2 pt-2 border-t border-slate-700">
+            <h3 className="text-xs font-semibold text-gray-400">Lay Low Options</h3>
             
-            <div>
-              <label className="text-sm text-gray-400 block mb-2">
-                Days to lay low: {layLowDays}
-              </label>
+            {/* Compact Slider */}
+            <div className="bg-slate-800/30 rounded-lg p-2">
+              <div className="flex justify-between items-center mb-1">
+                <label className="text-xs text-gray-400">
+                  Days to lay low: <span className="text-cyan-400">{layLowDays}</span>
+                </label>
+                <span className="text-xs text-blue-400">-{Math.min(20 * layLowDays, player.heat)} heat</span>
+              </div>
               <input
                 type="range"
                 min="1"
                 max="5"
                 value={layLowDays}
                 onChange={(e) => setLayLowDays(Number(e.target.value))}
-                className="w-full"
+                className="w-full h-1"
               />
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-500">Cost:</span>
+                <span className="text-xs text-cyan-400 font-mono">{actualLayLowCost * layLowDays}c</span>
+              </div>
             </div>
             
-            <div className="flex justify-between">
-              <span className="text-gray-400">Heat reduction</span>
-              <span className="text-blue-400">-{Math.min(20 * layLowDays, player.heat)} heat</span>
-            </div>
-            
-            <div className="flex justify-between text-lg">
-              <span className="text-gray-300">Total Cost</span>
-              <span className="text-cyan-400 font-mono">{actualLayLowCost * layLowDays} credits</span>
-            </div>
-            
+            {/* Compact Buttons */}
             <button
               onClick={handleLayLow}
               disabled={isProcessing || player.heat === 0 || credits < actualLayLowCost * layLowDays}
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg
-                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-2.5 rounded-lg
+                       font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : 
                player.heat === 0 ? 'No Heat to Reduce' : 
@@ -1226,8 +1229,8 @@ export const StationDashboard: React.FC = () => {
                   }
                 }}
                 disabled={isProcessing || credits < 1000}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg
-                         font-semibold active:scale-95 transition-transform disabled:opacity-50"
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2.5 rounded-lg
+                         font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
               >
                 Purchase Fake ID (1000c)
               </button>
