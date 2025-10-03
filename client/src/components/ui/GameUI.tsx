@@ -20,7 +20,7 @@ import { ObjectiveTracker } from "../economy/ObjectiveTracker";
 // Save and Menu Components
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
-import { SaveIndicator } from "../../hooks/useAutoSave";
+import { AutoSaveIndicator } from "./AutoSaveIndicator";
 // Store Hooks
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
@@ -36,15 +36,9 @@ import { TakeoffControls } from "../surface/TakeoffControls";
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
   const [showSavePanel, setShowSavePanel] = useState(false);
-  const [showAutoSaveMessage, setShowAutoSaveMessage] = useState(false);
   
   const { isGuest } = useAuthStore();
-  const { manualSave } = useAutoSave({
-    onSave: () => setShowAutoSaveMessage(true),
-    onSaveComplete: () => {
-      setTimeout(() => setShowAutoSaveMessage(false), 3000);
-    }
-  });
+  const { manualSave } = useAutoSave();
 
   // Initialize docking detection
   useDockingDetection();
@@ -189,22 +183,11 @@ export function GameUI() {
         onClose={() => setShowSavePanel(false)}
         onSaveComplete={() => {
           setShowSavePanel(false);
-          setShowAutoSaveMessage(true);
-          setTimeout(() => setShowAutoSaveMessage(false), 3000);
         }}
       />
       
-      {/* Auto-save Indicator */}
-      <SaveIndicator />
-      
-      {/* Quick save notification */}
-      {showAutoSaveMessage && (
-        <div className="fixed bottom-20 right-4 z-40 animate-fade-in">
-          <div className="px-4 py-2 bg-green-600/20 border border-green-600/50 text-green-400 rounded-lg backdrop-blur-sm">
-            <span className="text-sm font-medium">Game Saved!</span>
-          </div>
-        </div>
-      )}
+      {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
+      <AutoSaveIndicator />
 
     </>
   );

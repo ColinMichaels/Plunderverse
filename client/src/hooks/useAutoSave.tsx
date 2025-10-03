@@ -1,7 +1,7 @@
 // Auto-Save Hook
 // Handles automatic saving at key points in the game
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useAuthStore } from '../lib/stores/auth/useAuthStore';
 import { useHUDContext } from '../lib/stores/ui/useHUDContext';
 import { usePlunderverseMissions } from '../lib/stores/economy/usePlunderverseMissions';
@@ -16,12 +16,62 @@ interface AutoSaveOptions {
   onSaveError?: (error: Error) => void;
 }
 
+// Singleton state for auto-save to prevent multiple hooks from creating duplicate saves
+let globalSaveState = {
+  isSaving: false,
+  lastSaveTime: null as Date | null,
+  saveMessage: '',
+  subscribers: new Set<(state: any) => void>()
+};
+
+const updateGlobalSaveState = (updates: Partial<typeof globalSaveState>) => {
+  Object.assign(globalSaveState, updates);
+  globalSaveState.subscribers.forEach(cb => cb(globalSaveState));
+};
+
+// Lightweight hook that ONLY reads the auto-save state
+// Does NOT create any timers, listeners, or trigger saves
+// This is for display components that need to show save status
+export const useAutoSaveState = () => {
+  const [localState, setLocalState] = useState({
+    isSaving: globalSaveState.isSaving,
+    lastSaveTime: globalSaveState.lastSaveTime,
+    saveMessage: globalSaveState.saveMessage
+  });
+  
+  // Subscribe to global state changes
+  useEffect(() => {
+    const subscriber = (state: typeof globalSaveState) => {
+      setLocalState({
+        isSaving: state.isSaving,
+        lastSaveTime: state.lastSaveTime,
+        saveMessage: state.saveMessage
+      });
+    };
+    globalSaveState.subscribers.add(subscriber);
+    
+    return () => {
+      globalSaveState.subscribers.delete(subscriber);
+    };
+  }, []);
+  
+  return {
+    isSaving: localState.isSaving,
+    lastSaveTime: localState.lastSaveTime,
+    saveMessage: localState.saveMessage
+  };
+};
+
+// Full hook that manages auto-save logic, timers, and triggers
+// Should only be used once in the application (GameUI)
 export const useAutoSave = (options: AutoSaveOptions = {}) => {
   const { intervalMinutes = 5, onSave, onSaveComplete, onSaveError } = options;
   
-  const [isSaving, setIsSaving] = useState(false);
-  const [lastSaveTime, setLastSaveTime] = useState<Date | null>(null);
-  const [saveMessage, setSaveMessage] = useState('');
+  const [localState, setLocalState] = useState({
+    isSaving: globalSaveState.isSaving,
+    lastSaveTime: globalSaveState.lastSaveTime,
+    saveMessage: globalSaveState.saveMessage
+  });
   
   const { isAuthenticated, isGuest } = useAuthStore();
   const { phase } = useGame();
@@ -31,45 +81,104 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastDockedRef = useRef(false);
   const lastCompletedMissionsRef = useRef(completedMissionIds.size);
+  const messageClearTimeoutRef = useRef<NodeJS.Timeout>();
+  const isPerformingSaveRef = useRef(false);
   
-  // Auto-save function
-  const performAutoSave = async () => {
+  // Subscribe to global state changes
+  useEffect(() => {
+    const subscriber = (state: typeof globalSaveState) => {
+      setLocalState({
+        isSaving: state.isSaving,
+        lastSaveTime: state.lastSaveTime,
+        saveMessage: state.saveMessage
+      });
+    };
+    globalSaveState.subscribers.add(subscriber);
+    
+    return () => {
+      globalSaveState.subscribers.delete(subscriber);
+    };
+  }, []);
+  
+  // Auto-save function - fully async and non-blocking
+  const performAutoSave = useCallback(async () => {
     if (isGuest || !isAuthenticated || phase !== 'playing') {
       return;
     }
     
-    setIsSaving(true);
-    setSaveMessage('Auto-saving...');
-    onSave?.();
-    
-    try {
-      const gameState = collectGameState();
-      
-      // Try to get the most recent save slot or use slot 1
-      const saves = await gameApi.listSaves();
-      const slot = saves.saves.length > 0 
-        ? saves.saves.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0].slot
-        : 1;
-      
-      await gameApi.saveGame(slot, gameState);
-      
-      setLastSaveTime(new Date());
-      setSaveMessage('Auto-saved');
-      onSaveComplete?.();
-      
-      // Clear message after 3 seconds
-      setTimeout(() => setSaveMessage(''), 3000);
-    } catch (error: any) {
-      console.error('Auto-save failed:', error);
-      setSaveMessage('Auto-save failed');
-      onSaveError?.(error);
-      
-      // Clear error message after 5 seconds
-      setTimeout(() => setSaveMessage(''), 5000);
-    } finally {
-      setIsSaving(false);
+    // Prevent multiple simultaneous saves
+    if (isPerformingSaveRef.current || globalSaveState.isSaving) {
+      console.log('[AUTO-SAVE] Save already in progress, skipping...');
+      return;
     }
-  };
+    
+    isPerformingSaveRef.current = true;
+    
+    // Run the save operation completely asynchronously
+    requestAnimationFrame(() => {
+      // Use requestIdleCallback if available for even better performance
+      const runSave = async () => {
+        updateGlobalSaveState({ isSaving: true, saveMessage: 'Saving...' });
+        onSave?.();
+        
+        try {
+          // Collect game state in a non-blocking way
+          const gameState = await new Promise<any>(resolve => {
+            // Use setTimeout to prevent blocking
+            setTimeout(() => resolve(collectGameState()), 0);
+          });
+          
+          // Get save slot asynchronously
+          const saves = await gameApi.listSaves();
+          const slot = saves.saves.length > 0 
+            ? saves.saves.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0].slot
+            : 1;
+          
+          // Perform the actual save
+          await gameApi.saveGame(slot, gameState);
+          
+          updateGlobalSaveState({ 
+            lastSaveTime: new Date(), 
+            saveMessage: 'Saved',
+            isSaving: false
+          });
+          onSaveComplete?.();
+          
+          // Clear message after a short delay
+          if (messageClearTimeoutRef.current) {
+            clearTimeout(messageClearTimeoutRef.current);
+          }
+          messageClearTimeoutRef.current = setTimeout(() => {
+            updateGlobalSaveState({ saveMessage: '' });
+          }, 2000);
+        } catch (error: any) {
+          console.error('[AUTO-SAVE] Save failed:', error);
+          updateGlobalSaveState({ 
+            saveMessage: 'Save failed',
+            isSaving: false
+          });
+          onSaveError?.(error);
+          
+          // Clear error message after longer delay
+          if (messageClearTimeoutRef.current) {
+            clearTimeout(messageClearTimeoutRef.current);
+          }
+          messageClearTimeoutRef.current = setTimeout(() => {
+            updateGlobalSaveState({ saveMessage: '' });
+          }, 4000);
+        } finally {
+          isPerformingSaveRef.current = false;
+        }
+      };
+      
+      // Use requestIdleCallback if available, otherwise use setTimeout
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(runSave, { timeout: 2000 });
+      } else {
+        setTimeout(runSave, 0);
+      }
+    });
+  }, [isGuest, isAuthenticated, phase, onSave, onSaveComplete, onSaveError]);
   
   // Trigger auto-save on docking
   useEffect(() => {
@@ -78,7 +187,7 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
       performAutoSave();
     }
     lastDockedRef.current = isDocked;
-  }, [isDocked]);
+  }, [isDocked, performAutoSave]);
   
   // Trigger auto-save on mission completion
   useEffect(() => {
@@ -87,7 +196,7 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
       performAutoSave();
     }
     lastCompletedMissionsRef.current = completedMissionIds.size;
-  }, [completedMissionIds.size]);
+  }, [completedMissionIds.size, performAutoSave]);
   
   // Interval-based auto-save
   useEffect(() => {
@@ -118,29 +227,38 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
+      if (messageClearTimeoutRef.current) {
+        clearTimeout(messageClearTimeoutRef.current);
+      }
     };
-  }, [isGuest, isAuthenticated, phase, intervalMinutes]);
+  }, [isGuest, isAuthenticated, phase, intervalMinutes, performAutoSave]);
   
   // Manual save function
-  const manualSave = async () => {
+  const manualSave = useCallback(async () => {
     if (isGuest) {
-      setSaveMessage('Guest mode: Saving disabled');
-      setTimeout(() => setSaveMessage(''), 3000);
+      updateGlobalSaveState({ saveMessage: 'Guest mode: Saving disabled' });
+      if (messageClearTimeoutRef.current) {
+        clearTimeout(messageClearTimeoutRef.current);
+      }
+      messageClearTimeoutRef.current = setTimeout(() => {
+        updateGlobalSaveState({ saveMessage: '' });
+      }, 3000);
       return;
     }
     
     await performAutoSave();
-  };
+  }, [isGuest, performAutoSave]);
   
   return {
-    isSaving,
-    lastSaveTime,
-    saveMessage,
+    isSaving: localState.isSaving,
+    lastSaveTime: localState.lastSaveTime,
+    saveMessage: localState.saveMessage,
     manualSave,
   };
 };
 
-// Save indicator component
+// Legacy Save indicator component - keeping for backward compatibility
+// Use the new AutoSaveIndicator component instead
 export const SaveIndicator: React.FC = () => {
   const { isSaving, saveMessage, lastSaveTime } = useAutoSave();
   

@@ -211,7 +211,7 @@ class ResourceManager {
   }
 
   /**
-   * Dispose all resources with a specific tag
+   * Dispose all resources with a specific tag (except protected resources)
    */
   public disposeByTag(tag: string): number {
     const resourceIds = this.tagIndex.get(tag);
@@ -224,6 +224,13 @@ class ResourceManager {
     const idsToDispose = Array.from(resourceIds);
     
     idsToDispose.forEach(id => {
+      const resource = this.resources.get(id);
+      // Skip disposal of persistent resources
+      if (resource && resource.tags.has('persistent-audio')) {
+        this.log(`Skipping disposal of persistent resource: ${id}`);
+        return;
+      }
+      
       if (this.disposeResource(id)) {
         disposedCount++;
       }
