@@ -1,11 +1,11 @@
 // Test Script for Panel Functionality and Transitions
 // This script provides automated and manual test procedures for verifying panel behavior
 
-import { useLandedState } from './lib/stores/surface/useLandedState';
-import { useHUDContext } from './lib/stores/ui/useHUDContext';
-import { useUILayout } from './components/ui/UILayoutManager';
-import { useAutopilot } from './lib/stores/navigation/useAutopilot';
-import { useShipStatus } from './lib/stores/ship/useShipStatus';
+import { useLandedState } from '../../stores/surface/useLandedState';
+import { useHUDContext } from '../../stores/ui/useHUDContext';
+import { useUILayout } from '../../../components/ui/UILayoutManager';
+import { useAutopilot } from '../../stores/navigation/useAutopilot';
+import { useShipStatus } from '../../stores/ship/useShipStatus';
 import { toast } from 'sonner';
 
 // Test Logger Helper

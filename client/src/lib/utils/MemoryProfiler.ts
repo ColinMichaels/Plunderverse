@@ -311,6 +311,7 @@ class MemoryProfiler {
   public getStats(): {
     current: number;
     peak: number;
+    limit: number;
     usage: number;
     lastCleanup: number;
     cleanupCount: number;
@@ -321,11 +322,20 @@ class MemoryProfiler {
     return {
       current: current?.usedJSHeapSize || 0,
       peak: this.peakMemory,
+      limit: current?.jsHeapSizeLimit || 0,
       usage: (current?.usedJSHeapSize || 0) / (current?.jsHeapSizeLimit || 1),
       lastCleanup: this.lastCleanupTime,
       cleanupCount: this.cleanupCount,
       snapshotCount: this.snapshots.length
     };
+  }
+
+  /**
+   * Clear all snapshots
+   */
+  public clearSnapshots(): void {
+    this.snapshots = [];
+    console.log('[MemoryProfiler] Cleared all snapshots');
   }
 
   /**

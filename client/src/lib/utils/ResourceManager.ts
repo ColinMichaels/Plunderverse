@@ -404,6 +404,13 @@ class ResourceManager {
   }
 
   /**
+   * Get all tags currently in use
+   */
+  public getAllTags(): Set<string> {
+    return new Set(this.tagIndex.keys());
+  }
+
+  /**
    * Add tag to existing resource
    */
   public addTag(id: string, tag: string): void {
