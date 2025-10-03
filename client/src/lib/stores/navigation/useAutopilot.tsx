@@ -142,9 +142,21 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     // Use cubic easing for smooth deceleration
     const easedProgress = easeOutCubic(progress);
     
+    // Apply crew pilot bonus to navigation speed
+    let speedMultiplier = 1.0;
+    try {
+      const crewState = (window as any).useCrewManagement?.getState?.();
+      if (crewState?.currentBonuses?.navigationSpeed) {
+        speedMultiplier = 1 + crewState.currentBonuses.navigationSpeed;
+        console.log(`[AUTOPILOT] Applying pilot bonus: +${(crewState.currentBonuses.navigationSpeed * 100).toFixed(0)}% navigation speed`);
+      }
+    } catch (e) {
+      // Crew management might not be initialized yet
+    }
+    
     // Apply easing to speed (slow down as we get closer)
-    const minSpeed = baseSpeed * 0.2; // Minimum 20% of base speed
-    const speed = baseSpeed * (1 - easedProgress * 0.8) + minSpeed;
+    const minSpeed = baseSpeed * 0.2 * speedMultiplier; // Minimum 20% of base speed
+    const speed = (baseSpeed * (1 - easedProgress * 0.8) + minSpeed) * speedMultiplier;
     
     return speed;
   }

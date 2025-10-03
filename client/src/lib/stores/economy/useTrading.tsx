@@ -151,9 +151,21 @@ export const useTrading = create<TradingState>()(
       },
       
       calculatePrice: (basePrice: number, factionModifier: number, heatModifier: number, demand: number) => {
+        // Apply crew negotiator bonus to trade prices
+        let tradePriceModifier = 1.0;
+        try {
+          const crewState = (window as any).useCrewManagement?.getState?.();
+          if (crewState?.currentBonuses?.tradePrices) {
+            tradePriceModifier = 1 + crewState.currentBonuses.tradePrices; // Negative bonus = better prices
+            console.log(`[TRADING] Applying negotiator bonus: ${(-crewState.currentBonuses.tradePrices * 100).toFixed(0)}% better trade prices`);
+          }
+        } catch (e) {
+          // Crew management might not be initialized yet
+        }
+        
         // Apply all modifiers
         const demandModifier = 0.8 + (demand * 0.4); // 0.8x to 1.2x based on demand
-        return Math.round(basePrice * factionModifier * heatModifier * demandModifier);
+        return Math.round(basePrice * factionModifier * heatModifier * demandModifier * tradePriceModifier);
       },
       
       getGoodById: (goodId: string) => {

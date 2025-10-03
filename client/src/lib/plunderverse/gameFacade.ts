@@ -143,7 +143,7 @@ export class GameFacade {
       crewManagement.initializeCrew();
 
       // Make crew management accessible globally for other systems
-      (window as any).crewManagement = crewManagement;
+      (window as any).useCrewManagement = useCrewManagement;
 
       console.log("[GameFacade] ✅ Crew system initialized");
 

@@ -46,13 +46,38 @@ export const useShooting = create<ShootingState>((set, get) => ({
         return;
       }
 
+      // Apply crew gunner bonuses to player projectiles
+      let damageMultiplier = 1.0;
+      let accuracyBonus = 0;
+      if (ownerType === 'player') {
+        try {
+          const crewState = (window as any).useCrewManagement?.getState?.();
+          if (crewState?.currentBonuses) {
+            if (crewState.currentBonuses.combatDamage) {
+              damageMultiplier = 1 + crewState.currentBonuses.combatDamage;
+              console.log(`[SHOOTING] Applying gunner damage bonus: +${(crewState.currentBonuses.combatDamage * 100).toFixed(0)}% damage`);
+            }
+            if (crewState.currentBonuses.accuracy) {
+              accuracyBonus = crewState.currentBonuses.accuracy;
+              // Apply accuracy as a slight adjustment to direction (less spread)
+              const accuracyFactor = 1 - accuracyBonus * 0.5; // Less spread with higher accuracy
+              direction.x += (Math.random() - 0.5) * 0.1 * accuracyFactor;
+              direction.y += (Math.random() - 0.5) * 0.1 * accuracyFactor;
+              direction.z += (Math.random() - 0.5) * 0.1 * accuracyFactor;
+            }
+          }
+        } catch (e) {
+          // Crew management might not be initialized yet
+        }
+      }
+
       const newProjectile: Projectile = {
         id: Math.random().toString(36).substr(2, 9),
         position: position.clone(),
         direction: direction.clone().normalize(),
         speed,
         life: 5.0, // 5 seconds
-        damage,
+        damage: damage * damageMultiplier,
         ownerId,
         ownerType,
       };

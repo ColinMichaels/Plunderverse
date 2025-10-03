@@ -15,6 +15,7 @@ interface ShipStatusState {
   
   // Damage sources
   lastDamageSource: string | null;
+  lastCombatTime: number; // Track last combat for hull regen
   
   // Upgrade system
   upgrades: {
@@ -31,6 +32,7 @@ interface ShipStatusState {
   setThrusting: (thrusting: boolean) => void;
   setWarpMode: (warpMode: boolean) => void;
   upgradeShip: (upgradeType: 'fuelCapacity' | 'thrustEfficiency' | 'warpCapability', cost: number) => boolean;
+  applyPassiveRegen: (delta: number) => void;
 }
 
 export const useShipStatus = create<ShipStatusState>((set, get) => ({
@@ -41,6 +43,7 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   isThrusting: false,
   isWarpMode: false,
   lastDamageSource: null,
+  lastCombatTime: 0,
   upgrades: {
     fuelCapacity: 1.0,
     thrustEfficiency: 1.0,
@@ -108,7 +111,8 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
         hull: newHull,
         isDestroyed,
         isCritical,
-        lastDamageSource: source
+        lastDamageSource: source,
+        lastCombatTime: Date.now() // Update combat time for regen tracking
       };
     });
   },
@@ -229,5 +233,60 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
     });
     
     return true;
+  },
+  
+  applyPassiveRegen: (delta) => {
+    const state = get();
+    const currentTime = Date.now();
+    
+    // Only apply regen if not in combat (5 seconds after last damage)
+    if (currentTime - state.lastCombatTime < 5000) {
+      return;
+    }
+    
+    // Apply crew medic and mechanic bonuses for hull regeneration
+    let hullRegenRate = 0;
+    try {
+      const crewState = (window as any).useCrewManagement?.getState?.();
+      if (crewState?.currentBonuses?.healthRegen) {
+        hullRegenRate = crewState.currentBonuses.healthRegen * delta; // Hull points per second
+        console.log(`[HULL-REGEN] Applying medic/mechanic bonus: +${hullRegenRate.toFixed(2)} hull/sec`);
+      }
+    } catch (e) {
+      // Crew management might not be initialized yet
+    }
+    
+    if (hullRegenRate > 0 && state.hull < 100) {
+      const newHull = Math.min(100, state.hull + hullRegenRate);
+      
+      set(state => ({
+        hull: newHull,
+        isCritical: state.shield < 20 || newHull < 20
+      }));
+      
+      // Also sync with equipment system
+      const equipmentStore = useEquipment.getState();
+      const hullEquipment = equipmentStore.getEquipment('hull-primary');
+      
+      if (hullEquipment) {
+        const durabilityRegen = (hullRegenRate / 100) * hullEquipment.maxDurability;
+        
+        equipmentStore.equipment = equipmentStore.equipment.map(eq => {
+          if (eq.id === 'hull-primary') {
+            const regenDurability = Math.min(eq.maxDurability, eq.currentDurability + durabilityRegen);
+            const conditionRatio = regenDurability / eq.maxDurability;
+            return {
+              ...eq,
+              currentDurability: regenDurability,
+              performanceLevel: conditionRatio > 0.8 ? 1.0 : conditionRatio > 0.6 ? 0.9 : conditionRatio > 0.4 ? 0.75 : conditionRatio > 0.2 ? 0.5 : conditionRatio > 0 ? 0.25 : 0
+            };
+          }
+          return eq;
+        });
+        
+        // Force equipment store update
+        useEquipment.setState({ equipment: [...equipmentStore.equipment] });
+      }
+    }
   }
 }));

@@ -18,6 +18,7 @@ import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
 import { MissionHUD } from "./MissionHUD";
+import { CrewBonusDisplay } from "./CrewBonusDisplay";
 // Save and Menu Components
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
@@ -191,6 +192,9 @@ export function GameUI() {
       
       {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
       <AutoSaveIndicator />
+      
+      {/* Crew Bonus Display - Shows active crew bonuses */}
+      <CrewBonusDisplay />
 
     </>
   );

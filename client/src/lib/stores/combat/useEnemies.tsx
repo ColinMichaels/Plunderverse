@@ -222,8 +222,20 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
         const speed = 20; // Base movement speed
         let targetVelocity = new THREE.Vector3();
         
+        // Apply crew hacker bonus to reduce enemy detection range
+        let effectiveDetectionRange = enemy.detectionRange;
+        try {
+          const crewState = (window as any).useCrewManagement?.getState?.();
+          if (crewState?.currentBonuses?.intelGathering) {
+            effectiveDetectionRange *= (1 - crewState.currentBonuses.intelGathering * 0.5); // 50% of intel bonus reduces detection
+            console.log(`[ENEMY] Hacker stealth reducing detection by ${(crewState.currentBonuses.intelGathering * 50).toFixed(0)}%`);
+          }
+        } catch (e) {
+          // Crew management might not be initialized yet
+        }
+        
         // Detection and behavior switching
-        if (distanceToPlayer < enemy.detectionRange) {
+        if (distanceToPlayer < effectiveDetectionRange) {
           // Player detected - determine behavior based on faction and health
           const healthPercent = enemy.hull / enemy.maxHull;
           
@@ -374,8 +386,20 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
               .sub(enemy.position)
               .normalize();
             
-            // Add some inaccuracy based on enemy type
-            const inaccuracy = enemy.shipType === 'elite' ? 0.02 : 0.05;
+            // Add some inaccuracy based on enemy type and apply crew pilot evasion bonus
+            let inaccuracy = enemy.shipType === 'elite' ? 0.02 : 0.05;
+            
+            // Apply crew pilot evasion bonus to make enemies less accurate
+            try {
+              const crewState = (window as any).useCrewManagement?.getState?.();
+              if (crewState?.currentBonuses?.evasion) {
+                inaccuracy *= (1 + crewState.currentBonuses.evasion); // More evasion = less accurate enemies
+                console.log(`[ENEMY] Pilot evasion making shots ${(crewState.currentBonuses.evasion * 100).toFixed(0)}% less accurate`);
+              }
+            } catch (e) {
+              // Crew management might not be initialized yet
+            }
+            
             shootDirection.x += (Math.random() - 0.5) * inaccuracy;
             shootDirection.z += (Math.random() - 0.5) * inaccuracy;
             

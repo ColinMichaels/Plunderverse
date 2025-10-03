@@ -196,11 +196,23 @@ export const useHeatSystem = create<HeatSystemState>((set, get) => ({
   // Heat Management
   applyHeat: (crime: CrimeType, multiplier: number = 1) => {
     const state = get();
-    const heatIncrease = (state.crimeHeatValues[crime] || 0) * multiplier;
+    let heatIncrease = (state.crimeHeatValues[crime] || 0) * multiplier;
+    
+    // Apply crew hacker bonus to reduce heat gain
+    try {
+      const crewState = (window as any).useCrewManagement?.getState?.();
+      if (crewState?.currentBonuses?.heatReduction && heatIncrease > 0) {
+        const reduction = 1 - crewState.currentBonuses.heatReduction;
+        heatIncrease *= reduction;
+        console.log(`[HeatSystem] Hacker bonus reducing heat by ${(crewState.currentBonuses.heatReduction * 100).toFixed(0)}%`);
+      }
+    } catch (e) {
+      // Crew management might not be initialized yet
+    }
     
     if (heatIncrease > 0) {
       state.updateHeat(heatIncrease);
-      console.log(`[HeatSystem] Applied ${heatIncrease} heat for ${crime}`);
+      console.log(`[HeatSystem] Applied ${heatIncrease.toFixed(1)} heat for ${crime}`);
       
       // Also update player's heat stat
       const player = usePlayer.getState();

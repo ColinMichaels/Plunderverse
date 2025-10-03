@@ -390,10 +390,24 @@ export const usePlayer = create<PlayerState>((set, get) => ({
   },
   
   updateReputation: (faction, change) => {
+    // Apply crew negotiator bonus to reputation gains
+    let finalChange = change;
+    if (change > 0) {
+      try {
+        const crewState = (window as any).useCrewManagement?.getState?.();
+        if (crewState?.currentBonuses?.reputationGain) {
+          finalChange = change * (1 + crewState.currentBonuses.reputationGain);
+          console.log(`[PLAYER] Negotiator bonus: +${(crewState.currentBonuses.reputationGain * 100).toFixed(0)}% reputation gain`);
+        }
+      } catch (e) {
+        // Crew management might not be initialized yet
+      }
+    }
+    
     set(state => ({
       reputation: {
         ...state.reputation,
-        [faction]: Math.max(-100, Math.min(100, state.reputation[faction] + change))
+        [faction]: Math.max(-100, Math.min(100, state.reputation[faction] + finalChange))
       }
     }));
   },

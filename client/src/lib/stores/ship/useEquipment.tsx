@@ -204,10 +204,14 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     
     // Apply crew mechanic bonus to repair costs if available
     let repairCostMultiplier = 1.0;
-    const crewState = (window as any).crewManagement;
-    if (crewState?.bonuses?.repairDiscount) {
-      repairCostMultiplier = 1 - crewState.bonuses.repairDiscount;
-      console.log(`[REPAIR] Applying mechanic discount: ${crewState.bonuses.repairDiscount * 100}%`);
+    try {
+      const crewState = (window as any).useCrewManagement?.getState?.();
+      if (crewState?.currentBonuses?.repairCost) {
+        repairCostMultiplier = 1 + crewState.currentBonuses.repairCost; // Negative bonus = reduced cost
+        console.log(`[REPAIR] Applying mechanic discount: ${(-crewState.currentBonuses.repairCost * 100).toFixed(0)}% repair cost reduction`);
+      }
+    } catch (e) {
+      // Crew management might not be initialized yet
     }
     
     const baseRepairCost = Math.ceil((actualRepair / equipment.maxDurability) * equipment.repairCost);
@@ -306,15 +310,34 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
 
   consumeFuel: (amount) => {
     const fuel = get().getEquipment('fuel-tank');
-    if (!fuel || fuel.currentDurability < amount) {
-      console.warn(`Insufficient fuel! Need ${amount}, have ${fuel?.currentDurability || 0}`);
+    if (!fuel) {
+      console.warn(`No fuel tank found!`);
+      return false;
+    }
+    
+    // Apply crew pilot bonus to reduce fuel consumption
+    let fuelEfficiencyMultiplier = 1.0;
+    try {
+      const crewState = (window as any).useCrewManagement?.getState?.();
+      if (crewState?.currentBonuses?.fuelEfficiency) {
+        fuelEfficiencyMultiplier = 1 - crewState.currentBonuses.fuelEfficiency; // Negative bonus = less fuel consumed
+        console.log(`[FUEL] Applying pilot/mechanic efficiency: -${(crewState.currentBonuses.fuelEfficiency * 100).toFixed(0)}% fuel consumption`);
+      }
+    } catch (e) {
+      // Crew management might not be initialized yet
+    }
+    
+    const actualConsumption = amount * fuelEfficiencyMultiplier;
+    
+    if (fuel.currentDurability < actualConsumption) {
+      console.warn(`Insufficient fuel! Need ${actualConsumption.toFixed(1)}, have ${fuel.currentDurability.toFixed(1)}`);
       return false;
     }
 
     set(state => {
       const updatedEquipment = state.equipment.map(eq => {
         if (eq.id === 'fuel-tank') {
-          const newFuel = Math.max(0, eq.currentDurability - amount);
+          const newFuel = Math.max(0, eq.currentDurability - actualConsumption);
           return {
             ...eq,
             currentDurability: newFuel,
@@ -327,7 +350,7 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
       return { equipment: updatedEquipment };
     });
 
-    console.log(`Consumed ${amount} fuel units`);
+    console.log(`Consumed ${actualConsumption.toFixed(1)} fuel units (base: ${amount})`);
     return true;
   },
   
