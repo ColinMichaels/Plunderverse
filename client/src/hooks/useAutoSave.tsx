@@ -108,7 +108,6 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
     
     // Prevent multiple simultaneous saves
     if (isPerformingSaveRef.current || globalSaveState.isSaving) {
-      console.log('[AUTO-SAVE] Save already in progress, skipping...');
       return;
     }
     
@@ -183,7 +182,6 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
   // Trigger auto-save on docking
   useEffect(() => {
     if (isDocked && !lastDockedRef.current) {
-      console.log('[AUTO-SAVE] Triggered by docking at station');
       performAutoSave();
     }
     lastDockedRef.current = isDocked;
@@ -192,7 +190,6 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
   // Trigger auto-save on mission completion
   useEffect(() => {
     if (completedMissionIds.size > lastCompletedMissionsRef.current) {
-      console.log('[AUTO-SAVE] Triggered by mission completion');
       performAutoSave();
     }
     lastCompletedMissionsRef.current = completedMissionIds.size;
@@ -215,7 +212,6 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
       
       // Set new timeout
       saveTimeoutRef.current = setTimeout(() => {
-        console.log(`[AUTO-SAVE] Triggered by ${intervalMinutes}-minute interval`);
         performAutoSave();
         startInterval(); // Restart the interval
       }, intervalMs);

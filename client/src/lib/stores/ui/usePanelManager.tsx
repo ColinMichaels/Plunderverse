@@ -28,6 +28,32 @@ interface PanelManagerState {
   setManualOverride: (override: boolean) => void;
 }
 
+const STORAGE_KEY = 'panel-manager-states';
+
+// Load saved panel states from localStorage
+const loadPanelStates = (): Partial<Record<PanelId, boolean>> => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : {};
+  } catch (e) {
+    console.error('[PanelManager] Failed to load panel states:', e);
+    return {};
+  }
+};
+
+// Save panel states to localStorage
+const savePanelStates = (panels: Map<PanelId, Panel>) => {
+  try {
+    const states: Record<PanelId, boolean> = {};
+    panels.forEach((panel, id) => {
+      states[id] = panel.isOpen;
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(states));
+  } catch (e) {
+    console.error('[PanelManager] Failed to save panel states:', e);
+  }
+};
+
 // Define default panels
 const DEFAULT_PANELS: Panel[] = [
   { id: 'missions', label: 'Missions', icon: '📋', isOpen: false, wasManuallyToggled: false, priority: 0 },
@@ -44,8 +70,23 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'repair', label: 'Quick Repair', icon: '🔧', isOpen: false, wasManuallyToggled: false, priority: 11 },
 ];
 
+// Initialize panels with saved states
+const initializePanels = (): Map<PanelId, Panel> => {
+  const savedStates = loadPanelStates();
+  const panels = new Map<PanelId, Panel>();
+  
+  DEFAULT_PANELS.forEach(panel => {
+    panels.set(panel.id, {
+      ...panel,
+      isOpen: savedStates[panel.id] || false
+    });
+  });
+  
+  return panels;
+};
+
 export const usePanelManager = create<PanelManagerState>((set, get) => ({
-  panels: new Map(DEFAULT_PANELS.map(p => [p.id, p])),
+  panels: initializePanels(),
   activePanelId: null,
   manualOverride: false,
   lastInteractionTime: Date.now(),
@@ -56,7 +97,6 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
     if (!panel) return;
     
     const newIsOpen = !panel.isOpen;
-    console.log(`[PanelManager] Toggling ${id}: ${panel.isOpen} -> ${newIsOpen}`);
     
     // Close other panels if opening a new one
     const updatedPanels = new Map(state.panels);
@@ -76,6 +116,9 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
       wasManuallyToggled: true
     });
     
+    // Save to localStorage
+    savePanelStates(updatedPanels);
+    
     set({
       panels: updatedPanels,
       activePanelId: newIsOpen ? id : null,
@@ -87,7 +130,6 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
     setTimeout(() => {
       const currentState = get();
       if (Date.now() - currentState.lastInteractionTime >= 30000) {
-        console.log('[PanelManager] Resetting manual override due to inactivity');
         currentState.resetManualOverride();
       }
     }, 30000);
@@ -97,8 +139,6 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
     const state = get();
     const panel = state.panels.get(id);
     if (!panel || panel.isOpen) return;
-    
-    console.log(`[PanelManager] Opening panel: ${id}`);
     
     // Close other panels
     const updatedPanels = new Map(state.panels);
@@ -114,6 +154,9 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
       wasManuallyToggled: true
     });
     
+    // Save to localStorage
+    savePanelStates(updatedPanels);
+    
     set({
       panels: updatedPanels,
       activePanelId: id,
@@ -127,13 +170,14 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
     const panel = state.panels.get(id);
     if (!panel || !panel.isOpen) return;
     
-    console.log(`[PanelManager] Closing panel: ${id}`);
-    
     const updatedPanels = new Map(state.panels);
     updatedPanels.set(id, {
       ...panel,
       isOpen: false
     });
+    
+    // Save to localStorage
+    savePanelStates(updatedPanels);
     
     set({
       panels: updatedPanels,
@@ -143,7 +187,6 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
   },
   
   closeAllPanels: () => {
-    console.log('[PanelManager] Closing all panels');
     const state = get();
     const updatedPanels = new Map(state.panels);
     
@@ -153,6 +196,9 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
       }
     });
     
+    // Save to localStorage
+    savePanelStates(updatedPanels);
+    
     set({
       panels: updatedPanels,
       activePanelId: null,
@@ -161,7 +207,6 @@ export const usePanelManager = create<PanelManagerState>((set, get) => ({
   },
   
   resetManualOverride: () => {
-    console.log('[PanelManager] Resetting manual override');
     const state = get();
     const updatedPanels = new Map(state.panels);
     

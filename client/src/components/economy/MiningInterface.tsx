@@ -55,7 +55,6 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
   // Stop mining when interface is closed
   useEffect(() => {
     if (!isVisible && isActive) {
-      console.log("Mining interface closed, stopping mining operation");
       stopMining();
     }
   }, [isVisible, isActive, stopMining]);
@@ -69,11 +68,7 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
       
       if (result) {
         // Mining completed - EconomyService has already processed everything
-        if (result.success) {
-          console.log(`Mining successful: ${result.message}`);
-          // Success sound and other processing already handled by EconomyService
-        } else {
-          console.log(`Mining failed: ${result.message}`);
+        if (!result.success) {
           stopMining();
         }
       }
@@ -89,7 +84,6 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
       // Check if drill is broken before starting
       const drillCondition = getConditionStatus('drill-mk1');
       if (drillCondition === 'broken') {
-        console.warn("Cannot start mining: drill is broken and needs repair!");
         return;
       }
       
@@ -143,13 +137,10 @@ export function MiningInterface({ isVisible, planetName, resources, onClose }: M
     const result = repairEquipment(equipmentId, undefined, credits);
     if (result.success) {
       spendCredits(result.cost);
-      console.log(`Repaired equipment for ${result.cost} credits`);
       
       // Apply maintenance kit degradation when repairing
       const { applyShipDegradation } = useEquipment.getState();
       applyShipDegradation('repair', 1.0, 1.0); // Fixed intensity and duration for repairs
-    } else {
-      console.log(`Failed to repair equipment. Need ${result.cost} credits, have ${credits}`);
     }
   };
 

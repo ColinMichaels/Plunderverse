@@ -6,6 +6,7 @@ import "./autoTestMissions"; // This will auto-run after 5 seconds
 import { testTerrainGeneration } from "./testTerrainGeneration";
 import { testSurfaceScatter } from "./testSurfaceScatter";
 import { testAtmosphericEffects } from "./testAtmosphericEffects";
+import { runAllImprovementTests } from "./testAllImprovements";
 
 // Make test available in console for debugging
 (window as any).testMissionSystem = testMissionSystem;

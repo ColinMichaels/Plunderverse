@@ -38,7 +38,6 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
     
     const result = economyService.sellResource(resourceType, quantity);
     if (result.success) {
-      console.log(result.message);
       // Reset quantity selection
       setSelectedQuantity(prev => ({ ...prev, [resourceType]: 1 }));
       
@@ -52,60 +51,32 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
             itemType: resourceType
           });
           triggers.reportInteractionProgress('trade');
-          console.log(`[OBJECTIVE-TRIGGER] Reported trade of ${quantity}x ${resourceType} for mission objectives`);
         });
       } catch (error) {
         console.error('[OBJECTIVE-TRIGGER] Error reporting trade:', error);
       }
-    } else {
-      console.log(result.message);
     }
   };
 
   const handleBuyFuel = (amount: number) => {
-    const result = economyService.buyFuel(amount);
-    if (result.success) {
-      console.log(result.message);
-    } else {
-      console.log(result.message);
-    }
+    economyService.buyFuel(amount);
   };
 
   const handleRepairEquipment = (equipmentId: string) => {
-    const result = economyService.repairEquipment(equipmentId);
-    if (result.success) {
-      console.log(result.message);
-    } else {
-      console.log(result.message);
-    }
+    economyService.repairEquipment(equipmentId);
   };
 
   const handleUpgradeDrill = () => {
-    const result = economyService.upgradeDrill();
-    if (result.success) {
-      console.log(result.message);
-    } else {
-      console.log(result.message);
-    }
+    economyService.upgradeDrill();
   };
 
   const handleUpgradeExtractor = () => {
-    const result = economyService.upgradeExtractor();
-    if (result.success) {
-      console.log(result.message);
-    } else {
-      console.log(result.message);
-    }
+    economyService.upgradeExtractor();
   };
 
   const handleUpgradeStorage = () => {
     const additionalCapacity = 50;
-    const result = economyService.upgradeStorage(additionalCapacity);
-    if (result.success) {
-      console.log(result.message);
-    } else {
-      console.log(result.message);
-    }
+    economyService.upgradeStorage(additionalCapacity);
   };
 
   const getQuantityToSell = (resourceType: string, maxQuantity: number) => {

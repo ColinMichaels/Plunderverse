@@ -1,7 +1,8 @@
+import React from "react";
 import { useSolarSystem } from "../../../lib/stores/space/useSolarSystem";
 import { planets } from "../../../lib/planetData";
 
-export function FixedMiniMap() {
+export const FixedMiniMap = React.memo(function FixedMiniMap() {
   const { time, cameraPosition } = useSolarSystem();
   const playerPos = { x: cameraPosition.x, z: cameraPosition.z };
 
@@ -127,4 +128,4 @@ export function FixedMiniMap() {
       </div>
     </div>
   );
-}
+});

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAutoSaveState } from '../../hooks/useAutoSave';
 
-export const AutoSaveIndicator: React.FC = () => {
+export const AutoSaveIndicator: React.FC = React.memo(() => {
   // Use the lightweight state-only hook to avoid creating duplicate timers
   const { isSaving, saveMessage, lastSaveTime } = useAutoSaveState();
   const [isVisible, setIsVisible] = useState(false);
@@ -83,4 +83,4 @@ export const AutoSaveIndicator: React.FC = () => {
       </div>
     </div>
   );
-};
+});

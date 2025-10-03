@@ -9,8 +9,8 @@ import { ShipUpgradesPanel } from '../../components/ship/ShipUpgradesPanel';
 import { QuickRepairPanel } from '../../components/ship/QuickRepairPanel';
 
 export const NavigationSidebar: React.FC = () => {
-  const { isLanded, landedPlanet } = useLandedState();
-  const { currentContext, isDocked, dockedStationName } = useHUDContext();
+  const { isLanded } = useLandedState();
+  const { currentContext, isDocked } = useHUDContext();
   const { togglePanel } = useUILayout();
   
   // Determine which panels should be visible based on context

@@ -26,6 +26,7 @@ import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import "./testSaveSystem"; // Import save system test module
 import "./utils/testSaveFixed"; // Import fixed save test
+import "./runImprovementTests"; // Import improvement tests
 import "@fontsource/inter";
 
 // Main Game component (without auth wrapper)

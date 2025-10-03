@@ -96,7 +96,6 @@ export function GameUI() {
         );
 
         activateAutopilot(targetPosition);
-        console.log(`Autopilot activated! Navigating to ${selectedPlanet}`);
       }
     }
   };
