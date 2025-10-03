@@ -430,7 +430,7 @@ canvas {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 200;
+  z-index: 40; /* Lowered from 200 to allow modals (z-50+) to appear above */
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(2px);
   display: flex;
