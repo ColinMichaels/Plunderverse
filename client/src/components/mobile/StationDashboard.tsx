@@ -11,6 +11,10 @@ import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
 import { MobileSlidePanel } from './MobileSlidePanel';
 import { ShipRepairPanel } from './panels/ShipRepairPanel';
 import { ShipUpgradePanel } from './panels/ShipUpgradePanel';
+import { MarketPanel } from './panels/MarketPanel';
+import { TradingPanel } from './panels/TradingPanel';
+import { TradeHistoryPanel } from './panels/TradeHistoryPanel';
+import { useTradeHistory } from '../../lib/stores/economy/useTradeHistory';
 import { toast } from 'sonner';
 import { 
   Fuel, 
@@ -28,7 +32,10 @@ import {
   Wrench,
   AlertTriangle,
   Settings,
-  Sparkles
+  Sparkles,
+  History,
+  Store,
+  Coins
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,6 +63,9 @@ export const StationDashboard: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [showRepairPanel, setShowRepairPanel] = useState(false);
   const [showUpgradePanel, setShowUpgradePanel] = useState(false);
+  const [showMarketPanel, setShowMarketPanel] = useState(false);
+  const [showTradingPanel, setShowTradingPanel] = useState(false);
+  const [showTradeHistoryPanel, setShowTradeHistoryPanel] = useState(false);
   
   // Fuel management state
   const [fuelAmount, setFuelAmount] = useState(10);
@@ -73,6 +83,7 @@ export const StationDashboard: React.FC = () => {
   const { config } = useMobileLayout();
   const heatSystem = useHeatSystem();
   const { selectedPlanet } = useSolarSystem();
+  const tradeHistory = useTradeHistory();
   
   // Get fuel data from equipment store
   const fuelTank = equipment.getEquipment('fuel-tank');
@@ -557,12 +568,12 @@ export const StationDashboard: React.FC = () => {
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('trade')}
+                  onClick={() => setShowMarketPanel(true)}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
                            py-4 px-6 rounded-lg flex items-center justify-center gap-3
                            active:scale-95 transition-transform min-h-[60px]"
                 >
-                  <ShoppingCart className="w-5 h-5" />
+                  <Store className="w-5 h-5" />
                   <span>Market Prices</span>
                 </button>
                 
@@ -576,6 +587,64 @@ export const StationDashboard: React.FC = () => {
                 >
                   <AlertCircle className="w-5 h-5" />
                   <span>Emergency Jump</span>
+                </button>
+              </div>
+              
+              {/* Trading Actions */}
+              <div className="grid grid-cols-3 gap-3 mt-3">
+                <button
+                  onClick={() => setShowTradingPanel(true)}
+                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold
+                           py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1
+                           active:scale-95 transition-transform"
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="text-xs">Trade</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    // Quick sell functionality
+                    const sellableItems = inventory.items;
+                    if (sellableItems.length === 0) {
+                      toast.info('No items to sell');
+                      return;
+                    }
+                    
+                    let totalEarnings = 0;
+                    sellableItems.forEach(item => {
+                      const basePrice = 50; // Base price fallback
+                      const sellPrice = Math.round(basePrice * 0.8 * priceModifier);
+                      totalEarnings += sellPrice * item.quantity;
+                    });
+                    
+                    // Clear inventory and add credits
+                    inventory.items.forEach(item => {
+                      inventory.removeResource(item.type, item.quantity);
+                    });
+                    addCredits(totalEarnings);
+                    
+                    toast.success(`Quick sell complete: +${totalEarnings}c`);
+                    triggerHaptic(20);
+                  }}
+                  disabled={isProcessing || inventory.items.length === 0}
+                  className="bg-gradient-to-r from-orange-600 to-red-600 text-white font-semibold
+                           py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1
+                           active:scale-95 transition-transform
+                           disabled:opacity-50 disabled:active:scale-100"
+                >
+                  <Coins className="w-5 h-5" />
+                  <span className="text-xs">Quick Sell</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowTradeHistoryPanel(true)}
+                  className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold
+                           py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1
+                           active:scale-95 transition-transform"
+                >
+                  <History className="w-5 h-5" />
+                  <span className="text-xs">History</span>
                 </button>
               </div>
             </div>
@@ -1194,6 +1263,50 @@ export const StationDashboard: React.FC = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Market Overview Panel */}
+      <MobileSlidePanel
+        isOpen={showMarketPanel}
+        onClose={() => setShowMarketPanel(false)}
+        title="Market Overview"
+        height="full"
+      >
+        <MarketPanel
+          station={locationName}
+          faction={STATION_DATA.faction.toLowerCase()}
+          onItemSelect={(item, price) => {
+            setShowMarketPanel(false);
+            setShowTradingPanel(true);
+          }}
+          onClose={() => setShowMarketPanel(false)}
+        />
+      </MobileSlidePanel>
+
+      {/* Trading Panel */}
+      <MobileSlidePanel
+        isOpen={showTradingPanel}
+        onClose={() => setShowTradingPanel(false)}
+        title="Trading Terminal"
+        height="full"
+      >
+        <TradingPanel
+          station={locationName}
+          faction={STATION_DATA.faction.toLowerCase()}
+          onClose={() => setShowTradingPanel(false)}
+        />
+      </MobileSlidePanel>
+
+      {/* Trade History Panel */}
+      <MobileSlidePanel
+        isOpen={showTradeHistoryPanel}
+        onClose={() => setShowTradeHistoryPanel(false)}
+        title="Trade History"
+        height="full"
+      >
+        <TradeHistoryPanel
+          onClose={() => setShowTradeHistoryPanel(false)}
+        />
+      </MobileSlidePanel>
     </div>
   );
 };
