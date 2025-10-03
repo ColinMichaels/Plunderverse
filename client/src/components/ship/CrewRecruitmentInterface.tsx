@@ -59,11 +59,6 @@ export function CrewRecruitmentInterface({ stationFaction = 'independents', onCl
     const result = hireCrew(crewId);
     if (result.success) {
       setSelectedCrew(null);
-      // Show success message
-      console.log(result.message);
-    } else {
-      // Show error message
-      console.error(result.message);
     }
   };
   
@@ -98,7 +93,7 @@ export function CrewRecruitmentInterface({ stationFaction = 'independents', onCl
         {/* Crew List */}
         <div className="space-y-3 max-h-[600px] overflow-y-auto custom-scrollbar">
           {stationCrew.map((crew) => {
-            const topSkill = getTopSkill(crew.skills);
+            const topSkill = getTopSkill(crew.skills as unknown as Record<string, number>);
             const canAfford = credits.credits >= crew.hiringCost;
             const isSelected = selectedCrew === crew.id;
             
@@ -255,7 +250,7 @@ export function CrewRecruitmentInterface({ stationFaction = 'independents', onCl
                             !credits.credits || 
                             credits.credits < crew.hiringCost ||
                             activeCrew.length >= maxCrewSize ||
-                            (crew.hatedFaction && player.reputation[crew.hatedFaction as keyof typeof player.reputation] > 50)
+                            !!(crew.hatedFaction && player.reputation[crew.hatedFaction as keyof typeof player.reputation] > 50)
                           }
                         >
                           <Coins className="w-4 h-4 mr-2" />

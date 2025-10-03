@@ -5,7 +5,6 @@ import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
-import { useFrame } from '@react-three/fiber';
 import { planets } from '../../lib/planetData';
 import * as THREE from 'three';
 import {
@@ -114,7 +113,6 @@ export const AutopilotPanel: React.FC = () => {
     
     const targetPosition = calculatePlanetPosition(planet);
     activate(targetPosition);
-    console.log(`Autopilot engaged to ${selectedDestination}`);
   };
   
   const handleCancelAutopilot = () => {

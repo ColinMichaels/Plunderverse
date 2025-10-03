@@ -35,28 +35,24 @@ export const NavigationSidebar: React.FC = () => {
           if (showAutopilot) {
             e.preventDefault();
             togglePanel('autopilot');
-            console.log('[NavigationSidebar] Alt+1 pressed - toggling Autopilot panel');
           }
           break;
         case '2':
           if (showShipSystems) {
             e.preventDefault();
             togglePanel('ship-systems');
-            console.log('[NavigationSidebar] Alt+2 pressed - toggling Ship Systems panel');
           }
           break;
         case '3':
           if (showShipUpgrades) {
             e.preventDefault();
             togglePanel('ship-upgrades');
-            console.log('[NavigationSidebar] Alt+3 pressed - toggling Ship Upgrades panel');
           }
           break;
         case '4':
           if (showQuickRepair) {
             e.preventDefault();
             togglePanel('quick-repair');
-            console.log('[NavigationSidebar] Alt+4 pressed - toggling Quick Repair panel');
           }
           break;
       }

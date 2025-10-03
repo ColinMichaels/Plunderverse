@@ -66,13 +66,6 @@ export function ActionBar() {
           // Find the corresponding button
           const button = ACTION_BUTTONS[fNumber - 1];
           if (button) {
-            // Enhanced logging
-            console.log(`[ActionBar] ====== KEYBOARD SHORTCUT TRIGGERED ======`);
-            console.log(`[ActionBar] Key: ${event.key}`);
-            console.log(`[ActionBar] Panel: ${button.label} (${button.id})`);
-            console.log(`[ActionBar] Action: Toggling panel`);
-            console.log(`[ActionBar] Current Context: ${currentContext}`);
-            console.log(`[ActionBar] ==========================================`);
             
             // Add visual feedback - highlight the button briefly
             setPressedButton(button.id);
@@ -100,10 +93,6 @@ export function ActionBar() {
           // Only prevent default and handle if panels are open
           event.preventDefault();
           
-          console.log('[ActionBar] ====== ESC KEY TRIGGERED ======');
-          console.log('[ActionBar] Action: Closing all panels');
-          console.log('[ActionBar] Resetting manual override');
-          console.log('[ActionBar] ================================');
           
           // Visual feedback - flash all buttons briefly
           setPressedButton('all' as PanelId);
@@ -119,9 +108,6 @@ export function ActionBar() {
     // Don't use capture phase to allow game controls to work
     window.addEventListener('keydown', handleKeyDown);
     
-    // Debug logging
-    console.log('[ActionBar] Keyboard shortcuts initialized');
-    console.log('[ActionBar] Available shortcuts: F1-F8 for panels, ESC to close all');
     
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
@@ -134,12 +120,7 @@ export function ActionBar() {
   }
 
   const handleButtonClick = (id: PanelId) => {
-    console.log(`[ActionBar] ====== BUTTON CLICKED ======`);
-    console.log(`[ActionBar] Panel: ${id}`);
-    console.log(`[ActionBar] Mouse interaction detected`);
-    console.log(`[ActionBar] ==============================`);
-    
-    // Add visual feedback for mouse clicks too
+    // Add visual feedback for mouse clicks
     setPressedButton(id);
     setTimeout(() => setPressedButton(null), 200);
     
@@ -265,7 +246,6 @@ export function ActionBar() {
               onClose={() => togglePanel('crew')}
               onOpenRecruitment={() => {
                 // Handle recruitment opening if needed
-                console.log('[ActionBar] Crew recruitment requested');
               }}
             />
           </div>

@@ -62,9 +62,6 @@ export function CrewManagementPanel({ onClose, onOpenRecruitment }: CrewManageme
   useEffect(() => {
     const interval = setInterval(() => {
       const deserters = checkDesertion();
-      if (deserters.length > 0) {
-        console.warn('Crew members deserted:', deserters);
-      }
     }, 60000); // Check every minute
     
     return () => clearInterval(interval);
@@ -98,7 +95,6 @@ export function CrewManagementPanel({ onClose, onOpenRecruitment }: CrewManageme
   
   const handleFireCrew = (crewId: string) => {
     const result = fireCrew(crewId);
-    console.log(result.message);
     setShowConfirmFire(null);
     setSelectedCrew(null);
   };
@@ -180,7 +176,7 @@ export function CrewManagementPanel({ onClose, onOpenRecruitment }: CrewManageme
               ) : (
                 activeCrew.map((crew) => {
                   const loyaltyStatus = getLoyaltyStatus(crew.currentLoyalty);
-                  const topSkill = getTopSkill(crew.skills as Record<string, number>);
+                  const topSkill = getTopSkill(crew.skills as unknown as Record<string, number>);
                   const isSelected = selectedCrew === crew.id;
                   
                   return (

@@ -49,7 +49,6 @@ export function ShipStatus() {
     const result = repairEquipment(equipmentId, undefined, credits);
     if (result.success) {
       spendCredits(result.cost);
-      console.log(`Repaired ship component for ${result.cost} credits`);
       
       // Apply maintenance kit degradation when repairing ship components
       const maintenanceKit = equipment.find(eq => eq.id === 'maintenance-kit');
@@ -57,8 +56,6 @@ export function ShipStatus() {
         const { applyShipDegradation } = useEquipment.getState();
         applyShipDegradation('repair', 1.0, 1.0);
       }
-    } else {
-      console.log(`Failed to repair ship component. Need ${result.cost} credits, have ${credits}`);
     }
   };
 
@@ -70,9 +67,6 @@ export function ShipStatus() {
     const result = replenishFuel(maxRefuel, credits);
     if (result.success) {
       spendCredits(result.cost);
-      console.log(`Refueled ship for ${result.cost} credits`);
-    } else {
-      console.log(`Failed to refuel. Need ${result.cost} credits, have ${credits}`);
     }
   };
 
