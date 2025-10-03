@@ -38,6 +38,7 @@ export { useCombatTrigger } from './economy/useCombatTrigger';
 // Ship stores
 export { useShipStatus } from './ship/useShipStatus';
 export { useEquipment } from './ship/useEquipment';
+export { useUpgrades } from './ship/useUpgrades';
 
 // Player stores
 export { usePlayer } from './player/usePlayer';

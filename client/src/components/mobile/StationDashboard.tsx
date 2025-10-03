@@ -9,6 +9,8 @@ import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useMobileLayout } from '../../stores/useMobileLayout';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
 import { MobileSlidePanel } from './MobileSlidePanel';
+import { ShipRepairPanel } from './panels/ShipRepairPanel';
+import { ShipUpgradePanel } from './panels/ShipUpgradePanel';
 import { toast } from 'sonner';
 import { 
   Fuel, 
@@ -24,9 +26,11 @@ import {
   Zap,
   ShoppingCart,
   Wrench,
-  AlertTriangle
+  AlertTriangle,
+  Settings,
+  Sparkles
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 type TabType = 'overview' | 'trade' | 'crew' | 'missions' | 'ship';
 type ResourcePanelType = 'fuel' | 'cargo' | 'hull' | 'heat' | null;
@@ -50,6 +54,8 @@ export const StationDashboard: React.FC = () => {
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ResourcePanelType>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showRepairPanel, setShowRepairPanel] = useState(false);
+  const [showUpgradePanel, setShowUpgradePanel] = useState(false);
   
   // Fuel management state
   const [fuelAmount, setFuelAmount] = useState(10);
@@ -661,26 +667,138 @@ export const StationDashboard: React.FC = () => {
         )}
 
         {activeTab === 'ship' && (
-          <div className="p-4">
-            <h2 className="text-lg font-semibold text-white mb-4">Ship Upgrades</h2>
-            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 space-y-4`}>
-              <div className="space-y-3">
-                <h3 className="text-sm font-semibold text-gray-400">Current Upgrades</h3>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 text-sm">Fuel Capacity</span>
-                    <span className="text-cyan-400">{ship.upgrades.fuelCapacity}x</span>
+          <div className="p-4 space-y-4">
+            <h2 className="text-lg font-semibold text-white mb-4">Ship Management</h2>
+            
+            {/* Ship Status Overview */}
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">System Status</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Hull Integrity</span>
+                  <span className={`text-sm font-semibold ${
+                    ship.hull > 70 ? 'text-green-400' : 
+                    ship.hull > 30 ? 'text-yellow-400' : 'text-red-400'
+                  }`}>{Math.round(ship.hull)}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Shield Status</span>
+                  <span className={`text-sm font-semibold ${
+                    ship.shield > 70 ? 'text-cyan-400' : 
+                    ship.shield > 30 ? 'text-yellow-400' : 'text-red-400'
+                  }`}>{Math.round(ship.shield)}%</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Engine Health</span>
+                  <span className={`text-sm font-semibold ${
+                    equipment.getPerformanceMultiplier('engine-main') > 0.8 ? 'text-purple-400' :
+                    equipment.getPerformanceMultiplier('engine-main') > 0.5 ? 'text-yellow-400' : 'text-red-400'
+                  }`}>
+                    {(equipment.getPerformanceMultiplier('engine-main') * 100).toFixed(0)}%
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-500">Combat Rating</span>
+                  <span className="text-sm font-semibold text-orange-400">
+                    {Math.round((ship.hull + ship.shield + (equipment.getPerformanceMultiplier('drill-mk1') * 100)) / 3)}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Ship Management Actions */}
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setShowRepairPanel(true);
+                }}
+                className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold
+                         py-4 px-6 rounded-lg flex flex-col items-center justify-center gap-2
+                         active:scale-95 transition-transform min-h-[100px]"
+              >
+                <Wrench className="w-8 h-8" />
+                <span className="text-sm">Repair Bay</span>
+                <span className="text-xs opacity-75">Fix & Maintain</span>
+              </button>
+              
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setShowUpgradePanel(true);
+                }}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
+                         py-4 px-6 rounded-lg flex flex-col items-center justify-center gap-2
+                         active:scale-95 transition-transform min-h-[100px]"
+              >
+                <Settings className="w-8 h-8" />
+                <span className="text-sm">Upgrade Shop</span>
+                <span className="text-xs opacity-75">Enhance Systems</span>
+              </button>
+            </div>
+
+            {/* Current Upgrades */}
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Active Upgrades</h3>
+              <div className="space-y-2">
+                {ship.upgrades.warpCapability && (
+                  <div className="flex items-center gap-3 p-2 bg-purple-900/30 border border-purple-600/30 rounded-lg">
+                    <Sparkles className="w-4 h-4 text-purple-400" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">Warp Drive</p>
+                      <p className="text-xs text-purple-400">FTL Travel Enabled</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 text-sm">Thrust Efficiency</span>
-                    <span className="text-green-400">{((1 - ship.upgrades.thrustEfficiency) * 100).toFixed(0)}%</span>
+                )}
+                {ship.upgrades.fuelCapacity > 1 && (
+                  <div className="flex items-center gap-3 p-2 bg-orange-900/30 border border-orange-600/30 rounded-lg">
+                    <Fuel className="w-4 h-4 text-orange-400" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">Expanded Fuel Tank</p>
+                      <p className="text-xs text-orange-400">Capacity: {ship.upgrades.fuelCapacity}x</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500 text-sm">Warp Drive</span>
-                    <span className={ship.upgrades.warpCapability ? 'text-purple-400' : 'text-gray-600'}>
-                      {ship.upgrades.warpCapability ? 'Installed' : 'Not Installed'}
-                    </span>
+                )}
+                {ship.upgrades.thrustEfficiency < 1 && (
+                  <div className="flex items-center gap-3 p-2 bg-green-900/30 border border-green-600/30 rounded-lg">
+                    <Zap className="w-4 h-4 text-green-400" />
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-white">Efficient Thrusters</p>
+                      <p className="text-xs text-green-400">Fuel Usage: {(ship.upgrades.thrustEfficiency * 100).toFixed(0)}%</p>
+                    </div>
                   </div>
+                )}
+                {!ship.upgrades.warpCapability && ship.upgrades.fuelCapacity <= 1 && ship.upgrades.thrustEfficiency >= 1 && (
+                  <p className="text-gray-500 text-sm text-center py-2">No upgrades installed</p>
+                )}
+              </div>
+            </div>
+
+            {/* Ship Statistics */}
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Ship Statistics</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Cargo Capacity</span>
+                  <span className="text-cyan-400">{inventory.storageCapacity} tons</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Max Speed</span>
+                  <span className="text-purple-400">{ship.upgrades.thrustEfficiency < 1 ? '130%' : '100%'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Defensive Rating</span>
+                  <span className="text-green-400">{Math.round((ship.hull + ship.shield) / 2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Maintenance Status</span>
+                  <span className={`${
+                    equipment.getPerformanceMultiplier('maintenance-kit') > 0.8 ? 'text-green-400' :
+                    equipment.getPerformanceMultiplier('maintenance-kit') > 0.5 ? 'text-yellow-400' : 'text-red-400'
+                  }`}>
+                    {equipment.getPerformanceMultiplier('maintenance-kit') > 0.8 ? 'Good' :
+                     equipment.getPerformanceMultiplier('maintenance-kit') > 0.5 ? 'Fair' : 'Poor'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -1048,6 +1166,34 @@ export const StationDashboard: React.FC = () => {
           </div>
         </div>
       </MobileSlidePanel>
+
+      {/* Ship Repair Panel */}
+      <AnimatePresence>
+        {showRepairPanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50"
+          >
+            <ShipRepairPanel onClose={() => setShowRepairPanel(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Ship Upgrade Panel */}
+      <AnimatePresence>
+        {showUpgradePanel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50"
+          >
+            <ShipUpgradePanel onClose={() => setShowUpgradePanel(false)} />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
