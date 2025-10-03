@@ -1,8 +1,11 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import authRoutes from "./routes/auth.routes";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Register authentication routes
+  app.use('/api/auth', authRoutes);
   // Crypto API Proxy Routes - keeps API keys secure on server side
   
   // Crypto API configuration from environment variables
