@@ -906,19 +906,21 @@ export const StationDashboard: React.FC = () => {
       {/* Resource Management Panels */}
       
       {/* Fuel Management Panel */}
+      {/* Fuel Management Panel - Optimized for mobile */}
       <MobileSlidePanel
         isOpen={activePanel === 'fuel'}
         onClose={() => setActivePanel(null)}
         title="Fuel Management"
-        height="1/2"
+        height="full"
       >
-        <div className="space-y-4">
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400">Current Fuel</span>
-              <span className="text-yellow-400 font-mono">{Math.round(fuel)} / {maxFuel}</span>
+        <div className="space-y-3 pb-4">
+          {/* Compact Fuel Level Display */}
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-400 text-sm">Current Fuel</span>
+              <span className="text-yellow-400 font-mono text-sm">{Math.round(fuel)} / {maxFuel}</span>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
                 style={{ width: `${fuelPercentage}%` }}
@@ -926,15 +928,17 @@ export const StationDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex justify-between">
+          {/* Compact Purchase Controls */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-400">Price per unit</span>
               <span className="text-cyan-400">{actualFuelPrice} credits</span>
             </div>
             
-            <div>
-              <label className="text-sm text-gray-400 block mb-2">
-                Amount to purchase: {fuelAmount} units
+            {/* Compact Slider */}
+            <div className="bg-slate-800/30 rounded-lg p-2">
+              <label className="text-xs text-gray-400 block mb-1">
+                Amount to purchase: <span className="text-yellow-400">{fuelAmount}</span> units
               </label>
               <input
                 type="range"
@@ -942,20 +946,20 @@ export const StationDashboard: React.FC = () => {
                 max={Math.min(100, maxFuel - fuel)}
                 value={fuelAmount}
                 onChange={(e) => setFuelAmount(Number(e.target.value))}
-                className="w-full"
+                className="w-full h-1"
               />
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-500">Total Cost:</span>
+                <span className="text-xs text-cyan-400 font-mono">{fuelAmount * actualFuelPrice}c</span>
+              </div>
             </div>
             
-            <div className="flex justify-between text-lg">
-              <span className="text-gray-300">Total Cost</span>
-              <span className="text-cyan-400 font-mono">{fuelAmount * actualFuelPrice} credits</span>
-            </div>
-            
+            {/* Compact Button */}
             <button
               onClick={handleRefuel}
               disabled={isProcessing || credits < fuelAmount * actualFuelPrice}
-              className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 text-white py-3 rounded-lg
-                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 text-white py-2.5 rounded-lg
+                       font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : `Purchase ${fuelAmount} Fuel`}
             </button>
@@ -963,22 +967,23 @@ export const StationDashboard: React.FC = () => {
         </div>
       </MobileSlidePanel>
 
-      {/* Cargo Management Panel */}
+      {/* Cargo Management Panel - Optimized for mobile */}
       <MobileSlidePanel
         isOpen={activePanel === 'cargo'}
         onClose={() => setActivePanel(null)}
         title="Cargo Management"
-        height="3/4"
+        height="full"
       >
-        <div className="space-y-4">
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400">Cargo Hold</span>
-              <span className="text-blue-400 font-mono">
+        <div className="space-y-3 pb-4">
+          {/* Compact Cargo Hold Display */}
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-400 text-sm">Cargo Hold</span>
+              <span className="text-blue-400 font-mono text-sm">
                 {inventory.getStorageUsed()} / {inventory.storageCapacity} tons
               </span>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
                 style={{ width: `${(inventory.getStorageUsed() / inventory.storageCapacity) * 100}%` }}
@@ -986,19 +991,20 @@ export const StationDashboard: React.FC = () => {
             </div>
           </div>
           
+          {/* Compact Manifest */}
           <div className="space-y-2">
-            <h3 className="text-sm font-semibold text-gray-400">Cargo Manifest</h3>
+            <h3 className="text-xs font-semibold text-gray-400">Cargo Manifest</h3>
             {inventory.items.length > 0 ? (
-              <div className="space-y-2">
+              <div className="space-y-1.5 max-h-60 overflow-y-auto">
                 {inventory.items.map(item => (
-                  <div key={item.type} className="bg-slate-800/50 rounded-lg p-3">
+                  <div key={item.type} className="bg-slate-800/50 rounded-lg p-2">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="text-white font-medium">{item.type}</p>
-                        <div className="flex gap-4 mt-1">
+                        <p className="text-white text-sm font-medium">{item.type}</p>
+                        <div className="flex gap-3 mt-0.5">
                           <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
-                          <span className="text-xs text-yellow-500">Value: {item.value * item.quantity}c</span>
-                          <span className="text-xs text-blue-500">From: {item.planetSource}</span>
+                          <span className="text-xs text-yellow-500">{item.value * item.quantity}c</span>
+                          <span className="text-xs text-blue-500">{item.planetSource}</span>
                         </div>
                       </div>
                       <input
@@ -1011,7 +1017,7 @@ export const StationDashboard: React.FC = () => {
                             setSelectedCargoToJettison(selectedCargoToJettison.filter(t => t !== item.type));
                           }
                         }}
-                        className="w-5 h-5"
+                        className="w-4 h-4"
                       />
                     </div>
                   </div>
@@ -1035,25 +1041,26 @@ export const StationDashboard: React.FC = () => {
         </div>
       </MobileSlidePanel>
 
-      {/* Hull Repair Panel */}
+      {/* Hull Repair Panel - Optimized for mobile */}
       <MobileSlidePanel
         isOpen={activePanel === 'hull'}
         onClose={() => setActivePanel(null)}
         title="Hull Repair"
-        height="1/2"
+        height="full"
       >
-        <div className="space-y-4">
-          <div className="bg-slate-800/50 rounded-lg p-4">
-            <div className="flex justify-between items-center mb-3">
-              <span className="text-gray-400">Hull Integrity</span>
-              <span className={`font-mono ${
+        <div className="space-y-3 pb-4">
+          {/* Compact Hull Status Display */}
+          <div className="bg-slate-800/50 rounded-lg p-3">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-gray-400 text-sm">Hull Integrity</span>
+              <span className={`font-mono text-sm ${
                 hullPercentage > 70 ? 'text-green-400' :
                 hullPercentage > 30 ? 'text-yellow-400' : 'text-red-400'
               }`}>
                 {Math.round(hullPercentage)}%
               </span>
             </div>
-            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
               <div 
                 className={`h-full ${
                   hullPercentage > 70 ? 'bg-green-500' :
@@ -1064,20 +1071,22 @@ export const StationDashboard: React.FC = () => {
             </div>
           </div>
           
-          <div className="space-y-3">
-            <div className="flex justify-between">
+          {/* Compact Repair Controls */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-400">Damage</span>
               <span className="text-red-400">{Math.round(hullDamage)}%</span>
             </div>
             
-            <div className="flex justify-between">
+            <div className="flex justify-between text-sm">
               <span className="text-gray-400">Repair cost per %</span>
               <span className="text-cyan-400">{actualRepairPrice} credits</span>
             </div>
             
-            <div>
-              <label className="text-sm text-gray-400 block mb-2">
-                Repair amount: {repairAmount}%
+            {/* Compact Slider */}
+            <div className="bg-slate-800/30 rounded-lg p-2">
+              <label className="text-xs text-gray-400 block mb-1">
+                Repair amount: <span className="text-green-400">{repairAmount}</span>%
               </label>
               <input
                 type="range"
@@ -1085,23 +1094,23 @@ export const StationDashboard: React.FC = () => {
                 max={Math.round(hullDamage)}
                 value={repairAmount}
                 onChange={(e) => setRepairAmount(Number(e.target.value))}
-                className="w-full"
+                className="w-full h-1"
                 disabled={hullDamage === 0}
               />
+              <div className="flex justify-between mt-1">
+                <span className="text-xs text-gray-500">Total Cost:</span>
+                <span className="text-xs text-cyan-400 font-mono">
+                  {Math.round(Math.min(repairAmount, hullDamage) * actualRepairPrice)}c
+                </span>
+              </div>
             </div>
             
-            <div className="flex justify-between text-lg">
-              <span className="text-gray-300">Total Cost</span>
-              <span className="text-cyan-400 font-mono">
-                {Math.round(Math.min(repairAmount, hullDamage) * actualRepairPrice)} credits
-              </span>
-            </div>
-            
+            {/* Compact Button */}
             <button
               onClick={handleRepair}
               disabled={isProcessing || hullDamage === 0 || credits < repairAmount * actualRepairPrice}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg
-                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-2.5 rounded-lg
+                       font-semibold text-sm active:scale-95 transition-transform disabled:opacity-50"
             >
               {isProcessing ? 'Processing...' : 
                hullDamage === 0 ? 'Hull at 100%' : 
