@@ -35,6 +35,8 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
   pendingSpawns: [],
   
   addAsteroid: (position) => {
+    const MAX_ASTEROIDS = 15; // Limit to prevent memory issues
+    
     const newAsteroid: Asteroid = {
       id: Math.random().toString(36).substr(2, 9),
       position: position.clone(),
@@ -53,9 +55,17 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
       maxHealth: 3
     };
     
-    set(state => ({
-      asteroids: [...state.asteroids, newAsteroid]
-    }));
+    set(state => {
+      let updatedAsteroids = [...state.asteroids, newAsteroid];
+      
+      // If we exceed the limit, remove the oldest asteroids
+      if (updatedAsteroids.length > MAX_ASTEROIDS) {
+        updatedAsteroids = updatedAsteroids.slice(-MAX_ASTEROIDS);
+        console.log(`Asteroid limit reached, removing oldest`);
+      }
+      
+      return { asteroids: updatedAsteroids };
+    });
     
     console.log("Asteroid spawned!");
   },
