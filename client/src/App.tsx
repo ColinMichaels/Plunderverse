@@ -23,6 +23,7 @@ import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
+import "./testSaveSystem"; // Import save system test module
 import "@fontsource/inter";
 
 // Main App component
