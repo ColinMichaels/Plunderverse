@@ -17,16 +17,34 @@ import { MissionContextHUD } from "./MissionContextHUD";
 import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
+// Save and Menu Components
+import { MainMenu } from "./MainMenu";
+import { SaveGamePanel } from "./SaveGamePanel";
+import { SaveIndicator } from "../../hooks/useAutoSave";
+// Store Hooks
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
+import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
+// Other Hooks
 import { useDockingDetection } from "../../hooks/useDockingDetection";
+import { useAutoSave } from "../../hooks/useAutoSave";
 import { planets } from "../../lib/planetData";
 import { TakeoffControls } from "../surface/TakeoffControls";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
+  const [showSavePanel, setShowSavePanel] = useState(false);
+  const [showAutoSaveMessage, setShowAutoSaveMessage] = useState(false);
+  
+  const { isGuest } = useAuthStore();
+  const { manualSave } = useAutoSave({
+    onSave: () => setShowAutoSaveMessage(true),
+    onSaveComplete: () => {
+      setTimeout(() => setShowAutoSaveMessage(false), 3000);
+    }
+  });
 
   // Initialize docking detection
   useDockingDetection();
@@ -40,7 +58,29 @@ export function GameUI() {
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
   const { currentContext, uiZoneVisibility } = useHUDContext();
-
+  
+  // Keyboard shortcut for save panel (F5 or Ctrl+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F5 for quick save
+      if (e.key === 'F5') {
+        e.preventDefault();
+        if (!isGuest) {
+          manualSave();
+        } else {
+          setShowSavePanel(true); // Show panel for guest to see they need to register
+        }
+      }
+      // Ctrl+S for save panel
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        setShowSavePanel(true);
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isGuest, manualSave]);
 
   // Autopilot activation function
   const handleAutopilot = () => {
@@ -137,6 +177,32 @@ export function GameUI() {
             stationFaction="independents"
             onClose={() => setShowCrewRecruitment(false)}
           />
+        </div>
+      )}
+      
+      {/* Main Menu - ESC key opens it */}
+      <MainMenu />
+      
+      {/* Save Game Panel - Ctrl+S or F5 */}
+      <SaveGamePanel 
+        isOpen={showSavePanel}
+        onClose={() => setShowSavePanel(false)}
+        onSaveComplete={() => {
+          setShowSavePanel(false);
+          setShowAutoSaveMessage(true);
+          setTimeout(() => setShowAutoSaveMessage(false), 3000);
+        }}
+      />
+      
+      {/* Auto-save Indicator */}
+      <SaveIndicator />
+      
+      {/* Quick save notification */}
+      {showAutoSaveMessage && (
+        <div className="fixed bottom-20 right-4 z-40 animate-fade-in">
+          <div className="px-4 py-2 bg-green-600/20 border border-green-600/50 text-green-400 rounded-lg backdrop-blur-sm">
+            <span className="text-sm font-medium">Game Saved!</span>
+          </div>
         </div>
       )}
 

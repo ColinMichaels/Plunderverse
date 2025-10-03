@@ -9,6 +9,7 @@ import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { PatrolEncounter } from "./components/space/PatrolEncounter";
 import { MobileGame } from "./components/mobile/MobileGame";
+import { AuthProvider } from "./components/auth/AuthProvider";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
 import { useSettings } from "./lib/stores/ui/useSettings";
@@ -26,8 +27,8 @@ import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import "./testSaveSystem"; // Import save system test module
 import "@fontsource/inter";
 
-// Main App component
-function App() {
+// Main Game component (without auth wrapper)
+function GameContent() {
   const [showCanvas, setShowCanvas] = useState(false);
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
@@ -272,6 +273,15 @@ function App() {
         {import.meta.env.DEV && <MissionDebugPanel />}
       </div>
     </UILayoutProvider>
+  );
+}
+
+// Main App component with authentication wrapper
+function App() {
+  return (
+    <AuthProvider>
+      <GameContent />
+    </AuthProvider>
   );
 }
 
