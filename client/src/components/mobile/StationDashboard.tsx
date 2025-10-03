@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePlayer } from '../../lib/stores/player/usePlayer';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
@@ -7,32 +7,391 @@ import { useCredits } from '../../lib/stores/economy/useCredits';
 import { useInventory } from '../../lib/stores/economy/useInventory';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useMobileLayout } from '../../stores/useMobileLayout';
+import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+import { MobileSlidePanel } from './MobileSlidePanel';
+import { toast } from 'sonner';
+import { 
+  Fuel, 
+  Package, 
+  Shield, 
+  Flame, 
+  ChevronRight,
+  AlertCircle,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+  Zap,
+  ShoppingCart,
+  Wrench,
+  AlertTriangle
+} from 'lucide-react';
+import { motion } from 'framer-motion';
 
 type TabType = 'overview' | 'trade' | 'crew' | 'missions' | 'ship';
+type ResourcePanelType = 'fuel' | 'cargo' | 'hull' | 'heat' | null;
+
+// Station data (would normally come from a store)
+const STATION_DATA = {
+  fuelPrice: 10, // per unit
+  repairPrice: 5, // per hull %
+  layLowCost: 100, // base cost
+  emergencyJumpCost: 500,
+  faction: 'Independent',
+  services: ['Refuel', 'Repair', 'Trade', 'Lay Low']
+};
 
 /**
- * StationDashboard - Main mobile UI for station management
- * Provides touch-friendly interface for all station activities
+ * StationDashboard - Enhanced mobile UI for station management
+ * Features interactive resource management, transactions, and station services
  */
 export const StationDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [expandedCard, setExpandedCard] = useState<string | null>(null);
+  const [activePanel, setActivePanel] = useState<ResourcePanelType>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Fuel management state
+  const [fuelAmount, setFuelAmount] = useState(10);
+  const [selectedCargoToJettison, setSelectedCargoToJettison] = useState<string[]>([]);
+  const [repairAmount, setRepairAmount] = useState(100);
+  const [layLowDays, setLayLowDays] = useState(1);
   
   // Store hooks for shared state
   const player = usePlayer();
   const ship = useShipStatus();
   const equipment = useEquipment();
-  const { credits } = useCredits();
+  const { credits, spendCredits, addCredits } = useCredits();
   const inventory = useInventory();
   const { landedPlanet } = useLandedState();
   const { config } = useMobileLayout();
+  const heatSystem = useHeatSystem();
+  const { selectedPlanet } = useSolarSystem();
   
   // Get fuel data from equipment store
   const fuelTank = equipment.getEquipment('fuel-tank');
   const fuel = fuelTank?.currentDurability || 0;
   const maxFuel = fuelTank?.maxDurability || 100;
+  const fuelPercentage = (fuel / maxFuel) * 100;
+  
+  // Get hull percentage
+  const hullPercentage = ship.hull;
+  const hullDamage = 100 - hullPercentage;
   
   // Get current location name
-  const locationName = landedPlanet || 'Unknown Station';
+  const locationName = landedPlanet || selectedPlanet || 'Unknown Station';
+  
+  // Calculate prices with faction modifiers
+  const priceModifier = heatSystem.applyPriceModifiers(1);
+  const actualFuelPrice = Math.round(STATION_DATA.fuelPrice * priceModifier);
+  const actualRepairPrice = Math.round(STATION_DATA.repairPrice * priceModifier);
+  const actualLayLowCost = Math.round(STATION_DATA.layLowCost * priceModifier);
+  
+  // Haptic feedback helper
+  const triggerHaptic = (duration = 10) => {
+    if ('vibrate' in navigator) {
+      navigator.vibrate(duration);
+    }
+  };
+  
+  // Toggle card expansion
+  const handleCardTap = (cardId: string) => {
+    triggerHaptic();
+    setExpandedCard(expandedCard === cardId ? null : cardId);
+  };
+  
+  // Handle fuel purchase
+  const handleRefuel = async () => {
+    const cost = Math.round(fuelAmount * actualFuelPrice);
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    // Animate the transaction
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        equipment.refuelEquipment('fuel-tank', fuelAmount);
+        toast.success('Refuel successful', {
+          description: `Added ${fuelAmount} fuel for ${cost} credits`
+        });
+        triggerHaptic();
+        setActivePanel(null);
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  // Handle hull repair
+  const handleRepair = async () => {
+    const actualRepairAmount = Math.min(repairAmount, hullDamage);
+    const cost = Math.round(actualRepairAmount * actualRepairPrice);
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        ship.repairHull(actualRepairAmount);
+        toast.success('Repair successful', {
+          description: `Repaired ${actualRepairAmount}% hull for ${cost} credits`
+        });
+        triggerHaptic();
+        setActivePanel(null);
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  // Handle cargo jettison
+  const handleJettisonCargo = () => {
+    if (selectedCargoToJettison.length === 0) {
+      toast.error('No cargo selected');
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      selectedCargoToJettison.forEach(itemType => {
+        const quantity = inventory.getResourceQuantity(itemType);
+        if (quantity > 0) {
+          inventory.removeResource(itemType, quantity);
+        }
+      });
+      
+      toast.success('Cargo jettisoned', {
+        description: `Freed ${selectedCargoToJettison.length} cargo slot(s)`
+      });
+      triggerHaptic();
+      setSelectedCargoToJettison([]);
+      setActivePanel(null);
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  // Handle laying low
+  const handleLayLow = () => {
+    const cost = actualLayLowCost * layLowDays;
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        heatSystem.startLayingLow(locationName);
+        const heatReduction = Math.min(20 * layLowDays, player.heat);
+        player.updateHeat(-heatReduction);
+        
+        toast.success('Laying low', {
+          description: `Heat reduced by ${heatReduction}. Stay hidden for ${layLowDays} day(s)`
+        });
+        triggerHaptic();
+        setActivePanel(null);
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  // Quick actions
+  const handleQuickRefuel = () => {
+    const fuelNeeded = maxFuel - fuel;
+    const cost = Math.round(fuelNeeded * actualFuelPrice);
+    
+    if (fuelNeeded <= 0) {
+      toast.info('Tank already full');
+      return;
+    }
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits for full refuel', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        equipment.refuelEquipment('fuel-tank', fuelNeeded);
+        toast.success('Quick refuel complete', {
+          description: `Tank filled for ${cost} credits`
+        });
+        triggerHaptic();
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  const handleAutoRepair = () => {
+    if (hullDamage <= 0) {
+      toast.info('Hull already at 100%');
+      return;
+    }
+    
+    const cost = Math.round(hullDamage * actualRepairPrice);
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits for full repair', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        ship.repairHull(hullDamage);
+        toast.success('Auto repair complete', {
+          description: `Hull fully repaired for ${cost} credits`
+        });
+        triggerHaptic();
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+  
+  const handleEmergencyJump = () => {
+    const cost = STATION_DATA.emergencyJumpCost;
+    
+    if (credits < cost) {
+      toast.error('Insufficient credits for emergency jump', {
+        description: `Need ${cost} credits, have ${credits}`
+      });
+      triggerHaptic(30);
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    setTimeout(() => {
+      if (spendCredits(cost)) {
+        player.updateHeat(-player.heat); // Reset heat to 0
+        toast.success('Emergency jump activated', {
+          description: 'Heat signature scrambled, wanted level reset'
+        });
+        triggerHaptic(20);
+      }
+      setIsProcessing(false);
+    }, 500);
+  };
+
+  // Resource card component
+  const ResourceCard = ({ 
+    id, 
+    title, 
+    icon, 
+    value, 
+    max, 
+    unit, 
+    color,
+    gradientColor,
+    onAction,
+    actionLabel,
+    details
+  }: any) => {
+    const isExpanded = expandedCard === id;
+    const percentage = max ? (value / max) * 100 : 0;
+    
+    return (
+      <motion.div
+        layout
+        className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4
+                   ${isExpanded ? 'col-span-2' : ''} cursor-pointer active:scale-98 transition-transform`}
+        onClick={() => handleCardTap(id)}
+      >
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-gray-400">{title}</span>
+          <div className="flex items-center gap-2">
+            {icon}
+            <ChevronRight className={`w-4 h-4 text-gray-500 transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <div className="flex justify-between items-baseline">
+            <span className="text-lg font-semibold text-white">
+              {typeof value === 'number' ? Math.round(value) : value}
+            </span>
+            {max && (
+              <span className="text-xs text-gray-500">
+                / {max} {unit}
+              </span>
+            )}
+          </div>
+          
+          {max && (
+            <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+              <motion.div 
+                className={`h-full ${gradientColor}`}
+                initial={{ width: 0 }}
+                animate={{ width: `${percentage}%` }}
+                transition={{ duration: 0.5 }}
+              />
+            </div>
+          )}
+        </div>
+        
+        {isExpanded && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="mt-4 pt-4 border-t border-slate-700 space-y-3"
+          >
+            {details && (
+              <div className="space-y-2 text-sm">
+                {details.map((detail: any, idx: number) => (
+                  <div key={idx} className="flex justify-between">
+                    <span className="text-gray-500">{detail.label}</span>
+                    <span className={detail.valueColor || 'text-gray-400'}>{detail.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            
+            {onAction && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  triggerHaptic();
+                  onAction();
+                }}
+                className="w-full bg-gradient-to-r from-orange-600 to-amber-600 text-white py-2 rounded-lg
+                         font-semibold active:scale-95 transition-transform"
+              >
+                {actionLabel}
+              </button>
+            )}
+          </motion.div>
+        )}
+      </motion.div>
+    );
+  };
 
   return (
     <div className="fixed inset-0 bg-black flex flex-col">
@@ -57,10 +416,25 @@ export const StationDashboard: React.FC = () => {
               <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}</p>
             </div>
           </div>
-          <div className="bg-slate-700/50 rounded px-2 py-1">
-            <p className="text-xs text-gray-400">
-              📍 {locationName}
-            </p>
+          
+          {/* Station Info */}
+          <div className="bg-slate-700/50 rounded px-3 py-2 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-gray-400 flex items-center gap-1">
+                📍 {locationName}
+              </p>
+              <p className="text-xs text-orange-400">
+                {STATION_DATA.faction}
+              </p>
+            </div>
+            {heatSystem.wantedLevel > 0 && (
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-3 h-3 text-red-400" />
+                <p className="text-xs text-red-400">
+                  {heatSystem.wantedLevelInfo.name} - Prices +{Math.round((priceModifier - 1) * 100)}%
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </header>
@@ -71,104 +445,79 @@ export const StationDashboard: React.FC = () => {
           <div className="p-4 space-y-4">
             {/* Resource Overview Cards */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Fuel Card */}
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Fuel</span>
-                  <span className="text-xl">⛽</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-semibold text-white">
-                      {Math.round(fuel)}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      / {maxFuel}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
-                      style={{ width: `${(fuel / maxFuel) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Cargo Card */}
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Cargo</span>
-                  <span className="text-xl">📦</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-semibold text-white">
-                      {inventory.getStorageUsed()}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      / {inventory.storageCapacity}
-                    </span>
-                  </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
-                      style={{ width: `${(inventory.getStorageUsed() / inventory.storageCapacity) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Hull Integrity Card */}
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Hull</span>
-                  <span className="text-xl">🛡️</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-semibold text-white">
-                      {Math.round(ship.hull)}%
-                    </span>
-                  </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${
-                        ship.hull > 70 ? 'bg-green-500' :
-                        ship.hull > 30 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${ship.hull}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Heat Level Card */}
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-gray-400">Heat</span>
-                  <span className="text-xl">🔥</span>
-                </div>
-                <div className="space-y-1">
-                  <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-semibold text-white">
-                      {player.heat}
-                    </span>
-                    <span className="text-xs text-gray-500">
-                      / 100
-                    </span>
-                  </div>
-                  <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full ${
-                        player.heat < 30 ? 'bg-blue-500' :
-                        player.heat < 70 ? 'bg-orange-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${player.heat}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
+              <ResourceCard
+                id="fuel"
+                title="Fuel"
+                icon={<Fuel className="w-5 h-5 text-yellow-400" />}
+                value={fuel}
+                max={maxFuel}
+                unit=""
+                gradientColor="bg-gradient-to-r from-yellow-500 to-orange-500"
+                onAction={() => setActivePanel('fuel')}
+                actionLabel="Manage Fuel"
+                details={[
+                  { label: 'Efficiency', value: `${(ship.upgrades.thrustEfficiency * 100).toFixed(0)}%`, valueColor: 'text-green-400' },
+                  { label: 'Price/unit', value: `${actualFuelPrice}c`, valueColor: 'text-yellow-400' },
+                  { label: 'Full tank cost', value: `${Math.round((maxFuel - fuel) * actualFuelPrice)}c` }
+                ]}
+              />
+              
+              <ResourceCard
+                id="cargo"
+                title="Cargo"
+                icon={<Package className="w-5 h-5 text-blue-400" />}
+                value={inventory.getStorageUsed()}
+                max={inventory.storageCapacity}
+                unit="tons"
+                gradientColor="bg-gradient-to-r from-blue-500 to-cyan-500"
+                onAction={() => setActivePanel('cargo')}
+                actionLabel="Manage Cargo"
+                details={[
+                  { label: 'Total value', value: `${inventory.getTotalValue()}c`, valueColor: 'text-cyan-400' },
+                  { label: 'Items', value: inventory.items.length },
+                  { label: 'Free space', value: `${inventory.storageCapacity - inventory.getStorageUsed()} tons` }
+                ]}
+              />
+              
+              <ResourceCard
+                id="hull"
+                title="Hull"
+                icon={<Shield className="w-5 h-5 text-green-400" />}
+                value={hullPercentage}
+                max={100}
+                unit="%"
+                gradientColor={`${
+                  hullPercentage > 70 ? 'bg-green-500' :
+                  hullPercentage > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                onAction={() => setActivePanel('hull')}
+                actionLabel="Repair Hull"
+                details={[
+                  { label: 'Damage', value: `${hullDamage.toFixed(0)}%`, valueColor: hullDamage > 0 ? 'text-red-400' : 'text-green-400' },
+                  { label: 'Repair cost', value: `${actualRepairPrice}c per %` },
+                  { label: 'Full repair', value: `${Math.round(hullDamage * actualRepairPrice)}c` }
+                ]}
+              />
+              
+              <ResourceCard
+                id="heat"
+                title="Heat"
+                icon={<Flame className="w-5 h-5 text-red-400" />}
+                value={player.heat}
+                max={100}
+                unit=""
+                gradientColor={`${
+                  player.heat < 30 ? 'bg-blue-500' :
+                  player.heat < 70 ? 'bg-orange-500' : 'bg-red-500'
+                }`}
+                onAction={() => setActivePanel('heat')}
+                actionLabel="Manage Heat"
+                details={[
+                  { label: 'Wanted level', value: heatSystem.wantedLevelInfo.name, valueColor: `text-[${heatSystem.wantedLevelInfo.color}]` },
+                  { label: 'Encounter chance', value: `${(heatSystem.wantedLevelInfo.encounterChance * 100).toFixed(0)}%` },
+                  { label: 'Price markup', value: `+${(heatSystem.wantedLevelInfo.priceMarkup * 100).toFixed(0)}%`, valueColor: 'text-red-400' }
+                ]}
+              />
             </div>
 
             {/* Quick Actions */}
@@ -178,44 +527,62 @@ export const StationDashboard: React.FC = () => {
               </h2>
               <div className="grid grid-cols-2 gap-3">
                 <button
-                  onClick={() => setActiveTab('trade')}
-                  className="bg-gradient-to-r from-orange-600 to-amber-600 text-white font-semibold
+                  onClick={handleQuickRefuel}
+                  disabled={isProcessing || fuel >= maxFuel}
+                  className="bg-gradient-to-r from-yellow-600 to-orange-600 text-white font-semibold
                            py-4 px-6 rounded-lg flex items-center justify-center gap-3
-                           active:scale-95 transition-transform min-h-[60px]"
+                           active:scale-95 transition-transform min-h-[60px]
+                           disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <span className="text-2xl">💰</span>
-                  <span>Trade</span>
+                  <Zap className="w-5 h-5" />
+                  <span>Quick Refuel</span>
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('ship')}
+                  onClick={handleAutoRepair}
+                  disabled={isProcessing || hullPercentage >= 100}
                   className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold
                            py-4 px-6 rounded-lg flex items-center justify-center gap-3
-                           active:scale-95 transition-transform min-h-[60px]"
+                           active:scale-95 transition-transform min-h-[60px]
+                           disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <span className="text-2xl">🔧</span>
-                  <span>Repair</span>
+                  <Wrench className="w-5 h-5" />
+                  <span>Auto Repair</span>
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('crew')}
+                  onClick={() => setActiveTab('trade')}
                   className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
                            py-4 px-6 rounded-lg flex items-center justify-center gap-3
                            active:scale-95 transition-transform min-h-[60px]"
                 >
-                  <span className="text-2xl">👥</span>
-                  <span>Crew</span>
+                  <ShoppingCart className="w-5 h-5" />
+                  <span>Market Prices</span>
                 </button>
                 
                 <button
-                  onClick={() => setActiveTab('missions')}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold
+                  onClick={handleEmergencyJump}
+                  disabled={isProcessing || player.heat <= 0}
+                  className="bg-gradient-to-r from-red-600 to-red-800 text-white font-semibold
                            py-4 px-6 rounded-lg flex items-center justify-center gap-3
-                           active:scale-95 transition-transform min-h-[60px]"
+                           active:scale-95 transition-transform min-h-[60px]
+                           disabled:opacity-50 disabled:active:scale-100"
                 >
-                  <span className="text-2xl">📋</span>
-                  <span>Missions</span>
+                  <AlertCircle className="w-5 h-5" />
+                  <span>Emergency Jump</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Station Services */}
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
+              <h3 className="text-sm font-semibold text-gray-400 mb-3">Station Services</h3>
+              <div className="flex flex-wrap gap-2">
+                {STATION_DATA.services.map(service => (
+                  <span key={service} className="px-3 py-1 bg-slate-700/50 rounded-full text-xs text-cyan-400">
+                    {service}
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -246,9 +613,31 @@ export const StationDashboard: React.FC = () => {
 
         {activeTab === 'trade' && (
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-white mb-4">Trading Post</h2>
-            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
-              <p className="text-gray-400">Trading interface coming soon...</p>
+            <h2 className="text-lg font-semibold text-white mb-4">Market Prices</h2>
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 space-y-3`}>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Fuel</span>
+                <span className="text-yellow-400">{actualFuelPrice}c per unit</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Repairs</span>
+                <span className="text-green-400">{actualRepairPrice}c per %</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Lay Low</span>
+                <span className="text-blue-400">{actualLayLowCost}c per day</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">Emergency Jump</span>
+                <span className="text-red-400">{STATION_DATA.emergencyJumpCost}c</span>
+              </div>
+              {priceModifier > 1 && (
+                <div className="pt-3 border-t border-slate-700">
+                  <p className="text-xs text-red-400">
+                    ⚠️ Prices increased by {Math.round((priceModifier - 1) * 100)}% due to wanted level
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -273,21 +662,26 @@ export const StationDashboard: React.FC = () => {
 
         {activeTab === 'ship' && (
           <div className="p-4">
-            <h2 className="text-lg font-semibold text-white mb-4">Ship Maintenance</h2>
-            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4`}>
+            <h2 className="text-lg font-semibold text-white mb-4">Ship Upgrades</h2>
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 space-y-4`}>
               <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-400">Hull Integrity</span>
-                  <span className="text-white">{Math.round(ship.hull)}%</span>
+                <h3 className="text-sm font-semibold text-gray-400">Current Upgrades</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-sm">Fuel Capacity</span>
+                    <span className="text-cyan-400">{ship.upgrades.fuelCapacity}x</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-sm">Thrust Efficiency</span>
+                    <span className="text-green-400">{((1 - ship.upgrades.thrustEfficiency) * 100).toFixed(0)}%</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-500 text-sm">Warp Drive</span>
+                    <span className={ship.upgrades.warpCapability ? 'text-purple-400' : 'text-gray-600'}>
+                      {ship.upgrades.warpCapability ? 'Installed' : 'Not Installed'}
+                    </span>
+                  </div>
                 </div>
-                <button className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold
-                                 active:bg-blue-700 transition-colors min-h-[44px]">
-                  Repair Hull (500 credits)
-                </button>
-                <button className="w-full bg-orange-600 text-white py-3 rounded-lg font-semibold
-                                 active:bg-orange-700 transition-colors min-h-[44px]">
-                  Refuel (100 credits)
-                </button>
               </div>
             </div>
           </div>
@@ -299,14 +693,17 @@ export const StationDashboard: React.FC = () => {
         <div className="grid grid-cols-5 h-16">
           {[
             { id: 'overview', icon: '🏠', label: 'Overview' },
-            { id: 'trade', icon: '💰', label: 'Trade' },
+            { id: 'trade', icon: '💰', label: 'Market' },
             { id: 'crew', icon: '👥', label: 'Crew' },
             { id: 'missions', icon: '📋', label: 'Missions' },
             { id: 'ship', icon: '🚀', label: 'Ship' },
           ].map((tab) => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id as TabType)}
+              onClick={() => {
+                triggerHaptic();
+                setActiveTab(tab.id as TabType);
+              }}
               className={`flex flex-col items-center justify-center gap-1 transition-colors
                         ${activeTab === tab.id 
                           ? 'text-orange-400 bg-slate-800' 
@@ -318,6 +715,339 @@ export const StationDashboard: React.FC = () => {
           ))}
         </div>
       </nav>
+
+      {/* Resource Management Panels */}
+      
+      {/* Fuel Management Panel */}
+      <MobileSlidePanel
+        isOpen={activePanel === 'fuel'}
+        onClose={() => setActivePanel(null)}
+        title="Fuel Management"
+        height="1/2"
+      >
+        <div className="space-y-4">
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-400">Current Fuel</span>
+              <span className="text-yellow-400 font-mono">{Math.round(fuel)} / {maxFuel}</span>
+            </div>
+            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-yellow-500 to-orange-500"
+                style={{ width: `${fuelPercentage}%` }}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Price per unit</span>
+              <span className="text-cyan-400">{actualFuelPrice} credits</span>
+            </div>
+            
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">
+                Amount to purchase: {fuelAmount} units
+              </label>
+              <input
+                type="range"
+                min="1"
+                max={Math.min(100, maxFuel - fuel)}
+                value={fuelAmount}
+                onChange={(e) => setFuelAmount(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="flex justify-between text-lg">
+              <span className="text-gray-300">Total Cost</span>
+              <span className="text-cyan-400 font-mono">{fuelAmount * actualFuelPrice} credits</span>
+            </div>
+            
+            <button
+              onClick={handleRefuel}
+              disabled={isProcessing || credits < fuelAmount * actualFuelPrice}
+              className="w-full bg-gradient-to-r from-yellow-600 to-orange-600 text-white py-3 rounded-lg
+                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {isProcessing ? 'Processing...' : `Purchase ${fuelAmount} Fuel`}
+            </button>
+          </div>
+        </div>
+      </MobileSlidePanel>
+
+      {/* Cargo Management Panel */}
+      <MobileSlidePanel
+        isOpen={activePanel === 'cargo'}
+        onClose={() => setActivePanel(null)}
+        title="Cargo Management"
+        height="3/4"
+      >
+        <div className="space-y-4">
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-400">Cargo Hold</span>
+              <span className="text-blue-400 font-mono">
+                {inventory.getStorageUsed()} / {inventory.storageCapacity} tons
+              </span>
+            </div>
+            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-to-r from-blue-500 to-cyan-500"
+                style={{ width: `${(inventory.getStorageUsed() / inventory.storageCapacity) * 100}%` }}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-400">Cargo Manifest</h3>
+            {inventory.items.length > 0 ? (
+              <div className="space-y-2">
+                {inventory.items.map(item => (
+                  <div key={item.type} className="bg-slate-800/50 rounded-lg p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-white font-medium">{item.type}</p>
+                        <div className="flex gap-4 mt-1">
+                          <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                          <span className="text-xs text-yellow-500">Value: {item.value * item.quantity}c</span>
+                          <span className="text-xs text-blue-500">From: {item.planetSource}</span>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={selectedCargoToJettison.includes(item.type)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedCargoToJettison([...selectedCargoToJettison, item.type]);
+                          } else {
+                            setSelectedCargoToJettison(selectedCargoToJettison.filter(t => t !== item.type));
+                          }
+                        }}
+                        className="w-5 h-5"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-500 text-center py-4">No cargo in hold</p>
+            )}
+          </div>
+          
+          {inventory.items.length > 0 && (
+            <button
+              onClick={handleJettisonCargo}
+              disabled={isProcessing || selectedCargoToJettison.length === 0}
+              className="w-full bg-gradient-to-r from-red-600 to-red-800 text-white py-3 rounded-lg
+                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {isProcessing ? 'Processing...' : `Jettison ${selectedCargoToJettison.length} Selected`}
+            </button>
+          )}
+        </div>
+      </MobileSlidePanel>
+
+      {/* Hull Repair Panel */}
+      <MobileSlidePanel
+        isOpen={activePanel === 'hull'}
+        onClose={() => setActivePanel(null)}
+        title="Hull Repair"
+        height="1/2"
+      >
+        <div className="space-y-4">
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-400">Hull Integrity</span>
+              <span className={`font-mono ${
+                hullPercentage > 70 ? 'text-green-400' :
+                hullPercentage > 30 ? 'text-yellow-400' : 'text-red-400'
+              }`}>
+                {Math.round(hullPercentage)}%
+              </span>
+            </div>
+            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${
+                  hullPercentage > 70 ? 'bg-green-500' :
+                  hullPercentage > 30 ? 'bg-yellow-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${hullPercentage}%` }}
+              />
+            </div>
+          </div>
+          
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-400">Damage</span>
+              <span className="text-red-400">{Math.round(hullDamage)}%</span>
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-gray-400">Repair cost per %</span>
+              <span className="text-cyan-400">{actualRepairPrice} credits</span>
+            </div>
+            
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">
+                Repair amount: {repairAmount}%
+              </label>
+              <input
+                type="range"
+                min="1"
+                max={Math.round(hullDamage)}
+                value={repairAmount}
+                onChange={(e) => setRepairAmount(Number(e.target.value))}
+                className="w-full"
+                disabled={hullDamage === 0}
+              />
+            </div>
+            
+            <div className="flex justify-between text-lg">
+              <span className="text-gray-300">Total Cost</span>
+              <span className="text-cyan-400 font-mono">
+                {Math.round(Math.min(repairAmount, hullDamage) * actualRepairPrice)} credits
+              </span>
+            </div>
+            
+            <button
+              onClick={handleRepair}
+              disabled={isProcessing || hullDamage === 0 || credits < repairAmount * actualRepairPrice}
+              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 text-white py-3 rounded-lg
+                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {isProcessing ? 'Processing...' : 
+               hullDamage === 0 ? 'Hull at 100%' : 
+               `Repair ${Math.min(repairAmount, Math.round(hullDamage))}% Hull`}
+            </button>
+          </div>
+        </div>
+      </MobileSlidePanel>
+
+      {/* Heat Management Panel */}
+      <MobileSlidePanel
+        isOpen={activePanel === 'heat'}
+        onClose={() => setActivePanel(null)}
+        title="Heat Management"
+        height="3/4"
+      >
+        <div className="space-y-4">
+          <div className="bg-slate-800/50 rounded-lg p-4">
+            <div className="flex justify-between items-center mb-3">
+              <span className="text-gray-400">Heat Level</span>
+              <span className={`font-mono ${
+                player.heat < 30 ? 'text-blue-400' :
+                player.heat < 70 ? 'text-orange-400' : 'text-red-400'
+              }`}>
+                {player.heat} / 100
+              </span>
+            </div>
+            <div className="h-3 bg-slate-700 rounded-full overflow-hidden">
+              <div 
+                className={`h-full ${
+                  player.heat < 30 ? 'bg-blue-500' :
+                  player.heat < 70 ? 'bg-orange-500' : 'bg-red-500'
+                }`}
+                style={{ width: `${player.heat}%` }}
+              />
+            </div>
+          </div>
+          
+          <div className="bg-red-900/20 border border-red-600/30 rounded-lg p-3">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-2xl">{heatSystem.wantedLevelInfo.icon}</span>
+              <div>
+                <p className="text-white font-semibold">{heatSystem.wantedLevelInfo.name}</p>
+                <p className="text-xs text-gray-400">{heatSystem.wantedLevelInfo.description}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold text-gray-400">Consequences</h3>
+            <div className="space-y-1 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Patrol encounters</span>
+                <span className="text-orange-400">{(heatSystem.wantedLevelInfo.encounterChance * 100).toFixed(0)}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Price markup</span>
+                <span className="text-red-400">+{(heatSystem.wantedLevelInfo.priceMarkup * 100).toFixed(0)}%</span>
+              </div>
+              {heatSystem.bountyHunterActive && (
+                <div className="flex justify-between">
+                  <span className="text-gray-500">Bounty on head</span>
+                  <span className="text-yellow-400">{heatSystem.bountyAmount}c</span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="space-y-3 pt-3 border-t border-slate-700">
+            <h3 className="text-sm font-semibold text-gray-400">Lay Low</h3>
+            
+            <div>
+              <label className="text-sm text-gray-400 block mb-2">
+                Days to lay low: {layLowDays}
+              </label>
+              <input
+                type="range"
+                min="1"
+                max="5"
+                value={layLowDays}
+                onChange={(e) => setLayLowDays(Number(e.target.value))}
+                className="w-full"
+              />
+            </div>
+            
+            <div className="flex justify-between">
+              <span className="text-gray-400">Heat reduction</span>
+              <span className="text-blue-400">-{Math.min(20 * layLowDays, player.heat)} heat</span>
+            </div>
+            
+            <div className="flex justify-between text-lg">
+              <span className="text-gray-300">Total Cost</span>
+              <span className="text-cyan-400 font-mono">{actualLayLowCost * layLowDays} credits</span>
+            </div>
+            
+            <button
+              onClick={handleLayLow}
+              disabled={isProcessing || player.heat === 0 || credits < actualLayLowCost * layLowDays}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg
+                       font-semibold active:scale-95 transition-transform disabled:opacity-50"
+            >
+              {isProcessing ? 'Processing...' : 
+               player.heat === 0 ? 'No Heat to Reduce' : 
+               `Lay Low for ${layLowDays} Day${layLowDays > 1 ? 's' : ''}`}
+            </button>
+            
+            {heatSystem.fakeIdAvailable && (
+              <button
+                onClick={() => {
+                  if (credits >= 1000) {
+                    if (spendCredits(1000)) {
+                      heatSystem.purchaseFakeId();
+                      toast.success('Fake ID purchased', {
+                        description: 'Temporary immunity from routine checks'
+                      });
+                      triggerHaptic();
+                    }
+                  } else {
+                    toast.error('Insufficient credits', {
+                      description: 'Need 1000 credits for fake ID'
+                    });
+                  }
+                }}
+                disabled={isProcessing || credits < 1000}
+                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 rounded-lg
+                         font-semibold active:scale-95 transition-transform disabled:opacity-50"
+              >
+                Purchase Fake ID (1000c)
+              </button>
+            )}
+          </div>
+        </div>
+      </MobileSlidePanel>
     </div>
   );
 };
