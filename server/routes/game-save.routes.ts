@@ -115,12 +115,20 @@ router.post('/:slot', async (req: Request<{ slot: string }, {}, { gameState: Gam
       hasStores: !!gameState.stores,
     });
     
-    // Validate required fields
+    // Fix undefined values with defaults
+    if (gameState.playTime === null || gameState.playTime === undefined) {
+      gameState.playTime = 0;
+    }
+    if (gameState.credits === null || gameState.credits === undefined) {
+      gameState.credits = 1000; // Default starting credits
+    }
+    
+    // Validate required fields after fixing
     if (typeof gameState.playTime !== 'number' || 
         typeof gameState.credits !== 'number' || 
         !gameState.location ||
         !gameState.shipStatus) {
-      console.error('Save validation failed:', {
+      console.error('Save validation failed after fix attempt:', {
         playTime: typeof gameState.playTime,
         credits: typeof gameState.credits,
         location: gameState.location,

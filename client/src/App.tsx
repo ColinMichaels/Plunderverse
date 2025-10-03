@@ -25,6 +25,7 @@ import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import "./testSaveSystem"; // Import save system test module
+import "./utils/testSaveFixed"; // Import fixed save test
 import "@fontsource/inter";
 
 // Main Game component (without auth wrapper)

@@ -26,8 +26,8 @@ const SAVE_FORMAT_VERSION = '1.0.0';
 function calculatePlayTime(): number {
   // Get from solar system store if it tracks time
   const solarSystem = useSolarSystem.getState();
-  // Convert elapsed time to seconds
-  return Math.floor(solarSystem.elapsedTime / 1000);
+  // Convert elapsed time to seconds, default to 0 if undefined
+  return Math.floor((solarSystem.elapsedTime || 0) / 1000);
 }
 
 // Helper to get current location
@@ -62,13 +62,13 @@ export function collectGameState(): GameStateData {
   const gameState: GameStateData = {
     version: SAVE_FORMAT_VERSION,
     timestamp: Date.now(),
-    playTime,
-    credits: credits.balance,
+    playTime: playTime || 0,
+    credits: credits.balance || 1000,  // Default to 1000 if undefined
     location,
     shipStatus: {
-      hull: shipStatus.hull,
-      shield: shipStatus.shield,
-      fuel: equipment.equipment.find(e => e.type === 'fuel')?.currentDurability || 0,
+      hull: shipStatus.hull || 100,
+      shield: shipStatus.shield || 100,
+      fuel: equipment.equipment.find(e => e.type === 'fuel')?.currentDurability || 100,
     },
     stores: {
       // Player stores - exclude functions
@@ -100,9 +100,9 @@ export function collectGameState(): GameStateData {
       
       // Credits
       credits: {
-        balance: credits.balance,
-        totalEarned: credits.totalEarned,
-        totalSpent: credits.totalSpent,
+        balance: credits.balance || 1000,
+        totalEarned: credits.totalEarned || 0,
+        totalSpent: credits.totalSpent || 0,
       },
       
       // Inventory
