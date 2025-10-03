@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
+import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
 import { useUILayout } from '../ui/UILayoutManager';
 import { SpaceUIPanel } from '../ui/SpaceUIPanel';
 import { AutopilotPanel } from './AutopilotPanel';
@@ -8,13 +9,17 @@ import { ShipUpgradesPanel } from '../../components/ship/ShipUpgradesPanel';
 import { QuickRepairPanel } from '../../components/ship/QuickRepairPanel';
 
 export const NavigationSidebar: React.FC = () => {
-  const { isLanded } = useLandedState();
+  const { isLanded, landedPlanet } = useLandedState();
+  const { currentContext, isDocked, dockedStationName } = useHUDContext();
   const { togglePanel } = useUILayout();
   
-  // Don't show sidebar when landed on planet surface
-  if (isLanded) return null;
+  // Determine which panels should be visible based on context
+  const showAutopilot = !isLanded && currentContext !== 'planet-surface';
+  const showShipSystems = true; // Always available
+  const showShipUpgrades = isLanded || isDocked; // Only when landed or docked
+  const showQuickRepair = true; // Always available
   
-  // Set up keyboard shortcuts (Alt+1 through Alt+4)
+  // Set up keyboard shortcuts (Alt+1 through Alt+4) - only for visible panels
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       // Don't trigger if user is typing in an input
@@ -27,83 +32,103 @@ export const NavigationSidebar: React.FC = () => {
       
       switch (e.key) {
         case '1':
-          e.preventDefault();
-          togglePanel('autopilot');
-          console.log('[NavigationSidebar] Alt+1 pressed - toggling Autopilot panel');
+          if (showAutopilot) {
+            e.preventDefault();
+            togglePanel('autopilot');
+            console.log('[NavigationSidebar] Alt+1 pressed - toggling Autopilot panel');
+          }
           break;
         case '2':
-          e.preventDefault();
-          togglePanel('ship-systems');
-          console.log('[NavigationSidebar] Alt+2 pressed - toggling Ship Systems panel');
+          if (showShipSystems) {
+            e.preventDefault();
+            togglePanel('ship-systems');
+            console.log('[NavigationSidebar] Alt+2 pressed - toggling Ship Systems panel');
+          }
           break;
         case '3':
-          e.preventDefault();
-          togglePanel('ship-upgrades');
-          console.log('[NavigationSidebar] Alt+3 pressed - toggling Ship Upgrades panel');
+          if (showShipUpgrades) {
+            e.preventDefault();
+            togglePanel('ship-upgrades');
+            console.log('[NavigationSidebar] Alt+3 pressed - toggling Ship Upgrades panel');
+          }
           break;
         case '4':
-          e.preventDefault();
-          togglePanel('quick-repair');
-          console.log('[NavigationSidebar] Alt+4 pressed - toggling Quick Repair panel');
+          if (showQuickRepair) {
+            e.preventDefault();
+            togglePanel('quick-repair');
+            console.log('[NavigationSidebar] Alt+4 pressed - toggling Quick Repair panel');
+          }
           break;
       }
     };
     
     window.addEventListener('keydown', handleKeyPress);
     return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [togglePanel]);
+  }, [togglePanel, showAutopilot, showShipSystems, showShipUpgrades, showQuickRepair]);
   
   // Register panels with UILayoutManager using SpaceUIPanel
-  // These components don't render anything visible - they just register the panels
+  // Conditionally render panels based on current context
   return (
     <>
-      <SpaceUIPanel
-        id="autopilot"
-        title="AUTOPILOT"
-        icon="🧭"
-        zone="left-sidebar"
-        priority={1}
-        defaultExpanded={false}
-        canCollapse={true}
-      >
-        <AutopilotPanel />
-      </SpaceUIPanel>
+      {/* Autopilot - Only in space */}
+      {showAutopilot && (
+        <SpaceUIPanel
+          id="autopilot"
+          title="AUTOPILOT"
+          icon="🧭"
+          zone="left-sidebar"
+          priority={1}
+          defaultExpanded={false}
+          canCollapse={true}
+        >
+          <AutopilotPanel />
+        </SpaceUIPanel>
+      )}
       
-      <SpaceUIPanel
-        id="ship-systems"
-        title="SHIP SYSTEMS"
-        icon="⚡"
-        zone="left-sidebar"
-        priority={2}
-        defaultExpanded={false}
-        canCollapse={true}
-      >
-        <ShipSystemsPanel />
-      </SpaceUIPanel>
+      {/* Ship Systems - Always available */}
+      {showShipSystems && (
+        <SpaceUIPanel
+          id="ship-systems"
+          title="SHIP SYSTEMS"
+          icon="⚡"
+          zone="left-sidebar"
+          priority={2}
+          defaultExpanded={false}
+          canCollapse={true}
+        >
+          <ShipSystemsPanel />
+        </SpaceUIPanel>
+      )}
       
-      <SpaceUIPanel
-        id="ship-upgrades"
-        title="UPGRADES"
-        icon="🚀"
-        zone="left-sidebar"
-        priority={3}
-        defaultExpanded={false}
-        canCollapse={true}
-      >
-        <ShipUpgradesPanel />
-      </SpaceUIPanel>
+      {/* Ship Upgrades - Only when docked or landed */}
+      {showShipUpgrades && (
+        <SpaceUIPanel
+          id="ship-upgrades"
+          title={isDocked ? "STATION UPGRADES" : (isLanded ? "FIELD REPAIRS" : "UPGRADES")}
+          icon="🚀"
+          zone="left-sidebar"
+          priority={3}
+          defaultExpanded={false}
+          canCollapse={true}
+        >
+          <ShipUpgradesPanel />
+        </SpaceUIPanel>
+      )}
       
-      <SpaceUIPanel
-        id="quick-repair"
-        title="QUICK REPAIR"
-        icon="🔧"
-        zone="left-sidebar"
-        priority={4}
-        defaultExpanded={false}
-        canCollapse={true}
-      >
-        <QuickRepairPanel />
-      </SpaceUIPanel>
+      {/* Quick Repair - Always available */}
+      {showQuickRepair && (
+        <SpaceUIPanel
+          id="quick-repair"
+          title="QUICK REPAIR"
+          icon="🔧"
+          zone="left-sidebar"
+          priority={4}
+          defaultExpanded={false}
+          canCollapse={true}
+        >
+          <QuickRepairPanel />
+        </SpaceUIPanel>
+      )}
     </>
   );
 };

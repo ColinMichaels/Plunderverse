@@ -3,6 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUpgrades, type Upgrade, type UpgradeTier } from '../../lib/stores/ship/useUpgrades';
 import { useCredits } from '../../lib/stores/economy/useCredits';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
+import { useLandedState } from '../../lib/stores/surface/useLandedState';
+import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
 import { toast } from 'sonner';
 import {
   Zap,
@@ -18,7 +20,10 @@ import {
   DollarSign,
   TrendingUp,
   Award,
-  Info
+  Info,
+  Wrench,
+  Building,
+  Globe
 } from 'lucide-react';
 
 interface UpgradeCategory {
@@ -35,6 +40,8 @@ export const ShipUpgradesPanel: React.FC = () => {
   const { catalog, ownedUpgrades, purchaseUpgrade, getUpgradesByCategory, isOwned } = useUpgrades();
   const { credits } = useCredits();
   const ship = useShipStatus();
+  const { isLanded, landedPlanet } = useLandedState();
+  const { isDocked, dockedStationName } = useHUDContext();
   
   const categories: UpgradeCategory[] = [
     {
@@ -120,18 +127,62 @@ export const ShipUpgradesPanel: React.FC = () => {
   
   const currentCategory = categories.find(c => c.id === selectedCategory);
   
+  // Determine context for title and content
+  const getTitle = () => {
+    if (isDocked) return 'STATION UPGRADES';
+    if (isLanded) return 'FIELD REPAIRS';
+    return 'SHIP UPGRADES';
+  };
+  
+  const getIcon = () => {
+    if (isDocked) return <Building className="w-5 h-5 text-purple-400" />;
+    if (isLanded) return <Wrench className="w-5 h-5 text-purple-400" />;
+    return <Zap className="w-5 h-5 text-purple-400" />;
+  };
+  
+  const getLocationText = () => {
+    if (isDocked) return `Docked at ${dockedStationName || 'Station'}`;
+    if (isLanded) return `Landed on ${landedPlanet || 'Surface'}`;
+    return 'In Space';
+  };
+  
+  const getContextMessage = () => {
+    if (isDocked) {
+      return 'Full station facilities available. All upgrades accessible at standard prices.';
+    }
+    if (isLanded) {
+      return 'Limited field repairs available. Basic upgrades only, 20% price increase.';
+    }
+    return 'Upgrades unavailable while in space. Dock at a station or land on a planet.';
+  };
+  
+  const getPriceModifier = () => {
+    if (isDocked) return 1.0;
+    if (isLanded) return 1.2; // 20% price increase for field repairs
+    return 1.0;
+  };
+  
   return (
     <div className="bg-slate-900/90 backdrop-blur-md rounded-lg border border-purple-500/30 p-4 w-80">
       {/* Header */}
       <div className="flex items-center justify-between mb-4 pb-2 border-b border-purple-500/20">
         <div className="flex items-center gap-2">
-          <Zap className="w-5 h-5 text-purple-400" />
-          <h3 className="font-mono text-sm text-purple-400">SHIP UPGRADES</h3>
+          {getIcon()}
+          <h3 className="font-mono text-sm text-purple-400">{getTitle()}</h3>
         </div>
         <div className="flex items-center gap-1 text-xs text-gray-400">
           <DollarSign className="w-3 h-3" />
           <span className="font-mono">{credits}</span>
         </div>
+      </div>
+      
+      {/* Context Information */}
+      <div className="mb-3 p-2 bg-slate-800/40 rounded text-xs">
+        <div className="flex items-center gap-1 text-gray-400 mb-1">
+          <Globe className="w-3 h-3" />
+          <span>{getLocationText()}</span>
+        </div>
+        <p className="text-gray-500">{getContextMessage()}</p>
       </div>
       
       {/* Category Tabs */}
@@ -195,12 +246,15 @@ export const ShipUpgradesPanel: React.FC = () => {
                 {!isOwned(upgrade.id) && (
                   <>
                     <div className={`text-xs font-mono ${
-                      credits >= upgrade.cost ? 'text-green-400' : 'text-red-400'
+                      credits >= Math.round(upgrade.cost * getPriceModifier()) ? 'text-green-400' : 'text-red-400'
                     }`}>
-                      {upgrade.cost} credits
+                      {Math.round(upgrade.cost * getPriceModifier())} credits
+                      {isLanded && !isDocked && (
+                        <div className="text-yellow-500 text-[10px]">+20% field</div>
+                      )}
                     </div>
                     <div className="mt-1">
-                      {credits >= upgrade.cost ? (
+                      {credits >= Math.round(upgrade.cost * getPriceModifier()) ? (
                         <Unlock className="w-3 h-3 text-green-400" />
                       ) : (
                         <Lock className="w-3 h-3 text-gray-500" />
@@ -254,25 +308,25 @@ export const ShipUpgradesPanel: React.FC = () => {
                 )}
                 
                 {/* Purchase Button */}
-                {!isOwned(upgrade.id) && credits >= upgrade.cost && (
+                {!isOwned(upgrade.id) && credits >= Math.round(upgrade.cost * getPriceModifier()) && (
                   <motion.button
                     onClick={(e) => {
                       e.stopPropagation();
                       handlePurchaseUpgrade(upgrade.id);
                     }}
                     className={`w-full px-3 py-1.5 rounded text-xs font-mono transition-all ${
-                      credits >= upgrade.cost
+                      credits >= Math.round(upgrade.cost * getPriceModifier())
                         ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600'
                         : 'bg-slate-700/30 border border-slate-600/30 text-gray-500 cursor-not-allowed'
                     }`}
-                    whileHover={credits >= upgrade.cost ? { scale: 1.05 } : {}}
-                    whileTap={credits >= upgrade.cost ? { scale: 0.95 } : {}}
+                    whileHover={credits >= Math.round(upgrade.cost * getPriceModifier()) ? { scale: 1.05 } : {}}
+                    whileTap={credits >= Math.round(upgrade.cost * getPriceModifier()) ? { scale: 0.95 } : {}}
                   >
                     PURCHASE UPGRADE
                   </motion.button>
                 )}
                 
-                {!isOwned(upgrade.id) && credits < upgrade.cost && (
+                {!isOwned(upgrade.id) && credits < Math.round(upgrade.cost * getPriceModifier()) && (
                   <div className="p-2 bg-gray-500/10 border border-gray-500/30 rounded">
                     <p className="text-xs text-gray-400">
                       Insufficient credits

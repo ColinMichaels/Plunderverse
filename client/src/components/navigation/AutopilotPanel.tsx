@@ -4,6 +4,7 @@ import { useAutopilot } from '../../lib/stores/navigation/useAutopilot';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
+import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useFrame } from '@react-three/fiber';
 import { planets } from '../../lib/planetData';
 import * as THREE from 'three';
@@ -19,7 +20,8 @@ import {
   MapPin,
   XCircle,
   Play,
-  Pause
+  Pause,
+  AlertTriangle
 } from 'lucide-react';
 
 interface DestinationInfo {
@@ -47,6 +49,7 @@ export const AutopilotPanel: React.FC = () => {
   } = useAutopilot();
   
   const { cameraPosition } = useSolarSystem();
+  const { isLanded, landedPlanet } = useLandedState();
   const equipment = useEquipment();
   
   const fuelTank = equipment.getEquipment('fuel-tank');
@@ -151,6 +154,23 @@ export const AutopilotPanel: React.FC = () => {
           <span className="text-xs font-mono">{getStatusText()}</span>
         </div>
       </div>
+      
+      {/* Unavailable when landed message */}
+      {isLanded && (
+        <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg mb-4">
+          <div className="flex items-center gap-2 text-yellow-400 mb-2">
+            <AlertTriangle className="w-5 h-5" />
+            <span className="font-mono text-sm">AUTOPILOT UNAVAILABLE</span>
+          </div>
+          <p className="text-xs text-gray-400">
+            Autopilot systems are offline while landed on {landedPlanet || 'planet surface'}.
+            Launch from the planet surface to re-enable autopilot navigation.
+          </p>
+        </div>
+      )}
+      
+      {/* Hide controls when landed */}
+      {!isLanded && (<>
       
       {/* Current Status */}
       {isActive && (
@@ -319,6 +339,7 @@ export const AutopilotPanel: React.FC = () => {
       <div className="mt-2 text-center text-xs text-gray-500">
         Press <span className="text-orange-400 font-mono">A</span> to toggle autopilot
       </div>
+      </>)}
     </div>
   );
 };
