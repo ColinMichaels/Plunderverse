@@ -543,7 +543,8 @@ export function CameraController() {
     }
 
     // Autopilot system with orbital mechanics
-    if (isAutopilotActive && selectedPlanet) {
+    // Check !isLanded to prevent autopilot from running when docked/landed
+    if (isAutopilotActive && selectedPlanet && !isLanded) {
       // Calculate current planet position dynamically
       const planetData = planets.find((p) => p.name === selectedPlanet);
       if (planetData) {

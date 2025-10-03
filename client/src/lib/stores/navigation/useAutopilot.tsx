@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as THREE from "three";
+import { useLandedState } from "../surface/useLandedState";
 
 // Easing functions for smooth orbital mechanics
 const easeInOutCubic = (t: number): number => {
@@ -42,6 +43,13 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
   orbitSpeed: 0.15,
   
   activate: (target) => {
+    // Check if landed before allowing activation
+    const landedState = useLandedState.getState();
+    if (landedState.isLanded) {
+      console.log(`[AUTOPILOT] Cannot activate while landed on ${landedState.landedPlanet}`);
+      return;
+    }
+    
     set({
       isActive: true,
       target: target.clone(),
@@ -141,3 +149,15 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     return speed;
   }
 }));
+
+// Subscribe to landing state changes to automatically deactivate autopilot when landing
+useLandedState.subscribe((state, prevState) => {
+  // If we just landed, deactivate autopilot
+  if (state.isLanded && !prevState?.isLanded) {
+    const autopilotState = useAutopilot.getState();
+    if (autopilotState.isActive) {
+      console.log('[AUTOPILOT] Auto-deactivating due to landing on', state.landedPlanet);
+      autopilotState.deactivate();
+    }
+  }
+});
