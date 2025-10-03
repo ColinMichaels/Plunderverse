@@ -183,6 +183,36 @@ export class GameFacade {
       // Make trigger system globally accessible for debugging
       (window as any).objectiveTriggers = triggerSystem;
 
+      // Generate Act 1 story missions on initialization
+      console.log("[GameFacade] 📖 Generating Act 1 story missions...");
+      await this.generateStoryMissions();
+
+      // Make facade accessible globally for debugging
+      (window as any).gameFacade = this;
+      
+      // Add debug console commands
+      (window as any).advanceToAct = (actNumber: number) => {
+        this.currentAct = actNumber;
+        this.generateStoryMissions();
+        console.log(`[GameFacade] Advanced to Act ${actNumber}`);
+        toast.info("Story Progression", {
+          description: `Advanced to Act ${actNumber}`,
+        });
+      };
+
+      (window as any).completeStoryMission = async (missionId: string) => {
+        const result = await this.resolveMission(missionId);
+        if (result.success) {
+          this.completedStoryMissions.add(missionId);
+          console.log(`[GameFacade] Completed story mission: ${missionId}`);
+        }
+        return result;
+      };
+
+      (window as any).getStoryState = () => {
+        return this.getStoryProgressionState();
+      };
+
       this.initialized = true;
       console.log(
         "[GameFacade] Initialized successfully with deterministic seeding",
@@ -566,8 +596,45 @@ export class GameFacade {
       if (outcomes) {
         consequences = outcomes;
 
-        // Apply choice outcomes
+        // Apply choice outcomes and track morality
         for (const outcome of outcomes) {
+          // Track morality impact from choices
+          const choice = mission.choices?.find(c => c.id === choiceId);
+          if (choice) {
+            // Calculate morality impact based on choice outcomes
+            let moralityImpact = 0;
+            
+            // Check for moral implications in the choice text/id
+            if (choiceId.includes('save') || choiceId.includes('rescue') || choiceId.includes('help')) {
+              moralityImpact += 10;
+            }
+            if (choiceId.includes('betray') || choiceId.includes('abandon') || choiceId.includes('kill')) {
+              moralityImpact -= 15;
+            }
+            if (choiceId.includes('steal') || choiceId.includes('lie')) {
+              moralityImpact -= 5;
+            }
+            
+            // Apply reputation-based morality changes
+            if (outcome.effects?.reputation) {
+              if (outcome.effects.reputation.independents && outcome.effects.reputation.independents > 0) {
+                moralityImpact += 5;
+              }
+              if (outcome.effects.reputation.outlaws && outcome.effects.reputation.outlaws > 0) {
+                moralityImpact -= 3;
+              }
+            }
+            
+            // Record the choice and morality impact
+            this.recordPlayerChoice(missionId, choiceId, moralityImpact);
+            
+            // Log story choice for debugging
+            if (mission.type === 'story') {
+              console.log(`[GameFacade] 📖 Story choice made: ${choiceId}, morality impact: ${moralityImpact}`);
+              console.log(`[GameFacade] Current morality: ${this.moralityScore}, alignment: ${this.getStoryProgressionState().moralityAlignment}`);
+            }
+          }
+          
           await this.applyOutcome(outcome);
         }
       }
@@ -586,14 +653,32 @@ export class GameFacade {
     // Apply rewards
     await this.applyRewards(rewards, mission);
 
+    // Track story mission completion
+    if (mission.type === 'story') {
+      this.completedStoryMissions.add(missionId);
+      this.progressionMetrics.missionsCompleted++;
+      console.log(`[GameFacade] 📖 Story mission completed: ${mission.title}`);
+      console.log(`[GameFacade] Completed story missions: ${this.completedStoryMissions.size}`);
+      
+      // Check if this was an act climax mission
+      const missionData = mission as any;
+      if (missionData.climax) {
+        console.log(`[GameFacade] 🎭 Act ${this.currentAct} climax reached!`);
+        toast.info("📖 Act Complete!", {
+          description: `You've completed Act ${this.currentAct}. Your choices have consequences...`,
+        });
+      }
+    }
+
     // Show success toast with rewards
     const creditsEarned = rewards.credits || 0;
-    toast.success("🎉 Mission Completed!", {
+    const toastIcon = mission.type === 'story' ? '📖' : '🎉';
+    toast.success(`${toastIcon} Mission Completed!`, {
       description: `${mission.title} - Earned ${creditsEarned} credits`,
     });
 
-    // Update player progression
-    this.checkRankProgression();
+    // Update player progression and check for act advancement
+    await this.checkRankProgression();
 
     // Update legacy missions if needed
     const legacyMissions = useMissions.getState();
@@ -1446,13 +1531,27 @@ export class GameFacade {
     const currentAct = await this.getCurrentAct();
     if (currentAct && player.rank > currentAct.rankRange.max) {
       this.currentAct++;
-      console.log(`[GameFacade] Advanced to Act ${this.currentAct}!`);
-      toast.info("📖 Story Progression", {
-        description: `Advanced to Act ${this.currentAct}`,
+      console.log(`[GameFacade] 📖 Advanced to Act ${this.currentAct}!`);
+      
+      // Get the new act information
+      const newAct = await this.getCurrentAct();
+      const actTitle = newAct ? `${newAct.title}: ${newAct.subtitle}` : `Act ${this.currentAct}`;
+      
+      toast.info("📖 Story Progression!", {
+        description: `Advanced to ${actTitle}. New story missions available!`,
       });
 
       // Generate new story missions for the new act
-      this.generateStoryMissions();
+      await this.generateStoryMissions();
+      
+      // Log progression for debugging
+      console.log(`[GameFacade] Act progression details:`, {
+        newAct: this.currentAct,
+        title: actTitle,
+        rankRange: newAct?.rankRange,
+        themes: newAct?.themes,
+        storyMissions: newAct?.storyMissions,
+      });
     }
 
     this.saveProgressionData();

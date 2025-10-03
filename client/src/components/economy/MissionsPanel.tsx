@@ -182,18 +182,28 @@ export function MissionsPanel() {
   };
 
   const renderMissionCard = (mission: Mission, isActive: boolean = false) => {
-    const legalityColor = getLegalityColor(mission);
+    const isStoryMission = mission.type === 'story';
+    const legalityColor = isStoryMission 
+      ? 'border-2 border-purple-500 shadow-lg shadow-purple-500/20 bg-gradient-to-br from-purple-900/30 to-pink-900/30' 
+      : getLegalityColor(mission);
     const availability = checkMissionAvailability(mission);
-    const availabilityStyle = getMissionAvailabilityColor(mission);
+    const availabilityStyle = isStoryMission ? '' : getMissionAvailabilityColor(mission);
     
     return (
       <div 
         key={mission.id} 
-        className={`bg-gray-800 p-3 rounded border ${legalityColor} ${availabilityStyle} cursor-pointer hover:bg-gray-700 transition-colors relative`}
+        className={`${isStoryMission ? 'bg-gradient-to-br from-purple-900/30 to-pink-900/30' : 'bg-gray-800'} p-3 rounded border ${legalityColor} ${availabilityStyle} cursor-pointer hover:bg-gray-700 transition-colors relative`}
         onClick={() => setSelectedMission(mission)}
       >
+        {/* Story mission badge */}
+        {isStoryMission && (
+          <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1 shadow-lg">
+            📖 STORY
+          </div>
+        )}
+        
         {/* Availability banner */}
-        {!availability.available && (
+        {!availability.available && !isStoryMission && (
           <div className={`absolute top-0 left-0 right-0 px-2 py-1 text-xs font-medium text-center ${
             availability.close ? 'bg-yellow-600/80 text-yellow-100' : 'bg-red-600/80 text-red-100'
           }`}>
@@ -201,10 +211,14 @@ export function MissionsPanel() {
           </div>
         )}
         
-        <div className={`flex items-start justify-between mb-2 ${!availability.available ? 'mt-6' : ''}`}>
+        <div className={`flex items-start justify-between mb-2 ${!availability.available && !isStoryMission ? 'mt-6' : ''}`}>
           <div className="flex items-center space-x-2">
-            <span className="text-lg">{getMissionTypeIcon(mission.type)}</span>
-            <h3 className="font-semibold text-white">{mission.title}</h3>
+            <span className="text-lg">
+              {isStoryMission ? '📖' : getMissionTypeIcon(mission.type)}
+            </span>
+            <h3 className={`font-semibold ${isStoryMission ? 'text-purple-200' : 'text-white'}`}>
+              {mission.title}
+            </h3>
             {/* Show faction icon if mission has faction association */}
             {mission.rewards?.base?.reputation && (
               <span className="text-sm opacity-75">
@@ -281,6 +295,22 @@ export function MissionsPanel() {
     );
   };
 
+  // Get story state
+  const storyState = gameFacade.getStoryProgressionState();
+  const getMoralityIcon = () => {
+    if (storyState.moralityScore >= 50) return '😇';
+    if (storyState.moralityScore >= 20) return '🙂';
+    if (storyState.moralityScore >= -20) return '😐';
+    if (storyState.moralityScore >= -50) return '😈';
+    return '💀';
+  };
+  
+  const getMoralityColor = () => {
+    if (storyState.moralityScore >= 50) return 'text-green-400';
+    if (storyState.moralityScore <= -50) return 'text-red-400';
+    return 'text-gray-400';
+  };
+
   return (
     <>
       <div className="space-y-3">
@@ -288,9 +318,18 @@ export function MissionsPanel() {
         <div className="missions-panel-header bg-gray-800 p-4 border-b border-gray-600 rounded-t-lg">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-xl font-bold text-white">Mission Control</h2>
-            <div className="text-sm">
-              <span className="text-purple-400 font-bold">{player.rankTitle}</span>
-              <span className="text-gray-400 ml-2">Rank {player.rank}</span>
+            <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2 bg-purple-900/40 px-3 py-1 rounded border border-purple-500">
+                <span className="text-purple-400">📖 Act {storyState.currentAct}</span>
+              </div>
+              <div className={`flex items-center gap-1 ${getMoralityColor()}`}>
+                <span>{getMoralityIcon()}</span>
+                <span className="font-medium">{storyState.moralityAlignment}</span>
+              </div>
+              <div>
+                <span className="text-purple-400 font-bold">{player.rankTitle}</span>
+                <span className="text-gray-400 ml-2">Rank {player.rank}</span>
+              </div>
             </div>
           </div>
           
