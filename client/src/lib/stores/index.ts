@@ -3,7 +3,6 @@
 
 // Space stores
 export { useSolarSystem } from './space/useSolarSystem';
-export { useAsteroids } from './space/useAsteroids';
 
 // Navigation stores
 export { useAutopilot } from './navigation/useAutopilot';

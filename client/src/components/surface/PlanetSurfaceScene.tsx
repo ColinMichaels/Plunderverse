@@ -638,6 +638,10 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   );
 }
 
+// Store for sun position to be used by lens flare
+let currentSunPosition = new THREE.Vector3(50, 200, 50);
+let currentSunIntensity = 0.9;
+
 function SurfaceLighting() {
   const { landedPlanet } = useLandedState();
   const { getUniverseTime, updateUniverseTime } = useSolarSystem();
@@ -769,6 +773,10 @@ function SurfaceLighting() {
   // Get final lighting data (manual override or automatic)
   const lightingData = surfaceLighting.getCurrentLightingData(automaticLightingData);
   const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
+  
+  // Store sun position and intensity for lens flare
+  currentSunPosition = sunPosition.clone();
+  currentSunIntensity = sunIntensity;
 
   // Update time of day in the lighting store
   useEffect(() => {
@@ -1319,8 +1327,35 @@ function SurfaceControls({ planetName }: { planetName: string }) {
 // Post-processing effects component
 function PostProcessingEffects() {
   const { enableBloom, graphicsQuality } = useSettings();
+  const [sunVisible, setSunVisible] = useState(true);
+  const [bloomIntensity, setBloomIntensity] = useState(1.5);
   
-  // Only render bloom on medium/high quality settings when enabled
+  useEffect(() => {
+    console.log("[Bloom] Sun glow effect loaded for planet surface");
+  }, []);
+  
+  // Update sun visibility and bloom intensity every frame
+  useFrame(() => {
+    if (currentSunPosition) {
+      // Check if sun is above horizon (y > 0 means above horizon in our coordinate system)
+      const isVisible = currentSunPosition.y > 0 && currentSunIntensity > 0.1;
+      setSunVisible(isVisible);
+      
+      // Dynamic bloom intensity based on sun elevation and intensity
+      // Higher intensity when sun is visible and bright
+      if (isVisible) {
+        const sunElevation = Math.max(0, currentSunPosition.y / 200); // Normalize elevation
+        const dynamicIntensity = 1.0 + (sunElevation * currentSunIntensity * 2.0);
+        setBloomIntensity(Math.min(3.5, dynamicIntensity)); // Cap at 3.5
+      } else {
+        // Lower bloom for night/twilight ambient lighting
+        setBloomIntensity(0.5);
+      }
+    }
+  });
+  
+  // Render effects based on graphics quality settings
+  // Only render EffectComposer when bloom is enabled and not on low quality
   if (!enableBloom || graphicsQuality === 'low') {
     return null;
   }
@@ -1328,12 +1363,12 @@ function PostProcessingEffects() {
   return (
     <EffectComposer>
       <Bloom 
-        intensity={graphicsQuality === 'high' ? 1.5 : 0.8}
-        luminanceThreshold={0.6}
+        intensity={bloomIntensity}
+        luminanceThreshold={sunVisible ? 0.4 : 0.7}
         luminanceSmoothing={0.9}
-        radius={0.8}
-        levels={graphicsQuality === 'high' ? 7 : 5}
-        mipmapBlur
+        radius={sunVisible ? 0.95 : 0.6}
+        levels={graphicsQuality === 'high' ? 8 : 6}
+        mipmapBlur={true}
       />
     </EffectComposer>
   );
