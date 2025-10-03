@@ -19,7 +19,6 @@ import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
-import { UnifiedDebugPanel } from "./components/debug/UnifiedDebugPanel";
 import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
@@ -63,19 +62,6 @@ function App() {
     };
   }, []);
 
-  // Add keyboard shortcut for UnifiedDebugPanel (F4)
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (e.key === 'F4' && import.meta.env.DEV) {
-        e.preventDefault();
-        toggleDebugPanel();
-        console.log('[DEBUG] Toggled UnifiedDebugPanel');
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [toggleDebugPanel]);
 
   // Handle resource cleanup on scene transitions
   useEffect(() => {
@@ -168,8 +154,9 @@ function App() {
       console.log('  - window.exportMemoryData() : Export profiling data');
       console.log('  - window.resetMemoryProfiler() : Reset profiler data');
       
-      console.log('%c[UNIFIED-DEBUG-PANEL] Press F4 to toggle the comprehensive debug panel', 'color: #00ffff; font-weight: bold');
+      console.log('%c[CONSOLIDATED-DEBUG-PANEL] Press backtick (`) key to toggle the comprehensive debug panel', 'color: #00ffff; font-weight: bold');
       console.log('  Features include:');
+      console.log('  - Mission debugging and controls');
       console.log('  - Real-time FPS and memory monitoring');
       console.log('  - Time controls and camera positioning');
       console.log('  - Lighting controls (when landed on planet)');
@@ -282,9 +269,6 @@ function App() {
         
         {/* Debug panel available even on splash screen in dev mode */}
         {import.meta.env.DEV && <MissionDebugPanel />}
-        
-        {/* Unified Debug Panel in dev mode (toggle with F4) */}
-        {import.meta.env.DEV && <UnifiedDebugPanel />}
       </div>
     </UILayoutProvider>
   );
