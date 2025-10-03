@@ -19,6 +19,7 @@ import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
 import { MissionHUD } from "./MissionHUD";
 import { CrewBonusDisplay } from "./CrewBonusDisplay";
+import { EconomicFeedback } from "../economy/EconomicFeedback";
 // Save and Menu Components
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
@@ -118,6 +119,13 @@ export function GameUI() {
       
       {/* Top Left - Objective Tracker (below ship status) */}
       {uiZoneVisibility.topLeft && <ObjectiveTracker />}
+      
+      {/* Top Left - Economic Feedback (below objective tracker) */}
+      {uiZoneVisibility.topLeft && (
+        <div className="fixed top-64 left-4 z-40 w-80">
+          <EconomicFeedback />
+        </div>
+      )}
 
       {/* Top Right - Mission Context */}
       {uiZoneVisibility.topRight && <MissionContextHUD />}

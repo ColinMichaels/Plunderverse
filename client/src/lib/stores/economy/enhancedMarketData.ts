@@ -103,9 +103,18 @@ export const calculateFinalPrice = (
     }
   }
   
-  // Selling prices base modifier
+  // Improved selling prices base modifier for better profit margins
   if (!isBuying) {
-    price *= 0.8;
+    // Base sell price should be 70% of buy price for standard items
+    // This ensures a minimum 20-30% profit on trade routes
+    price *= 0.7;
+    
+    // Increase profit margin for scarce items at this location
+    const economy = PLANET_ECONOMIES[planetName];
+    if (economy && economy.primaryImports.includes(item.id)) {
+      price *= 1.3; // 30% bonus for items in demand
+      console.log(`[TRADING] High demand for ${item.id} at ${planetName}, +30% sell bonus`);
+    }
   }
   
   return Math.round(price);

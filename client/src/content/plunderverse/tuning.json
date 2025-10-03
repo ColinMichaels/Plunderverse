@@ -34,13 +34,13 @@
       }
     },
     "trading": {
-      "base_profit_margin": 0.2,
-      "distance_bonus_per_sector": 0.1,
+      "base_profit_margin": 0.3,
+      "distance_bonus_per_sector": 0.15,
       "risk_bonus": {
-        "low": 0,
-        "medium": 0.15,
-        "high": 0.3,
-        "extreme": 0.5
+        "low": 0.1,
+        "medium": 0.25,
+        "high": 0.5,
+        "extreme": 1.0
       },
       "bulk_discount": {
         "threshold": 50,
@@ -73,10 +73,10 @@
     },
     "missions": {
       "base_rewards": {
-        "easy": 2500,
-        "medium": 5000,
-        "hard": 10000,
-        "legendary": 25000
+        "easy": 225,
+        "medium": 500,
+        "hard": 1000,
+        "legendary": 1500
       },
       "time_bonus": {
         "early_completion": 1.25,
@@ -342,22 +342,22 @@
     },
     "daily_costs": {
       "crew_salaries": {
-        "base_crew": 50,
-        "navigator": 75,
-        "gunner": 100,
-        "engineer": 80,
-        "medic": 60
+        "base_crew": 25,
+        "navigator": 30,
+        "gunner": 40,
+        "engineer": 35,
+        "medic": 25
       },
-      "life_support": 25,
+      "life_support": 15,
       "docking_fees": {
-        "corporations": 30,
-        "independents": 20,
-        "outlaws": 10,
+        "corporations": 15,
+        "independents": 10,
+        "outlaws": 5,
         "deep_space": 0
       },
-      "insurance": 15,
-      "supplies": 20,
-      "total_daily_minimum": 75,
+      "insurance": 10,
+      "supplies": 10,
+      "total_daily_minimum": 60,
       "payment_interval_minutes": 1,
       "warning_credit_threshold": 200,
       "critical_credit_threshold": 50,

@@ -71,7 +71,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'Strengthened hull plating for better damage resistance',
     tier: 'basic',
     category: 'hull',
-    cost: 500,
+    cost: 400,
     requirements: { level: 2 },
     benefits: [
       { label: 'Hull Strength', value: '+20%', improvement: 20 },
@@ -107,7 +107,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'Experimental quantum-phased armor technology',
     tier: 'legendary',
     category: 'hull',
-    cost: 10000,
+    cost: 8000,
     requirements: { level: 10, reputation: 80 },
     benefits: [
       { label: 'Hull Strength', value: '+100%', improvement: 100 },
@@ -128,7 +128,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'Improved shield generators with faster recharge',
     tier: 'basic',
     category: 'shields',
-    cost: 600,
+    cost: 500,
     requirements: { level: 2 },
     benefits: [
       { label: 'Shield Capacity', value: '+25%', improvement: 25 },
@@ -145,7 +145,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'High-energy plasma shield system',
     tier: 'elite',
     category: 'shields',
-    cost: 3500,
+    cost: 4000,
     requirements: { level: 7, previousUpgrade: 'shield-enhanced' },
     benefits: [
       { label: 'Shield Capacity', value: '+60%', improvement: 60 },
@@ -166,7 +166,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'High-performance thruster system for increased speed',
     tier: 'basic',
     category: 'engine',
-    cost: 800,
+    cost: 600,
     requirements: { level: 3 },
     benefits: [
       { label: 'Max Speed', value: '+30%', improvement: 30 },
@@ -201,7 +201,7 @@ const UPGRADE_CATALOG: Upgrade[] = [
     description: 'Revolutionary quantum propulsion technology',
     tier: 'legendary',
     category: 'engine',
-    cost: 15000,
+    cost: 9000,
     requirements: { level: 12, reputation: 90, previousUpgrade: 'engine-warp' },
     benefits: [
       { label: 'Max Speed', value: '+100%', improvement: 100 },
