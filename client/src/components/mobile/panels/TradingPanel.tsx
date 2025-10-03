@@ -70,12 +70,55 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     return generatePlanetMarketConditions(landedPlanet || station);
   }, [landedPlanet, station]);
   
+  // Check if faction will trade with player
+  const canTrade = useMemo(() => {
+    const factionRep = player.reputation[faction as keyof typeof player.reputation] || 0;
+    if (factionRep <= -50) {
+      return { allowed: false, reason: `${faction} refuses to trade with enemies (Reputation: ${factionRep})` };
+    }
+    return { allowed: true, reason: '' };
+  }, [player.reputation, faction]);
+  
   // Get available items for buying
   const buyableItems = useMemo(() => {
-    return MARKET_ITEMS.filter(item => 
-      marketConditions.available.includes(item.id)
-    );
-  }, [marketConditions]);
+    if (!canTrade.allowed) return [];
+    
+    // Filter items based on faction and reputation
+    const factionRep = player.reputation[faction as keyof typeof player.reputation] || 0;
+    
+    return MARKET_ITEMS.filter(item => {
+      // Basic availability check
+      if (!marketConditions.available.includes(item.id)) return false;
+      
+      // Faction-specific item restrictions
+      if (faction === 'corporations') {
+        // Corps won't sell contraband unless you're corrupt (negative rep)
+        if ((item.category === 'contraband' || item.illegal) && factionRep > -20) {
+          return false;
+        }
+        // Advanced shields and legal cargo for good standing
+        if (item.category === 'shields' && item.rarity === 'rare' && factionRep < 20) {
+          return false;
+        }
+      } else if (faction === 'outlaws') {
+        // Outlaws focus on contraband and illegal items
+        if (item.category === 'contraband' && factionRep < -20) {
+          return false; // Need some outlaw cred for contraband
+        }
+        // Special black market items for high rep
+        if (item.rarity === 'legendary' && item.illegal && factionRep < 50) {
+          return false;
+        }
+      } else if (faction === 'independents') {
+        // Independents have diverse goods but limit rare items
+        if (item.rarity === 'legendary' && factionRep < 30) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }, [marketConditions, canTrade.allowed, player.reputation, faction]);
   
   // Get player's inventory items for selling
   const sellableItems = useMemo(() => {
@@ -494,8 +537,42 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     }, 500);
   };
   
+  // Get faction reputation status
+  const factionRep = player.reputation[faction as keyof typeof player.reputation] || 0;
+  const getReputationColor = () => {
+    if (factionRep >= 75) return 'text-green-400';
+    if (factionRep >= 50) return 'text-green-300';
+    if (factionRep >= 20) return 'text-blue-300';
+    if (factionRep <= -50) return 'text-red-500';
+    if (factionRep <= -20) return 'text-orange-400';
+    return 'text-gray-400';
+  };
+  
+  const getReputationStatus = () => {
+    if (factionRep >= 75) return 'Allied';
+    if (factionRep >= 50) return 'Friendly';
+    if (factionRep >= 20) return 'Liked';
+    if (factionRep <= -50) return 'Hostile';
+    if (factionRep <= -20) return 'Unfriendly';
+    return 'Neutral';
+  };
+  
   return (
     <div className="flex flex-col h-full bg-black">
+      {/* Service Refusal Warning */}
+      {!canTrade.allowed && (
+        <div className="bg-red-900/30 border-2 border-red-600 p-4 m-4 rounded-lg">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-500 animate-pulse" />
+            <div>
+              <p className="text-red-400 font-bold">ACCESS DENIED</p>
+              <p className="text-red-300 text-sm">{canTrade.reason}</p>
+              <p className="text-gray-400 text-xs mt-1">Improve your reputation to gain access to trading services</p>
+            </div>
+          </div>
+        </div>
+      )}
+      
       {/* Header */}
       <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-cyan-600/30 px-4 py-3">
         <div className="flex items-center justify-between mb-2">
@@ -510,6 +587,9 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
           <div className="flex items-center gap-3">
             <span className="text-gray-400">Station: {station}</span>
             <span className="text-orange-400">Faction: {faction}</span>
+            <span className={`${getReputationColor()} font-semibold`}>
+              [{getReputationStatus()}: {factionRep}]
+            </span>
           </div>
           <div className="flex items-center gap-2">
             <Package className="w-3 h-3 text-gray-400" />

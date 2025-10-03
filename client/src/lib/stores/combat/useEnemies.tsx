@@ -242,17 +242,110 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
           if (healthPercent < 0.3 && enemy.behavior !== 'fleeing') {
             enemy.behavior = 'fleeing';
           } else if (distanceToPlayer < enemy.attackRange) {
-            // Check faction reputation for aggression
+            // Enhanced faction reputation checking
             const player = usePlayer.getState();
-            const reputation = player.reputation[enemy.faction] || 0;
+            let shouldAttack = false;
+            let behaviorType: AIBehavior = 'defensive';
             
-            if (reputation < -20 || enemy.faction === 'bountyHunter') {
-              enemy.behavior = 'aggressive';
-            } else if (reputation > 20) {
-              enemy.behavior = 'defensive';
-            } else {
-              enemy.behavior = 'orbiting';
+            // Faction-specific behavior based on reputation
+            switch (enemy.faction) {
+              case 'corporations':
+                // Corporation patrols ignore players with positive reputation
+                const corpRep = player.reputation.corporations || 0;
+                if (corpRep >= 20) {
+                  // Friendly - won't attack
+                  behaviorType = 'patrol';
+                  console.log(`[ENEMY] Corporation patrol ignoring player (rep: ${corpRep})`);
+                } else if (corpRep <= -20 || player.heat > 50) {
+                  // Hostile if bad reputation OR high heat
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                  console.log(`[ENEMY] Corporation patrol attacking (rep: ${corpRep}, heat: ${player.heat})`);
+                } else {
+                  // Neutral - defensive stance
+                  behaviorType = 'defensive';
+                }
+                break;
+                
+              case 'outlaws':
+                // Outlaw pirates are friendly to players with high outlaw reputation
+                const outlawRep = player.reputation.outlaws || 0;
+                if (outlawRep >= 50) {
+                  // Allied - won't attack
+                  behaviorType = 'patrol';
+                  console.log(`[ENEMY] Outlaw pirates allied with player (rep: ${outlawRep})`);
+                } else if (outlawRep >= 20) {
+                  // Friendly - defensive only
+                  behaviorType = 'defensive';
+                } else if (player.reputation.corporations > 50) {
+                  // Hostile to corporation-aligned players
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                  console.log(`[ENEMY] Outlaws attacking corporation ally (corp rep: ${player.reputation.corporations})`);
+                } else if (outlawRep < -20) {
+                  // Hostile if bad reputation with outlaws
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                } else {
+                  // Neutral - might attack for loot
+                  shouldAttack = Math.random() < 0.3; // 30% chance
+                  behaviorType = shouldAttack ? 'aggressive' : 'orbiting';
+                }
+                break;
+                
+              case 'military':
+                // Military forces escalate based on heat AND corporation reputation
+                const milHeat = player.heat;
+                const milCorpRep = player.reputation.corporations || 0;
+                
+                if (milHeat > 75) {
+                  // Extreme threat - always attack
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                  console.log(`[ENEMY] Military engaging high-threat target (heat: ${milHeat})`);
+                } else if (milHeat > 50 && milCorpRep < 0) {
+                  // High heat + bad corp rep = attack
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                } else if (milCorpRep >= 50) {
+                  // Good standing with corporations - just observe
+                  behaviorType = 'patrol';
+                } else if (milHeat > 25) {
+                  // Moderate heat - defensive/warning
+                  behaviorType = 'defensive';
+                } else {
+                  // Low threat - patrol
+                  behaviorType = 'patrol';
+                }
+                break;
+                
+              case 'bountyHunter':
+                // Bounty hunters always attack if player has heat
+                if (player.heat > 30) {
+                  shouldAttack = true;
+                  behaviorType = 'aggressive';
+                  console.log(`[ENEMY] Bounty hunter pursuing target (heat: ${player.heat})`);
+                } else {
+                  // No bounty - ignore
+                  behaviorType = 'patrol';
+                }
+                break;
+                
+              default:
+                // Independent traders - neutral unless provoked
+                const indRep = player.reputation.independents || 0;
+                if (indRep < -50) {
+                  // Very bad reputation - will defend themselves
+                  shouldAttack = true;
+                  behaviorType = 'defensive';
+                } else {
+                  // Neutral - avoid conflict
+                  behaviorType = 'patrol';
+                }
+                break;
             }
+            
+            enemy.behavior = behaviorType;
           } else {
             enemy.behavior = 'pursuing';
           }

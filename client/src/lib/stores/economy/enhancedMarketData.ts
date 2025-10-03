@@ -43,7 +43,67 @@ export const calculateFinalPrice = (
   // Apply heat modifier (prices go up with heat)
   price *= heatModifier;
   
-  // Selling prices are typically lower
+  // Apply aggressive reputation-based price scaling
+  const { usePlayer } = require('../../stores/player/usePlayer');
+  const player = usePlayer.getState();
+  const factionRep = player.reputation[faction as keyof typeof player.reputation] || 0;
+  
+  let reputationModifier = 1.0;
+  if (isBuying) {
+    // Buying prices based on reputation
+    if (factionRep >= 75) {
+      // Allied - special discounts
+      reputationModifier = 0.7;
+      console.log(`[PRICE] Allied discount with ${faction}: 30% off`);
+    } else if (factionRep >= 50) {
+      // Friendly - good prices
+      reputationModifier = 0.85;
+    } else if (factionRep >= 20) {
+      // Liked - small discount
+      reputationModifier = 0.95;
+    } else if (factionRep <= -50) {
+      // Hostile - very high prices (if they even trade)
+      reputationModifier = 1.5;
+      console.log(`[PRICE] Hostile markup with ${faction}: 50% increase`);
+    } else if (factionRep <= -20) {
+      // Unfriendly - higher prices
+      reputationModifier = 1.2;
+    }
+  } else {
+    // Selling prices based on reputation (inverse of buying)
+    if (factionRep >= 75) {
+      // Allied - better sell prices
+      reputationModifier = 1.15;
+      console.log(`[PRICE] Allied bonus when selling to ${faction}: 15% better`);
+    } else if (factionRep >= 50) {
+      reputationModifier = 1.1;
+    } else if (factionRep >= 20) {
+      reputationModifier = 1.05;
+    } else if (factionRep <= -50) {
+      // Hostile - terrible sell prices
+      reputationModifier = 0.6;
+      console.log(`[PRICE] Hostile penalty when selling to ${faction}: 40% worse`);
+    } else if (factionRep <= -20) {
+      reputationModifier = 0.8;
+    }
+  }
+  
+  price *= reputationModifier;
+  
+  // Special pricing for contraband/illegal items
+  if (item.category === 'contraband' || item.illegal) {
+    if (faction === 'outlaws' && player.reputation.outlaws >= 20) {
+      // Outlaws give better prices for contraband to allies
+      price *= isBuying ? 0.8 : 1.2;
+      console.log(`[PRICE] Outlaw contraband ${isBuying ? 'discount' : 'bonus'}`);
+    } else if (faction === 'corporations' && player.reputation.corporations >= 20) {
+      // Corps charge more for contraband to law-abiding citizens
+      price *= isBuying ? 1.5 : 0.7;
+      console.log(`[PRICE] Corporation contraband ${isBuying ? 'penalty' : 'reduced value'}`);
+    }
+  }
+  
+  // Selling prices base modifier
   if (!isBuying) {
     price *= 0.8;
   }

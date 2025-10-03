@@ -16,6 +16,7 @@ import { TradingPanel } from './panels/TradingPanel';
 import { TradeHistoryPanel } from './panels/TradeHistoryPanel';
 import { useTradeHistory } from '../../lib/stores/economy/useTradeHistory';
 import { toast } from 'sonner';
+import ReputationWarning from '../ReputationWarning';
 import { 
   Fuel, 
   Package, 
@@ -1319,6 +1320,8 @@ export const StationDashboard: React.FC = () => {
           onClose={() => setShowTradeHistoryPanel(false)}
         />
       </MobileSlidePanel>
+      {/* Reputation Warning */}
+      <ReputationWarning />
     </div>
   );
 };
