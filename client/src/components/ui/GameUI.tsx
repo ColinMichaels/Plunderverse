@@ -10,7 +10,6 @@ import { NavigationSidebar } from "../navigation/NavigationSidebar";
 import { FixedMiniMap } from "../navigation/MiniMap/FixedMiniMap";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
-import { DevDebugOverlay } from "../debug/DevDebugOverlay";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
 // New HUD Components
 import { ShipCoreStatus } from "./ShipCoreStatus";
@@ -22,7 +21,6 @@ import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
-import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { planets } from "../../lib/planetData";
 import { TakeoffControls } from "../surface/TakeoffControls";
@@ -41,30 +39,8 @@ export function GameUI() {
     hideWarning,
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
-  const { toggleVisibility } = useDebugTools();
   const { currentContext, uiZoneVisibility } = useHUDContext();
 
-  // F3 key handler for debug overlay (dev mode only)
-  useEffect(() => {
-    if (!import.meta.env.DEV) return;
-
-    console.log("[DEBUG] GameUI mounted - F3 to toggle debug overlay");
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "F3") {
-        event.preventDefault();
-        event.stopPropagation();
-        toggleVisibility();
-        console.log("[DEBUG] F3 pressed - Debug overlay toggled");
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [toggleVisibility]);
 
   // Autopilot activation function
   const handleAutopilot = () => {
@@ -164,8 +140,6 @@ export function GameUI() {
         </div>
       )}
 
-      {/* Debug Overlay - Dev mode only (F3 to toggle) */}
-      <DevDebugOverlay />
     </>
   );
 }

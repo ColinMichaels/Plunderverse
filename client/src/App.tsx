@@ -19,7 +19,6 @@ import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
-import { MemoryStatsOverlay } from "./components/debug/MemoryStatsOverlay";
 import { UnifiedDebugPanel } from "./components/debug/UnifiedDebugPanel";
 import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
@@ -283,9 +282,6 @@ function App() {
         
         {/* Debug panel available even on splash screen in dev mode */}
         {import.meta.env.DEV && <MissionDebugPanel />}
-        
-        {/* Memory stats overlay in dev mode */}
-        {import.meta.env.DEV && <MemoryStatsOverlay />}
         
         {/* Unified Debug Panel in dev mode (toggle with F4) */}
         {import.meta.env.DEV && <UnifiedDebugPanel />}
