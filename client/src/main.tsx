@@ -7,6 +7,7 @@ import { testTerrainGeneration } from "./testTerrainGeneration";
 import { testSurfaceScatter } from "./testSurfaceScatter";
 import { testAtmosphericEffects } from "./testAtmosphericEffects";
 import { runAllImprovementTests } from "./testAllImprovements";
+import "./testCombatSystem"; // Import combat system test
 
 // Make test available in console for debugging
 (window as any).testMissionSystem = testMissionSystem;

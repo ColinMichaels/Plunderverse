@@ -75,6 +75,9 @@ interface PlayerState {
   getOxygenTimeRemaining: () => number; // Minutes of oxygen remaining
   levelUp: () => void;
   
+  // Combat rewards
+  addCredits: (amount: number) => void;
+  
   // Plunderverse Actions
   updateRank: (newRank: number, newTitle: string) => void;
   updateNotoriety: (change: number) => void;
@@ -406,6 +409,16 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     if (rep > -60) return 'Unfriendly';
     if (rep > -80) return 'Hostile';
     return 'Hated';
+  },
+  
+  // Combat rewards
+  addCredits: (amount) => {
+    // Use the domain credits store for proper credit management
+    import('../../../domain/economy/credits.store').then(({ useCreditsStore }) => {
+      const creditsStore = useCreditsStore.getState();
+      creditsStore.addCredits(amount);
+      console.log(`[Player] Added ${amount} credits from combat reward`);
+    });
   }
 }));
 

@@ -7,13 +7,23 @@ export interface Projectile {
   direction: THREE.Vector3;
   speed: number;
   life: number;
+  damage: number;
+  ownerId: string;
+  ownerType: 'player' | 'enemy';
 }
 
 interface ShootingState {
   projectiles: Projectile[];
 
   // Actions
-  addProjectile: (position: THREE.Vector3, direction: THREE.Vector3) => void;
+  addProjectile: (
+    position: THREE.Vector3, 
+    direction: THREE.Vector3,
+    speed?: number,
+    damage?: number,
+    ownerId?: string,
+    ownerType?: 'player' | 'enemy'
+  ) => void;
   updateProjectiles: (delta: number) => void;
   removeProjectile: (id: string) => void;
   reportEnemyDestroyed: (enemyType?: string, enemyFaction?: string) => void;
@@ -22,7 +32,14 @@ interface ShootingState {
 export const useShooting = create<ShootingState>((set, get) => ({
   projectiles: [],
 
-  addProjectile: (position, direction) => {
+  addProjectile: (
+    position, 
+    direction, 
+    speed = 50,
+    damage = 10,
+    ownerId = 'player',
+    ownerType = 'player'
+  ) => {
     try {
       if (!position || !direction) {
         console.error("Invalid position or direction for projectile");
@@ -33,8 +50,11 @@ export const useShooting = create<ShootingState>((set, get) => ({
         id: Math.random().toString(36).substr(2, 9),
         position: position.clone(),
         direction: direction.clone().normalize(),
-        speed: 50,
+        speed,
         life: 5.0, // 5 seconds
+        damage,
+        ownerId,
+        ownerType,
       };
 
       set((state) => ({
