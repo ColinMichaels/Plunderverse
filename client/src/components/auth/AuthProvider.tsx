@@ -28,7 +28,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (!isAuthenticated || isGuest) return;
     
     const interval = setInterval(() => {
-      checkAuth().catch(console.error);
+      // Use silent refresh to avoid showing loading screen
+      checkAuth(true).catch(console.error);
     }, 30000);
     
     return () => clearInterval(interval);

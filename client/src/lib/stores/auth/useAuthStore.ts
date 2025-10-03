@@ -20,6 +20,7 @@ interface AuthState {
   refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isRefreshing: boolean; // Separate flag for silent refreshes
   isGuest: boolean;
   rememberMe: boolean;
   tokenRefreshTimeout?: NodeJS.Timeout;
@@ -29,7 +30,7 @@ interface AuthState {
   signup: (email: string, password: string, username?: string) => Promise<void>;
   logout: () => Promise<void>;
   refresh: () => Promise<void>;
-  checkAuth: () => Promise<boolean>;
+  checkAuth: (silent?: boolean) => Promise<boolean>; // Add silent parameter
   playAsGuest: () => void;
   setLoading: (loading: boolean) => void;
   scheduleTokenRefresh: () => void;
@@ -59,6 +60,7 @@ export const useAuthStore = create<AuthState>()(
       refreshToken: null,
       isAuthenticated: false,
       isLoading: false,
+      isRefreshing: false,
       isGuest: false,
       rememberMe: false,
       
@@ -234,14 +236,19 @@ export const useAuthStore = create<AuthState>()(
       },
       
       // Check authentication status
-      checkAuth: async () => {
+      checkAuth: async (silent: boolean = false) => {
         const { accessToken } = get();
         
         if (!accessToken) {
           return false;
         }
         
-        set({ isLoading: true });
+        // Use isRefreshing for silent checks, isLoading for initial checks
+        if (silent) {
+          set({ isRefreshing: true });
+        } else {
+          set({ isLoading: true });
+        }
         
         try {
           const response = await fetch('/api/auth/verify', {
@@ -267,6 +274,7 @@ export const useAuthStore = create<AuthState>()(
                 user: meData.user,
                 isAuthenticated: true,
                 isLoading: false,
+                isRefreshing: false,
               });
               
               // Schedule token refresh
@@ -281,7 +289,7 @@ export const useAuthStore = create<AuthState>()(
           return false;
         } catch (error) {
           console.error('Auth check failed:', error);
-          set({ isLoading: false });
+          set({ isLoading: false, isRefreshing: false });
           return false;
         }
       },
