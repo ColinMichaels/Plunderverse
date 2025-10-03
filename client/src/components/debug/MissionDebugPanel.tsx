@@ -1,33 +1,38 @@
 import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from 'framer-motion';
-import * as THREE from 'three';
-import { 
-  Tabs, 
-  TabsList, 
-  TabsTrigger, 
-  TabsContent 
-} from '../ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { motion, AnimatePresence } from "framer-motion";
+import * as THREE from "three";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../ui/card";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";
-import { Slider } from '../ui/slider';
-import { Switch } from '../ui/switch';
-import { ScrollArea } from '../ui/scroll-area';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../ui/collapsible';
-import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
-import { 
+import { Slider } from "../ui/slider";
+import { Switch } from "../ui/switch";
+import { ScrollArea } from "../ui/scroll-area";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
+import { Badge } from "../ui/badge";
+import { Progress } from "../ui/progress";
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { toast } from 'sonner';
+import { toast } from "sonner";
 
 // Icons
-import { 
+import {
   Activity,
   Cpu,
   Timer,
@@ -54,8 +59,8 @@ import {
   Globe,
   Rocket,
   Shield,
-  DollarSign
-} from 'lucide-react';
+  DollarSign,
+} from "lucide-react";
 
 // Store imports
 import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
@@ -68,20 +73,23 @@ import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets } from "../../lib/planetData";
 import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
-import { useSurfaceLighting, TIME_OF_DAY_PRESETS } from "../../lib/stores/surface/useSurfaceLighting";
-import { useDebugTools } from '../../lib/stores/debug/useDebugTools';
+import {
+  useSurfaceLighting,
+  TIME_OF_DAY_PRESETS,
+} from "../../lib/stores/surface/useSurfaceLighting";
+import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 
 // Utils
-import { MemoryProfiler } from '../../lib/utils/MemoryProfiler';
-import { ResourceManager } from '../../lib/utils/ResourceManager';
+import { MemoryProfiler } from "../../lib/utils/MemoryProfiler";
+import { ResourceManager } from "../../lib/utils/ResourceManager";
 
 // Test imports
-import { testMissionSystem } from '../../testMissionSystem';
-import { PanelTestSuite } from '../../lib/tests/panel-tests/testPanelFunctionality';
+import { testMissionSystem } from "../../testMissionSystem";
+import { PanelTestSuite } from "../../lib/tests/panel-tests/testPanelFunctionality";
 
 interface TestResult {
   name: string;
-  status: 'running' | 'passed' | 'failed';
+  status: "running" | "passed" | "failed";
   message: string;
   timestamp: number;
 }
@@ -122,54 +130,56 @@ function useFPS(): number {
 
 export function MissionDebugPanel() {
   const [isVisible, setIsVisible] = useState(false);
-  const [activeTab, setActiveTab] = useState('mission');
+  const [activeTab, setActiveTab] = useState("mission");
   const [creditAmount, setCreditAmount] = useState("1000");
   const [reputationAmount, setReputationAmount] = useState("10");
   const [selectedFaction, setSelectedFaction] = useState("corporations");
-  
+
   // Memory & Performance state
   const [memoryHistory, setMemoryHistory] = useState<MemoryData[]>([]);
   const [resourceStats, setResourceStats] = useState<any>(null);
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunningTests, setIsRunningTests] = useState(false);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['memory', 'fps']));
-  
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(["memory", "fps"]),
+  );
+
   // Time & Camera state
-  const [selectedPlanet, setSelectedTravelPlanet] = useState<string>('');
-  const [posX, setPosX] = useState('0');
-  const [posY, setPosY] = useState('0');
-  const [posZ, setPosZ] = useState('0');
-  
+  const [selectedPlanet, setSelectedTravelPlanet] = useState<string>("");
+  const [posX, setPosX] = useState("0");
+  const [posY, setPosY] = useState("0");
+  const [posZ, setPosZ] = useState("0");
+
   // Mission debug state
   const [triggerLocation, setTriggerLocation] = useState("Mars");
   const [collectionAmount, setCollectionAmount] = useState("5");
   const [combatCount, setCombatCount] = useState("1");
   const [interactionId, setInteractionId] = useState("trade_merchant");
   const [customValue, setCustomValue] = useState("50");
-  
+
   // Store hooks
   const missionsStore = usePlunderverseMissions();
   const player = usePlayer();
   const credits = useCreditsStore();
   const triggers = useObjectiveTriggers();
   const { isLanded, landedPlanet, setLanded, setNotLanded } = useLandedState();
-  const { 
-    time, 
-    setCameraPosition, 
+  const {
+    time,
+    setCameraPosition,
     setSelectedPlanet,
     cameraPosition,
     setTime,
-    getUniverseTime
+    getUniverseTime,
   } = useSolarSystem();
   const crew = useCrewManagement();
   const lighting = useSurfaceLighting();
-  const { 
-    timeScale, 
-    showCollisionBoxes, 
+  const {
+    timeScale,
+    showCollisionBoxes,
     showWireframes,
     setTimeScale,
     toggleCollisionBoxes,
-    toggleWireframes
+    toggleWireframes,
   } = useDebugTools();
 
   // Performance metrics
@@ -188,11 +198,13 @@ export function MissionDebugPanel() {
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === "`" || e.key === "~") {
-        e.preventDefault(); 
+        e.preventDefault();
         e.stopPropagation();
-        setIsVisible(prev => {
+        setIsVisible((prev) => {
           const newValue = !prev;
-          console.log(`[MISSION-DEBUG] Debug panel toggled: ${prev} -> ${newValue}`);
+          console.log(
+            `[MISSION-DEBUG] Debug panel toggled: ${prev} -> ${newValue}`,
+          );
           return newValue;
         });
       }
@@ -211,10 +223,10 @@ export function MissionDebugPanel() {
           timestamp: Date.now(),
           used: stats.current,
           total: stats.limit,
-          percentage: stats.usage * 100
+          percentage: stats.usage * 100,
         };
-        
-        setMemoryHistory(prev => {
+
+        setMemoryHistory((prev) => {
           const updated = [...prev, newData];
           return updated.slice(-30);
         });
@@ -250,7 +262,9 @@ export function MissionDebugPanel() {
   const addCredits = () => {
     const amount = parseInt(creditAmount) || 1000;
     credits.earnCredits(amount);
-    console.log(`[MISSION-DEBUG] Added ${amount} credits. New balance: ${credits.credits}`);
+    console.log(
+      `[MISSION-DEBUG] Added ${amount} credits. New balance: ${credits.credits}`,
+    );
   };
 
   const completeRandomMission = () => {
@@ -261,12 +275,12 @@ export function MissionDebugPanel() {
 
     const mission = missionsStore.activeMissions[0];
     console.log(`[MISSION-DEBUG] Force completing mission: ${mission.title}`);
-    
-    mission.objectives.forEach(obj => {
+
+    mission.objectives.forEach((obj) => {
       missionsStore.updateObjectiveProgress(mission.id, obj.id, 100);
     });
-    
-    gameFacade.resolveMission(mission.id).then(result => {
+
+    gameFacade.resolveMission(mission.id).then((result) => {
       console.log("[MISSION-DEBUG] Mission completion result:", result);
     });
   };
@@ -284,21 +298,23 @@ export function MissionDebugPanel() {
       rewards: {
         base: {
           credits: 5000,
-          reputation: { corporations: 10, outlaws: -5 }
+          reputation: { corporations: 10, outlaws: -5 },
         },
-        variable: false
+        variable: false,
       },
       requirements: {},
-      objectives: [{
-        id: "obj_test_1",
-        type: "investigation",
-        description: "Test objective 1",
-        completed: false
-      }],
+      objectives: [
+        {
+          id: "obj_test_1",
+          type: "investigation",
+          description: "Test objective 1",
+          completed: false,
+        },
+      ],
       choices: [],
       active: false,
       completed: false,
-      failed: false
+      failed: false,
     };
 
     missionsStore.addEmergencyMissions([testMission]);
@@ -312,7 +328,7 @@ export function MissionDebugPanel() {
     }
 
     const mission = missionsStore.availableMissions[0];
-    gameFacade.acceptMission(mission.id).then(result => {
+    gameFacade.acceptMission(mission.id).then((result) => {
       console.log("[MISSION-DEBUG] Mission acceptance result:", result);
     });
   };
@@ -320,14 +336,16 @@ export function MissionDebugPanel() {
   const adjustReputation = () => {
     const amount = parseInt(reputationAmount) || 10;
     player.updateReputation(selectedFaction as any, amount);
-    console.log(`[MISSION-DEBUG] Updated ${selectedFaction} reputation by ${amount}`);
+    console.log(
+      `[MISSION-DEBUG] Updated ${selectedFaction} reputation by ${amount}`,
+    );
   };
 
   const resetPlayerStats = () => {
     console.log("[MISSION-DEBUG] Resetting player stats");
     player.initializePlayer();
     credits.setCredits(1000);
-    missionsStore.activeMissions.forEach(m => {
+    missionsStore.activeMissions.forEach((m) => {
       missionsStore.abandonMission(m.id);
     });
     console.log("[MISSION-DEBUG] Player stats reset complete");
@@ -346,28 +364,43 @@ export function MissionDebugPanel() {
     console.log("[MISSION-DEBUG] Notoriety:", player.notoriety);
     console.log("[MISSION-DEBUG] Heat:", player.heat);
     console.log("[MISSION-DEBUG] Reputation:", player.reputation);
-    console.log("[MISSION-DEBUG] Available Missions:", missionsStore.availableMissions.length);
-    console.log("[MISSION-DEBUG] Active Missions:", missionsStore.activeMissions.length);
-    console.log("[MISSION-DEBUG] Completed Missions:", missionsStore.completedMissionIds.size);
+    console.log(
+      "[MISSION-DEBUG] Available Missions:",
+      missionsStore.availableMissions.length,
+    );
+    console.log(
+      "[MISSION-DEBUG] Active Missions:",
+      missionsStore.activeMissions.length,
+    );
+    console.log(
+      "[MISSION-DEBUG] Completed Missions:",
+      missionsStore.completedMissionIds.size,
+    );
     console.log("[MISSION-DEBUG] ====================");
   };
 
   // Trigger simulation functions
   const simulateLocationTrigger = () => {
-    console.log(`[TRIGGER-DEBUG] Simulating location trigger for: ${triggerLocation}`);
-    triggers.reportLocationProgress(triggerLocation, undefined, triggerLocation);
+    console.log(
+      `[TRIGGER-DEBUG] Simulating location trigger for: ${triggerLocation}`,
+    );
+    triggers.reportLocationProgress(
+      triggerLocation,
+      undefined,
+      triggerLocation,
+    );
   };
 
   const simulateCollectionTrigger = () => {
     const amount = parseInt(collectionAmount) || 1;
     console.log(`[TRIGGER-DEBUG] Simulating collection of ${amount} resources`);
-    triggers.reportCollectionProgress('debug_resource', 'resource', amount);
+    triggers.reportCollectionProgress("debug_resource", "resource", amount);
   };
 
   const simulateCombatTrigger = () => {
     const count = parseInt(combatCount) || 1;
     console.log(`[TRIGGER-DEBUG] Simulating ${count} combat victories`);
-    triggers.reportCombatProgress('enemy', undefined, count);
+    triggers.reportCombatProgress("enemy", undefined, count);
   };
 
   const simulateInteractionTrigger = () => {
@@ -377,13 +410,15 @@ export function MissionDebugPanel() {
 
   const simulateCustomTrigger = () => {
     const value = parseInt(customValue) || 1;
-    console.log(`[TRIGGER-DEBUG] Simulating custom trigger with value: ${value}`);
-    triggers.reportCustomProgress('test_condition', value);
+    console.log(
+      `[TRIGGER-DEBUG] Simulating custom trigger with value: ${value}`,
+    );
+    triggers.reportCustomProgress("test_condition", value);
   };
 
   // === Memory & Performance Functions ===
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => {
+    setExpandedSections((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(section)) {
         newSet.delete(section);
@@ -395,13 +430,13 @@ export function MissionDebugPanel() {
   };
 
   const formatMemory = (bytes: number): string => {
-    return (bytes / 1024 / 1024).toFixed(2) + ' MB';
+    return (bytes / 1024 / 1024).toFixed(2) + " MB";
   };
 
   const formatTime = (seconds: number): string => {
     const hours = Math.floor(seconds / 3600) % 24;
     const minutes = Math.floor((seconds % 3600) / 60);
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`;
   };
 
   // === Time & Camera Functions ===
@@ -422,22 +457,22 @@ export function MissionDebugPanel() {
   };
 
   const quickTravelToPlanet = (planetName: string) => {
-    const planet = planets.find(p => p.name === planetName);
+    const planet = planets.find((p) => p.name === planetName);
     if (planet) {
       const angle = time * planet.orbitalSpeed;
       const planetPos = new THREE.Vector3(
         Math.cos(angle) * planet.distance,
         0,
-        Math.sin(angle) * planet.distance
+        Math.sin(angle) * planet.distance,
       );
-      
+
       setSelectedPlanet(planetName);
-      
+
       const viewDistance = planet.size * 8;
-      const cameraPos = planetPos.clone().add(
-        new THREE.Vector3(viewDistance, 5, viewDistance)
-      );
-      
+      const cameraPos = planetPos
+        .clone()
+        .add(new THREE.Vector3(viewDistance, 5, viewDistance));
+
       setCameraPosition(cameraPos);
       console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
     }
@@ -467,75 +502,81 @@ export function MissionDebugPanel() {
   const runPanelTests = async () => {
     setIsRunningTests(true);
     const result: TestResult = {
-      name: 'Panel Tests',
-      status: 'running',
-      message: 'Running panel functionality tests...',
-      timestamp: Date.now()
+      name: "Panel Tests",
+      status: "running",
+      message: "Running panel functionality tests...",
+      timestamp: Date.now(),
     };
-    setTestResults(prev => [...prev, result]);
+    setTestResults((prev) => [...prev, result]);
 
     try {
       const testSuite = new PanelTestSuite();
       await testSuite.runAllTests();
-      
-      result.status = 'passed';
-      result.message = 'All panel tests completed successfully';
+
+      result.status = "passed";
+      result.message = "All panel tests completed successfully";
     } catch (error) {
-      result.status = 'failed';
+      result.status = "failed";
       result.message = `Test failed: ${error}`;
     }
-    
-    setTestResults(prev => prev.map(r => r.name === 'Panel Tests' ? result : r));
+
+    setTestResults((prev) =>
+      prev.map((r) => (r.name === "Panel Tests" ? result : r)),
+    );
     setIsRunningTests(false);
   };
 
   const runMissionTests = async () => {
     setIsRunningTests(true);
     const result: TestResult = {
-      name: 'Mission Tests',
-      status: 'running',
-      message: 'Running mission system tests...',
-      timestamp: Date.now()
+      name: "Mission Tests",
+      status: "running",
+      message: "Running mission system tests...",
+      timestamp: Date.now(),
     };
-    setTestResults(prev => [...prev, result]);
+    setTestResults((prev) => [...prev, result]);
 
     try {
       const testResult = await testMissionSystem();
-      
-      result.status = testResult.success ? 'passed' : 'failed';
-      result.message = testResult.success 
-        ? 'Mission system tests completed successfully'
-        : 'Some mission tests failed';
+
+      result.status = testResult.success ? "passed" : "failed";
+      result.message = testResult.success
+        ? "Mission system tests completed successfully"
+        : "Some mission tests failed";
     } catch (error) {
-      result.status = 'failed';
+      result.status = "failed";
       result.message = `Test failed: ${error}`;
     }
-    
-    setTestResults(prev => prev.map(r => r.name === 'Mission Tests' ? result : r));
+
+    setTestResults((prev) =>
+      prev.map((r) => (r.name === "Mission Tests" ? result : r)),
+    );
     setIsRunningTests(false);
   };
 
   const runObjectiveTests = async () => {
     setIsRunningTests(true);
     const result: TestResult = {
-      name: 'Objective Tests',
-      status: 'running',
-      message: 'Running objective trigger tests...',
-      timestamp: Date.now()
+      name: "Objective Tests",
+      status: "running",
+      message: "Running objective trigger tests...",
+      timestamp: Date.now(),
     };
-    setTestResults(prev => [...prev, result]);
+    setTestResults((prev) => [...prev, result]);
 
     try {
       await testObjectiveTriggers();
-      
-      result.status = 'passed';
-      result.message = 'Objective trigger tests completed successfully';
+
+      result.status = "passed";
+      result.message = "Objective trigger tests completed successfully";
     } catch (error) {
-      result.status = 'failed';
+      result.status = "failed";
       result.message = `Test failed: ${error}`;
     }
-    
-    setTestResults(prev => prev.map(r => r.name === 'Objective Tests' ? result : r));
+
+    setTestResults((prev) =>
+      prev.map((r) => (r.name === "Objective Tests" ? result : r)),
+    );
     setIsRunningTests(false);
   };
 
@@ -551,26 +592,30 @@ export function MissionDebugPanel() {
     const data = {
       stats,
       tags: Array.from(tags),
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+
+    const blob = new Blob([JSON.stringify(data, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = document.createElement("a");
     a.href = url;
     a.download = `resource-data-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    
-    toast.success('Resource data exported');
+
+    toast.success("Resource data exported");
   };
 
   const forceGarbageCollection = () => {
     if ((window as any).gc) {
       (window as any).gc();
-      toast.success('Garbage collection triggered');
+      toast.success("Garbage collection triggered");
     } else {
-      toast.warning('Garbage collection not available (requires --expose-gc flag)');
+      toast.warning(
+        "Garbage collection not available (requires --expose-gc flag)",
+      );
     }
   };
 
@@ -591,7 +636,19 @@ export function MissionDebugPanel() {
                 Consolidated Debug Panel
               </CardTitle>
               <CardDescription className="text-gray-400 text-xs mt-1">
-                Development Mode • FPS: <span className={fps < 30 ? 'text-red-400' : fps < 50 ? 'text-yellow-400' : 'text-green-400'}>{fps}</span> • Press ` to toggle
+                Development Mode • FPS:{" "}
+                <span
+                  className={
+                    fps < 30
+                      ? "text-red-400"
+                      : fps < 50
+                        ? "text-yellow-400"
+                        : "text-green-400"
+                  }
+                >
+                  {fps}
+                </span>{" "}
+                • Press ` to toggle
               </CardDescription>
             </div>
             <Button
@@ -607,31 +664,53 @@ export function MissionDebugPanel() {
 
         {/* Tabs */}
         <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start bg-black/50 border-b border-cyan-500/20 rounded-none h-auto flex-wrap">
-              <TabsTrigger value="mission" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="w-full"
+          >
+            <TabsList className="w-full justify-start bg-black/50 border-b text-white/60 border-cyan-500/20 rounded-none h-auto flex-wrap">
+              <TabsTrigger
+                value="mission"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
                 <Shield className="w-3 h-3 mr-1" />
                 Mission
               </TabsTrigger>
-              <TabsTrigger value="memory" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+              <TabsTrigger
+                value="memory"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
                 <Activity className="w-3 h-3 mr-1" />
                 Memory
               </TabsTrigger>
-              <TabsTrigger value="time" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+              <TabsTrigger
+                value="time"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
                 <Timer className="w-3 h-3 mr-1" />
                 Time
               </TabsTrigger>
               {landedPlanet && (
-                <TabsTrigger value="lighting" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+                <TabsTrigger
+                  value="lighting"
+                  className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+                >
                   <Sun className="w-3 h-3 mr-1" />
                   Lighting
                 </TabsTrigger>
               )}
-              <TabsTrigger value="tests" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+              <TabsTrigger
+                value="tests"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
                 <TestTube className="w-3 h-3 mr-1" />
                 Tests
               </TabsTrigger>
-              <TabsTrigger value="resources" className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400">
+              <TabsTrigger
+                value="resources"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
                 <Package className="w-3 h-3 mr-1" />
                 Resources
               </TabsTrigger>
@@ -646,13 +725,15 @@ export function MissionDebugPanel() {
                     <DollarSign className="w-4 h-4" />
                     Credits & Economy
                   </h3>
-                  
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-gray-400">Current Credits</Label>
-                      <span className="text-cyan-400 font-mono">{credits.credits}</span>
+                      <span className="text-cyan-400 font-mono">
+                        {credits.credits}
+                      </span>
                     </div>
-                    
+
                     <div className="flex gap-2">
                       <Input
                         type="number"
@@ -661,7 +742,10 @@ export function MissionDebugPanel() {
                         className="flex-1 bg-black/50 border-cyan-500/20 text-cyan-400"
                         placeholder="Amount"
                       />
-                      <Button onClick={addCredits} className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30">
+                      <Button
+                        onClick={addCredits}
+                        className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
+                      >
                         Add Credits
                       </Button>
                     </div>
@@ -670,37 +754,49 @@ export function MissionDebugPanel() {
 
                 {/* Player Stats */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-400">Player Stats</h3>
-                  
+                  <h3 className="text-sm font-semibold text-cyan-400">
+                    Player Stats
+                  </h3>
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-3">
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label className="text-xs text-gray-400">Rank</Label>
-                        <p className="text-cyan-400 font-mono">{player.rank} - {player.rankTitle}</p>
+                        <p className="text-cyan-400 font-mono">
+                          {player.rank} - {player.rankTitle}
+                        </p>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-400">Notoriety</Label>
-                        <p className="text-cyan-400 font-mono">{player.notoriety}</p>
+                        <Label className="text-xs text-gray-400">
+                          Notoriety
+                        </Label>
+                        <p className="text-cyan-400 font-mono">
+                          {player.notoriety}
+                        </p>
                       </div>
                       <div>
                         <Label className="text-xs text-gray-400">Heat</Label>
                         <p className="text-cyan-400 font-mono">{player.heat}</p>
                       </div>
                       <div>
-                        <Label className="text-xs text-gray-400">Wanted Level</Label>
-                        <p className="text-cyan-400 font-mono">{player.wantedLevel}</p>
+                        <Label className="text-xs text-gray-400">
+                          Wanted Level
+                        </Label>
+                        <p className="text-cyan-400 font-mono">
+                          {player.wantedLevel}
+                        </p>
                       </div>
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <Button 
+                      <Button
                         onClick={forceRankUp}
                         size="sm"
                         className="flex-1 bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                       >
                         Force Rank Up
                       </Button>
-                      <Button 
+                      <Button
                         onClick={resetPlayerStats}
                         size="sm"
                         className="flex-1 bg-red-500/20 text-red-400 hover:bg-red-500/30"
@@ -713,25 +809,36 @@ export function MissionDebugPanel() {
 
                 {/* Reputation */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-400">Reputation</h3>
-                  
+                  <h3 className="text-sm font-semibold text-cyan-400">
+                    Reputation
+                  </h3>
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-3">
                     <div className="grid grid-cols-3 gap-2">
-                      {Object.entries(player.reputation).map(([faction, value]) => (
-                        <div key={faction}>
-                          <Label className="text-xs text-gray-400">{faction}</Label>
-                          <p className="text-cyan-400 font-mono">{value}</p>
-                        </div>
-                      ))}
+                      {Object.entries(player.reputation).map(
+                        ([faction, value]) => (
+                          <div key={faction}>
+                            <Label className="text-xs text-gray-400">
+                              {faction}
+                            </Label>
+                            <p className="text-cyan-400 font-mono">{value}</p>
+                          </div>
+                        ),
+                      )}
                     </div>
-                    
+
                     <div className="flex gap-2">
-                      <Select value={selectedFaction} onValueChange={setSelectedFaction}>
+                      <Select
+                        value={selectedFaction}
+                        onValueChange={setSelectedFaction}
+                      >
                         <SelectTrigger className="bg-black/50 border-cyan-500/20 text-cyan-400">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="corporations">Corporations</SelectItem>
+                          <SelectItem value="corporations">
+                            Corporations
+                          </SelectItem>
                           <SelectItem value="pirates">Pirates</SelectItem>
                           <SelectItem value="miners">Miners</SelectItem>
                           <SelectItem value="explorers">Explorers</SelectItem>
@@ -744,7 +851,7 @@ export function MissionDebugPanel() {
                         onChange={(e) => setReputationAmount(e.target.value)}
                         className="w-20 bg-black/50 border-cyan-500/20 text-cyan-400"
                       />
-                      <Button 
+                      <Button
                         onClick={adjustReputation}
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                       >
@@ -756,32 +863,34 @@ export function MissionDebugPanel() {
 
                 {/* Mission Controls */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-400">Mission Controls</h3>
-                  
+                  <h3 className="text-sm font-semibold text-cyan-400">
+                    Mission Controls
+                  </h3>
+
                   <div className="bg-gray-900/50 p-3 rounded">
                     <div className="grid grid-cols-2 gap-2">
-                      <Button 
+                      <Button
                         onClick={generateTestMission}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                       >
                         Generate Test Mission
                       </Button>
-                      <Button 
+                      <Button
                         onClick={acceptFirstMission}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                       >
                         Accept First Mission
                       </Button>
-                      <Button 
+                      <Button
                         onClick={completeRandomMission}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                       >
                         Complete Active Mission
                       </Button>
-                      <Button 
+                      <Button
                         onClick={logCurrentState}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
@@ -794,8 +903,10 @@ export function MissionDebugPanel() {
 
                 {/* Objective Triggers */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-400">Objective Triggers</h3>
-                  
+                  <h3 className="text-sm font-semibold text-cyan-400">
+                    Objective Triggers
+                  </h3>
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-2">
                     <div className="flex gap-2">
                       <Input
@@ -804,7 +915,7 @@ export function MissionDebugPanel() {
                         className="flex-1 bg-black/50 border-cyan-500/20 text-cyan-400"
                         placeholder="Location"
                       />
-                      <Button 
+                      <Button
                         onClick={simulateLocationTrigger}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
@@ -819,7 +930,7 @@ export function MissionDebugPanel() {
                         className="flex-1 bg-black/50 border-cyan-500/20 text-cyan-400"
                         placeholder="Collection Amount"
                       />
-                      <Button 
+                      <Button
                         onClick={simulateCollectionTrigger}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
@@ -834,7 +945,7 @@ export function MissionDebugPanel() {
                         className="flex-1 bg-black/50 border-cyan-500/20 text-cyan-400"
                         placeholder="Combat Count"
                       />
-                      <Button 
+                      <Button
                         onClick={simulateCombatTrigger}
                         size="sm"
                         className="bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
@@ -849,12 +960,16 @@ export function MissionDebugPanel() {
               {/* Memory & Performance Tab */}
               <TabsContent value="memory" className="mt-0 space-y-4">
                 {/* FPS Monitor */}
-                <Collapsible open={expandedSections.has('fps')}>
+                <Collapsible open={expandedSections.has("fps")}>
                   <CollapsibleTrigger
-                    onClick={() => toggleSection('fps')}
+                    onClick={() => toggleSection("fps")}
                     className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 w-full"
                   >
-                    {expandedSections.has('fps') ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    {expandedSections.has("fps") ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
                     <Gauge className="w-4 h-4" />
                     Performance Metrics
                   </CollapsibleTrigger>
@@ -862,14 +977,16 @@ export function MissionDebugPanel() {
                     <div className="grid grid-cols-2 gap-2">
                       <div className="bg-gray-900/50 p-2 rounded">
                         <p className="text-xs text-gray-400">FPS</p>
-                        <p className={`text-2xl font-bold ${fps < 30 ? 'text-red-400' : fps < 50 ? 'text-yellow-400' : 'text-green-400'}`}>
+                        <p
+                          className={`text-2xl font-bold ${fps < 30 ? "text-red-400" : fps < 50 ? "text-yellow-400" : "text-green-400"}`}
+                        >
                           {fps}
                         </p>
                       </div>
                       <div className="bg-gray-900/50 p-2 rounded">
                         <p className="text-xs text-gray-400">Frame Time</p>
                         <p className="text-2xl font-bold text-cyan-400">
-                          {fps > 0 ? (1000 / fps).toFixed(1) : '0'}ms
+                          {fps > 0 ? (1000 / fps).toFixed(1) : "0"}ms
                         </p>
                       </div>
                     </div>
@@ -877,12 +994,16 @@ export function MissionDebugPanel() {
                 </Collapsible>
 
                 {/* Memory Usage */}
-                <Collapsible open={expandedSections.has('memory')}>
+                <Collapsible open={expandedSections.has("memory")}>
                   <CollapsibleTrigger
-                    onClick={() => toggleSection('memory')}
+                    onClick={() => toggleSection("memory")}
                     className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 w-full"
                   >
-                    {expandedSections.has('memory') ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    {expandedSections.has("memory") ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
                     <Database className="w-4 h-4" />
                     Memory Usage
                   </CollapsibleTrigger>
@@ -893,22 +1014,40 @@ export function MissionDebugPanel() {
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-400">Memory Usage</span>
                             <span className="text-cyan-400">
-                              {memoryHistory[memoryHistory.length - 1]?.percentage.toFixed(1)}%
+                              {memoryHistory[
+                                memoryHistory.length - 1
+                              ]?.percentage.toFixed(1)}
+                              %
                             </span>
                           </div>
-                          <Progress 
-                            value={memoryHistory[memoryHistory.length - 1]?.percentage || 0} 
+                          <Progress
+                            value={
+                              memoryHistory[memoryHistory.length - 1]
+                                ?.percentage || 0
+                            }
                             className="h-2"
                           />
                           <div className="flex justify-between text-xs text-gray-400">
-                            <span>{formatMemory(memoryHistory[memoryHistory.length - 1]?.used || 0)}</span>
-                            <span>{formatMemory(memoryHistory[memoryHistory.length - 1]?.total || 0)}</span>
+                            <span>
+                              {formatMemory(
+                                memoryHistory[memoryHistory.length - 1]?.used ||
+                                  0,
+                              )}
+                            </span>
+                            <span>
+                              {formatMemory(
+                                memoryHistory[memoryHistory.length - 1]
+                                  ?.total || 0,
+                              )}
+                            </span>
                           </div>
                         </div>
 
                         {/* Memory Trend Chart */}
                         <div className="bg-gray-900/50 p-3 rounded">
-                          <p className="text-xs text-gray-400 mb-2">Memory Trend (Last 30 samples)</p>
+                          <p className="text-xs text-gray-400 mb-2">
+                            Memory Trend (Last 30 samples)
+                          </p>
                           <div className="h-20 flex items-end gap-1">
                             {memoryHistory.map((data, index) => (
                               <div
@@ -916,7 +1055,12 @@ export function MissionDebugPanel() {
                                 className="flex-1 bg-cyan-500/50"
                                 style={{
                                   height: `${(data.percentage / 100) * 80}px`,
-                                  backgroundColor: data.percentage > 90 ? '#ef4444' : data.percentage > 70 ? '#f59e0b' : '#06b6d4'
+                                  backgroundColor:
+                                    data.percentage > 90
+                                      ? "#ef4444"
+                                      : data.percentage > 70
+                                        ? "#f59e0b"
+                                        : "#06b6d4",
                                 }}
                                 title={`${data.percentage.toFixed(1)}%`}
                               />
@@ -927,16 +1071,16 @@ export function MissionDebugPanel() {
                     )}
 
                     <div className="flex gap-2">
-                      <Button 
-                        size="sm" 
+                      <Button
+                        size="sm"
                         variant="outline"
-                        onClick={() => memoryProfiler.takeSnapshot('manual')}
+                        onClick={() => memoryProfiler.takeSnapshot("manual")}
                         className="flex-1 text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10"
                       >
                         <Camera className="w-3 h-3 mr-1" />
                         Snapshot
                       </Button>
-                      <Button 
+                      <Button
                         size="sm"
                         variant="outline"
                         onClick={() => memoryProfiler.clearSnapshots()}
@@ -950,12 +1094,16 @@ export function MissionDebugPanel() {
                 </Collapsible>
 
                 {/* Resource Counts */}
-                <Collapsible open={expandedSections.has('resources-count')}>
+                <Collapsible open={expandedSections.has("resources-count")}>
                   <CollapsibleTrigger
-                    onClick={() => toggleSection('resources-count')}
+                    onClick={() => toggleSection("resources-count")}
                     className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 w-full"
                   >
-                    {expandedSections.has('resources-count') ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    {expandedSections.has("resources-count") ? (
+                      <ChevronDown className="w-4 h-4" />
+                    ) : (
+                      <ChevronRight className="w-4 h-4" />
+                    )}
                     <Package className="w-4 h-4" />
                     Resource Counts
                   </CollapsibleTrigger>
@@ -964,27 +1112,39 @@ export function MissionDebugPanel() {
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Geometries</p>
-                          <p className="text-cyan-400 font-bold">{resourceStats.geometries}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {resourceStats.geometries}
+                          </p>
                         </div>
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Materials</p>
-                          <p className="text-cyan-400 font-bold">{resourceStats.materials}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {resourceStats.materials}
+                          </p>
                         </div>
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Textures</p>
-                          <p className="text-cyan-400 font-bold">{resourceStats.textures}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {resourceStats.textures}
+                          </p>
                         </div>
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Meshes</p>
-                          <p className="text-cyan-400 font-bold">{resourceStats.meshes}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {resourceStats.meshes}
+                          </p>
                         </div>
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Audio</p>
-                          <p className="text-cyan-400 font-bold">{resourceStats.audio}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {resourceStats.audio}
+                          </p>
                         </div>
                         <div className="bg-gray-900/50 p-2 rounded">
                           <p className="text-gray-400">Est. Memory</p>
-                          <p className="text-cyan-400 font-bold">{formatMemory(resourceStats.totalMemoryEstimate)}</p>
+                          <p className="text-cyan-400 font-bold">
+                            {formatMemory(resourceStats.totalMemoryEstimate)}
+                          </p>
                         </div>
                       </div>
                     )}
@@ -1000,11 +1160,13 @@ export function MissionDebugPanel() {
                     <Clock className="w-4 h-4" />
                     Time Controls
                   </h3>
-                  
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-3">
                     <div className="flex items-center justify-between">
                       <Label className="text-gray-400">Universe Time</Label>
-                      <span className="text-cyan-400 font-mono">{formatTime(getUniverseTime())}</span>
+                      <span className="text-cyan-400 font-mono">
+                        {formatTime(getUniverseTime())}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -1014,7 +1176,11 @@ export function MissionDebugPanel() {
                         onClick={handlePauseToggle}
                         className="text-cyan-400 border-cyan-500/30 hover:bg-cyan-500/10"
                       >
-                        {timeScale === 0 ? <Play className="w-3 h-3" /> : <Pause className="w-3 h-3" />}
+                        {timeScale === 0 ? (
+                          <Play className="w-3 h-3" />
+                        ) : (
+                          <Pause className="w-3 h-3" />
+                        )}
                       </Button>
                       <Button
                         size="sm"
@@ -1045,7 +1211,9 @@ export function MissionDebugPanel() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <Label className="text-gray-400">Time Scale</Label>
-                        <span className="text-cyan-400 font-mono">{timeScale.toFixed(1)}x</span>
+                        <span className="text-cyan-400 font-mono">
+                          {timeScale.toFixed(1)}x
+                        </span>
                       </div>
                       <Slider
                         value={[timeScale]}
@@ -1065,7 +1233,7 @@ export function MissionDebugPanel() {
                     <Camera className="w-4 h-4" />
                     Camera Position
                   </h3>
-                  
+
                   <div className="bg-gray-900/50 p-3 rounded space-y-3">
                     <div className="grid grid-cols-3 gap-2">
                       <div>
@@ -1096,7 +1264,7 @@ export function MissionDebugPanel() {
                         />
                       </div>
                     </div>
-                    
+
                     <Button
                       size="sm"
                       onClick={handlePositionUpdate}
@@ -1113,21 +1281,27 @@ export function MissionDebugPanel() {
                     <Rocket className="w-4 h-4" />
                     Quick Travel
                   </h3>
-                  
-                  <div className="bg-gray-900/50 p-3 rounded space-y-3">
-                    <Select value={selectedPlanet} onValueChange={setSelectedTravelPlanet}>
+
+                  <div className="bg-gray-900/50 p-3 text-white/60 rounded space-y-3">
+                    <Select
+                      value={selectedPlanet}
+                      onValueChange={setSelectedTravelPlanet}
+          
+                    >
                       <SelectTrigger className="bg-black/50 border-cyan-500/20 text-cyan-400">
                         <SelectValue placeholder="Select a planet..." />
                       </SelectTrigger>
                       <SelectContent>
                         {planets.map((planet) => (
                           <SelectItem key={planet.name} value={planet.name}>
-                            {planet.name}
+                            <span class="text-white/60 bg-black/60 p-2 w-full hover:text-cyan-500">
+                              {planet.name}
+                            </span>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    
+
                     <div className="grid grid-cols-2 gap-2">
                       <Button
                         size="sm"
@@ -1154,10 +1328,14 @@ export function MissionDebugPanel() {
 
                 {/* Debug Options */}
                 <div className="space-y-3">
-                  <h3 className="text-sm font-semibold text-cyan-400">Debug Options</h3>
+                  <h3 className="text-sm font-semibold text-cyan-400">
+                    Debug Options
+                  </h3>
                   <div className="space-y-2">
                     <div className="flex items-center justify-between bg-gray-900/50 p-2 rounded">
-                      <Label className="text-gray-400">Show Collision Boxes</Label>
+                      <Label className="text-gray-400">
+                        Show Collision Boxes
+                      </Label>
                       <Switch
                         checked={showCollisionBoxes}
                         onCheckedChange={toggleCollisionBoxes}
@@ -1189,10 +1367,14 @@ export function MissionDebugPanel() {
                     {lighting.manualOverride && (
                       <>
                         <div className="space-y-2">
-                          <Label className="text-gray-400">Sun Azimuth: {lighting.sunAzimuth}°</Label>
+                          <Label className="text-gray-400">
+                            Sun Azimuth: {lighting.sunAzimuth}°
+                          </Label>
                           <Slider
                             value={[lighting.sunAzimuth]}
-                            onValueChange={([value]) => lighting.setSunAzimuth(value)}
+                            onValueChange={([value]) =>
+                              lighting.setSunAzimuth(value)
+                            }
                             min={0}
                             max={360}
                             step={1}
@@ -1200,10 +1382,14 @@ export function MissionDebugPanel() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-400">Sun Elevation: {lighting.sunElevation}°</Label>
+                          <Label className="text-gray-400">
+                            Sun Elevation: {lighting.sunElevation}°
+                          </Label>
                           <Slider
                             value={[lighting.sunElevation]}
-                            onValueChange={([value]) => lighting.setSunElevation(value)}
+                            onValueChange={([value]) =>
+                              lighting.setSunElevation(value)
+                            }
                             min={-90}
                             max={90}
                             step={1}
@@ -1211,10 +1397,14 @@ export function MissionDebugPanel() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-400">Sun Intensity: {lighting.sunIntensity.toFixed(1)}</Label>
+                          <Label className="text-gray-400">
+                            Sun Intensity: {lighting.sunIntensity.toFixed(1)}
+                          </Label>
                           <Slider
                             value={[lighting.sunIntensity]}
-                            onValueChange={([value]) => lighting.setSunIntensity(value)}
+                            onValueChange={([value]) =>
+                              lighting.setSunIntensity(value)
+                            }
                             min={0}
                             max={5}
                             step={0.1}
@@ -1222,10 +1412,15 @@ export function MissionDebugPanel() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-400">Ambient Intensity: {lighting.ambientIntensity.toFixed(2)}</Label>
+                          <Label className="text-gray-400">
+                            Ambient Intensity:{" "}
+                            {lighting.ambientIntensity.toFixed(2)}
+                          </Label>
                           <Slider
                             value={[lighting.ambientIntensity]}
-                            onValueChange={([value]) => lighting.setAmbientIntensity(value)}
+                            onValueChange={([value]) =>
+                              lighting.setAmbientIntensity(value)
+                            }
                             min={0}
                             max={1}
                             step={0.01}
@@ -1237,13 +1432,17 @@ export function MissionDebugPanel() {
                           <Input
                             type="color"
                             value={lighting.sunColor}
-                            onChange={(e) => lighting.setSunColor(e.target.value)}
+                            onChange={(e) =>
+                              lighting.setSunColor(e.target.value)
+                            }
                             className="h-10 w-full"
                           />
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-gray-400">Time of Day Presets</Label>
+                          <Label className="text-gray-400">
+                            Time of Day Presets
+                          </Label>
                           <div className="grid grid-cols-2 gap-2">
                             {TIME_OF_DAY_PRESETS.map((preset) => (
                               <Button
@@ -1264,7 +1463,8 @@ export function MissionDebugPanel() {
                     {!lighting.manualOverride && (
                       <div className="bg-gray-900/50 p-3 rounded">
                         <p className="text-sm text-gray-400">
-                          Lighting is automatically calculated based on planet rotation and universe time.
+                          Lighting is automatically calculated based on planet
+                          rotation and universe time.
                         </p>
                         <p className="text-xs text-cyan-400 mt-2">
                           Current: {lighting.currentTimeOfDay}
@@ -1312,16 +1512,24 @@ export function MissionDebugPanel() {
 
                   {testResults.length > 0 && (
                     <div className="space-y-2">
-                      <h4 className="text-xs font-semibold text-gray-400 uppercase">Test Results</h4>
+                      <h4 className="text-xs font-semibold text-gray-400 uppercase">
+                        Test Results
+                      </h4>
                       <div className="space-y-1 max-h-60 overflow-y-auto">
                         {testResults.map((result, index) => (
                           <div
                             key={index}
                             className="flex items-center gap-2 bg-gray-900/50 p-2 rounded text-xs"
                           >
-                            {result.status === 'running' && <RefreshCw className="w-3 h-3 text-blue-400 animate-spin" />}
-                            {result.status === 'passed' && <CheckCircle className="w-3 h-3 text-green-400" />}
-                            {result.status === 'failed' && <AlertCircle className="w-3 h-3 text-red-400" />}
+                            {result.status === "running" && (
+                              <RefreshCw className="w-3 h-3 text-blue-400 animate-spin" />
+                            )}
+                            {result.status === "passed" && (
+                              <CheckCircle className="w-3 h-3 text-green-400" />
+                            )}
+                            {result.status === "failed" && (
+                              <AlertCircle className="w-3 h-3 text-red-400" />
+                            )}
                             <div className="flex-1">
                               <p className="text-gray-300">{result.name}</p>
                               <p className="text-gray-500">{result.message}</p>
@@ -1351,27 +1559,34 @@ export function MissionDebugPanel() {
                   </h3>
 
                   <div className="bg-gray-900/50 p-3 rounded space-y-2">
-                    <p className="text-xs text-gray-400 uppercase">Resource Tags</p>
+                    <p className="text-xs text-gray-400 uppercase">
+                      Resource Tags
+                    </p>
                     <div className="flex flex-wrap gap-1">
-                      {resourceManager.getAllTags && Array.from(resourceManager.getAllTags()).slice(0, 10).map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant="outline"
-                          className="text-cyan-400 border-cyan-500/30 cursor-pointer hover:bg-cyan-500/10"
-                          onClick={() => cleanupByTag(tag)}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
+                      {resourceManager.getAllTags &&
+                        Array.from(resourceManager.getAllTags())
+                          .slice(0, 10)
+                          .map((tag) => (
+                            <Badge
+                              key={tag}
+                              variant="outline"
+                              className="text-cyan-400 border-cyan-500/30 cursor-pointer hover:bg-cyan-500/10"
+                              onClick={() => cleanupByTag(tag)}
+                            >
+                              {tag}
+                            </Badge>
+                          ))}
                     </div>
-                    {resourceManager.getAllTags && resourceManager.getAllTags().size > 10 && (
-                      <p className="text-xs text-gray-500">
-                        ...and {resourceManager.getAllTags().size - 10} more tags
-                      </p>
-                    )}
+                    {resourceManager.getAllTags &&
+                      resourceManager.getAllTags().size > 10 && (
+                        <p className="text-xs text-gray-500">
+                          ...and {resourceManager.getAllTags().size - 10} more
+                          tags
+                        </p>
+                      )}
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 text-white/60">
                     <Button
                       size="sm"
                       onClick={exportResourceData}
@@ -1384,7 +1599,7 @@ export function MissionDebugPanel() {
                       size="sm"
                       onClick={() => {
                         resourceManager.disposeAll();
-                        toast.success('All resources cleaned up');
+                        toast.success("All resources cleaned up");
                       }}
                       variant="destructive"
                       className="w-full"
@@ -1404,7 +1619,7 @@ export function MissionDebugPanel() {
                       size="sm"
                       onClick={() => {
                         resourceManager.logMemoryStatus();
-                        toast.success('Memory status logged to console');
+                        toast.success("Memory status logged to console");
                       }}
                       className="w-full bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30"
                     >
