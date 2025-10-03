@@ -122,3 +122,4 @@ Preferred communication style: Simple, everyday language.
   - Dynamic wind system affecting particles
 - **Heat Shimmer**: Custom GPU shaders for heat distortion on hot planets
 - **Weather System**: Time-of-day variations and storm events with atmospheric sounds
+- **Sun Effects**: Enhanced Bloom post-processing for realistic sun glow in space and on planet surfaces
