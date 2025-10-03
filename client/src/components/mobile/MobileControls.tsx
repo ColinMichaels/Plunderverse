@@ -189,12 +189,22 @@ export function MobileControls() {
     }
   }, [isDragging, handleMouseMove, handleMouseUp]);
 
-  // Cleanup look animation frame on unmount
+  // Cleanup look animation frame on unmount and clear global callbacks
   useEffect(() => {
     return () => {
       if (lookAnimationRef.current) {
         cancelAnimationFrame(lookAnimationRef.current);
+        lookAnimationRef.current = undefined;
       }
+      // Clear global callbacks to prevent memory leaks
+      if ((window as any).mobileControlCallbacks) {
+        (window as any).mobileControlCallbacks = null;
+      }
+      // Clear all refs
+      smoothedLookRef.current = { x: 0, y: 0 };
+      lastTouchRef.current = { x: 0, y: 0 };
+      gyroDataRef.current = { alpha: 0, beta: 0, gamma: 0 };
+      lastGyroRef.current = { alpha: 0, beta: 0, gamma: 0 };
     };
   }, []);
 
