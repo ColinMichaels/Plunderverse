@@ -8,10 +8,12 @@ import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
 import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { PatrolEncounter } from "./components/space/PatrolEncounter";
+import { MobileGame } from "./components/mobile/MobileGame";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
 import { useSettings } from "./lib/stores/ui/useSettings";
 import { useLandedState } from "./lib/stores/surface/useLandedState";
+import { usePlatform } from "./lib/stores/ui/usePlatform";
 import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
 import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
@@ -29,6 +31,7 @@ function App() {
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
   const { isLanded } = useLandedState();
+  const { platformType, updatePlatform } = usePlatform();
   
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
@@ -39,6 +42,23 @@ function App() {
       keyboardMapRef.current = useSettings.getState().getKeyboardMap();
     });
     return unsubscribe;
+  }, []);
+  
+  // Initialize platform detection on mount and handle window resize
+  useEffect(() => {
+    updatePlatform();
+    console.log('[APP] Platform detected:', platformType);
+    
+    // Handle orientation changes on mobile
+    const handleOrientationChange = () => {
+      updatePlatform();
+    };
+    
+    window.addEventListener('orientationchange', handleOrientationChange);
+    
+    return () => {
+      window.removeEventListener('orientationchange', handleOrientationChange);
+    };
   }, []);
 
   // Handle resource cleanup on scene transitions
@@ -184,47 +204,56 @@ function App() {
           overflow: "hidden",
         }}
       >
-        {/* Show splash screen */}
-        {phase === "splash" && <SplashScreen />}
+        {/* Route to mobile experience for mobile devices */}
+        {platformType === 'mobile' ? (
+          // Mobile Experience
+          <MobileGame />
+        ) : (
+          // Desktop Experience
+          <>
+            {/* Show splash screen */}
+            {phase === "splash" && <SplashScreen />}
 
-        {/* Show game when playing */}
-        {phase === "playing" && showCanvas && (
-          <KeyboardControls map={keyboardMapRef.current}>
-            {/* Conditionally render EITHER space scene OR planet surface scene */}
-            {!isLanded ? (
-              // Space scene - only rendered when not landed
-              <TouchPropulsionControls>
-                <Canvas
-                  shadows
-                  camera={{
-                    position: [0, 10, 50],
-                    fov: 90,
-                    near: 0.1,
-                    far: 10000,
-                  }}
-                  gl={{
-                    antialias: true,
-                    powerPreference: "high-performance",
-                  }}
-                >
-                  <color attach="background" args={["#000000"]} />
+            {/* Show game when playing */}
+            {phase === "playing" && showCanvas && (
+              <KeyboardControls map={keyboardMapRef.current}>
+                {/* Conditionally render EITHER space scene OR planet surface scene */}
+                {!isLanded ? (
+                  // Space scene - only rendered when not landed
+                  <TouchPropulsionControls>
+                    <Canvas
+                      shadows
+                      camera={{
+                        position: [0, 10, 50],
+                        fov: 90,
+                        near: 0.1,
+                        far: 10000,
+                      }}
+                      gl={{
+                        antialias: true,
+                        powerPreference: "high-performance",
+                      }}
+                    >
+                      <color attach="background" args={["#000000"]} />
 
-                  <Suspense fallback={null}>
-                    <SolarSystem />
-                  </Suspense>
-                </Canvas>
-              </TouchPropulsionControls>
-            ) : (
-              // Planet surface scene - only rendered when landed
-              <PlanetSurfaceScene />
+                      <Suspense fallback={null}>
+                        <SolarSystem />
+                      </Suspense>
+                    </Canvas>
+                  </TouchPropulsionControls>
+                ) : (
+                  // Planet surface scene - only rendered when landed
+                  <PlanetSurfaceScene />
+                )}
+
+                {/* Common UI elements that persist across both scenes */}
+                <GameUI />
+                <PatrolEncounter />
+                <TakeoffControls />
+                <HintModal />
+              </KeyboardControls>
             )}
-
-            {/* Common UI elements that persist across both scenes */}
-            <GameUI />
-            <PatrolEncounter />
-            <TakeoffControls />
-            <HintModal />
-          </KeyboardControls>
+          </>
         )}
         
         {/* Debug panel available even on splash screen in dev mode */}
