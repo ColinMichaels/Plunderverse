@@ -98,15 +98,34 @@ router.post('/:slot', async (req: Request<{ slot: string }, {}, { gameState: Gam
     }
     
     if (!gameState) {
+      console.error('Save error: No game state in request body');
       throw new ValidationError(['Game state data is required']);
     }
+    
+    // Log the structure for debugging
+    console.log('Saving game state for slot', slot, {
+      hasPlayTime: typeof gameState.playTime === 'number',
+      playTime: gameState.playTime,
+      hasCredits: typeof gameState.credits === 'number',
+      credits: gameState.credits,
+      hasLocation: !!gameState.location,
+      location: gameState.location,
+      hasShipStatus: !!gameState.shipStatus,
+      shipStatus: gameState.shipStatus,
+      hasStores: !!gameState.stores,
+    });
     
     // Validate required fields
     if (typeof gameState.playTime !== 'number' || 
         typeof gameState.credits !== 'number' || 
         !gameState.location ||
-        !gameState.shipStatus ||
-        !gameState.stores) {
+        !gameState.shipStatus) {
+      console.error('Save validation failed:', {
+        playTime: typeof gameState.playTime,
+        credits: typeof gameState.credits,
+        location: gameState.location,
+        shipStatus: gameState.shipStatus,
+      });
       throw new ValidationError(['Invalid game state structure']);
     }
     

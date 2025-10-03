@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useAuthStore } from '../lib/stores/auth/useAuthStore';
-import { useLandedState } from '../lib/stores/surface/useLandedState';
+import { useHUDContext } from '../lib/stores/ui/useHUDContext';
 import { usePlunderverseMissions } from '../lib/stores/economy/usePlunderverseMissions';
 import { useGame } from '../lib/stores/ui/useGame';
 import { gameApi } from '../services/gameApi';
@@ -25,7 +25,7 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
   
   const { isAuthenticated, isGuest } = useAuthStore();
   const { phase } = useGame();
-  const { isDocked } = useLandedState();
+  const { isDocked } = useHUDContext();
   const { completedMissionIds } = usePlunderverseMissions();
   
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
@@ -44,7 +44,6 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
     
     try {
       const gameState = collectGameState();
-      gameState.metadata.saveName = `Auto Save - ${new Date().toLocaleTimeString()}`;
       
       // Try to get the most recent save slot or use slot 1
       const saves = await gameApi.listSaves();
