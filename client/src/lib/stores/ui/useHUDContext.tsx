@@ -80,10 +80,10 @@ interface HUDContextState {
 }
 
 export const useHUDContext = create<HUDContextState>((set, get) => ({
-  currentContext: 'space-flight',
+  currentContext: 'docked',
   previousContext: null,
   uiZoneVisibility: {
-    topLeft: true,
+    topLeft: false,
     topRight: true,
     bottomCenter: true,
     rightSidebar: true
@@ -91,9 +91,9 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
   
   isInCombat: false,
   isInWarp: false,
-  isDocked: false,
+  isDocked: true,
   isInMinigame: false,
-  dockedStationName: null,
+  dockedStationName: 'Earth Station',
   
   lastDamageTime: 0,
   lastShotTime: 0,
