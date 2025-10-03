@@ -17,6 +17,7 @@ import { MissionContextHUD } from "./MissionContextHUD";
 import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
+import { MissionHUD } from "./MissionHUD";
 // Save and Menu Components
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
@@ -102,6 +103,9 @@ export function GameUI() {
 
   return (
     <>
+      {/* Mission HUD - horizontal display at top of screen */}
+      <MissionHUD />
+      
       {/* Cockpit Overlay - background frame */}
       <CockpitOverlay />
 
