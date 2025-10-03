@@ -516,6 +516,7 @@ interface MiningFragmentsProps {
 export function MiningFragments({ resource, position, progress, isActive }: MiningFragmentsProps) {
   const particlePoolRef = useRef(new ParticlePool(20)); // Drastically reduced to 20 particles for performance
   const lastSpawnTimeRef = useRef(0);
+  const frameCountRef = useRef(0);
   const [particles, setParticles] = useState<Particle[]>([]);
   const { equipment } = useEquipment();
   const { clock } = useThree();
@@ -543,14 +544,26 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
            Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
   };
   
-  // Spawn particles
+  // Spawn particles with frame throttling for better performance
   useFrame((state, delta) => {
     const pool = particlePoolRef.current;
     const currentTime = clock.getElapsedTime();
     
+    // Throttle updates - only process every 2 frames for better performance
+    frameCountRef.current++;
+    const shouldUpdate = frameCountRef.current % 2 === 0;
+    
     if (!isActive) {
       pool.clear();
       setParticles([]);
+      return;
+    }
+    
+    // Skip particle spawning on throttled frames, but always update physics
+    if (!shouldUpdate) {
+      // Still update physics for smooth motion
+      pool.update(delta, terrainHeightAt);
+      setParticles([...pool.getActiveParticles()]);
       return;
     }
     
