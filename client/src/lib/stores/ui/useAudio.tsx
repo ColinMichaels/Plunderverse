@@ -8,7 +8,12 @@ interface AudioState {
   successSound: HTMLAudioElement | null;
   laserSound: HTMLAudioElement | null;
   thrusterSound: HTMLAudioElement | null;
-  isMuted: boolean;
+  
+  // Mute controls
+  isMuted: boolean; // Legacy support
+  masterMute: boolean; // Controls everything
+  musicMute: boolean; // Controls only music
+  sfxMute: boolean; // Controls only sound effects
 
   // Setter functions
   setBackgroundMusic: (music: HTMLAudioElement) => void;
@@ -19,7 +24,14 @@ interface AudioState {
   setThrusterSound: (sound: HTMLAudioElement) => void;
 
   // Control functions
-  toggleMute: () => void;
+  toggleMute: () => void; // Legacy support - toggles master mute
+  toggleMasterMute: () => void;
+  toggleMusicMute: () => void;
+  toggleSfxMute: () => void;
+  setMasterMute: (muted: boolean) => void;
+  setMusicMute: (muted: boolean) => void;
+  setSfxMute: (muted: boolean) => void;
+  stopAllAudio: () => void;
   playHit: () => void;
   playSuccess: () => void;
   playLaser: () => void;
@@ -36,7 +48,12 @@ export const useAudio = create<AudioState>((set, get) => ({
   successSound: null,
   laserSound: null,
   thrusterSound: null,
-  isMuted: false, // Start muted by default
+  
+  // Mute controls
+  isMuted: false, // Legacy support - mirrors masterMute
+  masterMute: false, // Controls everything
+  musicMute: false, // Controls only music  
+  sfxMute: false, // Controls only sound effects
 
   setBackgroundMusic: (music) => {
     set({ backgroundMusic: music });
@@ -84,21 +101,161 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   toggleMute: () => {
-    const { isMuted } = get();
-    const newMutedState = !isMuted;
-
-    // Just update the muted state
-    set({ isMuted: newMutedState });
-
-    // Log the change
-    console.log(`Sound ${newMutedState ? "muted" : "unmuted"}`);
+    // Legacy support - toggles master mute
+    get().toggleMasterMute();
+  },
+  
+  toggleMasterMute: () => {
+    const { masterMute } = get();
+    const newMutedState = !masterMute;
+    
+    set({ 
+      masterMute: newMutedState,
+      isMuted: newMutedState // Keep legacy flag in sync
+    });
+    
+    // Stop all audio immediately when master mute is activated
+    if (newMutedState) {
+      get().stopAllAudio();
+    }
+    
+    console.log(`Master audio ${newMutedState ? "muted" : "unmuted"}`);
+  },
+  
+  toggleMusicMute: () => {
+    const { musicMute } = get();
+    const newMutedState = !musicMute;
+    
+    set({ musicMute: newMutedState });
+    
+    // Stop music immediately if muted
+    if (newMutedState) {
+      const { backgroundMusic, ambientMusic } = get();
+      if (backgroundMusic) {
+        backgroundMusic.pause();
+      }
+      if (ambientMusic) {
+        ambientMusic.pause();
+      }
+      
+      // Also stop music player
+      try {
+        const { useMusicPlayer } = require("./useMusicPlayer");
+        const musicPlayer = useMusicPlayer.getState();
+        if (musicPlayer.isPlaying) {
+          musicPlayer.pause();
+        }
+      } catch (e) {
+        // Music player may not be loaded yet
+      }
+    }
+    
+    console.log(`Music ${newMutedState ? "muted" : "unmuted"}`);
+  },
+  
+  toggleSfxMute: () => {
+    const { sfxMute } = get();
+    const newMutedState = !sfxMute;
+    
+    set({ sfxMute: newMutedState });
+    
+    // Stop sound effects immediately if muted
+    if (newMutedState) {
+      const { thrusterSound } = get();
+      if (thrusterSound) {
+        thrusterSound.pause();
+        thrusterSound.currentTime = 0;
+      }
+    }
+    
+    console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"}`);
+  },
+  
+  setMasterMute: (muted: boolean) => {
+    set({ 
+      masterMute: muted,
+      isMuted: muted // Keep legacy flag in sync
+    });
+    
+    if (muted) {
+      get().stopAllAudio();
+    }
+  },
+  
+  setMusicMute: (muted: boolean) => {
+    set({ musicMute: muted });
+    
+    if (muted) {
+      const { backgroundMusic, ambientMusic } = get();
+      if (backgroundMusic) {
+        backgroundMusic.pause();
+      }
+      if (ambientMusic) {
+        ambientMusic.pause();
+      }
+    }
+  },
+  
+  setSfxMute: (muted: boolean) => {
+    set({ sfxMute: muted });
+    
+    if (muted) {
+      const { thrusterSound } = get();
+      if (thrusterSound) {
+        thrusterSound.pause();
+        thrusterSound.currentTime = 0;
+      }
+    }
+  },
+  
+  stopAllAudio: () => {
+    const { backgroundMusic, ambientMusic, thrusterSound } = get();
+    
+    // Stop all music
+    if (backgroundMusic) {
+      backgroundMusic.pause();
+      backgroundMusic.currentTime = 0;
+    }
+    
+    if (ambientMusic) {
+      ambientMusic.pause();
+      ambientMusic.currentTime = 0;
+    }
+    
+    // Stop all sound effects
+    if (thrusterSound) {
+      thrusterSound.pause();
+      thrusterSound.currentTime = 0;
+    }
+    
+    // Stop music player
+    try {
+      const { useMusicPlayer } = require("./useMusicPlayer");
+      const musicPlayer = useMusicPlayer.getState();
+      if (musicPlayer.isPlaying) {
+        musicPlayer.pause();
+      }
+    } catch (e) {
+      // Music player may not be loaded yet
+    }
+    
+    // Stop enhanced music player
+    try {
+      const { useEnhancedMusicPlayer } = require("./useEnhancedMusicPlayer");
+      const enhancedPlayer = useEnhancedMusicPlayer.getState();
+      enhancedPlayer.cleanup();
+    } catch (e) {
+      // Enhanced player may not be loaded yet
+    }
+    
+    console.log("All audio stopped");
   },
 
   playHit: () => {
-    const { hitSound, isMuted } = get();
+    const { hitSound, masterMute, sfxMute } = get();
     if (hitSound) {
-      // If sound is muted, don't play anything
-      if (isMuted) {
+      // Check both master and sfx mute
+      if (masterMute || sfxMute) {
         console.log("Hit sound skipped (muted)");
         return;
       }
@@ -124,10 +281,10 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playSuccess: () => {
-    const { successSound, isMuted } = get();
+    const { successSound, masterMute, sfxMute } = get();
     if (successSound) {
-      // If sound is muted, don't play anything
-      if (isMuted) {
+      // Check both master and sfx mute
+      if (masterMute || sfxMute) {
         console.log("Success sound skipped (muted)");
         return;
       }
@@ -140,10 +297,10 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playLaser: () => {
-    const { laserSound, isMuted } = get();
+    const { laserSound, masterMute, sfxMute } = get();
     if (laserSound) {
-      // If sound is muted, don't play anything
-      if (isMuted) {
+      // Check both master and sfx mute
+      if (masterMute || sfxMute) {
         console.log("Laser sound skipped (muted)");
         return;
       }
@@ -158,8 +315,8 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playAmbientMusic: () => {
-    const { ambientMusic, isMuted } = get();
-    if (ambientMusic && !isMuted) {
+    const { ambientMusic, masterMute, musicMute } = get();
+    if (ambientMusic && !masterMute && !musicMute) {
       ambientMusic.volume = 0.2; // Low volume for background ambience
       ambientMusic.loop = true;
       ambientMusic.play().catch((error) => {
@@ -177,8 +334,8 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playThruster: (fuelLevel) => {
-    const { thrusterSound, isMuted } = get();
-    if (thrusterSound && !isMuted) {
+    const { thrusterSound, masterMute, sfxMute } = get();
+    if (thrusterSound && !masterMute && !sfxMute) {
       // Calculate volume based on fuel level (0-1)
       const baseVolume = 0.15; // Low ambient volume
       const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100)); // Normalize fuel to 0-1

@@ -3,12 +3,21 @@ import { useAudio } from "./useAudio";
 import { useLandedState } from "../surface/useLandedState";
 import { AUDIO_CONFIG, AudioCategory } from "../../audioConfig";
 
+// Priority levels for music
+export enum MusicPriority {
+  AMBIENT = 0,
+  THEME = 1,
+  GAME_EVENT = 2,
+  CRITICAL = 3,
+}
+
 interface Track {
   id: string;
   name: string;
   filename: string;
   audio: HTMLAudioElement | null;
   categories: AudioCategory[];
+  priority?: MusicPriority;
 }
 
 interface MusicPlayerState {
@@ -25,6 +34,16 @@ interface MusicPlayerState {
   playbackMode: "random" | "sequential";
   lastPlayedTracks: number[];
   hasPlayedInitialTrack: boolean;
+  
+  // Priority system
+  currentPriority: MusicPriority;
+  musicStack: Array<{ trackIndex: number; priority: MusicPriority }>;
+  
+  // Minecraft-style ambient timer
+  ambientTimer: NodeJS.Timeout | null;
+  ambientTimerActive: boolean;
+  minAmbientDelay: number; // 5 minutes
+  maxAmbientDelay: number; // 15 minutes
 
   // Actions
   loadTracks: () => Promise<void>;
@@ -38,17 +57,29 @@ interface MusicPlayerState {
   togglePlaylist: () => void;
   setPlaybackMode: (mode: "random" | "sequential") => void;
   scheduleNextTrack: () => void;
-  crossfadeToTrack: (trackIndex: number) => void;
+  crossfadeToTrack: (trackIndex: number, priority?: MusicPriority) => void;
   getCurrentTrack: () => Track | null;
   getRandomTrackIndex: (isOnSurface?: boolean) => number;
   getFilteredTracks: (isOnSurface: boolean) => Track[];
   cleanup: () => void;
+  
+  // Event handlers for game triggers
+  triggerCombatMusic: () => void;
+  triggerTransitionMusic: (track?: Track) => void;
+  triggerEventMusic: (eventType: string) => void;
+  returnToUserMusic: () => void;
+  
+  // Ambient system
+  startAmbientTimer: () => void;
+  stopAmbientTimer: () => void;
+  playRandomAmbient: () => void;
 }
 
 // Random delay between tracks (2-10 minutes in milliseconds)
-
-
 const getRandomDelay = () => Math.random() * (600000 - 120000) + 120000;
+
+// Minecraft-style random delay (5-15 minutes)
+const getRandomAmbientDelay = () => Math.random() * (15 * 60 * 1000 - 5 * 60 * 1000) + 5 * 60 * 1000;
 
 export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   tracks: [],
@@ -64,6 +95,16 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   playbackMode: "random",
   lastPlayedTracks: [],
   hasPlayedInitialTrack: false,
+  
+  // Priority system
+  currentPriority: MusicPriority.AMBIENT,
+  musicStack: [],
+  
+  // Minecraft-style ambient timer
+  ambientTimer: null,
+  ambientTimerActive: false,
+  minAmbientDelay: 5 * 60 * 1000, // 5 minutes
+  maxAmbientDelay: 15 * 60 * 1000, // 15 minutes
 
   loadTracks: async () => {
     if (get().isLoaded || get().isLoading) return;
@@ -126,10 +167,10 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
 
   play: () => {
     const { tracks, currentTrackIndex, volume } = get();
-    const { isMuted } = useAudio.getState();
+    const { masterMute, musicMute } = useAudio.getState();
 
-    if (isMuted) {
-      console.log("Music playback skipped (globally muted)");
+    if (masterMute || musicMute) {
+      console.log("Music playback skipped (muted)");
       return;
     }
 
@@ -263,10 +304,20 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     console.log(`[MusicPlayer] Next track scheduled in ${timeDesc}`);
   },
 
-  crossfadeToTrack: (trackIndex: number) => {
-    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks, hasPlayedInitialTrack, fadeIntervals } =
+  crossfadeToTrack: (trackIndex: number, priority?: MusicPriority) => {
+    const { tracks, currentTrackIndex, volume, isPlaying, lastPlayedTracks, hasPlayedInitialTrack, fadeIntervals, currentPriority } =
       get();
-    const { isMuted } = useAudio.getState();
+    const { masterMute, musicMute } = useAudio.getState();
+    
+    // Handle priority if specified
+    const newPriority = priority !== undefined ? priority : currentPriority;
+    
+    // Don't interrupt higher priority music
+    if (newPriority < currentPriority) {
+      console.log(`[MusicPlayer] Track queued (higher priority music playing)`);
+      get().musicStack.push({ trackIndex, priority: newPriority });
+      return;
+    }
 
     if (tracks.length === 0 || trackIndex < 0 || trackIndex >= tracks.length)
       return;
@@ -322,8 +373,11 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
         hasPlayedInitialTrack: true, // Mark that we've played the initial track
       });
 
+      // Update priority
+      set({ currentPriority: newPriority });
+      
       // Fade in next track
-      if (nextTrack?.audio && !isMuted) {
+      if (nextTrack?.audio && !masterMute && !musicMute) {
         nextTrack.audio.volume = 0;
         nextTrack.audio.currentTime = 0;
 
@@ -438,7 +492,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   },
   
   cleanup: () => {
-    const { tracks, currentTrackIndex, crossfadeTimeout, fadeIntervals } = get();
+    const { tracks, currentTrackIndex, crossfadeTimeout, fadeIntervals, ambientTimer } = get();
     
     console.log("[MusicPlayer] Cleanup: Stopping all music and clearing timers");
     
@@ -454,6 +508,11 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       clearTimeout(crossfadeTimeout);
     }
     
+    // Clear ambient timer
+    if (ambientTimer) {
+      clearTimeout(ambientTimer);
+    }
+    
     // Clear all fade intervals
     fadeIntervals.forEach(interval => clearInterval(interval));
     
@@ -462,8 +521,196 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       isPlaying: false,
       crossfadeTimeout: null,
       fadeIntervals: new Set(),
-      nextPlayTime: null
+      nextPlayTime: null,
+      ambientTimer: null,
+      ambientTimerActive: false
     });
+  },
+  
+  // Event handlers for game triggers
+  triggerCombatMusic: () => {
+    console.log("[MusicPlayer] Combat music triggered");
+    const { tracks } = get();
+    
+    // Find combat music tracks (you can filter based on categories or names)
+    const combatTracks = tracks.filter(track => 
+      track.categories.includes("space" as AudioCategory) && 
+      track.name.toLowerCase().includes("combat") || 
+      track.name.toLowerCase().includes("battle")
+    );
+    
+    if (combatTracks.length > 0) {
+      const randomTrack = combatTracks[Math.floor(Math.random() * combatTracks.length)];
+      const trackIndex = tracks.findIndex(t => t.id === randomTrack.id);
+      if (trackIndex !== -1) {
+        get().crossfadeToTrack(trackIndex, MusicPriority.GAME_EVENT);
+        get().stopAmbientTimer();
+      }
+    }
+  },
+  
+  triggerTransitionMusic: (track?: Track) => {
+    console.log("[MusicPlayer] Transition music triggered");
+    const { tracks } = get();
+    
+    if (track) {
+      const trackIndex = tracks.findIndex(t => t.id === track.id);
+      if (trackIndex !== -1) {
+        get().crossfadeToTrack(trackIndex, MusicPriority.GAME_EVENT);
+      }
+    } else {
+      // Play a random transition track
+      const transitionTracks = tracks.filter(t => 
+        t.categories.includes("atmospheric" as AudioCategory)
+      );
+      
+      if (transitionTracks.length > 0) {
+        const randomTrack = transitionTracks[Math.floor(Math.random() * transitionTracks.length)];
+        const trackIndex = tracks.findIndex(t => t.id === randomTrack.id);
+        if (trackIndex !== -1) {
+          get().crossfadeToTrack(trackIndex, MusicPriority.GAME_EVENT);
+        }
+      }
+    }
+    
+    get().stopAmbientTimer();
+  },
+  
+  triggerEventMusic: (eventType: string) => {
+    console.log(`[MusicPlayer] Event music triggered: ${eventType}`);
+    const { tracks } = get();
+    
+    // Map event types to music categories/names
+    let filterFn: (track: Track) => boolean;
+    let priority = MusicPriority.GAME_EVENT;
+    
+    switch (eventType) {
+      case "mining_success":
+        filterFn = (t) => t.name.toLowerCase().includes("success") || t.name.toLowerCase().includes("discovery");
+        priority = MusicPriority.CRITICAL;
+        break;
+      case "low_fuel":
+        filterFn = (t) => t.name.toLowerCase().includes("tension") || t.name.toLowerCase().includes("danger");
+        break;
+      case "station_docking":
+        filterFn = (t) => t.categories.includes("atmospheric" as AudioCategory);
+        priority = MusicPriority.THEME;
+        break;
+      case "victory":
+        filterFn = (t) => t.name.toLowerCase().includes("victory") || t.name.toLowerCase().includes("success");
+        priority = MusicPriority.CRITICAL;
+        break;
+      default:
+        filterFn = (t) => t.categories.includes("space" as AudioCategory);
+    }
+    
+    const eventTracks = tracks.filter(filterFn);
+    
+    if (eventTracks.length > 0) {
+      const randomTrack = eventTracks[Math.floor(Math.random() * eventTracks.length)];
+      const trackIndex = tracks.findIndex(t => t.id === randomTrack.id);
+      if (trackIndex !== -1) {
+        get().crossfadeToTrack(trackIndex, priority);
+        
+        // Stop ambient timer for important events
+        if (priority >= MusicPriority.GAME_EVENT) {
+          get().stopAmbientTimer();
+        }
+      }
+    }
+  },
+  
+  returnToUserMusic: () => {
+    console.log("[MusicPlayer] Returning to user music");
+    const { musicStack, tracks, currentPriority } = get();
+    
+    // Pop from music stack if there's something to return to
+    if (musicStack.length > 0) {
+      const entry = musicStack.pop();
+      if (entry) {
+        set({ musicStack: [...musicStack] });
+        get().crossfadeToTrack(entry.trackIndex, entry.priority);
+        return;
+      }
+    }
+    
+    // Otherwise, return to ambient music
+    set({ currentPriority: MusicPriority.AMBIENT });
+    
+    // Resume ambient playback
+    const { isLanded } = useLandedState.getState();
+    const nextIndex = get().getRandomTrackIndex(isLanded);
+    get().crossfadeToTrack(nextIndex, MusicPriority.AMBIENT);
+    
+    // Restart ambient timer
+    get().startAmbientTimer();
+  },
+  
+  // Ambient system
+  startAmbientTimer: () => {
+    const { ambientTimerActive, ambientTimer } = get();
+    
+    if (ambientTimerActive) return;
+    
+    // Clear any existing timer
+    if (ambientTimer) {
+      clearTimeout(ambientTimer);
+    }
+    
+    const scheduleNext = () => {
+      const delay = getRandomAmbientDelay();
+      const timer = setTimeout(() => {
+        get().playRandomAmbient();
+        scheduleNext(); // Schedule the next one
+      }, delay);
+      
+      set({
+        ambientTimer: timer,
+        ambientTimerActive: true,
+        nextPlayTime: Date.now() + delay
+      });
+      
+      console.log(`[MusicPlayer] Next ambient music in ${Math.round(delay / 60000)} minutes`);
+    };
+    
+    scheduleNext();
+  },
+  
+  stopAmbientTimer: () => {
+    const { ambientTimer } = get();
+    
+    if (ambientTimer) {
+      clearTimeout(ambientTimer);
+      set({
+        ambientTimer: null,
+        ambientTimerActive: false,
+        nextPlayTime: null
+      });
+      
+      console.log("[MusicPlayer] Ambient timer stopped");
+    }
+  },
+  
+  playRandomAmbient: () => {
+    const { currentPriority, tracks } = get();
+    
+    // Only play ambient if nothing higher priority is playing
+    if (currentPriority > MusicPriority.AMBIENT) {
+      console.log("[MusicPlayer] Skipping ambient (higher priority music playing)");
+      return;
+    }
+    
+    const { isLanded } = useLandedState.getState();
+    const filteredTracks = get().getFilteredTracks(isLanded);
+    
+    if (filteredTracks.length > 0) {
+      const randomTrack = filteredTracks[Math.floor(Math.random() * filteredTracks.length)];
+      const trackIndex = tracks.findIndex(t => t.id === randomTrack.id);
+      if (trackIndex !== -1) {
+        get().crossfadeToTrack(trackIndex, MusicPriority.AMBIENT);
+        console.log(`[MusicPlayer] Playing random ambient: ${randomTrack.name}`);
+      }
+    }
   }
 }));
 
