@@ -181,7 +181,7 @@ export function ActionBar() {
       </div>
 
       {/* Panels - sliding in from right with proper spacing from action bar */}
-      <div className="fixed right-16 top-1/2 -translate-y-1/2 w-96 h-[80vh] max-h-[600px] z-30 pointer-events-none">
+      <div className="fixed right-16 top-1/2 -translate-y-1/2 w-96 h-[80vh] max-h-[600px] z-50 pointer-events-none">
         {/* Missions Panel */}
         {panels.get('missions')?.isOpen && (
           <div className="

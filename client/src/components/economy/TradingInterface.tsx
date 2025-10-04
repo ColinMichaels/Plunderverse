@@ -16,6 +16,8 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
   const { drillPower, extractorLevel } = useMining();
   const [activeTab, setActiveTab] = useState<'sell' | 'fuel' | 'repairs' | 'upgrades'>('sell');
   const [selectedQuantity, setSelectedQuantity] = useState<{ [key: string]: number }>({});
+  const [isLoading, setIsLoading] = useState<{ [key: string]: boolean }>({});
+  const [confirmDialog, setConfirmDialog] = useState<{ show: boolean; action: () => void; message: string } | null>(null);
 
   // Check black market access
   const hasBlackMarketAccess = gameFacade.canAccessBlackMarket();
@@ -33,8 +35,14 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
 
   if (!isVisible) return null;
 
-  const handleSellResource = (resourceType: string, value: number, maxQuantity: number) => {
+  const handleSellResource = async (resourceType: string, value: number, maxQuantity: number) => {
     const quantity = selectedQuantity[resourceType] || 1;
+    
+    // Show loading state
+    setIsLoading(prev => ({ ...prev, [resourceType]: true }));
+    
+    // Simulate async operation for visual feedback
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     const result = economyService.sellResource(resourceType, quantity);
     if (result.success) {
@@ -56,6 +64,9 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
         console.error('[OBJECTIVE-TRIGGER] Error reporting trade:', error);
       }
     }
+    
+    // Clear loading state
+    setIsLoading(prev => ({ ...prev, [resourceType]: false }));
   };
 
   const handleBuyFuel = (amount: number) => {
@@ -88,8 +99,8 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[250]">
-      <div className="bg-gray-900 border border-yellow-400 rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[150] animate-fadeIn">
+      <div className="bg-gray-900 border border-yellow-400 rounded-lg p-6 w-[600px] max-h-[80vh] overflow-y-auto animate-slide-in-right">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-yellow-400">🚀 Trading Station</h2>
           <button
@@ -197,14 +208,16 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
                           </div>
                           <button
                             onClick={() => handleSellResource(item.type, item.value, item.quantity)}
-                            disabled={isBlocked}
-                            className={`px-4 py-2 rounded font-semibold ${
+                            disabled={isBlocked || isLoading[item.type]}
+                            className={`px-4 py-2 rounded font-semibold transition-all duration-200 ${
                               isBlocked 
                                 ? 'bg-gray-600 text-gray-400 cursor-not-allowed' 
-                                : 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                : isLoading[item.type]
+                                ? 'bg-yellow-800 text-yellow-200 cursor-wait animate-pulse'
+                                : 'bg-yellow-600 hover:bg-yellow-700 text-white hover:scale-105 active:scale-95'
                             }`}
                           >
-                            {isBlocked ? 'Locked' : 'Sell'}
+                            {isBlocked ? 'Locked' : isLoading[item.type] ? 'Selling...' : 'Sell'}
                           </button>
                         </div>
                       </div>

@@ -17,7 +17,7 @@
   }
 }
 
-/* Slide-in animations for panels */
+/* Slide-in animations for panels - smoother */
 @keyframes slide-in-right {
   from {
     transform: translateX(100%);
@@ -30,7 +30,21 @@
 }
 
 .animate-slide-in-right {
-  animation: slide-in-right 0.3s ease-out;
+  animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
 }
 
 /* Button press animation */
@@ -77,21 +91,21 @@ canvas {
   touch-action: none;
 }
 
-/* Mobile responsive adjustments */
+/* Mobile responsive adjustments - improved readability */
 @media (max-width: 768px) {
   .cockpit-panel {
-    @apply w-full max-w-xs p-1 text-xs;
-    max-height: 40vh !important;
+    @apply w-full max-w-xs p-2 text-sm;
+    max-height: 35vh !important; /* Reduced from 40vh */
     left: 50% !important;
     transform: translateX(-50%) !important;
     right: auto !important;
-    font-size: 0.65rem !important;
+    font-size: 0.875rem !important; /* Increased from 0.65rem */
   }
 
   .status-bar {
-    @apply flex-wrap gap-1 p-1 text-xs;
+    @apply flex-wrap gap-1 p-2 text-sm;
     bottom: 60px !important;
-    font-size: 0.6rem !important;
+    font-size: 0.8rem !important; /* Increased from 0.6rem */
   }
 
   .status-item {
@@ -99,79 +113,79 @@ canvas {
   }
 
   .minimap {
-    @apply w-14 h-14;
+    @apply w-16 h-16;
     bottom: 100px !important;
     left: 4px !important;
     z-index: 50;
   }
 
   .flight-controls {
-    @apply text-xs p-1;
-    font-size: 0.6rem !important;
+    @apply text-sm p-2;
+    font-size: 0.8rem !important; /* Increased from 0.6rem */
   }
 
-  /* Mobile navigation buttons - much smaller */
+  /* Mobile navigation buttons - better sizing */
   .mobile-nav-left {
-    left: 2px !important;
+    left: 4px !important;
     top: 60px !important;
     transform: none !important;
   }
 
   .mobile-nav-right {
-    right: 2px !important;
+    right: 4px !important;
     top: 60px !important;
     transform: none !important;
   }
 
-  /* Make mobile nav buttons smaller */
+  /* Better sized mobile nav buttons */
   .mobile-nav-left button,
   .mobile-nav-right button {
-    @apply w-8 h-8 text-xs !important;
-    font-size: 0.7rem !important;
+    @apply w-10 h-10 text-sm !important;
+    font-size: 0.875rem !important; /* Increased from 0.7rem */
   }
 
-  /* Compact mobile panels */
+  /* Better sized mobile panels */
   .mobile-nav-left .cockpit-panel,
   .mobile-nav-right .cockpit-panel {
-    @apply w-72 max-h-80 p-2 text-xs !important;
-    font-size: 0.65rem !important;
+    @apply w-72 max-h-80 p-3 text-sm !important;
+    font-size: 0.8rem !important; /* Increased from 0.65rem */
   }
 }
 
 @media (max-width: 480px) {
   .cockpit-panel {
-    @apply max-w-xs text-xs;
-    max-height: 35vh !important;
-    padding: 4px !important;
-    font-size: 0.6rem !important;
+    @apply max-w-xs text-sm;
+    max-height: 30vh !important; /* Reduced from 35vh */
+    padding: 8px !important;
+    font-size: 0.75rem !important; /* Minimum readable - increased from 0.6rem */
   }
 
   .status-bar {
-    @apply text-xs;
+    @apply text-sm;
     bottom: 50px !important;
-    font-size: 0.55rem !important;
-    padding: 4px !important;
+    font-size: 0.75rem !important; /* Increased from 0.55rem */
+    padding: 6px !important;
   }
 
   .minimap {
-    @apply w-12 h-12;
+    @apply w-14 h-14;
     bottom: 90px !important;
     left: 2px !important;
     z-index: 50;
   }
 
-  /* Even smaller nav buttons for very small screens */
+  /* Properly sized nav buttons for small screens */
   .mobile-nav-left button,
   .mobile-nav-right button {
-    @apply w-6 h-6 text-xs !important;
-    font-size: 0.6rem !important;
+    @apply w-8 h-8 text-sm !important;
+    font-size: 0.75rem !important; /* Minimum readable - increased from 0.6rem */
   }
 
-  /* Ultra compact panels for small phones */
+  /* Readable panels for small phones */
   .mobile-nav-left .cockpit-panel,
   .mobile-nav-right .cockpit-panel {
-    @apply w-64 max-h-72 p-1 text-xs !important;
-    font-size: 0.55rem !important;
+    @apply w-64 max-h-64 p-2 text-sm !important;
+    font-size: 0.75rem !important; /* Minimum readable - increased from 0.55rem */
   }
 
   /* No conflicting transform overrides */
@@ -236,31 +250,58 @@ canvas {
   @apply flex items-center justify-center p-2;
 }
 
-/* Metallic button styling */
+/* Metallic button styling - improved feedback */
 .space-button {
-  @apply px-3 py-2 rounded transition-all duration-200 font-mono text-sm;
+  @apply px-3 py-2 rounded transition-all duration-300 font-mono text-sm;
   background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 0.9));
   border: 1px solid rgba(6, 182, 212, 0.3);
   color: rgb(6, 182, 212);
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.space-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
 }
 
 .space-button:hover {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.1));
   border-color: rgba(6, 182, 212, 0.5);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.02);
   box-shadow:
-    0 4px 8px rgba(0, 0, 0, 0.4),
+    0 6px 12px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
+.space-button:hover:before {
+  left: 100%;
+}
+
 .space-button:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
   box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+.space-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.space-button:disabled:hover:before {
+  left: -100%;
 }
 
 /* Status indicators */
@@ -521,5 +562,68 @@ canvas {
   .expanded-panel {
     max-width: calc(100vw - 100px);
     margin: 10px;
+  }
+}
+
+/* Desktop layout optimizations */
+@media (min-width: 1440px) {
+  /* Limit panel widths on wide screens */
+  .cockpit-panel,
+  .space-panel {
+    max-width: 500px;
+  }
+
+  .expanded-panel {
+    max-width: 600px;
+  }
+
+  /* Optimize action bar panels on desktop */
+  .fixed.right-16 {
+    width: 450px !important;
+  }
+
+  /* Better spacing for large screens */
+  .ui-sidebar-left {
+    left: 16px;
+  }
+
+  .ui-sidebar-right {
+    right: 16px;
+  }
+}
+
+@media (min-width: 1920px) {
+  /* Ultra-wide screen optimizations */
+  .cockpit-panel,
+  .space-panel {
+    max-width: 600px;
+  }
+
+  .expanded-panel {
+    max-width: 700px;
+  }
+
+  /* Center content on very wide screens */
+  .fixed.right-16 {
+    width: 500px !important;
+  }
+
+  /* Add margin to prevent panels from being too close to edges */
+  .ui-sidebar-left {
+    left: 24px;
+  }
+
+  .ui-sidebar-right {
+    right: 24px;
+  }
+
+  /* Larger buttons for big screens */
+  .sidebar-panel-button {
+    min-width: 64px;
+    padding: 10px;
+  }
+
+  .sidebar-panel-label {
+    font-size: 11px;
   }
 }

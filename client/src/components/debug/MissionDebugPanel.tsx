@@ -1598,8 +1598,10 @@ export function MissionDebugPanel() {
                     <Button
                       size="sm"
                       onClick={() => {
-                        resourceManager.disposeAll();
-                        toast.success("All resources cleaned up");
+                        if (confirm("Are you sure you want to clear ALL resources? This action cannot be undone.")) {
+                          resourceManager.disposeAll();
+                          toast.success("All resources cleaned up");
+                        }
                       }}
                       variant="destructive"
                       className="w-full"
