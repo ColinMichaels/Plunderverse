@@ -94,7 +94,7 @@ export const StoryProgressionPanel: React.FC<StoryProgressionPanelProps> = ({ cl
             setCurrentAct(act);
           }
         } catch (actError) {
-          console.error('[StoryProgressionPanel] Error getting current act:', actError);
+          console.error('[StoryProgressionPanel] Error getting current act:', actError instanceof Error ? actError.message : String(actError));
           // Use fallback act data
           const fallbackAct = {
             number: state.currentAct || 1,
@@ -114,7 +114,7 @@ export const StoryProgressionPanel: React.FC<StoryProgressionPanelProps> = ({ cl
           console.log('[StoryProgressionPanel] Rank progress received:', progress);
           setRankProgress(progress);
         } catch (progressError) {
-          console.error('[StoryProgressionPanel] Error getting rank progression:', progressError);
+          console.error('[StoryProgressionPanel] Error getting rank progression:', progressError instanceof Error ? progressError.message : String(progressError));
           setRankProgress(null);
         }
         
@@ -126,7 +126,7 @@ export const StoryProgressionPanel: React.FC<StoryProgressionPanelProps> = ({ cl
             console.log('[StoryProgressionPanel] Available endings received:', endings);
             setAvailableEndings(endings || []);
           } catch (endingsError) {
-            console.error('[StoryProgressionPanel] Error getting available endings:', endingsError);
+            console.error('[StoryProgressionPanel] Error getting available endings:', endingsError instanceof Error ? endingsError.message : String(endingsError));
             setAvailableEndings([]);
           }
         }
@@ -135,7 +135,7 @@ export const StoryProgressionPanel: React.FC<StoryProgressionPanelProps> = ({ cl
         console.log('[StoryProgressionPanel] Story state update complete');
         
       } catch (error) {
-        console.error('[StoryProgressionPanel] Fatal error updating story state:', error);
+        console.error('[StoryProgressionPanel] Fatal error updating story state:', error instanceof Error ? error.message : String(error));
         setError(error instanceof Error ? error.message : 'Failed to load story progression');
         setIsLoading(false);
         

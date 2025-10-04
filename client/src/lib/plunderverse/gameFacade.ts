@@ -224,8 +224,9 @@ export class GameFacade {
       // Start economic pressure systems
       this.startEconomicPressure();
     } catch (error) {
-      console.error("[GameFacade] Failed to initialize:", error);
-      throw error;
+      console.error("[GameFacade] Failed to initialize:", error instanceof Error ? error.message : String(error));
+      // Don't throw - allow the app to continue with default values
+      this.initialized = false;
     }
   }
 
@@ -1150,7 +1151,7 @@ export class GameFacade {
       // Return default act data if not found
       return this.getDefaultAct();
     } catch (error) {
-      console.error('[GameFacade] Error getting current act:', error);
+      console.error('[GameFacade] Error getting current act:', error instanceof Error ? error.message : String(error));
       return this.getDefaultAct();
     }
   }
