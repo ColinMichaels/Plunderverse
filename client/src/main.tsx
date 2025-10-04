@@ -1,18 +1,14 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { testMissionSystem } from "./testMissionSystem";
+import "./__tests__/index"; // Import all tests from index
 import "./autoTestMissions"; // This will auto-run after 5 seconds
 import { testTerrainGeneration } from "./testTerrainGeneration";
 import { testSurfaceScatter } from "./testSurfaceScatter";
 import { testAtmosphericEffects } from "./testAtmosphericEffects";
 import { runAllImprovementTests } from "./testAllImprovements";
-import "./testCombatSystem"; // Import combat system test
-import "./testEconomyBalance"; // Import economy balance test
-import "./testFullGameplayLoop"; // Import full gameplay loop test suite
 
-// Make test available in console for debugging
-(window as any).testMissionSystem = testMissionSystem;
+// Test functions are now available through window.tests and through backward-compatible function names
 (window as any).testTerrainGeneration = testTerrainGeneration;
 (window as any).testSurfaceScatter = testSurfaceScatter;
 (window as any).testAtmosphericEffects = testAtmosphericEffects;

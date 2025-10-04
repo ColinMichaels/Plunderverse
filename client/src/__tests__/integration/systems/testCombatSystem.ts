@@ -1,12 +1,12 @@
 // Combat System Test Script
 // Run this in the browser console to test the combat system
 
-import { useEnemies } from './lib/stores/combat/useEnemies';
-import { useShooting } from './lib/stores/combat/useShooting';
-import { useSolarSystem } from './lib/stores/space/useSolarSystem';
-import { useHeatSystem } from './lib/stores/player/useHeatSystem';
-import { useShipStatus } from './lib/stores/ship/useShipStatus';
-import { usePlayer } from './lib/stores/player/usePlayer';
+import { useEnemies } from '../../../lib/stores/combat/useEnemies';
+import { useShooting } from '../../../lib/stores/combat/useShooting';
+import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
+import { useHeatSystem } from '../../../lib/stores/player/useHeatSystem';
+import { useShipStatus } from '../../../lib/stores/ship/useShipStatus';
+import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import * as THREE from 'three';
 
 export function testCombatSystem() {

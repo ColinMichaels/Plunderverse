@@ -1,7 +1,7 @@
-import { gameFacade } from './lib/plunderverse/gameFacade';
-import { usePlunderverseMissions } from './lib/stores/economy/usePlunderverseMissions';
-import { usePlayer } from './lib/stores/player/usePlayer';
-import { useCreditsStore } from './domain/economy/credits.store';
+import { gameFacade } from '../../../lib/plunderverse/gameFacade';
+import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderverseMissions';
+import { usePlayer } from '../../../lib/stores/player/usePlayer';
+import { useCreditsStore } from '../../../domain/economy/credits.store';
 
 export async function testMissionSystem() {
   console.log('=== MISSION SYSTEM TEST STARTING ===');

@@ -5,31 +5,31 @@
  */
 
 import { toast } from 'sonner';
-import { gameFacade } from './lib/plunderverse/gameFacade';
-import { usePlunderverseMissions } from './lib/stores/economy/usePlunderverseMissions';
-import { usePlayer } from './lib/stores/player/usePlayer';
-import { useCreditsStore } from './domain/economy/credits.store';
-import { useLandedState } from './lib/stores/surface/useLandedState';
-import { useSolarSystem } from './lib/stores/space/useSolarSystem';
-import { useEnemies } from './lib/stores/combat/useEnemies';
-import { useShooting } from './lib/stores/combat/useShooting';
-import { useShipStatus } from './lib/stores/ship/useShipStatus';
-import { useHeatSystem } from './lib/stores/player/useHeatSystem';
-import { useMining } from './lib/stores/economy/useMining';
-import { useTrading } from './lib/stores/economy/useTrading';
-import { useCrewManagement } from './lib/stores/ship/useCrewManagement';
-import { useUpgrades } from './lib/stores/ship/useUpgrades';
-import { usePanelManager } from './lib/stores/ui/usePanelManager';
-import { useInventory } from './lib/stores/economy/useInventory';
-import { useObjectiveTriggers } from './lib/stores/economy/useObjectiveTriggers';
+import { gameFacade } from '../../../lib/plunderverse/gameFacade';
+import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderverseMissions';
+import { usePlayer } from '../../../lib/stores/player/usePlayer';
+import { useCreditsStore } from '../../../domain/economy/credits.store';
+import { useLandedState } from '../../../lib/stores/surface/useLandedState';
+import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
+import { useEnemies } from '../../../lib/stores/combat/useEnemies';
+import { useShooting } from '../../../lib/stores/combat/useShooting';
+import { useShipStatus } from '../../../lib/stores/ship/useShipStatus';
+import { useHeatSystem } from '../../../lib/stores/player/useHeatSystem';
+import { useMining } from '../../../lib/stores/economy/useMining';
+import { useTrading } from '../../../lib/stores/economy/useTrading';
+import { useCrewManagement } from '../../../lib/stores/ship/useCrewManagement';
+import { useUpgrades } from '../../../lib/stores/ship/useUpgrades';
+import { usePanelManager } from '../../../lib/stores/ui/usePanelManager';
+import { useInventory } from '../../../lib/stores/economy/useInventory';
+import { useObjectiveTriggers } from '../../../lib/stores/economy/useObjectiveTriggers';
 import * as THREE from 'three';
 
 // Test framework imports
-import { testMissionSystem } from './testMissionSystem';
-import { testCombatSystem, clearAllEnemies } from './testCombatSystem';
-import { testEconomyBalance } from './testEconomyBalance';
-import { testObjectiveTriggers } from './lib/tests/objectiveTriggerTest';
-import { PanelTestSuite } from './lib/tests/panel-tests/testPanelFunctionality';
+import { testMissionSystem } from '../../missions/testMissionSystem';
+import { testCombatSystem, clearAllEnemies } from '../../systems/testCombatSystem';
+import { testEconomyBalance } from '../../systems/testEconomyBalance';
+import { testObjectiveTriggers } from '../../missions/objectiveTriggerTest';
+import { PanelTestSuite } from '../../unit/components/testPanelFunctionality';
 
 // Test result types
 interface TestResult {

@@ -5,21 +5,21 @@
  */
 
 import { toast } from 'sonner';
-import { gameFacade } from '../plunderverse/gameFacade';
-import { usePlunderverseMissions } from '../stores/economy/usePlunderverseMissions';
-import { useObjectiveTriggers } from '../stores/economy/useObjectiveTriggers';
-import { usePlayer } from '../stores/player/usePlayer';
-import { useCreditsStore } from '../../domain/economy/credits.store';
-import { useLandedState } from '../stores/surface/useLandedState';
-import { useSolarSystem } from '../stores/space/useSolarSystem';
-import { useMining } from '../stores/economy/useMining';
+import { gameFacade } from '../../../lib/plunderverse/gameFacade';
+import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderverseMissions';
+import { useObjectiveTriggers } from '../../../lib/stores/economy/useObjectiveTriggers';
+import { usePlayer } from '../../../lib/stores/player/usePlayer';
+import { useCreditsStore } from '../../../domain/economy/credits.store';
+import { useLandedState } from '../../../lib/stores/surface/useLandedState';
+import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
+import { useMining } from '../../../lib/stores/economy/useMining';
 import { 
   Mission, 
   MissionObjective, 
   ObjectiveTriggerType,
   ObjectiveTriggerData,
   Coordinate3D
-} from '../plunderverse/types';
+} from '../../../lib/plunderverse/types';
 
 interface TestResult {
   name: string;

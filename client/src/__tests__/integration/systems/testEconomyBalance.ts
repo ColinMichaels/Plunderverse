@@ -1,13 +1,13 @@
 // Economy Balance Test Script
 // This script tests the new economy balance to ensure it meets requirements
 
-import { useCreditsStore } from './domain/economy/credits.store';
-import { usePlunderverseMissions } from './lib/stores/economy/usePlunderverseMissions';
-import { usePlayer } from './lib/stores/player/usePlayer';
-import { useCrewManagement } from './lib/stores/ship/useCrewManagement';
-import { useUpgrades } from './lib/stores/ship/useUpgrades';
-import { calculateFinalPrice } from './lib/stores/economy/enhancedMarketData';
-import { GameFacade } from './lib/plunderverse/gameFacade';
+import { useCreditsStore } from '../../../domain/economy/credits.store';
+import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderverseMissions';
+import { usePlayer } from '../../../lib/stores/player/usePlayer';
+import { useCrewManagement } from '../../../lib/stores/ship/useCrewManagement';
+import { useUpgrades } from '../../../lib/stores/ship/useUpgrades';
+import { calculateFinalPrice } from '../../../lib/stores/economy/enhancedMarketData';
+import { GameFacade } from '../../../lib/plunderverse/gameFacade';
 
 export async function testEconomyBalance() {
   console.log('\n====================================');
