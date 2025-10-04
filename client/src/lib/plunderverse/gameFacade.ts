@@ -922,8 +922,8 @@ export class GameFacade {
           randomEquipment.id,
           {
             resourceHardness: 0.5,
-            collectorWearRate: 0.1,
-            shipCondition: 0.5,
+            operationIntensity: 0.1,
+            environmentalFactor: 0.5,
           },
           10,
         );
@@ -949,12 +949,28 @@ export class GameFacade {
 
     // Apply degradation to all equipment
     equipment.forEach((eq) => {
-      const newCondition = Math.max(0, eq.condition - degradationRate * 100);
-      equipmentStore.updateEquipmentCondition(eq.id, newCondition);
+      // Calculate the current condition percentage
+      const currentConditionPercent = (eq.currentDurability / eq.maxDurability) * 100;
+      
+      // Apply wear based on degradation rate (convert percentage to actual durability loss)
+      const durabilityLoss = (degradationRate * eq.maxDurability);
+      
+      // Use applyWear to properly degrade the equipment
+      equipmentStore.applyWear(
+        eq.id,
+        {
+          resourceHardness: 0.2,  // Low stress for passive degradation
+          operationIntensity: 0.1,  // Minimal operation intensity
+          environmentalFactor: 0.3,  // Some environmental wear
+        },
+        durabilityLoss * 10  // Scale operation time to achieve desired wear
+      );
 
-      if (newCondition < 30 && eq.condition >= 30) {
+      // Check for condition warnings
+      const newConditionPercent = ((eq.currentDurability - durabilityLoss) / eq.maxDurability) * 100;
+      if (newConditionPercent < 30 && currentConditionPercent >= 30) {
         console.warn(
-          `[GameFacade] Equipment ${eq.name} is in poor condition: ${Math.round(newCondition)}%`,
+          `[GameFacade] Equipment ${eq.name} is in poor condition: ${Math.round(newConditionPercent)}%`,
         );
       }
     });
