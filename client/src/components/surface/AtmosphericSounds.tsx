@@ -175,7 +175,7 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
         src: ["/sounds/hit.mp3"],
         loop: true,
         volume: Math.max(0, Math.min(1, rainVolume)),
-        rate: 2.0, // Speed up for rain patter
+        rate: 1.0, // Speed up for rain patter
       });
       
       // Register with ResourceManager
