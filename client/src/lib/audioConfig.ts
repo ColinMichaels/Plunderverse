@@ -72,8 +72,11 @@ export interface AudioConfig {
     thruster: SoundEffectConfig;
     spaceHelmetBreathing: SoundEffectConfig;
     spaceVacuumDoor: SoundEffectConfig;
+    wind: SoundEffectConfig;
+    rain: SoundEffectConfig;
   };
   musicTracks: MusicTrackConfig[];
+  musicBasePath: string;
   globalVolume: number;
   crossfadeDuration: number;
   fadeDurations?: Map<MusicPriority, number>;
@@ -126,7 +129,18 @@ export const AUDIO_CONFIG: AudioConfig = {
       path: "/sounds/space-vaccum-door.mp3",
       volume: 0.5,
     },
+    wind: {
+      path: "/sounds/wind.mp3",
+      volume: 0.6,
+      loop: true,
+    },
+    rain: {
+      path: "/sounds/rain.mp3",
+      volume: 0.2,
+      loop: true,
+    },
   },
+  musicBasePath: "/sounds/music/",
   musicTracks: [
     {
       filename: "PlunderverseTheme.mp3",

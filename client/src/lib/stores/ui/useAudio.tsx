@@ -1,15 +1,76 @@
 import { create } from "zustand";
+import { Howl } from "howler";
 import { AUDIO_CONFIG } from "../../audioConfig";
 import { useMusicPlayer } from "./useMusicPlayer";
 import { useEnhancedMusicPlayer } from "./useEnhancedMusicPlayer";
 
+// Sound Effects Cache using Howler.js for better performance
+class SoundEffectsCache {
+  private cache: Map<string, Howl> = new Map();
+  private loadingPromises: Map<string, Promise<Howl>> = new Map();
+  
+  async getSound(key: string, config: { path: string; volume: number; loop?: boolean }): Promise<Howl> {
+    // Return cached sound if available
+    if (this.cache.has(key)) {
+      return this.cache.get(key)!;
+    }
+    
+    // Return loading promise if already loading
+    if (this.loadingPromises.has(key)) {
+      return this.loadingPromises.get(key)!;
+    }
+    
+    // Create new loading promise
+    const loadingPromise = new Promise<Howl>((resolve, reject) => {
+      const howl = new Howl({
+        src: [config.path],
+        volume: config.volume,
+        loop: config.loop || false,
+        preload: true,
+        onload: () => {
+          console.log(`[SoundEffectsCache] Loaded: ${key}`);
+          this.cache.set(key, howl);
+          this.loadingPromises.delete(key);
+          resolve(howl);
+        },
+        onloaderror: (id, error) => {
+          console.error(`[SoundEffectsCache] Failed to load ${key}:`, error);
+          this.loadingPromises.delete(key);
+          reject(error);
+        }
+      });
+    });
+    
+    this.loadingPromises.set(key, loadingPromise);
+    return loadingPromise;
+  }
+  
+  getCached(key: string): Howl | undefined {
+    return this.cache.get(key);
+  }
+  
+  clear() {
+    this.cache.forEach((howl) => {
+      howl.unload();
+    });
+    this.cache.clear();
+    this.loadingPromises.clear();
+  }
+}
+
 interface AudioState {
+  // Sound effects cache
+  soundEffectsCache: SoundEffectsCache;
+  
+  // Legacy HTMLAudioElement support for background/ambient music
   backgroundMusic: HTMLAudioElement | null;
   ambientMusic: HTMLAudioElement | null;
-  hitSound: HTMLAudioElement | null;
-  successSound: HTMLAudioElement | null;
-  laserSound: HTMLAudioElement | null;
-  thrusterSound: HTMLAudioElement | null;
+  
+  // Active Howl instances for continuous sounds
+  activeThrusterSound: number | null; // Howl sound ID
+  
+  // Last play times for throttling
+  lastPlayTimes: Map<string, number>;
   
   // Mute controls
   isMuted: boolean; // Legacy support
@@ -17,7 +78,7 @@ interface AudioState {
   musicMute: boolean; // Controls only music
   sfxMute: boolean; // Controls only sound effects
 
-  // Setter functions
+  // Setter functions (legacy support)
   setBackgroundMusic: (music: HTMLAudioElement) => void;
   setAmbientMusic: (music: HTMLAudioElement) => void;
   setHitSound: (sound: HTMLAudioElement) => void;
@@ -41,15 +102,24 @@ interface AudioState {
   stopAmbientMusic: () => void;
   playThruster: (fuelLevel: number) => void;
   stopThruster: () => void;
+  
+  // Preload frequently used sounds
+  preloadSounds: () => Promise<void>;
 }
 
 export const useAudio = create<AudioState>((set, get) => ({
+  // Sound effects cache
+  soundEffectsCache: new SoundEffectsCache(),
+  
+  // Legacy HTMLAudioElement support
   backgroundMusic: null,
   ambientMusic: null,
-  hitSound: null,
-  successSound: null,
-  laserSound: null,
-  thrusterSound: null,
+  
+  // Active Howl instances
+  activeThrusterSound: null,
+  
+  // Last play times for throttling
+  lastPlayTimes: new Map(),
   
   // Mute controls
   isMuted: false, // Legacy support - mirrors masterMute
@@ -73,29 +143,28 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
   setHitSound: (sound) => {
-    set({ hitSound: sound });
-    // Store reference for mining effects system to use
+    // Legacy support - just store reference for compatibility
     if (typeof window !== 'undefined') {
       (window as any).audioStore = (window as any).audioStore || {};
       (window as any).audioStore.hitSound = sound;
     }
   },
   setSuccessSound: (sound) => {
-    set({ successSound: sound });
+    // Legacy support - just store reference for compatibility
     if (typeof window !== 'undefined') {
       (window as any).audioStore = (window as any).audioStore || {};
       (window as any).audioStore.successSound = sound;
     }
   },
   setLaserSound: (sound) => {
-    set({ laserSound: sound });
+    // Legacy support - just store reference for compatibility
     if (typeof window !== 'undefined') {
       (window as any).audioStore = (window as any).audioStore || {};
       (window as any).audioStore.laserSound = sound;
     }
   },
   setThrusterSound: (sound) => {
-    set({ thrusterSound: sound });
+    // Legacy support - just store reference for compatibility
     if (typeof window !== 'undefined') {
       (window as any).audioStore = (window as any).audioStore || {};
       (window as any).audioStore.thrusterSound = sound;
@@ -250,66 +319,66 @@ export const useAudio = create<AudioState>((set, get) => ({
     console.log("All audio stopped");
   },
 
-  playHit: () => {
-    const { hitSound, masterMute, sfxMute } = get();
-    if (hitSound) {
-      // Check both master and sfx mute
-      if (masterMute || sfxMute) {
-        console.log("Hit sound skipped (muted)");
+  playHit: async () => {
+    const { masterMute, sfxMute, soundEffectsCache, lastPlayTimes } = get();
+    
+    // Check both master and sfx mute
+    if (masterMute || sfxMute) {
+      console.log("Hit sound skipped (muted)");
+      return;
+    }
+
+    // Check throttling
+    const throttleMs = AUDIO_CONFIG.soundEffects.hit.throttleMs ?? 0;
+    if (throttleMs > 0) {
+      const now = Date.now();
+      const lastHitTime = lastPlayTimes.get('hit') || 0;
+      if (now - lastHitTime < throttleMs) {
+        console.log("Hit sound throttled (preventing spam)");
         return;
       }
+      lastPlayTimes.set('hit', now);
+    }
 
-      const throttleMs = AUDIO_CONFIG.soundEffects.hit.throttleMs ?? 0;
-      if (throttleMs > 0) {
-        const now = Date.now();
-        const lastHitTime = (hitSound as any).lastPlayTime || 0;
-        if (now - lastHitTime < throttleMs) {
-          console.log("Hit sound throttled (preventing spam)");
-          return;
-        }
-        (hitSound as any).lastPlayTime = now;
-      }
-
-      // Clone the sound to allow overlapping playback
-      const soundClone = hitSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = AUDIO_CONFIG.soundEffects.hit.volume;
-      soundClone.play().catch((error) => {
-        console.log("Hit sound play prevented:", error);
-      });
+    try {
+      const hitSound = await soundEffectsCache.getSound('hit', AUDIO_CONFIG.soundEffects.hit);
+      hitSound.play();
+    } catch (error) {
+      console.error("Failed to play hit sound:", error);
     }
   },
 
-  playSuccess: () => {
-    const { successSound, masterMute, sfxMute } = get();
-    if (successSound) {
-      // Check both master and sfx mute
-      if (masterMute || sfxMute) {
-        console.log("Success sound skipped (muted)");
-        return;
-      }
+  playSuccess: async () => {
+    const { masterMute, sfxMute, soundEffectsCache } = get();
+    
+    // Check both master and sfx mute
+    if (masterMute || sfxMute) {
+      console.log("Success sound skipped (muted)");
+      return;
+    }
 
-      successSound.currentTime = 0;
-      successSound.play().catch((error) => {
-        console.log("Success sound play prevented:", error);
-      });
+    try {
+      const successSound = await soundEffectsCache.getSound('success', AUDIO_CONFIG.soundEffects.success);
+      successSound.play();
+    } catch (error) {
+      console.error("Failed to play success sound:", error);
     }
   },
 
-  playLaser: () => {
-    const { laserSound, masterMute, sfxMute } = get();
-    if (laserSound) {
-      // Check both master and sfx mute
-      if (masterMute || sfxMute) {
-        console.log("Laser sound skipped (muted)");
-        return;
-      }
+  playLaser: async () => {
+    const { masterMute, sfxMute, soundEffectsCache } = get();
+    
+    // Check both master and sfx mute
+    if (masterMute || sfxMute) {
+      console.log("Laser sound skipped (muted)");
+      return;
+    }
 
-      // Clone the sound to allow rapid fire
-      const soundClone = laserSound.cloneNode() as HTMLAudioElement;
-      soundClone.volume = 0.6; // Increased volume for zap sound
-      soundClone.play().catch((error) => {
-        console.log("Laser sound play prevented:", error);
-      });
+    try {
+      const laserSound = await soundEffectsCache.getSound('laser', AUDIO_CONFIG.soundEffects.laser);
+      laserSound.play();
+    } catch (error) {
+      console.error("Failed to play laser sound:", error);
     }
   },
 
@@ -332,30 +401,68 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
 
-  playThruster: (fuelLevel) => {
-    const { thrusterSound, masterMute, sfxMute } = get();
-    if (thrusterSound && !masterMute && !sfxMute) {
-      // Calculate volume based on fuel level (0-1)
-      const baseVolume = 0.15; // Low ambient volume
-      const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100)); // Normalize fuel to 0-1
+  playThruster: async (fuelLevel) => {
+    const { masterMute, sfxMute, soundEffectsCache, activeThrusterSound } = get();
+    
+    if (masterMute || sfxMute) {
+      get().stopThruster();
+      return;
+    }
+
+    try {
+      const thrusterSound = await soundEffectsCache.getSound('thruster', AUDIO_CONFIG.soundEffects.thruster);
+      
+      // Stop any existing thruster sound
+      if (activeThrusterSound !== null) {
+        thrusterSound.stop(activeThrusterSound);
+      }
+      
+      // Calculate volume based on fuel level
+      const baseVolume = 0.15;
+      const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100));
       const volume = baseVolume * fuelRatio;
       
-      thrusterSound.volume = volume;
-      thrusterSound.loop = true;
-      thrusterSound.play().catch((error) => {
-        console.log("Thruster sound play prevented:", error);
-      });
+      thrusterSound.volume(volume);
+      const soundId = thrusterSound.play();
+      set({ activeThrusterSound: soundId });
       
       console.log(`Thruster sound started - Volume: ${volume.toFixed(2)} (Fuel: ${fuelLevel}%)`);
+    } catch (error) {
+      console.error("Failed to play thruster sound:", error);
     }
   },
 
   stopThruster: () => {
-    const { thrusterSound } = get();
-    if (thrusterSound) {
-      thrusterSound.pause();
-      thrusterSound.currentTime = 0;
+    const { soundEffectsCache, activeThrusterSound } = get();
+    
+    if (activeThrusterSound !== null) {
+      soundEffectsCache.getCached('thruster')?.stop(activeThrusterSound);
+      set({ activeThrusterSound: null });
       console.log("Thruster sound stopped");
     }
+  },
+  
+  preloadSounds: async () => {
+    const { soundEffectsCache } = get();
+    console.log("[AudioStore] Preloading frequently used sounds...");
+    
+    // Preload frequently used sounds
+    const soundsToPreload = [
+      { key: 'laser', config: AUDIO_CONFIG.soundEffects.laser },
+      { key: 'hit', config: AUDIO_CONFIG.soundEffects.hit },
+      { key: 'thruster', config: AUDIO_CONFIG.soundEffects.thruster },
+      { key: 'wind', config: AUDIO_CONFIG.soundEffects.wind },
+      { key: 'rain', config: AUDIO_CONFIG.soundEffects.rain },
+    ];
+    
+    await Promise.all(
+      soundsToPreload.map(({ key, config }) =>
+        soundEffectsCache.getSound(key, config).catch((err) => {
+          console.error(`Failed to preload ${key}:`, err);
+        })
+      )
+    );
+    
+    console.log("[AudioStore] Sound preloading complete");
   },
 }));

@@ -183,10 +183,10 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
     if (isLoaded || isLoading) return;
     
     set({ isLoading: true });
-    console.log("[EnhancedMusicPlayer] Initializing music system...");
+    console.log("[EnhancedMusicPlayer] Initializing music system (lazy loading enabled)...");
     
     try {
-      // Load all music tracks from config
+      // Initialize tracks without loading audio - will load on-demand
       const loadedTracks: MusicTrack[] = [];
       const eventTracksMap = new Map<MusicEventType, MusicTrack[]>();
       const ambientTracksMap = new Map<EnvironmentType, MusicTrack[]>();
@@ -197,7 +197,7 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
           id: `track-${configTrack.filename}`,
           name: configTrack.name,
           filename: configTrack.filename,
-          audio: null,
+          audio: null, // Will be loaded on-demand
           categories: configTrack.categories,
           priority: (configTrack as any).priority || MusicPriority.AMBIENT,
           eventType: (configTrack as any).eventType,
@@ -205,24 +205,6 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
           duration: (configTrack as any).duration,
           isJingle: (configTrack as any).isJingle || false,
         };
-        
-        // Load audio
-        const audio = new Audio(`/sounds/music/${track.filename}`);
-        await new Promise<void>((resolve, reject) => {
-          audio.addEventListener("canplaythrough", () => {
-            audio.volume = 0;
-            audio.loop = !track.isJingle;
-            track.audio = audio;
-            resolve();
-          });
-          
-          audio.addEventListener("error", (e) => {
-            console.error(`[EnhancedMusicPlayer] Failed to load ${track.filename}:`, e);
-            reject(e);
-          });
-          
-          audio.load();
-        });
         
         loadedTracks.push(track);
         
@@ -266,9 +248,7 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
         isLoading: false,
       });
       
-      console.log(`[EnhancedMusicPlayer] Loaded ${loadedTracks.length} tracks`);
-      console.log(`[EnhancedMusicPlayer] Event tracks: ${eventTracksMap.size} categories`);
-      console.log(`[EnhancedMusicPlayer] Ambient tracks: ${ambientTracksMap.size} environments`);
+      console.log(`[EnhancedMusicPlayer] Initialized ${loadedTracks.length} tracks (lazy loading)`);
       
       // Start ambient timer
       get().startAmbientTimer();
@@ -279,8 +259,41 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
     }
   },
   
+  // Helper function to load a track audio on-demand
+  loadTrackAudio: async (track: MusicTrack): Promise<boolean> => {
+    if (track.audio) return true; // Already loaded
+    
+    console.log(`[EnhancedMusicPlayer] Loading track on-demand: ${track.name}`);
+    
+    try {
+      const audio = new Audio(`${AUDIO_CONFIG.musicBasePath}${track.filename}`);
+      
+      return new Promise((resolve) => {
+        audio.addEventListener("canplaythrough", () => {
+          audio.volume = 0;
+          audio.loop = !track.isJingle;
+          track.audio = audio;
+          
+          console.log(`[EnhancedMusicPlayer] Track loaded: ${track.name}`);
+          resolve(true);
+        });
+        
+        audio.addEventListener("error", (e) => {
+          console.error(`[EnhancedMusicPlayer] Failed to load ${track.filename}:`, e);
+          track.audio = null;
+          resolve(false);
+        });
+        
+        audio.load();
+      });
+    } catch (error) {
+      console.error(`[EnhancedMusicPlayer] Error loading track ${track.name}:`, error);
+      return false;
+    }
+  },
+  
   // Play music with priority
-  playWithPriority: (track: MusicTrack, priority: MusicPriority, returnAfter = false) => {
+  playWithPriority: async (track: MusicTrack, priority: MusicPriority, returnAfter = false) => {
     const { layers, activeLayer, fadeDurations, masterVolume } = get();
     const { masterMute, musicMute } = useAudio.getState();
     
@@ -292,7 +305,16 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
     
     // Find the layer for this priority
     const layer = layers.find(l => l.priority === priority);
-    if (!layer || !track.audio) return;
+    if (!layer) return;
+    
+    // Load track on-demand if not already loaded
+    if (!track.audio) {
+      const loaded = await (get() as any).loadTrackAudio(track);
+      if (!loaded) {
+        console.error(`[EnhancedMusicPlayer] Failed to load track: ${track.name}`);
+        return;
+      }
+    }
     
     // Stop any lower priority music
     for (const l of layers) {

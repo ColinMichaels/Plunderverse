@@ -110,62 +110,72 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     if (get().isLoaded || get().isLoading) return;
 
     set({ isLoading: true });
-    console.log("Loading music tracks...");
+    console.log("Initializing music tracks (lazy loading enabled)...");
 
     try {
-      const loadedTracks: Track[] = await Promise.all(
-        AUDIO_CONFIG.musicTracks.map(async (file, index) => {
-          const audio = new Audio(`/sounds/music/${file.filename}`);
-
-          return new Promise<Track>((resolve, reject) => {
-            const track: Track = {
-              id: `track-${index}`,
-              name: file.name,
-              filename: file.filename,
-              audio: null,
-              categories: [...file.categories],
-            };
-
-            audio.addEventListener("canplaythrough", () => {
-              audio.volume = 0;
-              audio.loop = false;
-              track.audio = audio;
-              resolve(track);
-            });
-
-            audio.addEventListener("error", (e) => {
-              console.error(`Failed to load ${file.filename}:`, e);
-              track.audio = null;
-              resolve(track); // Still resolve to not block other tracks
-            });
-
-            audio.addEventListener("ended", () => {
-              console.log(`Track "${track.name}" ended naturally`);
-              get().scheduleNextTrack();
-            });
-
-            audio.load();
-          });
-        }),
-      );
-
-      const validTracks = loadedTracks.filter((track) => track.audio !== null);
+      // Initialize tracks without loading audio - will load on-demand
+      const tracks: Track[] = AUDIO_CONFIG.musicTracks.map((file, index) => ({
+        id: `track-${index}`,
+        name: file.name,
+        filename: file.filename,
+        audio: null, // Will be loaded on-demand
+        categories: [...file.categories],
+        priority: (file as any).priority,
+      }));
 
       set({
-        tracks: validTracks,
+        tracks,
         isLoaded: true,
         isLoading: false,
         currentTrackIndex: 0,
       });
 
-      console.log(`Loaded ${validTracks.length} music tracks (use music player to start playback)`);
+      console.log(`Initialized ${tracks.length} music tracks (will load on-demand)`);
     } catch (error) {
-      console.error("Error loading music tracks:", error);
+      console.error("Error initializing music tracks:", error);
       set({ isLoading: false });
     }
   },
+  
+  // Helper function to load a track on-demand
+  loadTrackAudio: async (track: Track): Promise<boolean> => {
+    if (track.audio) return true; // Already loaded
+    
+    console.log(`[MusicPlayer] Loading track on-demand: ${track.name}`);
+    
+    try {
+      const audio = new Audio(`${AUDIO_CONFIG.musicBasePath}${track.filename}`);
+      
+      return new Promise((resolve) => {
+        audio.addEventListener("canplaythrough", () => {
+          audio.volume = 0;
+          audio.loop = false;
+          track.audio = audio;
+          
+          audio.addEventListener("ended", () => {
+            console.log(`Track "${track.name}" ended naturally`);
+            get().scheduleNextTrack();
+          });
+          
+          console.log(`[MusicPlayer] Track loaded: ${track.name}`);
+          resolve(true);
+        });
+        
+        audio.addEventListener("error", (e) => {
+          console.error(`[MusicPlayer] Failed to load ${track.filename}:`, e);
+          track.audio = null;
+          resolve(false);
+        });
+        
+        audio.load();
+      });
+    } catch (error) {
+      console.error(`[MusicPlayer] Error loading track ${track.name}:`, error);
+      return false;
+    }
+  },
 
-  play: () => {
+  play: async () => {
     const { tracks, currentTrackIndex, volume } = get();
     const { masterMute, musicMute } = useAudio.getState();
 
@@ -177,14 +187,25 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     if (tracks.length === 0) return;
 
     const currentTrack = tracks[currentTrackIndex];
-    if (currentTrack?.audio) {
-      currentTrack.audio.volume = volume;
-      currentTrack.audio.play().catch((error) => {
-        console.log("Music play prevented:", error);
-      });
+    if (currentTrack) {
+      // Load track on-demand if not already loaded
+      if (!currentTrack.audio) {
+        const loaded = await (get() as any).loadTrackAudio(currentTrack);
+        if (!loaded) {
+          console.error(`Failed to load track: ${currentTrack.name}`);
+          return;
+        }
+      }
+      
+      if (currentTrack.audio) {
+        currentTrack.audio.volume = volume;
+        currentTrack.audio.play().catch((error) => {
+          console.log("Music play prevented:", error);
+        });
 
-      set({ isPlaying: true });
-      console.log(`Playing: ${currentTrack.name}`);
+        set({ isPlaying: true });
+        console.log(`Playing: ${currentTrack.name}`);
+      }
     }
   },
 
@@ -365,7 +386,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       startNextTrack();
     }
 
-    function startNextTrack() {
+    async function startNextTrack() {
       // Switch to next track
       set({
         currentTrackIndex: trackIndex,
@@ -376,8 +397,19 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       // Update priority
       set({ currentPriority: newPriority });
       
+      // Load track on-demand if not already loaded
+      if (!nextTrack.audio) {
+        const loaded = await (get() as any).loadTrackAudio(nextTrack);
+        if (!loaded) {
+          console.error(`[MusicPlayer] Failed to load track: ${nextTrack.name}`);
+          // Try next track if this one fails
+          get().scheduleNextTrack();
+          return;
+        }
+      }
+      
       // Fade in next track
-      if (nextTrack?.audio && !masterMute && !musicMute) {
+      if (nextTrack.audio && !masterMute && !musicMute) {
         nextTrack.audio.volume = 0;
         nextTrack.audio.currentTime = 0;
 

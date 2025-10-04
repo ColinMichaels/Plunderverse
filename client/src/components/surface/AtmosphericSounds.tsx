@@ -3,6 +3,7 @@ import { Howl } from "howler";
 import { useWind } from "../../lib/stores/surface/useWind";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { ResourceManager } from "../../lib/utils/ResourceManager";
+import { AUDIO_CONFIG } from "../../lib/audioConfig";
 
 interface AtmosphericSoundsProps {
   planetName: string;
@@ -86,7 +87,7 @@ export function AtmosphericSounds({
         : 0.5;
 
       windSoundRef.current = new Howl({
-        src: ["/sounds/space-ambience.mp3"],
+        src: [AUDIO_CONFIG.soundEffects.ambient.path],
         loop: true,
         volume: Math.max(0, Math.min(1, safeVolume)),
         rate: Math.max(0.1, Math.min(4, safeRate)), // Vary pitch with intensity
@@ -130,7 +131,7 @@ export function AtmosphericSounds({
     if (stormActive && !stormSoundRef.current) {
       const stormVolume = isFinite(0.6 * soundVolume) ? 0.6 * soundVolume : 0.3;
       stormSoundRef.current = new Howl({
-        src: ["/sounds/wind.mp3"],
+        src: [AUDIO_CONFIG.soundEffects.wind.path],
         loop: true,
         volume: Math.max(0, Math.min(1, stormVolume)),
         rate: 1.0, // Slow it down for rumbling effect
@@ -201,10 +202,10 @@ export function AtmosphericSounds({
       timeOfDay < 18;
 
     if (isRaining && !rainSoundRef.current) {
-      // Use hit sound in loop as rain
+      // Use rain sound config
       const rainVolume = isFinite(0.2 * soundVolume) ? 0.2 * soundVolume : 0.1;
       rainSoundRef.current = new Howl({
-        src: ["/sounds/rain.mp3"],
+        src: [AUDIO_CONFIG.soundEffects.rain.path],
         loop: true,
         volume: Math.max(0, Math.min(1, rainVolume)),
         rate: 1.0, // Speed up for rain patter
