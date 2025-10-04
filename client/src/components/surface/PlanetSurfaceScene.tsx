@@ -959,12 +959,10 @@ function ResourceNodes({ planetName }: { planetName: string }) {
   } = useMining();
   const { playHit } = useAudio();
 
-  // Use persistent store for destroyed nodes - subscribe to the actual state
-  // to ensure re-renders when nodes are destroyed
-  const destroyedNodes = useDestroyedNodes((state) => state.getDestroyedNodes(planetName));
-  const isNodeDestroyed = (planetName: string, nodeId: string) => {
-    return destroyedNodes.has(nodeId);
-  };
+  // Use persistent store for destroyed nodes - properly subscribe to avoid infinite re-renders
+  // We need to check the nodes directly from the store to avoid creating new Sets
+  const isNodeDestroyed = useDestroyedNodes((state) => state.isNodeDestroyed);
+  const destroyNode = useDestroyedNodes((state) => state.destroyNode);
 
   // Calculate current mining progress (0 to 1)
   const miningProgress =
