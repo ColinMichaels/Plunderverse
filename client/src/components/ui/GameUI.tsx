@@ -24,6 +24,7 @@ import { EconomicFeedback } from "../economy/EconomicFeedback";
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
 import { AutoSaveIndicator } from "./AutoSaveIndicator";
+import { HintModal } from "../screens/HintModal";
 // Store Hooks
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
@@ -203,6 +204,9 @@ export function GameUI() {
       
       {/* Crew Bonus Display - Shows active crew bonuses */}
       <CrewBonusDisplay />
+      
+      {/* Hint Modal - Shows tutorial hints */}
+      <HintModal />
 
     </>
   );

@@ -8,6 +8,17 @@ interface HintContent {
 }
 
 const HINT_CONTENTS: Record<string, HintContent> = {
+  "combat-tutorial": {
+    title: "Combat System Ready!",
+    description: "You're safe for the first 30 seconds. Use this time to prepare:",
+    tips: [
+      "🎯 Click to Shoot - Left-click anywhere in space to fire lasers",
+      "💥 Destroy Asteroids - Shoot asteroids to clear your path",
+      "⚠️ Enemies Incoming - After 30 seconds, hostile ships will begin appearing",
+      "❤️ Monitor Health - Keep an eye on your hull integrity and shields",
+      "🔊 Audio Cues - Listen for hit sounds and explosion effects",
+    ],
+  },
   "first-landing": {
     title: "Welcome to Your First Landing!",
     description: "You've successfully landed on a planet! Here's what you can do:",

@@ -7,11 +7,13 @@ import { testTerrainGeneration } from "./testTerrainGeneration";
 import { testSurfaceScatter } from "./testSurfaceScatter";
 import { testAtmosphericEffects } from "./testAtmosphericEffects";
 import { runAllImprovementTests } from "./testAllImprovements";
+import { testCombatSystem } from "./testCombatSystem";
 
 // Test functions are now available through window.tests and through backward-compatible function names
 (window as any).testTerrainGeneration = testTerrainGeneration;
 (window as any).testSurfaceScatter = testSurfaceScatter;
 (window as any).testAtmosphericEffects = testAtmosphericEffects;
+(window as any).testCombatSystem = testCombatSystem;
 
 // Run test after 3 seconds to let the game initialize
 if (import.meta.env.DEV) {

@@ -6,6 +6,7 @@ import { useShooting } from "../../lib/stores/combat/useShooting";
 import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useHints } from "../../lib/stores/ui/useHints";
 import { Enemy } from "./Enemy";
 import { ExplosionEffect } from "./ExplosionEffect";
 import * as THREE from "three";
@@ -23,19 +24,30 @@ export function EnemyField() {
   const { takeDamage } = useShipStatus();
   const { isActive: isAutopilotActive } = useAutopilot();
   const { playHit } = useAudio();
+  const { showHint, hasSeenHint } = useHints();
   
   const lastSpawnCheck = useRef(0);
   const previousAutopilotState = useRef(false);
   const explosions = useRef<Array<{ id: string, position: THREE.Vector3, time: number }>>([]);
+  const combatTutorialShown = useRef(false);
   
   useEffect(() => {
+    // Show combat tutorial on first load
+    if (!combatTutorialShown.current && !hasSeenHint('combat-tutorial')) {
+      setTimeout(() => {
+        showHint('combat-tutorial');
+        console.log("[EnemyField] Showing combat tutorial - 30 second grace period active");
+      }, 1000); // Show after 1 second to ensure game is loaded
+      combatTutorialShown.current = true;
+    }
+    
     // Clear enemies when autopilot activates
     if (isAutopilotActive && !previousAutopilotState.current) {
       clearEnemies();
       console.log("[EnemyField] Autopilot activated - clearing enemies");
     }
     previousAutopilotState.current = isAutopilotActive;
-  }, [isAutopilotActive, clearEnemies]);
+  }, [isAutopilotActive, clearEnemies, showHint, hasSeenHint]);
   
   useFrame((state, delta) => {
     // Update enemy AI

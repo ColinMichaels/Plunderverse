@@ -67,6 +67,8 @@ interface EnemiesState {
   spawnCooldown: number;
   lastSpawnTime: number;
   totalEnemiesDestroyed: number;
+  gameStartTime: number;
+  gracePeriodDuration: number; // 30 seconds grace period
   
   // Enemy management
   spawnEnemy: (position: THREE.Vector3, faction?: FactionType, shipType?: Enemy['shipType']) => void;
@@ -88,9 +90,11 @@ interface EnemiesState {
 export const useEnemies = create<EnemiesState>((set, get) => ({
   enemies: [],
   maxEnemies: 8,
-  spawnCooldown: 10000, // 10 seconds base cooldown
+  spawnCooldown: 5000, // 5 seconds base cooldown between spawns
   lastSpawnTime: 0,
   totalEnemiesDestroyed: 0,
+  gameStartTime: Date.now(),
+  gracePeriodDuration: 30000, // 30 seconds grace period
   
   spawnEnemy: (position, faction = 'outlaws', shipType = 'fighter') => {
     const state = get();
@@ -567,8 +571,16 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     const heatSystem = useHeatSystem.getState();
     const player = usePlayer.getState();
     
-    // Check spawn cooldown
     const now = Date.now();
+    const timeSinceStart = now - state.gameStartTime;
+    
+    // Enforce grace period - no enemies for first 30 seconds
+    if (timeSinceStart < state.gracePeriodDuration) {
+      console.log(`[Enemies] Grace period active: ${Math.ceil((state.gracePeriodDuration - timeSinceStart) / 1000)}s remaining`);
+      return false;
+    }
+    
+    // Check spawn cooldown
     if (now - state.lastSpawnTime < state.spawnCooldown) return false;
     
     // Check max enemies
