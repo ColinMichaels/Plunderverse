@@ -247,7 +247,7 @@ export const StoryProgressionPanel: React.FC<StoryProgressionPanelProps> = ({ cl
       
       <CardContent className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 bg-gray-800">
+          <TabsList className="grid w-full grid-cols-4 bg-gray-800 text-white/60">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="progress">Progress</TabsTrigger>
             <TabsTrigger value="milestones">Milestones</TabsTrigger>

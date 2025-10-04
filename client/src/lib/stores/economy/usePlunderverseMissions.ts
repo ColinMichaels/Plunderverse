@@ -11,6 +11,7 @@ import {
   ObjectiveTriggerData
 } from '../../plunderverse/types';
 import { useObjectiveTriggers } from './useObjectiveTriggers';
+import { usePlayer } from '../player/usePlayer';
 
 interface PlunderverseMissionsState {
   // Mission state
@@ -72,7 +73,6 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     console.log(`[Missions] Seed test values: ${testValues.map(v => v.toFixed(4)).join(', ')}`);
     
     // Get player reputation for faction-based mission generation
-    const { usePlayer } = require('../player/usePlayer');
     const player = usePlayer.getState();
     const corpRep = player.reputation.corporations || 0;
     const indRep = player.reputation.independents || 0;

@@ -7,6 +7,7 @@ import {
   findProfitableRoutes,
   TradeRoute
 } from './planetEconomies';
+import { usePlayer } from '../player/usePlayer';
 
 // Use the expanded market items
 export const MARKET_ITEMS = EXPANDED_MARKET_ITEMS;
@@ -44,7 +45,6 @@ export const calculateFinalPrice = (
   price *= heatModifier;
   
   // Apply aggressive reputation-based price scaling
-  const { usePlayer } = require('../../stores/player/usePlayer');
   const player = usePlayer.getState();
   const factionRep = player.reputation[faction as keyof typeof player.reputation] || 0;
   

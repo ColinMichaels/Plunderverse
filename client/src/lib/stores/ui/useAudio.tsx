@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { AUDIO_CONFIG } from "../../audioConfig";
+import { useMusicPlayer } from "./useMusicPlayer";
+import { useEnhancedMusicPlayer } from "./useEnhancedMusicPlayer";
 
 interface AudioState {
   backgroundMusic: HTMLAudioElement | null;
@@ -140,7 +142,6 @@ export const useAudio = create<AudioState>((set, get) => ({
       
       // Also stop music player
       try {
-        const { useMusicPlayer } = require("./useMusicPlayer");
         const musicPlayer = useMusicPlayer.getState();
         if (musicPlayer.isPlaying) {
           musicPlayer.pause();
@@ -230,7 +231,6 @@ export const useAudio = create<AudioState>((set, get) => ({
     
     // Stop music player
     try {
-      const { useMusicPlayer } = require("./useMusicPlayer");
       const musicPlayer = useMusicPlayer.getState();
       if (musicPlayer.isPlaying) {
         musicPlayer.pause();
@@ -241,7 +241,6 @@ export const useAudio = create<AudioState>((set, get) => ({
     
     // Stop enhanced music player
     try {
-      const { useEnhancedMusicPlayer } = require("./useEnhancedMusicPlayer");
       const enhancedPlayer = useEnhancedMusicPlayer.getState();
       enhancedPlayer.cleanup();
     } catch (e) {

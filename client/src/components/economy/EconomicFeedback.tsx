@@ -5,6 +5,7 @@ import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
 import { usePlunderverseEconomy } from '../../lib/stores/economy/usePlunderverseEconomy';
 import { GameFacade } from '../../lib/plunderverse/gameFacade';
 import { usePlayer } from '../../lib/stores/player/usePlayer';
+import { calculateFinalPrice } from '../../lib/stores/economy/enhancedMarketData';
 
 interface DailyCostBreakdown {
   crew: number;
@@ -224,8 +225,6 @@ export const TradeProfitIndicator: React.FC<{
   currentPlanet: string;
   targetPlanet?: string;
 }> = ({ itemId, buyPrice, currentPlanet, targetPlanet }) => {
-  const { calculateFinalPrice } = require('../../lib/stores/economy/enhancedMarketData');
-  
   const profitInfo = useMemo(() => {
     if (!targetPlanet) return null;
     
