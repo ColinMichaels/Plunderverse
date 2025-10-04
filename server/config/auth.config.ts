@@ -34,8 +34,21 @@ function generateDefaultSecret(name: string): string {
 
 // Load and validate configuration from environment variables
 function loadAuthConfig(): AuthConfig {
+  // In production, use SESSION_SECRET as fallback for JWT_SECRET if not provided
+  // This prevents deployment failures when JWT_SECRET is not configured
+  let jwtSecret = process.env.JWT_SECRET;
+  
+  if (!jwtSecret) {
+    if (process.env.NODE_ENV === 'production' && process.env.SESSION_SECRET) {
+      console.log('[Auth Config] JWT_SECRET not set, using SESSION_SECRET as fallback for JWT operations');
+      jwtSecret = process.env.SESSION_SECRET;
+    } else {
+      jwtSecret = generateDefaultSecret('JWT_SECRET');
+    }
+  }
+  
   const config = {
-    jwtSecret: process.env.JWT_SECRET || generateDefaultSecret('JWT_SECRET'),
+    jwtSecret,
     jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
     refreshTokenExpiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN || '30d',
     sessionSecret: process.env.SESSION_SECRET || generateDefaultSecret('SESSION_SECRET'),
