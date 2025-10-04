@@ -68,7 +68,7 @@ import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useCreditsStore } from "../../domain/economy/credits.store";
 import { gameFacade } from "../../lib/plunderverse/gameFacade";
 import { useObjectiveTriggers } from "../../lib/stores/economy/useObjectiveTriggers";
-import { testObjectiveTriggers } from "../../lib/tests/objectiveTriggerTest";
+import { testObjectiveTriggers } from "../../__tests__/integration/missions/objectiveTriggerTest";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets } from "../../lib/planetData";
@@ -84,8 +84,8 @@ import { MemoryProfiler } from "../../lib/utils/MemoryProfiler";
 import { ResourceManager } from "../../lib/utils/ResourceManager";
 
 // Test imports
-import { testMissionSystem } from "../../testMissionSystem";
-import { PanelTestSuite } from "../../lib/tests/panel-tests/testPanelFunctionality";
+import { testMissionSystem } from "../../__tests__/integration/missions/testMissionSystem";
+import { PanelTestSuite } from "../../__tests__/unit/components/testPanelFunctionality";
 
 interface TestResult {
   name: string;

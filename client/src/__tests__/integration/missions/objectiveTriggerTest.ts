@@ -115,7 +115,7 @@ export class ObjectiveTriggerTest {
       id: missionId,
       title: title || `TEST: ${triggerType} Trigger Mission`,
       description: `Testing ${triggerType} trigger auto-completion`,
-      type: 'investigation',
+      type: 'exploration',
       difficulty: 'easy',
       minRank: 1,
       rewards: {
@@ -529,7 +529,6 @@ export class ObjectiveTriggerTest {
     console.log('\n⚙️ Testing CUSTOM Trigger...');
 
     const mission = this.createTestMission('custom', {
-      condition: 'reputation_threshold',
       customField: 'outlaws',
       targetValue: 50,
       currentValue: 0
@@ -557,7 +556,7 @@ export class ObjectiveTriggerTest {
         name: 'Custom Trigger - Partial',
         status: 'passed',
         message: 'Custom trigger partial progress tracked',
-        details: { condition: 'reputation_threshold', value: 25, progress: progress }
+        details: { value: 25, progress: progress }
       });
     } else {
       this.results.push({
@@ -580,7 +579,6 @@ export class ObjectiveTriggerTest {
         status: 'passed',
         message: 'Custom trigger auto-completed',
         details: { 
-          condition: 'reputation_threshold',
           value: 50,
           progress: progress
         }
@@ -596,7 +594,6 @@ export class ObjectiveTriggerTest {
 
     // Test rank-based custom trigger
     const rankMission = this.createTestMission('custom', {
-      condition: 'player_rank',
       targetValue: 3,
       currentValue: player.rank
     }, 'Reach Rank 3');
@@ -610,7 +607,7 @@ export class ObjectiveTriggerTest {
 
     const rankProgress = missions.currentObjectiveProgress.get(rankMission.id)?.get(rankMission.objectives[0].id);
 
-    if (rankProgress >= 100) {
+    if (rankProgress && rankProgress >= 100) {
       this.results.push({
         name: 'Custom Trigger - Rank',
         status: 'passed',
@@ -642,7 +639,7 @@ export class ObjectiveTriggerTest {
       id: `test_multi_${Date.now()}`,
       title: 'TEST: Multi-Objective Mission',
       description: 'Complete all objectives to finish',
-      type: 'story',
+      type: 'exploration',
       difficulty: 'medium',
       minRank: 1,
       rewards: {
@@ -678,7 +675,7 @@ export class ObjectiveTriggerTest {
         },
         {
           id: 'obj_collect',
-          type: 'collection',
+          type: 'investigation',
           description: 'Collect 5 items',
           triggerType: 'collection',
           triggerData: {

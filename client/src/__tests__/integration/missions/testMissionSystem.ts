@@ -31,6 +31,7 @@ export async function testMissionSystem() {
       type: 'delivery' as const,
       difficulty: 'easy' as const,
       rank: 1,
+      minRank: 1,
       faction: 'corporations' as const,
       rewards: {
         base: {
