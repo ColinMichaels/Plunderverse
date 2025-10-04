@@ -23,6 +23,16 @@ import { testEconomyBalance } from './integration/systems/testEconomyBalance';
 // Unit Tests - Components
 import { PanelTestSuite } from './unit/components/testPanelFunctionality';
 
+// Unit Tests - Game/3D Graphics
+import { SpaceSceneTestSuite } from './unit/game/testSpaceScene';
+import { PlanetSurfaceTestSuite } from './unit/game/testPlanetSurface';
+import { ShipModelsTestSuite } from './unit/game/testShipModels';
+import { EffectsTestSuite } from './unit/game/testEffects';
+import { MiningVisualsTestSuite } from './unit/game/testMiningVisuals';
+import { PostProcessingTestSuite } from './unit/game/testPostProcessing';
+import { LightingTestSuite } from './unit/game/testLighting';
+import { PerformanceTestSuite } from './unit/game/testPerformance';
+
 // Unit Tests - Stores (import the index to register all store tests)
 import './unit/stores';
 
@@ -70,6 +80,104 @@ export const tests = {
       panels: () => {
         const suite = new PanelTestSuite();
         return suite.runAllTests();
+      }
+    },
+    game: {
+      spaceScene: () => {
+        const suite = new SpaceSceneTestSuite();
+        return suite.runAllTests();
+      },
+      planetSurface: () => {
+        const suite = new PlanetSurfaceTestSuite();
+        return suite.runAllTests();
+      },
+      shipModels: () => {
+        const suite = new ShipModelsTestSuite();
+        return suite.runAllTests();
+      },
+      effects: () => {
+        const suite = new EffectsTestSuite();
+        return suite.runAllTests();
+      },
+      miningVisuals: () => {
+        const suite = new MiningVisualsTestSuite();
+        return suite.runAllTests();
+      },
+      postProcessing: () => {
+        const suite = new PostProcessingTestSuite();
+        return suite.runAllTests();
+      },
+      lighting: () => {
+        const suite = new LightingTestSuite();
+        return suite.runAllTests();
+      },
+      performance: () => {
+        const suite = new PerformanceTestSuite();
+        return suite.runAllTests();
+      },
+      // Run all 3D/graphics tests
+      all: async function() {
+        console.log('🎮 Running All 3D/Graphics Tests...');
+        const results = { passed: 0, failed: 0, total: 8 };
+        
+        try {
+          await tests.unit.game.spaceScene();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.planetSurface();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.shipModels();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.effects();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.miningVisuals();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.postProcessing();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.lighting();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        try {
+          await tests.unit.game.performance();
+          results.passed++;
+        } catch (e) {
+          results.failed++;
+        }
+        
+        console.log(`\n🎮 3D/Graphics Test Results: ${results.passed}/${results.total} passed`);
+        return results;
       }
     },
     stores: {
@@ -304,6 +412,49 @@ if (typeof window !== 'undefined') {
   
   (window as any).testAllMobile = tests.mobile.all;
   
+  // Register 3D/graphics test commands
+  (window as any).testSpaceScene = () => {
+    const suite = new SpaceSceneTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testPlanetSurface = () => {
+    const suite = new PlanetSurfaceTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testShipModels = () => {
+    const suite = new ShipModelsTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testEffects = () => {
+    const suite = new EffectsTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testMiningVisuals = () => {
+    const suite = new MiningVisualsTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testPostProcessing = () => {
+    const suite = new PostProcessingTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testLighting = () => {
+    const suite = new LightingTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testPerformance = () => {
+    const suite = new PerformanceTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testAll3D = tests.unit.game.all;
+  
   console.log('🧪 Test Suite Loaded!');
   console.log('Available test commands:');
   console.log('\n📋 Integration Tests:');
@@ -313,6 +464,16 @@ if (typeof window !== 'undefined') {
   console.log('  tests.integration.systems.economy() - Test economy balance');
   console.log('\n🔧 Unit Tests - Components:');
   console.log('  tests.unit.components.panels() - Test panel functionality');
+  console.log('\n🎮 Unit Tests - 3D/Graphics:');
+  console.log('  tests.unit.game.all() - Run ALL 3D/graphics tests');
+  console.log('  tests.unit.game.spaceScene() - Test space scene rendering');
+  console.log('  tests.unit.game.planetSurface() - Test planet surface scenes');
+  console.log('  tests.unit.game.shipModels() - Test ship models & damage');
+  console.log('  tests.unit.game.effects() - Test visual effects');
+  console.log('  tests.unit.game.miningVisuals() - Test mining graphics');
+  console.log('  tests.unit.game.postProcessing() - Test post-processing');
+  console.log('  tests.unit.game.lighting() - Test lighting systems');
+  console.log('  tests.unit.game.performance() - Test 3D performance');
   console.log('\n💾 Unit Tests - Stores:');
   console.log('  tests.unit.stores.all() - Run ALL store tests');
   console.log('  tests.unit.stores.player() - Test player state');
@@ -349,6 +510,12 @@ if (typeof window !== 'undefined') {
   console.log('  testTouchControls(), testMobileNavigation()');
   console.log('  testMobileUI(), testHapticFeedback()');
   console.log('  testMobilePanels(), testGyroscope()');
+  console.log('\n🎮 Quick 3D/Graphics Test Commands:');
+  console.log('  testAll3D() - Run all 3D/graphics tests');
+  console.log('  testSpaceScene(), testPlanetSurface()');
+  console.log('  testShipModels(), testEffects()');
+  console.log('  testMiningVisuals(), testPostProcessing()');
+  console.log('  testLighting(), testPerformance()');
 }
 
 export default tests;
