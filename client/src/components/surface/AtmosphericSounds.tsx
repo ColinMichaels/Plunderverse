@@ -82,7 +82,6 @@ export function AtmosphericSounds({ planetName, stormActive = false }: Atmospher
       // Register with ResourceManager
       resourceManager.registerAudio(windSoundIdRef.current, windSoundRef.current, 
         ['atmospheric-sounds', `planet-${planetName}-sounds`, 'wind']);
-      console.log(`[AtmosphericSounds] Registered wind sound: ${windSoundIdRef.current}`);
       
       windSoundRef.current.play();
     }
