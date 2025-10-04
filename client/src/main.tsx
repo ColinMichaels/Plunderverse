@@ -9,6 +9,7 @@ import { testAtmosphericEffects } from "./testAtmosphericEffects";
 import { runAllImprovementTests } from "./testAllImprovements";
 import "./testCombatSystem"; // Import combat system test
 import "./testEconomyBalance"; // Import economy balance test
+import "./testFullGameplayLoop"; // Import full gameplay loop test suite
 
 // Make test available in console for debugging
 (window as any).testMissionSystem = testMissionSystem;
