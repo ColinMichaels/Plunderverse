@@ -68,7 +68,10 @@ export function EnemyField() {
           if (enemy.isDying) return;
           
           const distance = projectile.position.distanceTo(enemy.position);
-          if (distance < enemy.scale + 0.5) {
+          // Increase hit radius for better collision detection
+          const hitRadius = enemy.scale * 1.5 + 1.0; // More generous hit box
+          
+          if (distance < hitRadius) {
             // Hit enemy
             damageEnemy(enemy.id, projectile.damage);
             removeProjectile(projectile.id);
@@ -83,7 +86,7 @@ export function EnemyField() {
               });
             }
             
-            console.log(`[EnemyField] Player hit enemy for ${projectile.damage} damage`);
+            console.log(`[EnemyField] Player hit enemy ${enemy.id} for ${projectile.damage} damage (distance: ${distance.toFixed(2)}, hitRadius: ${hitRadius.toFixed(2)}, enemy hull: ${enemy.hull}/${enemy.maxHull})`);
           }
         });
       }

@@ -60,16 +60,16 @@ export function AsteroidField() {
       asteroids.forEach(asteroid => {
         const distance = projectile.position.distanceTo(asteroid.position);
         const visualSize = asteroid.size * 0.15; // Match the visual scale from Asteroid.tsx
-        if (distance < visualSize + 0.5) { // Hit detection with smaller radius
+        const hitRadius = visualSize + 1.5; // Increase hit detection radius for better gameplay
+        
+        if (distance < hitRadius) {
           // Damage asteroid
           const destroyed = damageAsteroid(asteroid.id, 1);
           
           // Remove projectile
           removeProjectile(projectile.id);
           
-          if (destroyed) {
-            console.log("Asteroid destroyed by laser!");
-          }
+          console.log(`[AsteroidField] Projectile hit asteroid ${asteroid.id} (distance: ${distance.toFixed(2)}, hitRadius: ${hitRadius.toFixed(2)}, destroyed: ${destroyed})`);
         }
       });
     });
