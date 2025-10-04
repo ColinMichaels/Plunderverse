@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import { useHeatSystem } from '../player/useHeatSystem';
 import { usePlayer } from '../player/usePlayer';
 import { useShooting } from './useShooting';
+import { useLandedState } from '../surface/useLandedState';
+import { useSolarSystem } from '../space/useSolarSystem';
 
 export type FactionType = 'corporations' | 'outlaws' | 'military' | 'bountyHunter';
 export type AIBehavior = 'patrol' | 'aggressive' | 'defensive' | 'fleeing' | 'orbiting' | 'pursuing';
@@ -570,6 +572,8 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     const state = get();
     const heatSystem = useHeatSystem.getState();
     const player = usePlayer.getState();
+    const solarSystem = useSolarSystem.getState();
+    const landedState = useLandedState.getState();
     
     const now = Date.now();
     const timeSinceStart = now - state.gameStartTime;
@@ -589,8 +593,9 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     // Base spawn chance on heat level
     const spawnChance = heatSystem.wantedLevelInfo.encounterChance;
     
-    // Also consider location danger level
-    const locationDanger = player?.location?.includes('Asteroid') ? 0.2 : 0.1;
+    // Also consider location danger level - check if near asteroids or on a dangerous planet
+    const currentLocation = landedState.isLanded ? landedState.landedPlanet : solarSystem.selectedPlanet;
+    const locationDanger = currentLocation?.toLowerCase().includes('asteroid') ? 0.2 : 0.1;
     
     return Math.random() < (spawnChance + locationDanger);
   },
@@ -703,19 +708,22 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     
     // Update reputation with notifications
     Object.entries(enemy.reputationReward).forEach(([faction, amount]) => {
-      player.updateReputation(faction, amount);
-      
-      // Show reputation change notifications
-      if (Math.abs(amount) >= 5) {
-        const factionDisplayName = faction.charAt(0).toUpperCase() + faction.slice(1);
-        if (amount > 0) {
-          toast.info(`📈 ${factionDisplayName} reputation +${amount}`, {
-            duration: 2500
-          });
-        } else {
-          toast.warning(`📉 ${factionDisplayName} reputation ${amount}`, {
-            duration: 2500
-          });
+      // Type-cast faction to match PlayerState's updateReputation expected type
+      if (faction === 'corporations' || faction === 'independents' || faction === 'outlaws') {
+        player.updateReputation(faction as 'corporations' | 'independents' | 'outlaws', amount);
+        
+        // Show reputation change notifications
+        if (Math.abs(amount) >= 5) {
+          const factionDisplayName = faction.charAt(0).toUpperCase() + faction.slice(1);
+          if (amount > 0) {
+            toast.info(`📈 ${factionDisplayName} reputation +${amount}`, {
+              duration: 2500
+            });
+          } else {
+            toast.warning(`📉 ${factionDisplayName} reputation ${amount}`, {
+              duration: 2500
+            });
+          }
         }
       }
     });

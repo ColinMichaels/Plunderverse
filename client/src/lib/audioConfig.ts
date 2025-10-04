@@ -74,6 +74,8 @@ export interface AudioConfig {
     spaceVacuumDoor: SoundEffectConfig;
     wind: SoundEffectConfig;
     rain: SoundEffectConfig;
+    explosion: SoundEffectConfig;
+    takeoff: SoundEffectConfig;
   };
   musicTracks: MusicTrackConfig[];
   musicBasePath: string;
@@ -97,6 +99,14 @@ export const AUDIO_CONFIG: AudioConfig = {
       path: "/sounds/space-ambience.mp3",
       volume: 0.4,
       loop: true,
+    },
+    explosion: {
+      path: "/sounds/explosion.mp3",
+      volume: 1.0,
+    },
+    takeoff: {
+      path: "/sounds/takeoff.mp3",
+      volume: 0.7,
     },
     hit: {
       path: "/sounds/hit.mp3",
