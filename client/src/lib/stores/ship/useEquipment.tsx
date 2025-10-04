@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import { ResourceData } from "../../planetData";
 
 export interface EquipmentItem {
@@ -181,10 +182,25 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
       
       console.log(`${item.name} wear applied: -${totalWear.toFixed(1)} durability (${newDurability.toFixed(1)}/${item.maxDurability})`);
       
+      // Show equipment damage notifications
       if (newDurability <= 0) {
         console.warn(`${item.name} has broken down and needs repair!`);
+        toast.error(`💥 ${item.name} has broken down!`, {
+          description: 'Equipment needs immediate repair',
+          duration: 4000
+        });
       } else if (newDurability <= item.maxDurability * 0.2) {
         console.warn(`${item.name} is in critical condition and needs maintenance!`);
+        toast.warning(`⚠️ Equipment damaged: ${item.name} at ${Math.round(conditionRatio * 100)}%`, {
+          description: 'Critical condition - needs maintenance',
+          duration: 3500
+        });
+      } else if (newDurability <= item.maxDurability * 0.5 && item.currentDurability > item.maxDurability * 0.5) {
+        // Just crossed 50% threshold
+        toast.info(`🔧 ${item.name} at ${Math.round(conditionRatio * 100)}% condition`, {
+          description: 'Consider repairs soon',
+          duration: 3000
+        });
       }
       
       return { equipment };
@@ -338,6 +354,29 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
       const updatedEquipment = state.equipment.map(eq => {
         if (eq.id === 'fuel-tank') {
           const newFuel = Math.max(0, eq.currentDurability - actualConsumption);
+          const fuelPercentage = (newFuel / eq.maxDurability) * 100;
+          
+          // Show fuel level warnings
+          if (fuelPercentage <= 10 && fuel.currentDurability > eq.maxDurability * 0.1) {
+            // Just hit critical fuel
+            toast.error(`⛽ Fuel critical! ${Math.round(fuelPercentage)}% remaining`, {
+              description: 'Find fuel immediately!',
+              duration: 4000
+            });
+          } else if (fuelPercentage <= 20 && fuel.currentDurability > eq.maxDurability * 0.2) {
+            // Just hit low fuel
+            toast.warning(`⛽ Fuel low - ${Math.round(newFuel)} units remaining`, {
+              description: `Approximately ${Math.floor(newFuel / 5)} jumps possible`,
+              duration: 3500
+            });
+          } else if (fuelPercentage <= 30 && fuel.currentDurability > eq.maxDurability * 0.3) {
+            // Just hit 30% threshold
+            toast.info(`⛽ Fuel at ${Math.round(fuelPercentage)}%`, {
+              description: 'Consider refueling soon',
+              duration: 3000
+            });
+          }
+          
           return {
             ...eq,
             currentDurability: newFuel,

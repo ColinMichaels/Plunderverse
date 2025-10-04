@@ -1,3 +1,4 @@
+import { toast } from 'sonner';
 import { useCreditsStore } from './credits.store';
 import { useInventoryStore } from './inventory.store';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
@@ -538,6 +539,11 @@ class EconomyService {
     // Check storage capacity
     const storageUsed = inventory.getStorageUsed();
     if (storageUsed + quantity > inventory.storageCapacity) {
+      // Show cargo full notification
+      toast.error('📦 Cargo full!', {
+        description: `Need ${quantity} space, only ${inventory.storageCapacity - storageUsed} available`,
+        duration: 3500
+      });
       return {
         success: false,
         message: `Inventory full! Need ${quantity} space, have ${inventory.storageCapacity - storageUsed} available`
@@ -588,6 +594,15 @@ class EconomyService {
         type: 'credits_earned',
         payload: { amount: creditReward },
         timestamp: Date.now()
+      });
+      
+      // Show mining success notification
+      const rarityEmoji = resource.rarity === 'legendary' ? '💎' : 
+                          resource.rarity === 'rare' ? '💰' : 
+                          resource.rarity === 'uncommon' ? '✨' : '⛏️';
+      toast.success(`${rarityEmoji} Resource collected: +${quantity} ${resource.type}`, {
+        description: `+${creditReward} credits earned`,
+        duration: 3000
       });
       
       console.log(`[ECONOMY-SERVICE] Mining yield: ${quantity} ${resource.type} + ${creditReward} credits`);

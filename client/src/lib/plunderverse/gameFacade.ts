@@ -703,13 +703,43 @@ export class GameFacade {
     await this.ensureInitialized();
 
     const missionsStore = usePlunderverseMissions.getState();
+    const mission = missionsStore.getMissionById(missionId);
+    const objective = mission?.objectives.find(o => o.id === objectiveId);
+    
+    const previousProgress = missionsStore.currentObjectiveProgress
+      .get(missionId)
+      ?.get(objectiveId) || 0;
+    
     missionsStore.updateObjectiveProgress(missionId, objectiveId, progress);
 
+    // Show objective progress notifications
+    if (objective && progress > previousProgress) {
+      if (progress >= 100 && previousProgress < 100) {
+        // Objective completed
+        toast.success(`✅ Objective complete: ${objective.description}`, {
+          description: mission ? `Mission: ${mission.title}` : undefined,
+          duration: 3500
+        });
+      } else if (progress > previousProgress) {
+        // Partial progress
+        const progressIncrease = progress - previousProgress;
+        if (progressIncrease >= 20) {
+          toast.info(`📋 Progress: ${objective.description} (${Math.round(progress)}%)`, {
+            duration: 2500
+          });
+        }
+      }
+    }
+
     // Check for automatic mission completion
-    const mission = missionsStore.getMissionById(missionId);
     if (mission && mission.active) {
       const allComplete = mission.objectives.every((o) => o.completed);
       if (allComplete && mission.choices.length === 0) {
+        // Show mission completion preview
+        toast.success(`🎯 Mission ready for completion: ${mission.title}`, {
+          description: 'All objectives complete!',
+          duration: 3000
+        });
         // Auto-complete if no choices needed
         await this.resolveMission(missionId);
       }
@@ -855,18 +885,45 @@ export class GameFacade {
     let message = `Daily costs of ${costs.total} credits deducted.`;
     let bankruptcyWarning = false;
 
+    // Show daily costs notification
+    const costBreakdown = costs.docking > 0 
+      ? `Crew: ${costs.crew}c, Docking: ${costs.docking}c, Supplies: ${costs.supplies}c` 
+      : `Crew: ${costs.crew}c, Life Support: ${costs.lifeSupport}c, Supplies: ${costs.supplies}c`;
+    
+    toast.info(`💵 Daily costs paid: -${costs.total} credits`, {
+      description: costBreakdown,
+      duration: 3000
+    });
+
     if (remainingCredits < bankruptcyThreshold) {
       message = `BANKRUPTCY! Your ship will be repossessed. Credits: ${remainingCredits}`;
       bankruptcyWarning = true;
       // Trigger bankruptcy consequences
       this.handleBankruptcy();
+      // Show critical bankruptcy notification
+      toast.error(`💀 BANKRUPTCY! Ship will be repossessed!`, {
+        description: `Credits: ${remainingCredits}. Game Over.`,
+        duration: 0 // Persistent notification
+      });
     } else if (remainingCredits < 0) {
       message = `IN DEBT! Daily costs deducted. Credits: ${remainingCredits}. Find work immediately!`;
       bankruptcyWarning = true;
+      toast.error(`🔴 IN DEBT! Credits: ${remainingCredits}`, {
+        description: 'Find work immediately or face bankruptcy!',
+        duration: 5000
+      });
     } else if (remainingCredits < criticalThreshold) {
       message = `CRITICAL: Only ${remainingCredits} credits remaining after daily costs!`;
+      toast.warning(`⚠️ Credits critical: ${remainingCredits}c remaining`, {
+        description: 'Accept any mission immediately!',
+        duration: 4000
+      });
     } else if (remainingCredits < warningThreshold) {
       message = `Warning: Low on credits (${remainingCredits} remaining)`;
+      toast.warning(`💸 Low credits: ${remainingCredits}c remaining`, {
+        description: 'Consider taking on missions soon',
+        duration: 3500
+      });
     }
 
     console.log(`[GameFacade] ${message} Location: ${this.currentLocation}`);
@@ -1257,12 +1314,58 @@ export class GameFacade {
       `[GameFacade] ${faction}: ${oldRep} → ${newRep} (${oldLevel} → ${newLevel})`,
     );
 
+    // Show reputation change notifications
+    const factionDisplayName = faction.charAt(0).toUpperCase() + faction.slice(1);
+    
+    // Show notification for any significant reputation change
+    if (Math.abs(change) >= 5) {
+      const factionColor = faction === 'corporations' ? '🏢' : 
+                          faction === 'outlaws' ? '🏴‍☠️' : 
+                          faction === 'independents' ? '🛸' : '👥';
+      
+      if (change > 0) {
+        toast.info(`${factionColor} ${factionDisplayName} reputation +${change}`, {
+          description: reason,
+          duration: 3000
+        });
+      } else {
+        toast.warning(`${factionColor} ${factionDisplayName} reputation ${change}`, {
+          description: reason,
+          duration: 3000
+        });
+      }
+    }
+    
     // Alert on major threshold crossings
     if (oldLevel !== newLevel) {
       console.log(
         `[GameFacade] ⚡ ${faction} reputation level changed: ${oldLevel} → ${newLevel}`,
       );
-      // Could trigger UI notification here
+      
+      // Show major reputation level change notification
+      const levelEmoji = newLevel === 'allied' ? '🤝' :
+                        newLevel === 'friendly' ? '😊' :
+                        newLevel === 'neutral' ? '😐' :
+                        newLevel === 'hostile' ? '😠' :
+                        newLevel === 'hated' ? '💀' : '❓';
+      
+      const levelChangeType = ['allied', 'friendly'].includes(newLevel) ? 'success' :
+                              newLevel === 'neutral' ? 'info' :
+                              ['hostile', 'hated'].includes(newLevel) ? 'error' : 'info';
+      
+      toast[levelChangeType as 'success' | 'info' | 'error'](`${levelEmoji} ${factionDisplayName} standing: ${newLevel.toUpperCase()}`, {
+        description: `Reputation level changed from ${oldLevel} to ${newLevel}`,
+        duration: 4000
+      });
+      
+      // Special warning for hostile territory
+      if (newLevel === 'hostile' || newLevel === 'hated') {
+        setTimeout(() => {
+          toast.error(`⚠️ Hostile territory - ${factionDisplayName} forces will attack on sight!`, {
+            duration: 5000
+          });
+        }, 500);
+      }
     }
   }
 

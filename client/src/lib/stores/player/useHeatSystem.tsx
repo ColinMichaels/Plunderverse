@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { usePlayer } from './usePlayer';
 import { useCreditsStore } from '../../../domain/economy/credits.store';
 import { usePlunderverseMissions } from '../economy/usePlunderverseMissions';
@@ -241,6 +242,40 @@ export const useHeatSystem = create<HeatSystemState>((set, get) => ({
       const newHeat = Math.max(0, Math.min(100, state.currentHeat + amount));
       const newWantedLevel = state.calculateWantedLevel(newHeat);
       const newWantedInfo = state.getWantedLevelInfo(newWantedLevel);
+      
+      // Show heat level notifications
+      if (amount > 0 && newHeat > state.currentHeat) {
+        // Heat increased
+        if (newHeat >= 70 && state.currentHeat < 70) {
+          toast.error(`🔥 Heat critical! Level ${newWantedLevel}`, {
+            description: `${newWantedInfo.name} - ${newWantedInfo.description}`,
+            duration: 4000
+          });
+        } else if (newHeat >= 50 && state.currentHeat < 50) {
+          toast.warning(`⚠️ Heat level rising! Level ${newWantedLevel}`, {
+            description: `${newWantedInfo.name} - Increased patrol activity`,
+            duration: 3500
+          });
+        } else if (newHeat >= 30 && state.currentHeat < 30) {
+          toast.info(`👁️ Heat level: ${newWantedLevel}`, {
+            description: 'Patrols may become suspicious',
+            duration: 3000
+          });
+        }
+      } else if (amount < 0 && newHeat < state.currentHeat) {
+        // Heat decreased
+        if (newWantedLevel < state.wantedLevel) {
+          toast.success(`✅ Wanted level decreased to ${newWantedLevel}`, {
+            description: `${newWantedInfo.name}`,
+            duration: 3000
+          });
+        } else if (state.currentHeat >= 50 && newHeat < 50) {
+          toast.info(`📉 Heat cooling down`, {
+            description: 'Patrol activity decreasing',
+            duration: 2500
+          });
+        }
+      }
       
       // Log level changes
       if (newWantedLevel !== state.wantedLevel) {

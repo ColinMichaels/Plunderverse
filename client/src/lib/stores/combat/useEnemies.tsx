@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import * as THREE from 'three';
+import { toast } from 'sonner';
 import { useHeatSystem } from '../player/useHeatSystem';
 import { usePlayer } from '../player/usePlayer';
 import { useShooting } from './useShooting';
@@ -666,14 +667,59 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     // Grant credits
     player.addCredits(enemy.creditReward);
     
-    // Update reputation
+    // Show combat victory notification
+    let message = `⚔️ Enemy destroyed! +${enemy.creditReward} credits`;
+    
+    // Special notifications for bounty hunters or elite enemies
+    if (enemy.faction === 'bountyHunter') {
+      message = `💰 Bounty collected: ${enemy.creditReward} credits!`;
+      toast.success(message, { 
+        description: 'Elite bounty hunter eliminated',
+        duration: 4000
+      });
+    } else if (enemy.shipType === 'elite') {
+      message = `🎯 Elite target destroyed! +${enemy.creditReward} credits`;
+      toast.success(message, { duration: 4000 });
+    } else {
+      // Standard enemy destroyed notification
+      const factionName = enemy.faction.charAt(0).toUpperCase() + enemy.faction.slice(1);
+      toast.success(message, { 
+        description: `${factionName} ${enemy.shipType} eliminated`,
+        duration: 3000
+      });
+    }
+    
+    // Update reputation with notifications
     Object.entries(enemy.reputationReward).forEach(([faction, amount]) => {
       player.updateReputation(faction, amount);
+      
+      // Show reputation change notifications
+      if (Math.abs(amount) >= 5) {
+        const factionDisplayName = faction.charAt(0).toUpperCase() + faction.slice(1);
+        if (amount > 0) {
+          toast.info(`📈 ${factionDisplayName} reputation +${amount}`, {
+            duration: 2500
+          });
+        } else {
+          toast.warning(`📉 ${factionDisplayName} reputation ${amount}`, {
+            duration: 2500
+          });
+        }
+      }
     });
     
-    // Update heat if it was law enforcement
+    // Update heat if it was law enforcement with warning
     if (enemy.faction === 'corporations' || enemy.faction === 'military') {
       heatSystem.applyHeat('assault', 1.5);
+      
+      // Show heat warning for attacking law enforcement
+      const newWantedLevel = heatSystem.wantedLevel;
+      if (newWantedLevel > 0) {
+        toast.warning(`🚨 Heat level rising! (Level ${newWantedLevel})`, {
+          description: 'Attacking law enforcement has consequences',
+          duration: 4000
+        });
+      }
     }
     
     // TODO: Drop loot items when inventory system is ready

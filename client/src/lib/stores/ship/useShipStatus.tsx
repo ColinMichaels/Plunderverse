@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { toast } from "sonner";
 import { useCredits } from "../economy/useCredits";
 import { useEquipment } from "./useEquipment";
 
@@ -103,6 +104,41 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       
       const isDestroyed = newHull <= 0;
       const isCritical = newShield < 20 || newHull < 20;
+      
+      // Show damage notifications
+      if (amount > 30) {
+        // Critical hit notification
+        toast.error(`💥 Critical hit! -${Math.round(amount)} damage`, {
+          description: `From ${source}`,
+          duration: 3000
+        });
+      } else if (hullDamageAmount > 0) {
+        // Hull damage notification (more serious)
+        toast.warning(`🛡️ Shield breached! Hull -${Math.round(hullDamageAmount)}`, {
+          description: `Hull integrity: ${Math.round(newHull)}%`,
+          duration: 3000
+        });
+      } else if (amount > 0) {
+        // Shield damage notification
+        toast.info(`⚡ Shield hit! -${Math.round(amount)} shield`, {
+          description: `Shield: ${Math.round(newShield)}%`,
+          duration: 2500
+        });
+      }
+      
+      // Critical status warnings
+      if (isDestroyed) {
+        toast.error(`💀 Ship destroyed!`, {
+          description: 'Your ship has been critically damaged',
+          duration: 5000
+        });
+      } else if (isCritical && !state.isCritical) {
+        // Just became critical
+        toast.error(`🚨 Hull critical! Seek repairs immediately!`, {
+          description: `Hull: ${Math.round(newHull)}%, Shield: ${Math.round(newShield)}%`,
+          duration: 4000
+        });
+      }
       
       console.log(`Ship took ${amount} damage from ${source}! Hull: ${newHull}, Shield: ${newShield}`);
       

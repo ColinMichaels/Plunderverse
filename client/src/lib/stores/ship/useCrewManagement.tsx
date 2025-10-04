@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast } from 'sonner';
 import { useCreditsStore } from '../../../domain/economy/credits.store';
 import { usePlayer } from '../player/usePlayer';
 
@@ -280,8 +281,39 @@ export const useCrewManagement = create<CrewManagementState>()(
         set(state => ({
           activeCrew: state.activeCrew.map(crew => {
             if (crew.id === crewId) {
+              const oldLoyalty = crew.currentLoyalty;
               const newLoyalty = Math.max(0, Math.min(100, crew.currentLoyalty + change));
               console.log(`[CrewManagement] ${crew.name} loyalty: ${crew.currentLoyalty} → ${newLoyalty} (${reason})`);
+              
+              // Show crew loyalty notification
+              if (change !== 0 && Math.abs(change) >= 5) {
+                const emoji = change > 0 ? '💚' : '💔';
+                
+                if (change > 0) {
+                  toast.success(`${emoji} Crew loyalty increased: ${crew.name} +${change}`, {
+                    description: reason,
+                    duration: 3000
+                  });
+                } else {
+                  toast.warning(`${emoji} Crew loyalty decreased: ${crew.name} ${change}`, {
+                    description: reason,
+                    duration: 3000
+                  });
+                }
+              }
+              
+              // Check for loyalty milestones
+              if (oldLoyalty < 90 && newLoyalty >= 90) {
+                toast.success(`🌟 ${crew.name} is now devoted to your cause!`, {
+                  description: 'Maximum crew bonuses unlocked',
+                  duration: 4000
+                });
+              } else if (oldLoyalty >= 20 && newLoyalty < 20) {
+                toast.error(`⚠️ ${crew.name} is considering desertion!`, {
+                  description: 'Improve conditions or risk losing this crew member',
+                  duration: 4000
+                });
+              }
               
               // Check for quest activation
               if (crew.personalQuest && 

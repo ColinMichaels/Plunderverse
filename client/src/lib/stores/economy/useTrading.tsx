@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { toast } from 'sonner';
 
 // Good types with their categories
 export type GoodCategory = 'fuel' | 'food' | 'medicine' | 'electronics' | 'weapons' | 'rare';
@@ -112,6 +113,15 @@ export const useTrading = create<TradingState>()(
           totalPrice: totalCost
         };
         
+        // Show purchase notification
+        const good = get().getGoodById(goodId);
+        if (good) {
+          toast.info(`💰 Purchased ${quantity} ${good.name}`, {
+            description: `Paid ${totalCost} credits at ${station}`,
+            duration: 3000
+          });
+        }
+        
         set(state => ({
           tradeHistory: [...state.tradeHistory, trade],
           marketPrices: {
@@ -136,6 +146,50 @@ export const useTrading = create<TradingState>()(
           pricePerUnit: earnings / quantity,
           totalPrice: earnings
         };
+        
+        // Calculate profit/loss by checking purchase history
+        const good = get().getGoodById(goodId);
+        const recentBuy = get().tradeHistory
+          .filter(t => t.type === 'buy' && t.goodId === goodId)
+          .slice(-1)[0];
+        
+        if (good) {
+          const pricePerUnit = earnings / quantity;
+          let profitMessage = '';
+          let toastType: 'success' | 'warning' | 'info' = 'success';
+          
+          if (recentBuy) {
+            const profit = earnings - (recentBuy.pricePerUnit * quantity);
+            const margin = ((pricePerUnit - recentBuy.pricePerUnit) / recentBuy.pricePerUnit * 100).toFixed(0);
+            
+            if (profit > 0) {
+              profitMessage = `📈 Trade profit: +${Math.round(profit)} credits (${margin}% margin)`;
+              toastType = 'success';
+              toast[toastType](profitMessage, {
+                description: `Sold ${quantity} ${good.name} at ${station}`,
+                duration: 3500
+              });
+            } else if (profit < 0) {
+              profitMessage = `📉 Trade loss: ${Math.round(profit)} credits`;
+              toastType = 'warning';
+              toast[toastType](profitMessage, {
+                description: `Sold ${quantity} ${good.name} at ${station}`,
+                duration: 3500
+              });
+            } else {
+              toast.info(`💱 Sold ${quantity} ${good.name}`, {
+                description: `Earned ${earnings} credits at ${station}`,
+                duration: 3000
+              });
+            }
+          } else {
+            // No purchase history, just show sale info
+            toast.success(`💰 Sold ${quantity} ${good.name}`, {
+              description: `Earned ${earnings} credits at ${station}`,
+              duration: 3000
+            });
+          }
+        }
         
         set(state => ({
           tradeHistory: [...state.tradeHistory, trade],
