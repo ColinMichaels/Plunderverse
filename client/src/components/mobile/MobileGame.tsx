@@ -13,14 +13,9 @@ export const MobileGame: React.FC = () => {
   const { isLanded, landedPlanet } = useLandedState();
   const { viewport, orientation } = usePlatform();
 
-  // Log mobile platform initialization
+  // Mobile platform initialization
   useEffect(() => {
-    console.log('[MOBILE-GAME] Initialized mobile experience', {
-      viewport,
-      orientation,
-      isLanded,
-      landedPlanet
-    });
+    // Platform initialized
   }, []);
 
   // Mobile splash screen

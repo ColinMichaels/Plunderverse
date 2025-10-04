@@ -68,9 +68,6 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     const thrustVector = { x: 0, y: 0, z: speed };
     move(thrustVector);
     
-    // Debug logging
-    console.log('[MOBILE-THRUST] Y:', currentTouchRef.current.y, 'Speed:', speed.toFixed(3), 'Vector:', thrustVector);
-    
     thrustAnimationRef.current = requestAnimationFrame(updateThrust);
   }, [move, screenToThrustSpeed]);
   
@@ -98,7 +95,6 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
       const speed = screenToThrustSpeed(e.clientY);
       const thrustVector = { x: 0, y: 0, z: speed };
       move(thrustVector);
-      console.log('[MOBILE-TOUCH] Double tap thrust:', thrustVector);
       return;
     }
     
@@ -118,13 +114,11 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
         isThrusting.current = true;
         setDragging(true);
         
-        console.log('[MOBILE-TOUCH] Hold thrust activated');
         updateThrust();
       } else {
         // Large movement = look mode
         isDraggingLook.current = true;
         setDragging(true);
-        console.log('[MOBILE-TOUCH] Look mode activated');
       }
     }, 100);
   };
@@ -155,8 +149,6 @@ export function TouchPropulsionControls({ children }: TouchPropulsionControlsPro
     
     // Stop movement
     move({ x: 0, y: 0, z: 0 });
-    
-    console.log('[MOBILE-TOUCH] Touch ended');
   };
   
   // Cleanup on unmount

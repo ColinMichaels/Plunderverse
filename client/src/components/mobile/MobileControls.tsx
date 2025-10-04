@@ -60,11 +60,9 @@ export function MobileControls() {
       }
     };
 
-    console.log("Gyro listener added");
     window.addEventListener('deviceorientation', handleOrientation, true);
     
     return () => {
-      console.log("Gyro listener removed");
       window.removeEventListener('deviceorientation', handleOrientation, true);
     };
   }, [permissionGranted, isGyroEnabled]);
@@ -221,8 +219,20 @@ export function MobileControls() {
     setIsShooting(false);
   };
 
-  // Detect if we're on mobile
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  // Improved mobile detection using multiple methods
+  const isMobile = (() => {
+    // Check for touch capability
+    const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Check viewport width (typical mobile breakpoint)
+    const isSmallViewport = window.innerWidth <= 768;
+    
+    // Check user agent as fallback
+    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    
+    // Device is considered mobile if it has touch AND (small viewport OR mobile UA)
+    return hasTouch && (isSmallViewport || isMobileUA);
+  })();
 
   if (!isMobile) {
     return null; // Don't show mobile controls on desktop
