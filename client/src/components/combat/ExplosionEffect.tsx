@@ -12,55 +12,40 @@ interface ExplosionEffectProps {
 export function ExplosionEffect({ 
   position, 
   scale = 1, 
-  duration = 1,
-  color = "#ff8800" 
+  duration = 0.5,
+  color = "#ffff00" 
 }: ExplosionEffectProps) {
-  const groupRef = useRef<THREE.Group>(null);
   const sphereRef = useRef<THREE.Mesh>(null);
   const startTime = useRef(Date.now() / 1000);
   
   useFrame((state) => {
-    if (!groupRef.current) return;
+    if (!sphereRef.current) return;
     
     const elapsed = state.clock.elapsedTime - startTime.current;
     const progress = Math.min(elapsed / duration, 1);
     
-    // Update explosion sphere
-    if (sphereRef.current) {
-      const sphereScale = scale * (1 + progress * 3);
-      sphereRef.current.scale.setScalar(sphereScale);
-      
-      const material = sphereRef.current.material as THREE.MeshBasicMaterial;
-      material.opacity = Math.max(0, 0.8 * (1 - progress));
-    }
+    // Simple expanding sphere
+    const sphereScale = scale * (1 + progress * 2);
+    sphereRef.current.scale.setScalar(sphereScale);
+    
+    // Fade out
+    const material = sphereRef.current.material as THREE.MeshBasicMaterial;
+    material.opacity = Math.max(0, 1 - progress);
     
     // Remove after duration
     if (progress >= 1) {
-      groupRef.current.visible = false;
+      sphereRef.current.visible = false;
     }
   });
   
   return (
-    <group ref={groupRef} position={position}>
-      {/* Simple explosion sphere */}
-      <mesh ref={sphereRef}>
-        <sphereGeometry args={[1, 16, 16]} />
-        <meshBasicMaterial
-          color={color}
-          transparent
-          opacity={0.8}
-          side={THREE.DoubleSide}
-          blending={THREE.AdditiveBlending}
-        />
-      </mesh>
-      
-      {/* Flash light */}
-      <pointLight
+    <mesh ref={sphereRef} position={position}>
+      <sphereGeometry args={[1, 8, 8]} />
+      <meshBasicMaterial
         color={color}
-        intensity={5}
-        distance={10 * scale}
-        decay={2}
+        transparent
+        opacity={1}
       />
-    </group>
+    </mesh>
   );
 }

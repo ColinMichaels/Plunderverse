@@ -105,6 +105,32 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       const isDestroyed = newHull <= 0;
       const isCritical = newShield < 20 || newHull < 20;
       
+      // DEBUG: Log damage event
+      console.log(`[DEBUG-DAMAGE] Player took ${amount} damage from "${source}". Shield: ${newShield.toFixed(1)}, Hull: ${newHull.toFixed(1)}`);
+      
+      // Check for player death
+      if (isDestroyed) {
+        console.log(`[DEBUG-DEATH] PLAYER DIED! Hull reached 0. Triggering game over.`);
+        
+        // Trigger game over state
+        try {
+          // Import game store dynamically
+          import('../ui/useGame').then(({ useGame }) => {
+            const gameState = useGame.getState();
+            console.log(`[DEBUG-DEATH] Setting game state to GAME_OVER`);
+            gameState.setGameState('GAME_OVER');
+            
+            // Return to main menu after 3 seconds
+            setTimeout(() => {
+              console.log(`[DEBUG-DEATH] Returning to main menu...`);
+              gameState.setGameState('MENU');
+            }, 3000);
+          });
+        } catch (error) {
+          console.error(`[DEBUG-DEATH] Error triggering game over:`, error);
+        }
+      }
+      
       // Show damage notifications
       if (amount > 30) {
         // Critical hit notification

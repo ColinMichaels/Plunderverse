@@ -85,6 +85,15 @@ export const useShooting = create<ShootingState>((set, get) => ({
       set((state) => ({
         projectiles: [...state.projectiles, newProjectile],
       }));
+      
+      console.log(`[DEBUG-SHOT-FIRED]`, {
+        id: newProjectile.id,
+        owner: ownerType,
+        position: position.toArray(),
+        direction: direction.toArray(),
+        damage: newProjectile.damage,
+        speed: speed
+      });
     } catch (error) {
       console.error("Error in addProjectile:", error);
     }

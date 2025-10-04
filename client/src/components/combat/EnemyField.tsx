@@ -68,8 +68,13 @@ export function EnemyField() {
           if (enemy.isDying) return;
           
           const distance = projectile.position.distanceTo(enemy.position);
-          // Increase hit radius for better collision detection
-          const hitRadius = enemy.scale * 1.5 + 1.0; // More generous hit box
+          // Simple, large hit radius for easier detection
+          const hitRadius = 3.0; // Fixed large hit radius for simple box enemies
+          
+          // Only log near-hits or actual hits
+          if (distance < hitRadius * 2) {
+            console.log(`[DEBUG-COLLISION] Near hit! Projectile ${projectile.id} vs Enemy ${enemy.id}: distance=${distance.toFixed(2)}, hitRadius=${hitRadius}`);
+          }
           
           if (distance < hitRadius) {
             // Hit enemy
@@ -93,7 +98,14 @@ export function EnemyField() {
       // Enemy projectiles hitting player
       else if (projectile.ownerType === 'enemy') {
         const distanceToPlayer = projectile.position.distanceTo(cameraPosition);
-        if (distanceToPlayer < 1.5) {
+        const playerHitRadius = 2.0; // Larger hit radius for player
+        
+        // Only log near-hits or actual hits
+        if (distanceToPlayer < playerHitRadius * 2) {
+          console.log(`[DEBUG-COLLISION] Near hit! Enemy projectile ${projectile.id} vs Player: distance=${distanceToPlayer.toFixed(2)}, hitRadius=${playerHitRadius}`);
+        }
+        
+        if (distanceToPlayer < playerHitRadius) {
           // Hit player
           takeDamage(projectile.damage, `Enemy ${projectile.ownerId}`);
           removeProjectile(projectile.id);

@@ -91,8 +91,8 @@ interface EnemiesState {
 
 export const useEnemies = create<EnemiesState>((set, get) => ({
   enemies: [],
-  maxEnemies: 8,
-  spawnCooldown: 5000, // 5 seconds base cooldown between spawns
+  maxEnemies: 1, // LIMIT TO 1 ENEMY MAXIMUM
+  spawnCooldown: 20000, // 20 seconds cooldown between spawns
   lastSpawnTime: 0,
   totalEnemiesDestroyed: 0,
   gameStartTime: Date.now(),
@@ -198,7 +198,14 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
       lastSpawnTime: Date.now()
     }));
     
-    console.log(`[Enemies] Spawned ${shipType} ${faction} enemy at`, position);
+    console.log(`[DEBUG-ENEMY-SPAWN] Spawned ${shipType} ${faction} enemy:`, {
+      id: newEnemy.id,
+      position: position.toArray(),
+      hull: newEnemy.hull,
+      shield: newEnemy.shield,
+      weapon: newEnemy.weapon,
+      totalEnemies: state.enemies.length + 1
+    });
   },
   
   updateEnemies: (delta, playerPosition) => {
@@ -554,11 +561,18 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
         totalEnemiesDestroyed: state.totalEnemiesDestroyed + 1
       }));
       
-      console.log(`[Enemies] Enemy ${enemy.faction} ${enemy.shipType} destroyed!`);
+      console.log(`[DEBUG-ENEMY-DESPAWN] Enemy destroyed:`, {
+        id: enemy.id,
+        faction: enemy.faction,
+        shipType: enemy.shipType,
+        finalHull: enemy.hull,
+        totalDestroyed: state.totalEnemiesDestroyed + 1
+      });
     }
   },
   
   removeEnemy: (id) => {
+    console.log(`[DEBUG-ENEMY-DESPAWN] Removing enemy ${id} from game`);
     set(state => ({
       enemies: state.enemies.filter(e => e.id !== id)
     }));
