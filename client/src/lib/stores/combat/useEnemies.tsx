@@ -578,7 +578,7 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     const spawnChance = heatSystem.wantedLevelInfo.encounterChance;
     
     // Also consider location danger level
-    const locationDanger = player.location.includes('Asteroid') ? 0.2 : 0.1;
+    const locationDanger = player?.location?.includes('Asteroid') ? 0.2 : 0.1;
     
     return Math.random() < (spawnChance + locationDanger);
   },

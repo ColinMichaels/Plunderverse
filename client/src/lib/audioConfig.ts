@@ -1,11 +1,17 @@
-export type AudioCategory = "space" | "surface" | "atmospheric" | "combat" | "event" | "ambient";
+export type AudioCategory =
+  | "space"
+  | "surface"
+  | "atmospheric"
+  | "combat"
+  | "event"
+  | "ambient";
 
 // Music priority levels
 export enum MusicPriority {
-  AMBIENT = 0,      // User/Ambient Music (lowest)
-  THEME = 1,        // Location-based themes
-  GAME_EVENT = 2,   // Combat, transitions
-  CRITICAL = 3,     // Cutscenes, critical events (highest)
+  AMBIENT = 0, // User/Ambient Music (lowest)
+  THEME = 1, // Location-based themes
+  GAME_EVENT = 2, // Combat, transitions
+  CRITICAL = 3, // Cutscenes, critical events (highest)
 }
 
 // Event types for music triggers
@@ -123,6 +129,15 @@ export const AUDIO_CONFIG: AudioConfig = {
   },
   musicTracks: [
     {
+      filename: "PlunderverseTheme.mp3",
+      name: "Plunderverse Theme",
+      categories: ["space", "event"],
+      priority: MusicPriority.CRITICAL,
+      eventType: MusicEventType.VICTORY,
+      isJingle: true,
+      duration: 10,
+    },
+    {
       filename: "ES_Ame - Shinji Wakasa.mp3",
       name: "Ame by Shinji Wakasa",
       categories: ["surface", "atmospheric", "ambient"],
@@ -164,38 +179,6 @@ export const AUDIO_CONFIG: AudioConfig = {
       categories: ["space", "ambient"],
       priority: MusicPriority.AMBIENT,
       environment: EnvironmentType.SPACE,
-    },
-    {
-      filename: "Galactic Marauder's Anthem.mp3",
-      name: "Galactic Marauder's Anthem",
-      categories: ["space", "combat", "event"],
-      priority: MusicPriority.GAME_EVENT,
-      eventType: MusicEventType.COMBAT_START,
-      environment: EnvironmentType.SPACE,
-    },
-    {
-      filename: "Galactic Plunderers v2.mp3",
-      name: "Galactic Plunderers v2",
-      categories: ["space", "atmospheric", "event"],
-      priority: MusicPriority.THEME,
-      environment: EnvironmentType.STATION,
-    },
-    {
-      filename: "Galactic Plunderers.mp3",
-      name: "Galactic Plunderers",
-      categories: ["space", "atmospheric", "event"],
-      priority: MusicPriority.THEME,
-      eventType: MusicEventType.STATION_DOCKING,
-      environment: EnvironmentType.STATION,
-    },
-    {
-      filename: "PlunderverseTheme.mp3",
-      name: "Plunderverse Theme",
-      categories: ["space", "event"],
-      priority: MusicPriority.CRITICAL,
-      eventType: MusicEventType.VICTORY,
-      isJingle: true,
-      duration: 10,
     },
     {
       filename: "Plunderverse_Aura.mp3",
