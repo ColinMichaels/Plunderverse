@@ -35,39 +35,8 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
   pendingSpawns: [],
   
   addAsteroid: (position) => {
-    const MAX_ASTEROIDS = 15; // Limit to prevent memory issues
-    
-    const newAsteroid: Asteroid = {
-      id: Math.random().toString(36).substr(2, 9),
-      position: position.clone(),
-      velocity: new THREE.Vector3(
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10,
-        (Math.random() - 0.5) * 10
-      ),
-      rotation: new THREE.Vector3(
-        Math.random() * 0.02,
-        Math.random() * 0.02,
-        Math.random() * 0.02
-      ),
-      size: 1 + Math.random() * 2, // 1-3 units radius (smaller asteroids)
-      health: 3,
-      maxHealth: 3
-    };
-    
-    set(state => {
-      let updatedAsteroids = [...state.asteroids, newAsteroid];
-      
-      // If we exceed the limit, remove the oldest asteroids
-      if (updatedAsteroids.length > MAX_ASTEROIDS) {
-        updatedAsteroids = updatedAsteroids.slice(-MAX_ASTEROIDS);
-        console.log(`Asteroid limit reached, removing oldest`);
-      }
-      
-      return { asteroids: updatedAsteroids };
-    });
-    
-    console.log("Asteroid spawned!");
+    // ASTEROIDS DISABLED - Functionality removed from game
+    return;
   },
   
   updateAsteroids: (delta, playerPosition) => {
@@ -156,53 +125,13 @@ export const useAsteroids = create<AsteroidState>((set, get) => ({
   },
   
   spawnRandomAsteroid: (playerPosition, staggerDelay) => {
-    // Spawn asteroid at random position around player
-    const distance = 250 + Math.random() * 350; // 250-600 units away
-    const angle = Math.random() * Math.PI * 2;
-    const height = (Math.random() - 0.5) * 200; // Random height variation
-    
-    const spawnPosition = new THREE.Vector3(
-      playerPosition.x + Math.cos(angle) * distance,
-      playerPosition.y + height,
-      playerPosition.z + Math.sin(angle) * distance
-    );
-    
-    // If staggerDelay is provided, add to pending spawns instead of immediate spawn
-    if (staggerDelay !== undefined && staggerDelay > 0) {
-      set(state => ({
-        pendingSpawns: [...state.pendingSpawns, { position: spawnPosition, timeToSpawn: staggerDelay }]
-      }));
-      console.log(`Asteroid spawn queued with ${staggerDelay.toFixed(2)}s delay`);
-    } else {
-      // Immediate spawn
-      get().addAsteroid(spawnPosition);
-    }
+    // ASTEROIDS DISABLED - Functionality removed from game
+    return;
   },
   
   processPendingSpawns: (delta) => {
-    const state = get();
-    const readyToSpawn: THREE.Vector3[] = [];
-    const stillPending: Array<{ position: THREE.Vector3; timeToSpawn: number }> = [];
-    
-    // Process pending spawns
-    state.pendingSpawns.forEach(spawn => {
-      const newTime = spawn.timeToSpawn - delta;
-      if (newTime <= 0) {
-        readyToSpawn.push(spawn.position);
-      } else {
-        stillPending.push({ ...spawn, timeToSpawn: newTime });
-      }
-    });
-    
-    // Spawn ready asteroids
-    readyToSpawn.forEach(position => {
-      get().addAsteroid(position);
-    });
-    
-    // Update pending spawns
-    if (readyToSpawn.length > 0 || stillPending.length !== state.pendingSpawns.length) {
-      set({ pendingSpawns: stillPending });
-    }
+    // ASTEROIDS DISABLED - Functionality removed from game
+    return;
   },
   
   cleanup: () => {

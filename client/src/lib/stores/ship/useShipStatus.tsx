@@ -116,14 +116,13 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
         try {
           // Import game store dynamically
           import('../ui/useGame').then(({ useGame }) => {
-            const gameState = useGame.getState();
-            console.log(`[DEBUG-DEATH] Setting game state to GAME_OVER`);
-            gameState.setGameState('GAME_OVER');
+            console.log(`[DEBUG-DEATH] Setting game state to ended`);
+            useGame.getState().end();
             
-            // Return to main menu after 3 seconds
+            // Return to splash screen after 3 seconds
             setTimeout(() => {
-              console.log(`[DEBUG-DEATH] Returning to main menu...`);
-              gameState.setGameState('MENU');
+              console.log(`[DEBUG-DEATH] Returning to splash screen...`);
+              useGame.getState().showSplash();
             }, 3000);
           });
         } catch (error) {

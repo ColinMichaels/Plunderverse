@@ -6,7 +6,6 @@ import { Sun } from "./Sun";
 import { Planet } from "./Planet";
 import { Moon } from "./Moon";
 import { Starfield } from "./Starfield";
-import { AsteroidField } from "./AsteroidField";
 import { CameraController } from "../navigation/CameraController";
 import { ShootingSystem } from "../combat/ShootingSystem";
 import { EnemyField } from "../combat/EnemyField";
@@ -67,8 +66,6 @@ export function SolarSystem() {
         {/* Earth's Moon */}
         <Moon />
         
-        {/* Asteroid field */}
-        <AsteroidField />
         
         {/* Enemy ships */}
         <EnemyField />
