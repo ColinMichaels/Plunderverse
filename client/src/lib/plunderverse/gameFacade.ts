@@ -1971,6 +1971,15 @@ export class GameFacade {
 
     return factions[this.currentLocation] || "independents";
   }
+
+  canAccessBlackMarket(): boolean {
+    // Black market is accessible when player has high notoriety or is in outlaw territory
+    const player = usePlayer.getState();
+    const isOutlawTerritory = this.getCurrentFaction() === "outlaws";
+    const hasHighNotoriety = player.notoriety >= 50;
+    
+    return isOutlawTerritory || hasHighNotoriety;
+  }
 }
 
 // Export singleton instance
