@@ -55,3 +55,265 @@ The application structure is hierarchical, centering around an `AuthProvider` ma
 -   **Styling**: TailwindCSS 3.x with Radix UI components
 -   **Authentication**: Session-based authentication stored in PostgreSQL.
 -   **Network Protocol**: WebSocket for real-time multiplayer communication, with server-authoritative state, input validation, and rate limiting for anti-cheat measures.
+
+## Complete Game Design Specification
+
+### Core Gameplay Loops Detail
+1. **Trade & Survive Loop**:
+   - Mining: Laser activation (1-3 seconds), resource yield (10-50 units), node depletion
+   - Trading: Buy low/sell high, 60+ trade goods, planet-specific economies
+   - Resource Management: Fuel (100 max), oxygen (50/day), hull integrity (100 max)
+   - Economic Pressure: Daily costs (60 credits), equipment degradation (5%/day)
+
+2. **Mission & Story Loop**:
+   - Mission Types: Delivery, Combat, Exploration, Story (10 total)
+   - Dialogue System: Branching choices, faction impacts, karma tracking
+   - Rewards: Credits (225-1000), reputation (+/-10-50), items, crew
+   - Story Acts: 3 acts, 5 endings based on choices
+
+3. **Combat & Heat Loop**:
+   - Combat: Turn-based positioning, damage calculation (10-50 per hit)
+   - Heat Generation: +10-30 per crime, +50 for killing
+   - Wanted Levels: 6 levels (Clean to Terrorist)
+   - Patrol Spawning: 0-5 patrols based on heat level
+
+### Mathematical Formulas and Algorithms
+
+#### Combat Damage Calculation
+```
+baseDamage = weaponDamage * (1 + gunnerSkill/100)
+shieldDamage = min(baseDamage, targetShields)
+hullDamage = max(0, baseDamage - targetShields)
+criticalChance = 5% + (gunnerSkill * 0.1)
+if (critical) damage *= 1.5
+```
+
+#### Economy Pricing
+```
+basePrice = item.basePrice
+supplyModifier = 1 - (supply / maxSupply) * 0.5
+demandModifier = 1 + (demand / maxDemand) * 0.5
+factionModifier = 1 + (reputation * 0.003)
+heatModifier = 1 + (wantedLevel * 0.1)
+finalPrice = basePrice * supplyModifier * demandModifier * factionModifier * heatModifier
+```
+
+#### XP and Leveling
+```
+xpRequired = 100 * (level ^ 1.5)
+xpFromMission = baseXP * (1 + difficulty * 0.5)
+levelUp when currentXP >= xpRequired
+statsGainPerLevel = 3
+rankProgression = every 5 levels
+```
+
+#### Faction Reputation
+```
+baseChange = actionValue * factionMultiplier
+decayRate = 0.1 per day toward neutral
+maxReputation = 100, minReputation = -100
+priceEffect = reputation * 0.003 (Allied: -30% buy, Hostile: +50% buy)
+```
+
+### Balance Parameters
+- Starting Credits: 300
+- Starting Fuel: 50/100
+- Daily Operating Costs: 60 credits
+- Mission Rewards: 225-1000 credits
+- Trade Profit Margins: 20-100%
+- First Upgrade Cost: 400 credits
+- Max Upgrade Cost: 9000 credits
+
+## Asset Requirements
+
+### Textures
+- Format: PNG/JPG, power-of-2 dimensions
+- Categories: Planets (8), terrain (5), effects (10), UI (20)
+- Resolution: 512x512 (mobile), 2048x2048 (desktop)
+- Compression: 70% quality for diffuse, lossless for normal maps
+
+### 3D Models
+- Format: GLTF/GLB
+- Polycount: Ships (5000), planets (2000), stations (3000)
+- LOD Levels: 3 per model (100%, 50%, 25%)
+- Animations: Engine thrust, weapon fire, explosions
+
+### Audio
+- Format: MP3/OGG
+- Categories: Music (5 tracks), SFX (50+), Ambience (10)
+- Quality: 128kbps music, 96kbps SFX
+- Duration: 2-3 min loops for music, <1s for SFX
+
+### UI Assets
+- Icons: Lucide React (200+ icons)
+- Fonts: Inter Variable (300-800 weight)
+- Colors: Dark theme with cyan/orange accents
+
+## Test Suite Specification
+
+### Test Categories (1000+ tests total)
+1. **Unit Tests** (500+):
+   - UI Components (8 suites, 250+ tests)
+   - Game Stores (10 suites, 250+ tests)
+
+2. **Integration Tests** (300+):
+   - Game Mechanics (8 suites, 200+ tests)
+   - User Workflows (6 suites, 100+ tests)
+
+3. **Mobile Tests** (150+):
+   - Touch Controls (8 suites, 150+ tests)
+
+4. **3D/Graphics Tests** (100+):
+   - Rendering (8 suites, 100+ tests)
+
+### Test Commands
+```javascript
+// Run all tests
+window.runAllTests()
+
+// Run specific categories
+window.testAllStores()
+window.testAllComponents()
+window.testAllMobile()
+window.testAll3D()
+
+// Run individual tests
+window.testPlayerStore()
+window.testActionBar()
+window.testTouchControls()
+```
+
+### Performance Benchmarks
+- FPS Target: 60 (desktop), 30 (mobile)
+- Load Time: <3 seconds
+- Memory Usage: <500MB (mobile), <1GB (desktop)
+- Network Latency: <100ms for API calls
+
+## Data Schemas
+
+### Player Schema
+```typescript
+interface PlayerState {
+  id: string
+  name: string
+  level: number (1-100)
+  experience: number
+  credits: number
+  reputation: Record<string, number>
+  stats: {
+    missionsCompleted: number
+    enemiesDefeated: number
+    creditsEarned: number
+    distanceTraveled: number
+  }
+}
+```
+
+### Ship Schema
+```typescript
+interface ShipState {
+  hull: number (0-100)
+  shields: number (0-100)
+  fuel: number (0-100)
+  cargo: Item[]
+  cargoCapacity: number
+  weapons: Weapon[]
+  crew: CrewMember[]
+  upgrades: Upgrade[]
+}
+```
+
+### Mission Schema
+```typescript
+interface Mission {
+  id: string
+  type: 'delivery' | 'combat' | 'exploration' | 'story'
+  title: string
+  description: string
+  objectives: Objective[]
+  rewards: Reward[]
+  requirements: Requirement[]
+  faction: string
+  difficulty: number (1-5)
+}
+```
+
+## Environment Configuration
+
+### Required Environment Variables
+```
+DATABASE_URL=postgresql://...
+SESSION_SECRET=random-32-char-string
+NODE_ENV=development|production
+PORT=5000
+VITE_API_URL=http://localhost:5000
+```
+
+### Database Setup
+```sql
+CREATE TABLE users (
+  id UUID PRIMARY KEY,
+  email VARCHAR(255) UNIQUE,
+  password_hash VARCHAR(255),
+  username VARCHAR(100),
+  created_at TIMESTAMP
+);
+
+CREATE TABLE game_saves (
+  id UUID PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  slot_number INTEGER,
+  save_name VARCHAR(100),
+  game_state JSONB,
+  updated_at TIMESTAMP
+);
+
+CREATE TABLE sessions (
+  sid VARCHAR PRIMARY KEY,
+  sess JSON,
+  expire TIMESTAMP
+);
+```
+
+## Platform-Specific Considerations
+
+### Web Browser Requirements
+- Chrome/Edge 90+, Firefox 88+, Safari 14+
+- WebGL 2.0 support
+- LocalStorage for settings
+- WebAudio for sound
+
+### Mobile Requirements
+- iOS 14+ / Android 10+
+- Touch events support
+- Gyroscope API (optional)
+- Haptic feedback API
+- Minimum viewport: 375x667
+
+### Server Requirements
+- Node.js 18+
+- PostgreSQL 14+
+- 2GB RAM minimum
+- SSL certificate for HTTPS
+
+## Quality Metrics
+
+### Code Quality
+- TypeScript strict mode
+- ESLint configuration
+- 80% test coverage minimum
+- No circular dependencies
+
+### Performance Targets
+- First Contentful Paint: <1.5s
+- Time to Interactive: <3s
+- Bundle size: <5MB initial, <10MB total
+- Memory leaks: 0 tolerance
+
+### Accessibility Standards
+- WCAG 2.1 AA compliance
+- Keyboard navigation complete
+- Screen reader support
+- Color contrast 4.5:1 minimum
+
+This specification provides a complete blueprint for recreating Plunderverse in any technology stack.
