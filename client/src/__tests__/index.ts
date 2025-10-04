@@ -23,6 +23,9 @@ import { testEconomyBalance } from './integration/systems/testEconomyBalance';
 // Unit Tests - Components
 import { PanelTestSuite } from './unit/components/testPanelFunctionality';
 
+// Unit Tests - Stores (import the index to register all store tests)
+import './unit/stores';
+
 // Export all test functions as a structured object
 export const tests = {
   // Integration Tests
@@ -58,6 +61,19 @@ export const tests = {
         const suite = new PanelTestSuite();
         return suite.runAllTests();
       }
+    },
+    stores: {
+      all: (window as any).testAllStores,
+      player: (window as any).testPlayerStore,
+      credits: (window as any).testCreditsStore,
+      combat: (window as any).testCombatStores,
+      ship: (window as any).testShipStores,
+      economy: (window as any).testEconomyStores,
+      missions: (window as any).testMissionStores,
+      navigation: (window as any).testNavigationStores,
+      ui: (window as any).testUIStores,
+      faction: (window as any).testFactionStore,
+      heat: (window as any).testHeatStore
     }
   },
   
@@ -137,18 +153,33 @@ if (typeof window !== 'undefined') {
   
   console.log('🧪 Test Suite Loaded!');
   console.log('Available test commands:');
+  console.log('\n📋 Integration Tests:');
   console.log('  tests.runAll() - Run all tests');
   console.log('  tests.integration.missions.missionSystem() - Test mission system');
   console.log('  tests.integration.systems.combat.test() - Test combat system');
   console.log('  tests.integration.systems.economy() - Test economy balance');
+  console.log('\n🔧 Unit Tests - Components:');
   console.log('  tests.unit.components.panels() - Test panel functionality');
-  console.log('\nBackward compatible commands:');
-  console.log('  testFullGameplayLoop() - Run full gameplay loop test');
-  console.log('  testMissionSystem() - Test mission system');
-  console.log('  testCombatSystem() - Test combat system');
-  console.log('  testEconomyBalance() - Test economy balance');
-  console.log('  testObjectiveTriggers() - Test objective triggers');
-  console.log('  testPanelFunctionality() - Test panel functionality');
+  console.log('\n💾 Unit Tests - Stores:');
+  console.log('  tests.unit.stores.all() - Run ALL store tests');
+  console.log('  tests.unit.stores.player() - Test player state');
+  console.log('  tests.unit.stores.credits() - Test credits/economy');
+  console.log('  tests.unit.stores.combat() - Test combat systems');
+  console.log('  tests.unit.stores.ship() - Test ship systems');
+  console.log('  tests.unit.stores.economy() - Test economy/trading');
+  console.log('  tests.unit.stores.missions() - Test mission management');
+  console.log('  tests.unit.stores.navigation() - Test navigation');
+  console.log('  tests.unit.stores.ui() - Test UI state');
+  console.log('  tests.unit.stores.faction() - Test faction reputation');
+  console.log('  tests.unit.stores.heat() - Test heat/wanted system');
+  console.log('\n🎯 Quick Store Test Commands:');
+  console.log('  testAllStores() - Run all store tests');
+  console.log('  testStore("player") - Test specific store by name');
+  console.log('\n📝 Individual Store Test Commands:');
+  console.log('  testPlayerStore(), testCreditsStore(), testCombatStores()');
+  console.log('  testShipStores(), testEconomyStores(), testMissionStores()');
+  console.log('  testNavigationStores(), testUIStores()');
+  console.log('  testFactionStore(), testHeatStore()');
 }
 
 export default tests;
