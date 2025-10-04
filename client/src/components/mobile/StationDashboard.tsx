@@ -78,7 +78,7 @@ export const StationDashboard: React.FC = () => {
   const player = usePlayer();
   const ship = useShipStatus();
   const equipment = useEquipment();
-  const { credits, spendCredits, addCredits } = useCredits();
+  const { credits, spendCredits, earnCredits } = useCredits();
   const inventory = useInventory();
   const { landedPlanet } = useLandedState();
   const { config } = useMobileLayout();
@@ -135,12 +135,14 @@ export const StationDashboard: React.FC = () => {
     // Animate the transaction
     setTimeout(() => {
       if (spendCredits(cost)) {
-        equipment.refuelEquipment('fuel-tank', fuelAmount);
-        toast.success('Refuel successful', {
-          description: `Added ${fuelAmount} fuel for ${cost} credits`
-        });
-        triggerHaptic();
-        setActivePanel(null);
+        const result = equipment.replenishFuel(fuelAmount, credits - cost);
+        if (result.success) {
+          toast.success('Refuel successful', {
+            description: `Added ${fuelAmount} fuel for ${cost} credits`
+          });
+          triggerHaptic();
+          setActivePanel(null);
+        }
       }
       setIsProcessing(false);
     }, 500);
@@ -253,11 +255,13 @@ export const StationDashboard: React.FC = () => {
     
     setTimeout(() => {
       if (spendCredits(cost)) {
-        equipment.refuelEquipment('fuel-tank', fuelNeeded);
-        toast.success('Quick refuel complete', {
-          description: `Tank filled for ${cost} credits`
-        });
-        triggerHaptic();
+        const result = equipment.replenishFuel(fuelNeeded, credits - cost);
+        if (result.success) {
+          toast.success('Quick refuel complete', {
+            description: `Tank filled for ${cost} credits`
+          });
+          triggerHaptic();
+        }
       }
       setIsProcessing(false);
     }, 500);
@@ -623,7 +627,7 @@ export const StationDashboard: React.FC = () => {
                     inventory.items.forEach(item => {
                       inventory.removeResource(item.type, item.quantity);
                     });
-                    addCredits(totalEarnings);
+                    earnCredits(totalEarnings);
                     
                     toast.success(`Quick sell complete: +${totalEarnings}c`);
                     triggerHaptic(20);
