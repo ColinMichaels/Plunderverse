@@ -984,4 +984,7 @@ if (typeof window !== 'undefined') {
   console.log('  testLighting(), testPerformance()');
 }
 
+// Import story panel verification test
+import './verifyStoryPanel';
+
 export default tests;

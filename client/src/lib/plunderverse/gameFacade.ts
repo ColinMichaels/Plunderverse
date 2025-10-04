@@ -318,202 +318,147 @@ export class GameFacade {
         e.preventDefault();
         console.log("[GameFacade] Running quick test...");
         toast.info("Quick Test", {
-          description: "Running quick system check...",
+          description: "Testing mission generation and acceptance...",
         });
-        missionControlTest.runQuickTest();
+        missionControlTest.testMissionGeneration();
+      }
+
+      // Ctrl+M for mission info display
+      if (e.ctrlKey && !e.shiftKey && e.key === "m") {
+        e.preventDefault();
+        const missions = usePlunderverseMissions.getState();
+        console.log("[GameFacade] Current Missions:", {
+          available: missions.availableMissions.length,
+          active: missions.activeMissions.length,
+          completed: missions.completedMissionIds.size,
+        });
+        toast.info("Mission Status", {
+          description: `Available: ${missions.availableMissions.length}, Active: ${missions.activeMissions.length}, Completed: ${missions.completedMissionIds.size}`,
+        });
+      }
+
+      // Ctrl+Shift+C for clear missions (reset)
+      if (e.ctrlKey && e.shiftKey && e.key === "C") {
+        e.preventDefault();
+        console.log("[GameFacade] Clearing all missions...");
+        const missions = usePlunderverseMissions.getState();
+        missions.clearMissions();
+        toast.warning("Missions Cleared", {
+          description: "All missions have been reset",
+        });
       }
     });
 
     console.log(
-      "[GameFacade] Test keyboard shortcuts registered (Ctrl+T for full test, Ctrl+Shift+Q for quick test)",
+      "[GameFacade] Keyboard shortcuts activated: Ctrl+T (test), Ctrl+M (info), Ctrl+Shift+C (clear)",
     );
   }
 
   /**
-   * Generate emergency missions when desperate for credits
+   * Travel to a destination
    */
-  generateEmergencyMissions(): void {
-    const tuning = usePlunderverseEconomy.getState().tuning;
-    const emergencySettings =
-      tuning?.economy?.economic_pressure?.emergency_missions;
-
-    if (!emergencySettings) return;
-
-    const missionsStore = usePlunderverseMissions.getState();
-    const player = usePlayer.getState();
-
-    // Generate special high-risk, morally compromising missions
-    const emergencyMissions: Mission[] = [
-      {
-        id: `emergency_smuggling_${Date.now()}`,
-        title: "URGENT: Smuggle Medical Supplies",
-        description:
-          "A desperate colony needs medical supplies, but they're embargoed. High pay, high risk.",
-        type: "smuggling",
-        difficulty: "hard",
-        rank: player.rank,
-        faction: "outlaws",
-        rewards: {
-          credits: Math.floor(
-            3000 * (emergencySettings.payout_multiplier || 0.7),
-          ),
-          reputation: {
-            outlaws: 10,
-            corporations: emergencySettings.reputation_cost || -10,
-          },
-          notoriety: 15,
-          heat: 20,
-        },
-        requirements: { minRank: 1 },
-        tags: ["illegal", "urgent", "moral_compromise"],
-        timeLimit: 60,
-        objectives: [],
-        choices: [],
-        active: false,
-        completed: false,
-        failed: false,
-      },
-      {
-        id: `emergency_combat_${Date.now()}`,
-        title: "URGENT: Eliminate Rival Crew",
-        description:
-          "Take out a rival crew for quick credits. No questions asked.",
-        type: "combat",
-        difficulty: "hard",
-        rank: player.rank,
-        faction: "outlaws",
-        rewards: {
-          credits: Math.floor(
-            2500 * (emergencySettings.payout_multiplier || 0.7),
-          ),
-          reputation: {
-            outlaws: 5,
-            corporations: emergencySettings.reputation_cost || -10,
-          },
-          notoriety: 20,
-        },
-        requirements: { minRank: 1 },
-        tags: ["illegal", "urgent", "violent"],
-        objectives: [],
-        choices: [],
-        active: false,
-        completed: false,
-        failed: false,
-      },
-    ];
-
-    // Add emergency missions to available missions using proper setter
-    missionsStore.addEmergencyMissions(emergencyMissions);
-
-    console.log("[GameFacade] Generated emergency missions due to low credits");
-  }
-
-  /**
-   * List available star nodes for travel
-   */
-  async listNodes(): Promise<StarNode[]> {
-    await this.ensureInitialized();
-    const content = await this.contentRegistry.loadContent();
-    return content.starNodes || [];
-  }
-
-  /**
-   * Travel to a star node
-   * Handles fuel consumption, mission generation, and location updates
-   */
-  async travelTo(nodeKey: string): Promise<{
+  async travelTo(destination: string): Promise<{
     success: boolean;
     message: string;
-    missionsGenerated?: number;
-    fuelConsumed?: number;
+    location: string;
+    fuelUsed?: number;
   }> {
     await this.ensureInitialized();
 
-    const content = await this.contentRegistry.loadContent();
-    const node = content.starNodes.find((n) => n.id === nodeKey);
-
-    if (!node) {
-      return { success: false, message: "Invalid destination" };
-    }
-
-    // Check fuel and consume it
-    const fuelNeeded = this.calculateFuelNeeded(node.name);
-    const equipmentStore = useEquipment.getState();
-    const fuelTank = equipmentStore.getEquipment("fuel-tank");
-
-    if (!fuelTank) {
-      console.error("[GameFacade] No fuel tank found!");
-      return { success: false, message: "Ship has no fuel tank!" };
-    }
-
-    // Check if we have enough fuel
-    if (fuelTank.currentDurability < fuelNeeded) {
-      const tuning = usePlunderverseEconomy.getState().tuning;
-      const emergencyReserve =
-        tuning?.economy?.balance_constants?.fuel_emergency_reserve || 10;
-
-      if (fuelTank.currentDurability < emergencyReserve) {
-        return {
-          success: false,
-          message: `CRITICAL: Not enough fuel! Need ${fuelNeeded} units, only have ${fuelTank.currentDurability.toFixed(1)}. Refuel immediately!`,
-          fuelConsumed: 0,
-        };
-      } else {
-        return {
-          success: false,
-          message: `Insufficient fuel for jump. Need ${fuelNeeded} units, only have ${fuelTank.currentDurability.toFixed(1)}.`,
-          fuelConsumed: 0,
-        };
-      }
-    }
-
-    // Consume fuel
-    const fuelConsumed = equipmentStore.consumeFuel(fuelNeeded);
-    if (!fuelConsumed) {
+    const content = this.contentRegistry.getContent();
+    if (!content?.starNodes) {
       return {
         success: false,
-        message: "Failed to consume fuel. Check ship systems.",
-        fuelConsumed: 0,
+        message: "Navigation data not available",
+        location: this.currentLocation,
       };
     }
 
-    console.log(
-      `[GameFacade] Travel fuel consumed: ${fuelNeeded} units. Remaining: ${(fuelTank.currentDurability - fuelNeeded).toFixed(1)}`,
+    // Find destination node
+    const targetNode = content.starNodes.find(
+      (n) => n.name === destination || n.id === destination,
     );
 
-    // Update player location
-    const player = usePlayer.getState();
-    player.visitPlanet(node.name);
-    player.incrementJumps(); // Track jumps for stats
+    if (!targetNode) {
+      return {
+        success: false,
+        message: `Unknown destination: ${destination}`,
+        location: this.currentLocation,
+      };
+    }
+
+    // Check fuel requirements
+    const fuelNeeded = this.calculateFuelNeeded(destination);
+    const survival = useSurvival.getState();
+
+    if (survival.fuel < fuelNeeded) {
+      console.log(
+        `[GameFacade] Insufficient fuel: ${survival.fuel} / ${fuelNeeded} needed`,
+      );
+      return {
+        success: false,
+        message: `Insufficient fuel. Need ${fuelNeeded}, have ${survival.fuel}`,
+        location: this.currentLocation,
+      };
+    }
+
+    // Consume fuel
+    survival.consumeFuel(fuelNeeded);
+
+    // Update location
+    const previousLocation = this.currentLocation;
+    this.currentLocation = targetNode.name;
 
     // Increment game day on travel
     this.incrementGameDay();
 
-    // Generate missions for this location with deterministic seed
-    const playerId = this.getPlayerId();
-    const gameDay = this.getGameDay();
-    const seed = `${playerId}:${nodeKey}:${gameDay}`;
+    // Track system visit
+    this.progressionMetrics.systemsVisited.add(targetNode.name);
+
+    // Generate new missions for the new location
+    const player = usePlayer.getState();
+    const newSeed = `${this.getPlayerId()}:${this.currentLocation}:${this.getGameDay()}`;
+
+    // Clear old location missions and generate new ones
+    const missionsStore = usePlunderverseMissions.getState();
+    missionsStore.clearAvailableMissions(); // Clear available (not active) missions
+    missionsStore.generateMissions(this.currentLocation, player.rank, newSeed);
+
     console.log(
-      `[GameFacade] Travel to ${node.name}, generating missions with seed: ${seed}`,
+      `[GameFacade] 🚀 Traveled from ${previousLocation} to ${this.currentLocation}`,
     );
-    usePlunderverseMissions
-      .getState()
-      .generateMissions(node.name, player.rank, seed);
+    console.log(
+      `[GameFacade] New missions generated: ${missionsStore.availableMissions.length} available`,
+    );
 
-    // Update current location
-    this.currentLocation = node.name;
+    // Apply location effects
+    this.applyLocationEffects(targetNode);
 
-    // Apply faction-specific effects
-    this.applyLocationEffects(node);
-
-    const missionsState = usePlunderverseMissions.getState();
+    // Apply daily costs on travel
+    await this.applyDailyCosts();
 
     return {
       success: true,
-      message: `Arrived at ${node.name}`,
-      missionsGenerated: missionsState.availableMissions.length,
-      fuelConsumed: fuelNeeded,
+      message: `Arrived at ${targetNode.name}`,
+      location: this.currentLocation,
+      fuelUsed: fuelNeeded,
     };
+  }
+
+  /**
+   * Get current location details
+   */
+  getCurrentLocation(): StarNode | null {
+    const content = this.contentRegistry.getContent();
+    if (!content?.starNodes) return null;
+
+    return (
+      content.starNodes.find(
+        (n) =>
+          n.name === this.currentLocation ||
+          n.id === this.currentLocation.toLowerCase(),
+      ) || null
+    );
   }
 
   /**
@@ -527,48 +472,88 @@ export class GameFacade {
     await this.ensureInitialized();
 
     const missionsStore = usePlunderverseMissions.getState();
-    const mission = missionsStore.getMissionById(missionId);
+    const player = usePlayer.getState();
+
+    // Get the mission
+    const mission = missionsStore.availableMissions.find(
+      (m) => m.id === missionId,
+    );
 
     if (!mission) {
-      return { success: false, message: "Mission not found" };
+      return {
+        success: false,
+        message: "Mission not found or no longer available",
+      };
     }
 
-    // Check requirements
+    // Check player requirements
     const playerState = this.getPlayerState();
-    if (!missionsStore.checkMissionRequirements(mission, playerState)) {
-      return { success: false, message: "Requirements not met" };
+    if (mission.requirements) {
+      // Check credits requirement
+      if (
+        mission.requirements.credits &&
+        playerState.credits < mission.requirements.credits
+      ) {
+        return {
+          success: false,
+          message: `Insufficient credits. Need ${mission.requirements.credits}`,
+        };
+      }
+
+      // Check reputation requirements
+      if (mission.requirements.reputation) {
+        for (const [faction, required] of Object.entries(
+          mission.requirements.reputation,
+        )) {
+          const playerRep = playerState.reputation[faction as FactionId] || 0;
+          if (playerRep < required) {
+            return {
+              success: false,
+              message: `Insufficient ${faction} reputation. Need ${required}, have ${playerRep}`,
+            };
+          }
+        }
+      }
+    }
+
+    // Check max active missions
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const maxActive = tuning?.economy?.missions?.max_active || 5;
+
+    if (missionsStore.activeMissions.length >= maxActive) {
+      return {
+        success: false,
+        message: `Cannot accept more than ${maxActive} active missions`,
+      };
     }
 
     // Accept the mission
     const accepted = missionsStore.acceptMission(missionId);
 
-    if (!accepted) {
-      toast.error("Mission Failed", {
-        description: "Failed to accept mission",
-      });
-      return { success: false, message: "Failed to accept mission" };
-    }
+    if (accepted) {
+      console.log(
+        `[GameFacade] ✅ Mission accepted: ${mission.title} (${mission.type})`,
+      );
 
-    // Apply initial effects (e.g., receiving cargo)
-    if (mission.type === "delivery" || mission.type === "smuggling") {
-      // Would add cargo to ship
-      console.log(`Received cargo for ${mission.title}`);
-    }
+      // Initialize trigger system for this mission
+      const triggerSystem = useObjectiveTriggers.getState();
+      triggerSystem.initializeMissionTriggers(mission);
 
-    // Show success toast
-    toast.success("Mission Accepted!", {
-      description: mission.title,
-    });
+      return {
+        success: true,
+        message: `Mission "${mission.title}" accepted`,
+        mission,
+      };
+    }
 
     return {
-      success: true,
-      message: `Mission accepted: ${mission.title}`,
-      mission,
+      success: false,
+      message: "Failed to accept mission",
     };
   }
 
   /**
-   * Resolve a mission with optional choice
+   * Resolve/complete a mission
    */
   async resolveMission(
     missionId: string,
@@ -577,157 +562,121 @@ export class GameFacade {
     success: boolean;
     message: string;
     rewards?: MissionRewards;
-    consequences?: ChoiceOutcome[];
   }> {
     await this.ensureInitialized();
 
     const missionsStore = usePlunderverseMissions.getState();
-    const mission = missionsStore.getMissionById(missionId);
+    const mission = missionsStore.activeMissions.find(
+      (m) => m.id === missionId,
+    );
 
     if (!mission) {
-      return { success: false, message: "Mission not found" };
+      return {
+        success: false,
+        message: "Mission not found or not active",
+      };
     }
 
-    let consequences: ChoiceOutcome[] = [];
+    // Check all objectives are complete
+    const allObjectivesComplete = mission.objectives.every((o) => o.completed);
+    if (!allObjectivesComplete) {
+      return {
+        success: false,
+        message: "Not all mission objectives are complete",
+      };
+    }
 
     // Handle choice if provided
     if (choiceId) {
-      const outcomes = missionsStore.makeChoice(missionId, choiceId);
-      if (outcomes) {
-        consequences = outcomes;
-
-        // Apply choice outcomes and track morality
-        for (const outcome of outcomes) {
-          // Track morality impact from choices
-          const choice = mission.choices?.find(c => c.id === choiceId);
-          if (choice) {
-            // Calculate morality impact based on choice outcomes
-            let moralityImpact = 0;
-            
-            // Check for moral implications in the choice text/id
-            if (choiceId.includes('save') || choiceId.includes('rescue') || choiceId.includes('help')) {
-              moralityImpact += 10;
-            }
-            if (choiceId.includes('betray') || choiceId.includes('abandon') || choiceId.includes('kill')) {
-              moralityImpact -= 15;
-            }
-            if (choiceId.includes('steal') || choiceId.includes('lie')) {
-              moralityImpact -= 5;
-            }
-            
-            // Apply reputation-based morality changes
-            if (outcome.effects?.reputation) {
-              if (outcome.effects.reputation.independents && outcome.effects.reputation.independents > 0) {
-                moralityImpact += 5;
-              }
-              if (outcome.effects.reputation.outlaws && outcome.effects.reputation.outlaws > 0) {
-                moralityImpact -= 3;
-              }
-            }
-            
-            // Record the choice and morality impact
-            this.recordPlayerChoice(missionId, choiceId, moralityImpact);
-            
-            // Log story choice for debugging
-            if (mission.type === 'story') {
-              console.log(`[GameFacade] 📖 Story choice made: ${choiceId}, morality impact: ${moralityImpact}`);
-              console.log(`[GameFacade] Current morality: ${this.moralityScore}, alignment: ${this.getStoryProgressionState().moralityAlignment}`);
-            }
-          }
-          
-          await this.applyOutcome(outcome);
+      const choice = mission.choices.find((c) => c.id === choiceId);
+      if (choice?.outcome) {
+        await this.applyOutcome(choice.outcome);
+        // Track moral choice
+        this.playerChoices.set(missionId, choiceId);
+        if (choice.outcome.moralityShift) {
+          this.moralityScore += choice.outcome.moralityShift;
+          console.log(
+            `[GameFacade] Morality shift: ${choice.outcome.moralityShift > 0 ? "+" : ""}${choice.outcome.moralityShift} (Total: ${this.moralityScore})`,
+          );
         }
       }
     }
 
+    // Apply base rewards
+    await this.applyRewards(mission.rewards, mission);
+
     // Complete the mission
-    const rewards = missionsStore.completeMission(missionId);
+    missionsStore.completeMission(missionId);
 
-    if (!rewards) {
-      toast.error("Mission Failed", {
-        description: "Failed to complete mission",
-      });
-      return { success: false, message: "Failed to complete mission" };
-    }
+    // Update progression metrics
+    this.progressionMetrics.missionsCompleted++;
+    const missionTypeCount =
+      this.progressionMetrics.missionsByType.get(mission.type) || 0;
+    this.progressionMetrics.missionsByType.set(mission.type, missionTypeCount + 1);
+    this.progressionMetrics.creditsEarnedTotal +=
+      mission.rewards.base?.credits || 0;
 
-    // Apply rewards
-    await this.applyRewards(rewards, mission);
-
-    // Track story mission completion
-    if (mission.type === 'story') {
+    // Check for story mission completion
+    if (mission.type === "story") {
       this.completedStoryMissions.add(missionId);
-      this.progressionMetrics.missionsCompleted++;
-      console.log(`[GameFacade] 📖 Story mission completed: ${mission.title}`);
-      console.log(`[GameFacade] Completed story missions: ${this.completedStoryMissions.size}`);
-      
-      // Check if this was an act climax mission
-      const missionData = mission as any;
-      if (missionData.climax) {
-        console.log(`[GameFacade] 🎭 Act ${this.currentAct} climax reached!`);
-        toast.info("📖 Act Complete!", {
-          description: `You've completed Act ${this.currentAct}. Your choices have consequences...`,
-        });
-      }
+      await this.checkActProgression();
     }
 
-    // Show success toast with rewards
-    const creditsEarned = rewards.credits || 0;
-    const toastIcon = mission.type === 'story' ? '📖' : '🎉';
-    toast.success(`${toastIcon} Mission Completed!`, {
-      description: `${mission.title} - Earned ${creditsEarned} credits`,
-    });
+    // Check rank progression
+    this.updateRankProgressionInternal();
 
-    // Update player progression and check for act advancement
-    await this.checkRankProgression();
+    // Clean up trigger system for this mission
+    const triggerSystem = useObjectiveTriggers.getState();
+    triggerSystem.removeMissionTriggers(missionId);
 
-    // Update legacy missions if needed
-    const legacyMissions = useMissions.getState();
-    legacyMissions.completeMission(`legacy_${missionId}`);
+    console.log(
+      `[GameFacade] 🎉 Mission completed: ${mission.title} (${mission.type})`,
+    );
 
     return {
       success: true,
-      message: `Mission completed: ${mission.title}`,
-      rewards,
-      consequences,
+      message: `Mission "${mission.title}" completed!`,
+      rewards: mission.rewards,
     };
   }
 
   /**
-   * Update objective progress
+   * Update objective progress (called by trigger system)
    */
   async updateObjectiveProgress(
     missionId: string,
     objectiveId: string,
     progress: number,
   ): Promise<void> {
-    await this.ensureInitialized();
-
     const missionsStore = usePlunderverseMissions.getState();
-    const mission = missionsStore.getMissionById(missionId);
-    const objective = mission?.objectives.find(o => o.id === objectiveId);
-    
-    const previousProgress = missionsStore.currentObjectiveProgress
-      .get(missionId)
-      ?.get(objectiveId) || 0;
-    
+    const mission = missionsStore.activeMissions.find(
+      (m) => m.id === missionId,
+    );
+
+    if (!mission) return;
+
+    // Find and update objective
+    const objective = mission.objectives.find((o) => o.id === objectiveId);
+    if (!objective) return;
+
+    const previousProgress = objective.progress || 0;
     missionsStore.updateObjectiveProgress(missionId, objectiveId, progress);
 
-    // Show objective progress notifications
-    if (objective && progress > previousProgress) {
-      if (progress >= 100 && previousProgress < 100) {
-        // Objective completed
-        toast.success(`✅ Objective complete: ${objective.description}`, {
-          description: mission ? `Mission: ${mission.title}` : undefined,
-          duration: 3500
+    // Notify if significant progress
+    if (!objective.completed && progress >= 100) {
+      toast.success(`✅ Objective complete: ${objective.description}`, {
+        duration: 3000,
+      });
+      console.log(
+        `[GameFacade] Objective completed: ${objective.description} for mission ${mission.title}`,
+      );
+    } else if (previousProgress < progress) {
+      // Only notify on significant progress increments (20% or more)
+      const progressIncrease = progress - previousProgress;
+      if (progressIncrease >= 20) {
+        toast.info(`📋 Progress: ${objective.description} (${Math.round(progress)}%)`, {
+          duration: 2500
         });
-      } else if (progress > previousProgress) {
-        // Partial progress
-        const progressIncrease = progress - previousProgress;
-        if (progressIncrease >= 20) {
-          toast.info(`📋 Progress: ${objective.description} (${Math.round(progress)}%)`, {
-            duration: 2500
-          });
-        }
       }
     }
 
@@ -972,906 +921,598 @@ export class GameFacade {
           randomEquipment.id,
           {
             resourceHardness: 0.5,
-            operationIntensity: 1.0,
-            environmentalFactor: 0.5,
+            collectorWearRate: 0.1,
+            shipCondition: 0.5,
           },
           10,
         );
         console.log(
-          `[GameFacade] Equipment failure due to bankruptcy: ${randomEquipment.name}`,
+          `[GameFacade] Equipment failure from bankruptcy: ${randomEquipment.name}`,
         );
       }
     }
   }
 
   /**
-   * Apply maintenance degradation (call periodically)
+   * Apply maintenance degradation
    */
   async applyMaintenanceDegradation(): Promise<void> {
-    const tuning = usePlunderverseEconomy.getState().tuning;
-    if (!tuning?.economy?.maintenance_system) return;
-
-    const degradation = tuning.economy.maintenance_system.degradation_per_day;
     const equipmentStore = useEquipment.getState();
+    const equipment = equipmentStore.equipment;
 
-    // Apply degradation to hull
-    const hull = equipmentStore.getEquipment("hull-primary");
-    if (hull && degradation.hull) {
-      equipmentStore.applyWear(
-        "hull-primary",
-        {
-          resourceHardness: 0.2,
-          operationIntensity: 0.1,
-          environmentalFactor: 0.2,
-        },
-        degradation.hull,
-      );
-    }
+    if (equipment.length === 0) return;
 
-    // Apply degradation to engine
-    const engine = equipmentStore.getEquipment("engine-main");
-    if (engine && degradation.engine) {
-      equipmentStore.applyWear(
-        "engine-main",
-        {
-          resourceHardness: 0.2,
-          operationIntensity: 0.2,
-          environmentalFactor: 0.2,
-        },
-        degradation.engine,
-      );
-    }
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const degradationRate =
+      tuning?.economy?.maintenance?.degradation_per_hour || 0.02;
 
-    // Check for maintenance reminders
-    const reminderThreshold =
-      tuning.maintenance_system.maintenance_reminder_threshold || 30;
+    // Apply degradation to all equipment
+    equipment.forEach((eq) => {
+      const newCondition = Math.max(0, eq.condition - degradationRate * 100);
+      equipmentStore.updateEquipmentCondition(eq.id, newCondition);
 
-    equipmentStore.equipment.forEach((eq) => {
-      const condition = (eq.currentDurability / eq.maxDurability) * 100;
-      if (condition <= reminderThreshold && condition > 0) {
-        console.log(
-          `[GameFacade] MAINTENANCE REQUIRED: ${eq.name} at ${condition.toFixed(0)}% condition`,
+      if (newCondition < 30 && eq.condition >= 30) {
+        console.warn(
+          `[GameFacade] Equipment ${eq.name} is in poor condition: ${Math.round(newCondition)}%`,
         );
       }
     });
-
-    // Track days since last maintenance
-    const gameDay = this.getGameDay();
-    const lastMaintenance = parseInt(
-      localStorage.getItem("last_maintenance_day") || "0",
-    );
-    const daysSinceMaintenance = gameDay - lastMaintenance;
-
-    const maintenanceInterval =
-      tuning.maintenance_system.maintenance_interval_days || 5;
-
-    if (daysSinceMaintenance >= maintenanceInterval) {
-      console.log(
-        `[GameFacade] OVERDUE MAINTENANCE: ${daysSinceMaintenance} days since last service!`,
-      );
-
-      // Apply extra degradation for overdue maintenance
-      const overdueMultiplier =
-        1 + (daysSinceMaintenance - maintenanceInterval) * 0.2;
-
-      equipmentStore.equipment.forEach((eq) => {
-        equipmentStore.applyWear(
-          eq.id,
-          {
-            resourceHardness: 0.3 * overdueMultiplier,
-            operationIntensity: 0.3 * overdueMultiplier,
-            environmentalFactor: 0.3 * overdueMultiplier,
-          },
-          1,
-        );
-      });
-    }
   }
 
   /**
-   * Perform ship maintenance
-   */
-  async performMaintenance(): Promise<{
-    success: boolean;
-    message: string;
-    cost: number;
-  }> {
-    const tuning = usePlunderverseEconomy.getState().tuning;
-    const maintenanceCosts = tuning?.maintenance_system?.maintenance_costs;
-
-    if (!maintenanceCosts) {
-      return {
-        success: false,
-        message: "Maintenance system not configured",
-        cost: 0,
-      };
-    }
-
-    const equipmentStore = useEquipment.getState();
-    const creditsStore = useCreditsStore.getState();
-
-    // Calculate total repair cost
-    let totalCost = 0;
-    equipmentStore.equipment.forEach((eq) => {
-      const damagePercent =
-        ((eq.maxDurability - eq.currentDurability) / eq.maxDurability) * 100;
-      if (damagePercent > 0) {
-        let costPerPoint = maintenanceCosts.equipment_per_point;
-        if (eq.type === "hull") costPerPoint = maintenanceCosts.hull_per_point;
-        if (eq.type === "engine")
-          costPerPoint = maintenanceCosts.engine_per_point;
-
-        totalCost += Math.ceil(damagePercent * costPerPoint);
-      }
-    });
-
-    // Check if player can afford it
-    if (creditsStore.credits < totalCost) {
-      return {
-        success: false,
-        message: `Cannot afford maintenance. Need ${totalCost} credits, have ${creditsStore.credits}`,
-        cost: totalCost,
-      };
-    }
-
-    // Perform repairs
-    creditsStore.spendCredits(totalCost);
-
-    equipmentStore.equipment.forEach((eq) => {
-      const result = equipmentStore.repairEquipment(
-        eq.id,
-        eq.maxDurability,
-        creditsStore.credits + totalCost,
-      );
-      console.log(`[GameFacade] Repaired ${eq.name}: ${result.success}`);
-    });
-
-    // Update last maintenance day
-    localStorage.setItem("last_maintenance_day", this.getGameDay().toString());
-
-    return {
-      success: true,
-      message: `Maintenance complete. All systems repaired for ${totalCost} credits.`,
-      cost: totalCost,
-    };
-  }
-
-  /**
-   * Apply heat decay (call periodically) with faction modifiers
+   * Apply heat decay over time
    */
   async applyHeatDecay(): Promise<void> {
-    // Import the new heat system
-    const { useHeatSystem } = await import("../stores/player/useHeatSystem");
-    const heatSystem = useHeatSystem.getState();
+    const player = usePlayer.getState();
+    const tuning = usePlunderverseEconomy.getState().tuning;
+    const decayRate = tuning?.economy?.heat_system?.decay_per_day || 5;
 
-    // Apply decay through the heat system
-    heatSystem.applyHeatDecay();
-
-    // Process laying low if active
-    if (heatSystem.isLayingLow) {
-      heatSystem.processLayingLowTick();
+    if (player.heat > 0) {
+      const newHeat = Math.max(0, player.heat - decayRate);
+      player.updateHeat(-decayRate);
+      console.log(
+        `[GameFacade] Heat decay applied: ${player.heat + decayRate} -> ${newHeat}`,
+      );
     }
-
-    // Check for consequences after decay
-    heatSystem.checkHeatConsequences();
   }
 
   /**
-   * Apply reputation decay toward neutral
+   * Apply reputation decay for inactive factions
    */
   async applyReputationDecay(): Promise<void> {
     const player = usePlayer.getState();
     const tuning = usePlunderverseEconomy.getState().tuning;
+    const decayRate = tuning?.economy?.reputation?.decay_rate || 0.01;
 
-    if (!tuning?.reputation_system?.decay) return;
+    // Apply small decay to all faction reputations (trending toward neutral)
+    const factions: FactionId[] = ["corporations", "independents", "outlaws"];
 
-    const decayRate = tuning.reputation_system.decay.rate_per_day;
-    const target = tuning.reputation_system.decay.target;
-    const minThreshold = tuning.reputation_system.decay.min_threshold;
-
-    // Apply decay to each faction
-    Object.keys(player.reputation).forEach((faction) => {
-      const currentRep =
-        player.reputation[faction as keyof typeof player.reputation];
-
-      // Only decay if above threshold
-      if (Math.abs(currentRep - target) > minThreshold) {
-        const newRep =
-          currentRep > target
-            ? Math.max(target, currentRep - decayRate)
-            : Math.min(target, currentRep + decayRate);
-
-        if (newRep !== currentRep) {
-          player.updateReputation(
-            faction as "corporations" | "independents" | "outlaws",
-            newRep - currentRep,
-          );
-          console.log(
-            `[GameFacade] ${faction} reputation decayed from ${currentRep} to ${newRep}`,
-          );
-        }
+    factions.forEach((faction) => {
+      const currentRep = player.reputation[faction];
+      if (Math.abs(currentRep) > 10) {
+        // Only decay if reputation is significantly away from neutral
+        const decay =
+          currentRep > 0
+            ? -Math.ceil(currentRep * decayRate)
+            : Math.floor(Math.abs(currentRep) * decayRate);
+        player.updateReputation(faction, decay);
       }
     });
   }
 
   /**
-   * Get reputation level for a faction
+   * Generate emergency missions when credits are low
    */
-  getReputationLevel(faction: FactionId): string {
+  private generateEmergencyMissions(): void {
+    const missionsStore = usePlunderverseMissions.getState();
     const player = usePlayer.getState();
-    const tuning = usePlunderverseEconomy.getState().tuning;
-    const rep = player.reputation[faction];
 
-    if (!tuning?.reputation_system?.thresholds) return "neutral";
+    console.log("[GameFacade] Generating emergency missions due to low credits");
 
-    for (const [level, threshold] of Object.entries(
-      tuning.reputation_system.thresholds,
-    )) {
-      if (rep >= threshold.min && rep <= threshold.max) {
-        return level;
-      }
-    }
+    // Add a high-paying urgent mission
+    const emergencyMission: Mission = {
+      id: `emergency_${Date.now()}`,
+      title: "URGENT: Emergency Cargo Run",
+      description:
+        "A desperate client needs immediate delivery. High pay, high risk.",
+      type: "delivery",
+      difficulty: "hard",
+      minRank: player.rank,
+      active: false,
+      completed: false,
+      progress: 0,
+      timeLimit: 30, // 30 minute time limit
+      factionAlignment: "independents",
+      requirements: {},
+      objectives: [
+        {
+          id: "deliver_emergency",
+          type: "delivery",
+          description: "Deliver emergency supplies",
+          target: 1,
+          current: 0,
+          progress: 0,
+          completed: false,
+          locations: ["Mars", "Venus"],
+        },
+      ],
+      rewards: {
+        base: {
+          credits: 500, // High payout
+          reputation: { independents: 10 },
+        },
+      },
+      choices: [],
+      tags: ["urgent", "high_pay"],
+    };
 
-    return "neutral";
+    // Add to available missions
+    missionsStore.availableMissions.unshift(emergencyMission);
+
+    toast.warning("💰 URGENT MISSION AVAILABLE!", {
+      description: "High-paying emergency job to help with your financial situation",
+      duration: 5000,
+    });
   }
 
   /**
-   * Get faction-based price modifier
+   * Check and handle act progression
    */
-  getFactionPriceModifier(faction: FactionId): number {
-    const level = this.getReputationLevel(faction);
-    const tuning = usePlunderverseEconomy.getState().tuning;
-
-    if (!tuning?.reputation_system?.price_modifiers) return 1.0;
-
-    return tuning.reputation_system.price_modifiers[level] || 1.0;
-  }
-
-  /**
-   * Get faction-based mission reward modifier
-   */
-  getFactionRewardModifier(faction: FactionId): number {
-    const level = this.getReputationLevel(faction);
-    const tuning = usePlunderverseEconomy.getState().tuning;
-
-    if (!tuning?.reputation_system?.mission_reward_modifiers) return 1.0;
-
-    return tuning.reputation_system.mission_reward_modifiers[level] || 1.0;
-  }
-
-  /**
-   * Get faction-based heat reduction modifier
-   */
-  getFactionHeatModifier(faction: FactionId): number {
-    const level = this.getReputationLevel(faction);
-
-    // Allied with law enforcement (corporations) reduces heat faster
-    if (faction === "corporations") {
-      switch (level) {
-        case "revered":
-          return 3.0;
-        case "allied":
-          return 2.0;
-        case "friendly":
-          return 1.5;
-        case "neutral":
-          return 1.0;
-        case "unfriendly":
-          return 0.8;
-        case "hostile":
-          return 0.5;
-        case "hated":
-          return 0.25;
-        default:
-          return 1.0;
-      }
-    }
-
-    return 1.0;
-  }
-
-  /**
-   * Check if player can access black market
-   */
-  canAccessBlackMarket(): boolean {
+  private async checkActProgression(): Promise<void> {
     const player = usePlayer.getState();
-    const tuning = usePlunderverseEconomy.getState().tuning;
 
-    if (!tuning?.reputation_system?.black_market_access) return false;
-
-    const outlawRep = player.reputation.outlaws;
-    const corpRep = player.reputation.corporations;
-
-    // Need minimum reputation with outlaws OR be hostile with corporations
-    return (
-      outlawRep >=
-        tuning.reputation_system.black_market_access.outlaws_min_reputation ||
-      corpRep <=
-        tuning.reputation_system.black_market_access.corporations_max_reputation
-    );
-  }
-
-  /**
-   * Log reputation change with reason
-   */
-  logReputationChange(
-    faction: FactionId,
-    change: number,
-    reason: string,
-  ): void {
-    const player = usePlayer.getState();
-    const oldRep = player.reputation[faction];
-    const oldLevel = this.getReputationLevel(faction);
-
-    player.updateReputation(faction, change);
-    const newRep = player.reputation[faction];
-    const newLevel = this.getReputationLevel(faction);
-
-    console.log(
-      `[GameFacade] Reputation change: ${faction} ${change > 0 ? "+" : ""}${change} (${reason})`,
-    );
-    console.log(
-      `[GameFacade] ${faction}: ${oldRep} → ${newRep} (${oldLevel} → ${newLevel})`,
-    );
-
-    // Show reputation change notifications
-    const factionDisplayName = faction.charAt(0).toUpperCase() + faction.slice(1);
-    
-    // Show notification for any significant reputation change
-    if (Math.abs(change) >= 5) {
-      const factionColor = faction === 'corporations' ? '🏢' : 
-                          faction === 'outlaws' ? '🏴‍☠️' : 
-                          faction === 'independents' ? '🛸' : '👥';
-      
-      if (change > 0) {
-        toast.info(`${factionColor} ${factionDisplayName} reputation +${change}`, {
-          description: reason,
-          duration: 3000
-        });
-      } else {
-        toast.warning(`${factionColor} ${factionDisplayName} reputation ${change}`, {
-          description: reason,
-          duration: 3000
-        });
-      }
-    }
-    
-    // Alert on major threshold crossings
-    if (oldLevel !== newLevel) {
-      console.log(
-        `[GameFacade] ⚡ ${faction} reputation level changed: ${oldLevel} → ${newLevel}`,
-      );
-      
-      // Show major reputation level change notification
-      const levelEmoji = newLevel === 'allied' ? '🤝' :
-                        newLevel === 'friendly' ? '😊' :
-                        newLevel === 'neutral' ? '😐' :
-                        newLevel === 'hostile' ? '😠' :
-                        newLevel === 'hated' ? '💀' : '❓';
-      
-      const levelChangeType = ['allied', 'friendly'].includes(newLevel) ? 'success' :
-                              newLevel === 'neutral' ? 'info' :
-                              ['hostile', 'hated'].includes(newLevel) ? 'error' : 'info';
-      
-      toast[levelChangeType as 'success' | 'info' | 'error'](`${levelEmoji} ${factionDisplayName} standing: ${newLevel.toUpperCase()}`, {
-        description: `Reputation level changed from ${oldLevel} to ${newLevel}`,
-        duration: 4000
+    // Act progression based on rank
+    if (player.rank >= 3 && this.currentAct === 1) {
+      this.currentAct = 2;
+      await this.generateStoryMissions();
+      console.log("[GameFacade] 📖 Progressed to Act 2!");
+      toast.success("Act 2 Unlocked: The Outlaw", {
+        description:
+          "Your reputation grows. Time to build your crew and choose your allies.",
       });
-      
-      // Special warning for hostile territory
-      if (newLevel === 'hostile' || newLevel === 'hated') {
-        setTimeout(() => {
-          toast.error(`⚠️ Hostile territory - ${factionDisplayName} forces will attack on sight!`, {
-            duration: 5000
-          });
-        }, 500);
-      }
+    } else if (player.rank >= 6 && this.currentAct === 2) {
+      this.currentAct = 3;
+      await this.generateStoryMissions();
+      console.log("[GameFacade] 📖 Progressed to Act 3!");
+      toast.success("Act 3 Unlocked: The Captain", {
+        description:
+          "You command respect. The faction war has begun, and everyone wants you on their side.",
+      });
+    } else if (player.rank >= 9 && this.currentAct === 3) {
+      this.currentAct = 4;
+      await this.generateStoryMissions();
+      console.log("[GameFacade] 📖 Progressed to Act 4!");
+      toast.success("Act 4 Unlocked: The Legend", {
+        description: "Your name will echo through history. Choose your destiny.",
+      });
     }
   }
 
-  // ============================================================================
-  // INTEGRATION POINTS
-  // ============================================================================
-
   /**
-   * Hook for mining success
-   */
-  async onMiningSuccess(resourceType: string, quantity: number): Promise<void> {
-    const missionsStore = usePlunderverseMissions.getState();
-    const activeMissions = missionsStore.getActiveMissionsByType("exploration");
-
-    for (const mission of activeMissions) {
-      const miningObjective = mission.objectives.find(
-        (o) => o.type === "investigation" && o.target?.includes("mining"),
-      );
-
-      if (miningObjective) {
-        await this.updateObjectiveProgress(mission.id, miningObjective.id, 100);
-      }
-    }
-
-    // Update player stats
-    const player = usePlayer.getState();
-    player.incrementMiningOperations();
-  }
-
-  /**
-   * Hook for combat victory
-   */
-  async onCombatVictory(enemyType: string): Promise<void> {
-    const missionsStore = usePlunderverseMissions.getState();
-    const activeMissions = missionsStore.activeMissions;
-
-    for (const mission of activeMissions) {
-      if (mission.type === "bounty" || mission.type === "combat") {
-        const combatObjective = mission.objectives.find(
-          (o) => o.type === "combat" && (!o.target || o.target === enemyType),
-        );
-
-        if (combatObjective) {
-          const currentProgress =
-            missionsStore.currentObjectiveProgress
-              .get(mission.id)
-              ?.get(combatObjective.id) || 0;
-          await this.updateObjectiveProgress(
-            mission.id,
-            combatObjective.id,
-            Math.min(100, currentProgress + 20),
-          );
-        }
-      }
-    }
-
-    // Update notoriety
-    const player = usePlayer.getState();
-    player.updateNotoriety(2);
-
-    // Update progression metrics
-    this.progressionMetrics.combatVictories++;
-
-    // Apply heat through new heat system
-    const { useHeatSystem } = await import("../stores/player/useHeatSystem");
-    const heatSystem = useHeatSystem.getState();
-
-    // Combat with law enforcement is assault
-    if (enemyType === "patrol" || enemyType === "police") {
-      heatSystem.applyHeat("assault", 1.5);
-      this.moralityScore -= 5; // Attacking law enforcement is immoral
-    } else {
-      // Regular combat is minor crime
-      heatSystem.applyHeat("minor_smuggling", 0.5);
-    }
-  }
-
-  // ============================================================================
-  // STORY PROGRESSION METHODS
-  // ============================================================================
-
-  /**
-   * Load progression data from localStorage
+   * Load progression data from storage
    */
   private loadProgressionData(): void {
-    const saved = localStorage.getItem("plunderverse_progression");
-    if (saved) {
-      try {
+    try {
+      const saved = localStorage.getItem('plunderverse_progression');
+      if (saved) {
         const data = JSON.parse(saved);
-        this.progressionMetrics = {
-          ...this.progressionMetrics,
-          ...data.metrics,
-        };
         this.currentAct = data.currentAct || 1;
         this.moralityScore = data.moralityScore || 0;
-        this.completedStoryMissions = new Set(
-          data.completedStoryMissions || [],
-        );
-        this.playerChoices = new Map(Object.entries(data.playerChoices || {}));
-        this.storyProgress = new Map(Object.entries(data.storyProgress || {}));
-      } catch (error) {
-        console.error("[GameFacade] Failed to load progression data:", error);
+        this.completedStoryMissions = new Set(data.completedStoryMissions || []);
+        this.playerChoices = new Map(data.playerChoices || []);
+        this.endingPath = data.endingPath || null;
+        console.log('[GameFacade] Loaded progression data:', data);
       }
+    } catch (error) {
+      console.error('[GameFacade] Error loading progression data:', error);
     }
   }
 
   /**
-   * Save progression data to localStorage
-   */
-  private saveProgressionData(): void {
-    const data = {
-      metrics: {
-        ...this.progressionMetrics,
-        systemsVisited: Array.from(this.progressionMetrics.systemsVisited),
-        missionsByType: Object.fromEntries(
-          this.progressionMetrics.missionsByType,
-        ),
-      },
-      currentAct: this.currentAct,
-      moralityScore: this.moralityScore,
-      completedStoryMissions: Array.from(this.completedStoryMissions),
-      playerChoices: Object.fromEntries(this.playerChoices),
-      storyProgress: Object.fromEntries(this.storyProgress),
-    };
-    localStorage.setItem("plunderverse_progression", JSON.stringify(data));
-  }
-
-  /**
-   * Get current story act information
+   * Get current act information
    */
   async getCurrentAct(): Promise<any> {
-    const content = await this.contentRegistry.loadContent();
-    const storyActs = content.storyActs;
-    if (!storyActs) return null;
-
-    return storyActs.acts.find((act: any) => act.number === this.currentAct);
+    try {
+      await this.ensureInitialized();
+      
+      // Get content from registry
+      const content = this.contentRegistry.getContent();
+      
+      // Check if story acts are loaded
+      if (!content) {
+        console.warn('[GameFacade] No content loaded in registry');
+        return this.getDefaultAct();
+      }
+      
+      // Load story acts from the content registry
+      // The content registry loads story_acts.json which should have an acts array
+      const storyActsModule = (window as any).storyActsData || null;
+      
+      // Try to load story acts directly from the JSON file
+      try {
+        const response = await fetch('/src/content/plunderverse/story_acts.json');
+        if (response.ok) {
+          const storyData = await response.json();
+          const acts = storyData.acts || [];
+          
+          // Find the current act
+          const currentActData = acts.find((act: any) => act.number === this.currentAct);
+          
+          if (currentActData) {
+            console.log('[GameFacade] Found act data:', currentActData);
+            return currentActData;
+          }
+        }
+      } catch (fetchError) {
+        console.warn('[GameFacade] Could not fetch story acts directly:', fetchError);
+      }
+      
+      // Return default act data if not found
+      return this.getDefaultAct();
+    } catch (error) {
+      console.error('[GameFacade] Error getting current act:', error);
+      return this.getDefaultAct();
+    }
   }
 
   /**
-   * Check and update rank progression
+   * Get default act data when story content is not available
+   */
+  private getDefaultAct(): any {
+    const defaultActs = [
+      {
+        id: "act_1",
+        number: 1,
+        title: "The Rogue",
+        subtitle: "Life on the Margins",
+        description: "Fresh from Earth's collapse, you're just another desperate soul trying to survive in the black.",
+        rankRange: { min: 0, max: 3 },
+        themes: ["survival", "learning_the_ropes", "first_betrayal", "finding_purpose"]
+      },
+      {
+        id: "act_2", 
+        number: 2,
+        title: "The Outlaw",
+        subtitle: "Building a Reputation",
+        description: "You've learned the hard way that playing by the rules gets you killed. Time to build your crew.",
+        rankRange: { min: 4, max: 6 },
+        themes: ["crew_loyalty", "faction_politics", "moral_choices", "conspiracy_unveiled"]
+      },
+      {
+        id: "act_3",
+        number: 3,
+        title: "The Captain",
+        subtitle: "Leading the Charge",
+        description: "You command respect across the frontier. Your decisions shape the fate of entire colonies.",
+        rankRange: { min: 7, max: 8 },
+        themes: ["leadership", "faction_war", "difficult_choices", "power_and_responsibility"]
+      },
+      {
+        id: "act_4",
+        number: 4,
+        title: "The Legend",
+        subtitle: "Destiny Awaits",
+        description: "Your name will echo through history. The final battle approaches.",
+        rankRange: { min: 9, max: 10 },
+        themes: ["legacy", "final_confrontation", "redemption_or_damnation", "crew_epilogues"]
+      }
+    ];
+
+    const act = defaultActs.find(a => a.number === this.currentAct) || defaultActs[0];
+    console.log('[GameFacade] Using default act data for act', this.currentAct);
+    return act;
+  }
+
+  /**
+   * Check rank progression and requirements
    */
   async checkRankProgression(): Promise<{
     currentRank: number;
     nextRank: number | null;
-    progress: {
-      credits: number;
-      missions: number;
-      notoriety: number;
-      special: string | null;
-    };
+    progress: any;
     canAdvance: boolean;
+    requirements: any | null;
   }> {
-    const player = usePlayer.getState();
-    const content = await this.contentRegistry.loadContent();
-    const rankRequirements = content.storyActs?.rankRequirements || [];
+    await this.ensureInitialized();
 
-    const currentRank = player.rank;
-    const nextRankData = rankRequirements.find(
-      (r: any) => r.rank === currentRank + 1,
-    );
+    const player = usePlayer.getState();
+    const credits = useCreditsStore.getState();
+    const missionsStore = usePlunderverseMissions.getState();
+
+    const content = this.contentRegistry.getContent();
+    const ranks = content?.ranks || [];
+    const currentRank = ranks.find((r: Rank) => r.level === player.rank);
+    const nextRankData = ranks.find((r: Rank) => r.level === player.rank + 1);
 
     if (!nextRankData) {
       return {
-        currentRank,
+        currentRank: player.rank,
         nextRank: null,
         progress: {
-          credits: this.progressionMetrics.creditsEarnedTotal,
-          missions: this.progressionMetrics.missionsCompleted,
+          credits: credits.credits,
+          missions: missionsStore.completedMissionIds.size,
           notoriety: player.notoriety,
-          special: null,
         },
         canAdvance: false,
+        requirements: null,
       };
     }
 
     const progress = {
-      credits: this.progressionMetrics.creditsEarnedTotal,
-      missions: this.progressionMetrics.missionsCompleted,
+      credits: credits.credits,
+      missions: missionsStore.completedMissionIds.size,
       notoriety: player.notoriety,
-      special: nextRankData.requirements.special || null,
+      special: this.checkSpecialRequirements(nextRankData),
     };
 
-    // Check if requirements are met
-    let canAdvance =
+    const canAdvance =
       progress.credits >= nextRankData.requirements.credits &&
-      progress.missions >= nextRankData.requirements.missions &&
-      progress.notoriety >= nextRankData.requirements.notoriety;
-
-    // Check special requirements
-    if (nextRankData.requirements.special) {
-      canAdvance =
-        canAdvance &&
-        this.checkSpecialRequirement(nextRankData.requirements.special);
-    }
-
-    if (canAdvance) {
-      await this.advanceRank();
-    }
+      progress.missions >= (nextRankData.requirements.missionsCompleted || 0) &&
+      progress.notoriety >= nextRankData.requirements.notoriety &&
+      (!nextRankData.requirements.special || progress.special);
 
     return {
-      currentRank,
-      nextRank: currentRank + 1,
+      currentRank: player.rank,
+      nextRank: player.rank + 1,
       progress,
       canAdvance,
+      requirements: nextRankData.requirements,
     };
   }
 
   /**
-   * Check special rank requirements
+   * Check special requirements for ranks
    */
-  private checkSpecialRequirement(requirement: string): boolean {
-    const player = usePlayer.getState();
-    const crewManagement = useCrewManagement.getState();
-
-    if (requirement.includes("smuggling missions")) {
-      const count = parseInt(requirement.match(/\d+/)?.[0] || "0");
-      return (
-        (this.progressionMetrics.missionsByType.get("smuggling") || 0) >= count
-      );
-    }
-
-    if (requirement.includes("Complete Act")) {
-      const actNum = parseInt(requirement.match(/\d+/)?.[0] || "0");
-      return this.currentAct > actNum;
-    }
-
-    if (requirement.includes("faction at Friendly")) {
-      return Object.values(player.reputation).some((rep) => rep >= 50);
-    }
-
-    if (requirement.includes("Control a base")) {
-      return this.progressionMetrics.basesControlled > 0;
-    }
-
-    if (requirement.includes("Maximum reputation")) {
-      return Object.values(player.reputation).some((rep) => rep >= 90);
-    }
-
-    if (requirement.includes("Complete the final battle")) {
-      return this.completedStoryMissions.has("story_act4_final_battle");
-    }
-
-    return false;
-  }
-
-  /**
-   * Advance player rank
-   */
-  private async advanceRank(): Promise<void> {
-    const player = usePlayer.getState();
-    const content = await this.contentRegistry.loadContent();
-    const ranks = content.ranks;
-
-    const oldRank = player.rank;
-    player.incrementRank();
-    const newRank = player.rank;
-
-    // Show rank increase toast
-    if (newRank > oldRank) {
-      toast.success("🎖️ Rank Increased!", {
-        description: `Advanced to Rank ${newRank}: ${player.rankTitle}`,
-      });
-    }
-
-    // Check for act progression
-    const currentAct = await this.getCurrentAct();
-    if (currentAct && player.rank > currentAct.rankRange.max) {
-      this.currentAct++;
-      console.log(`[GameFacade] 📖 Advanced to Act ${this.currentAct}!`);
-      
-      // Get the new act information
-      const newAct = await this.getCurrentAct();
-      const actTitle = newAct ? `${newAct.title}: ${newAct.subtitle}` : `Act ${this.currentAct}`;
-      
-      toast.info("📖 Story Progression!", {
-        description: `Advanced to ${actTitle}. New story missions available!`,
-      });
-
-      // Generate new story missions for the new act
-      await this.generateStoryMissions();
-      
-      // Log progression for debugging
-      console.log(`[GameFacade] Act progression details:`, {
-        newAct: this.currentAct,
-        title: actTitle,
-        rankRange: newAct?.rankRange,
-        themes: newAct?.themes,
-        storyMissions: newAct?.storyMissions,
-      });
-    }
-
-    this.saveProgressionData();
+  private checkSpecialRequirements(rank: Rank): string | null {
+    // Implement special requirement checks based on rank
+    // This is placeholder logic
+    return null;
   }
 
   /**
    * Generate story missions for current act
    */
   private async generateStoryMissions(): Promise<void> {
-    const content = await this.contentRegistry.loadContent();
-    const currentAct = await this.getCurrentAct();
-    const allMissions = content.missions;
-
-    if (!currentAct) return;
-
-    const storyMissions = allMissions.filter(
-      (m: any) =>
-        m.type === "story" &&
-        m.storyAct === this.currentAct &&
-        !this.completedStoryMissions.has(m.id),
-    );
-
-    const missionsStore = usePlunderverseMissions.getState();
-
-    // Add story missions to available missions
-    storyMissions.forEach((mission: any) => {
-      if (!missionsStore.availableMissions.find((m) => m.id === mission.id)) {
-        missionsStore.availableMissions.push(mission);
-      }
-    });
-
-    console.log(
-      `[GameFacade] Generated ${storyMissions.length} story missions for Act ${this.currentAct}`,
-    );
+    // This is a placeholder - story missions would be generated based on act
+    console.log(`[GameFacade] Generating story missions for Act ${this.currentAct}`);
+    
+    // Mark some as completed based on progress
+    if (this.currentAct > 1) {
+      const storyMissionIds = [
+        'story_act1_desperate_measures',
+        'story_act1_first_score',
+        'story_act1_betrayal'
+      ];
+      storyMissionIds.forEach(id => this.completedStoryMissions.add(id));
+    }
   }
 
   /**
-   * Track player choice and update morality
-   */
-  recordPlayerChoice(
-    missionId: string,
-    choiceId: string,
-    moralityImpact: number = 0,
-  ): void {
-    this.playerChoices.set(`${missionId}_choice`, choiceId);
-    this.moralityScore += moralityImpact;
-
-    // Track specific choices that affect endings
-    if (choiceId.includes("betray")) {
-      this.storyProgress.set("betrayed_crew", true);
-      this.moralityScore -= 20;
-    }
-
-    if (choiceId.includes("save") || choiceId.includes("rescue")) {
-      this.progressionMetrics.livesSaved++;
-      this.moralityScore += 10;
-    }
-
-    if (choiceId.includes("kill") || choiceId.includes("destroy")) {
-      this.progressionMetrics.livesLost++;
-      this.moralityScore -= 15;
-    }
-
-    this.saveProgressionData();
-  }
-
-  /**
-   * Get available endings based on current state
+   * Get available endings based on player state
    */
   async getAvailableEndings(): Promise<any[]> {
-    const content = await this.contentRegistry.loadContent();
-    const player = usePlayer.getState();
-    const crewManagement = useCrewManagement.getState();
-    const creditsStore = useCreditsStore.getState();
+    await this.ensureInitialized();
 
-    const act4 = content.storyActs?.acts.find((act: any) => act.number === 4);
-    if (!act4) return [];
+    // Only available in Act 4
+    if (this.currentAct < 4) {
+      return [];
+    }
+
+    const player = usePlayer.getState();
+    const credits = useCreditsStore.getState();
+    const crewState = useCrewManagement.getState();
 
     const availableEndings = [];
 
-    for (const ending of act4.endings) {
-      let isAvailable = true;
-      const req = ending.requirements;
+    // Pirate King ending
+    if (
+      player.notoriety >= 90 &&
+      player.reputation.outlaws >= 80 &&
+      this.moralityScore <= -50
+    ) {
+      availableEndings.push({
+        id: "ending_pirate_king",
+        name: "The Pirate King",
+        description:
+          "Rule the frontier through fear and strength. The Corps bend to your will.",
+      });
+    }
 
-      // Check notoriety requirement
-      if (req.notoriety && player.notoriety < req.notoriety) {
-        isAvailable = false;
-      }
+    // Hero ending
+    if (
+      player.reputation.independents >= 90 &&
+      crewState.averageLoyalty >= 85 &&
+      this.moralityScore >= 50
+    ) {
+      availableEndings.push({
+        id: "ending_robin_hood",
+        name: "Hero of the People",
+        description:
+          "Break the Corporate stranglehold and give power back to the colonies.",
+      });
+    }
 
-      // Check faction reputation
-      if (
-        req.outlawReputation &&
-        player.reputation.outlaws < req.outlawReputation
-      ) {
-        isAvailable = false;
-      }
-      if (
-        req.independentReputation &&
-        player.reputation.independents < req.independentReputation
-      ) {
-        isAvailable = false;
-      }
-      if (
-        req.corporateReputation &&
-        player.reputation.corporations < req.corporateReputation
-      ) {
-        isAvailable = false;
-      }
+    // Corporate Sellout
+    if (
+      player.reputation.corporations >= 70 &&
+      credits.credits >= 1000000 &&
+      this.moralityScore >= -20 &&
+      this.moralityScore <= 20
+    ) {
+      availableEndings.push({
+        id: "ending_corporate_sellout",
+        name: "The Devil's Bargain",
+        description:
+          "Make a deal with the Corps - legitimacy and wealth for keeping colonies in line.",
+      });
+    }
 
-      // Check morality score
-      if (
-        req.moralityScore !== undefined &&
-        this.moralityScore < req.moralityScore
-      ) {
-        isAvailable = false;
-      }
+    // True Independence
+    if (
+      player.notoriety >= 100 &&
+      Math.max(
+        player.reputation.corporations,
+        player.reputation.independents,
+        player.reputation.outlaws,
+      ) < 60
+    ) {
+      availableEndings.push({
+        id: "ending_true_independence",
+        name: "Ghost of the Frontier",
+        description:
+          "Answer to no one. Your ship disappears into the black, a legend whispered.",
+      });
+    }
 
-      // Check credits
-      if (req.credits && creditsStore.credits < req.credits) {
-        isAvailable = false;
-      }
-
-      // Check crew loyalty
-      if (req.crewLoyalty) {
-        const avgLoyalty =
-          crewManagement.crewMembers.reduce(
-            (sum, crew) => sum + (crew.loyalty || 50),
-            0,
-          ) / crewManagement.crewMembers.length;
-        if (avgLoyalty < req.crewLoyalty) {
-          isAvailable = false;
-        }
-      }
-
-      // Check special conditions
-      if (req.noFactionAbove) {
-        const maxRep = Math.max(...Object.values(player.reputation));
-        if (maxRep > req.noFactionAbove) {
-          isAvailable = false;
-        }
-      }
-
-      if (
-        req.savedLives &&
-        this.progressionMetrics.livesSaved < req.savedLives
-      ) {
-        isAvailable = false;
-      }
-
-      if (isAvailable) {
-        availableEndings.push(ending);
-      }
+    // Redemption
+    if (this.moralityScore >= 75 && this.progressionMetrics.livesSaved >= 100) {
+      availableEndings.push({
+        id: "ending_redemption",
+        name: "The Redeemed",
+        description:
+          "Begin as a scoundrel but become something more. Your past sins are forgiven.",
+      });
     }
 
     return availableEndings;
   }
 
   /**
-   * Trigger game ending
+   * Choose an ending path
    */
-  async triggerEnding(endingId: string): Promise<{
+  async chooseEnding(endingId: string): Promise<{
     success: boolean;
-    ending: any;
-    newGamePlusBonuses?: any[];
+    message: string;
+    ending?: any;
   }> {
-    const endings = await this.getAvailableEndings();
-    const selectedEnding = endings.find((e) => e.id === endingId);
-
-    if (!selectedEnding) {
-      return { success: false, ending: null };
+    if (this.currentAct < 4) {
+      return {
+        success: false,
+        message: "Endings are only available in Act 4",
+      };
     }
 
-    // Mark game as complete
-    this.storyProgress.set("game_complete", true);
-    this.storyProgress.set("ending_achieved", endingId);
+    const availableEndings = await this.getAvailableEndings();
+    const chosenEnding = availableEndings.find((e) => e.id === endingId);
+
+    if (!chosenEnding) {
+      return {
+        success: false,
+        message: "This ending is not available based on your choices",
+      };
+    }
+
     this.endingPath = endingId;
 
-    // Calculate New Game+ bonuses
-    const content = await this.contentRegistry.loadContent();
-    const ngPlusBonuses = this.calculateNewGamePlusBonuses(
-      content.storyActs?.newGamePlus,
-    );
+    // Apply ending consequences
+    const player = usePlayer.getState();
+    const credits = useCreditsStore.getState();
 
-    // Save final state
-    this.saveProgressionData();
+    switch (endingId) {
+      case "ending_pirate_king":
+        player.updateNotoriety(100 - player.notoriety);
+        player.updateReputation("outlaws", 100 - player.reputation.outlaws);
+        break;
+
+      case "ending_robin_hood":
+        player.updateReputation("independents", 100 - player.reputation.independents);
+        this.progressionMetrics.livesSaved += 1000;
+        break;
+
+      case "ending_corporate_sellout":
+        credits.earnCredits(1000000);
+        player.updateReputation("corporations", 100 - player.reputation.corporations);
+        break;
+
+      case "ending_true_independence":
+        // Reset all faction reputations to neutral
+        player.updateReputation("corporations", -player.reputation.corporations);
+        player.updateReputation("independents", -player.reputation.independents);
+        player.updateReputation("outlaws", -player.reputation.outlaws);
+        break;
+
+      case "ending_redemption":
+        this.moralityScore = 100;
+        player.updateHeat(-player.heat);
+        break;
+    }
+
+    console.log(`[GameFacade] 🎭 Ending chosen: ${chosenEnding.name}`);
+    toast.success("Destiny Chosen!", {
+      description: chosenEnding.name,
+      duration: 5000,
+    });
 
     return {
       success: true,
-      ending: selectedEnding,
-      newGamePlusBonuses: ngPlusBonuses,
+      message: `You have chosen: ${chosenEnding.name}`,
+      ending: chosenEnding,
     };
   }
 
   /**
-   * Calculate New Game+ bonuses
+   * Get new game plus bonuses
    */
-  private calculateNewGamePlusBonuses(ngPlusConfig: any): any[] {
-    if (!ngPlusConfig?.enabled) return [];
+  async getNewGamePlusBonuses(): Promise<any[]> {
+    if (!this.endingPath) {
+      return [];
+    }
+
+    const player = usePlayer.getState();
+    const credits = useCreditsStore.getState();
+    const crewState = useCrewManagement.getState();
 
     const bonuses = [];
-    const creditsStore = useCreditsStore.getState();
-    const crewManagement = useCrewManagement.getState();
-    const player = usePlayer.getState();
 
-    for (const bonus of ngPlusConfig.bonuses) {
+    // List of potential bonuses
+    const potentialBonuses = [
+      {
+        id: "bonus_credits",
+        name: "Starter Fund",
+        description: "Start with 10% of your ending credits",
+        condition: credits.credits > 10000,
+      },
+      {
+        id: "bonus_crew",
+        name: "Veteran Crew",
+        description: "One loyal crew member joins you immediately",
+        condition: crewState.activeCrew.length > 0 && crewState.averageLoyalty >= 90,
+      },
+      {
+        id: "bonus_ship",
+        name: "Legacy Ship",
+        description: "Keep an upgraded version of your starting ship",
+        condition: this.endingPath !== null,
+      },
+      {
+        id: "bonus_reputation",
+        name: "Remembered",
+        description: "Start with +10 reputation with your allied faction",
+        condition:
+          Math.max(
+            player.reputation.corporations,
+            player.reputation.independents,
+            player.reputation.outlaws,
+          ) >= 80,
+      },
+    ];
+
+    // Check which bonuses qualify
+    for (const bonus of potentialBonuses) {
       let qualified = false;
       let value: any = null;
 
       switch (bonus.id) {
         case "bonus_credits":
-          qualified = true;
-          value = Math.floor(creditsStore.credits * 0.1);
+          if (credits.credits > 10000) {
+            qualified = true;
+            value = Math.floor(credits.credits * 0.1);
+          }
           break;
 
         case "bonus_crew":
-          const loyalCrew = crewManagement.crewMembers.find(
-            (c) => (c.loyalty || 50) >= 90,
+          const loyalCrew = crewState.activeCrew.find(
+            (c) => c.loyalty >= 90,
           );
           if (loyalCrew) {
             qualified = true;
