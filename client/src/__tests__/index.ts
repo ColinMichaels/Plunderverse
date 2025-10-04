@@ -26,6 +26,16 @@ import { PanelTestSuite } from './unit/components/testPanelFunctionality';
 // Unit Tests - Stores (import the index to register all store tests)
 import './unit/stores';
 
+// Mobile Tests
+import { MobileDetectionTestSuite } from './mobile/testMobileDetection';
+import { StationDashboardTestSuite } from './mobile/testStationDashboard';
+import { TouchControlsTestSuite } from './mobile/testTouchControls';
+import { MobileNavigationTestSuite } from './mobile/testMobileNavigation';
+import { MobileUITestSuite } from './mobile/testMobileUI';
+import { HapticFeedbackTestSuite } from './mobile/testHapticFeedback';
+import { MobilePanelsTestSuite } from './mobile/testMobilePanels';
+import { GyroscopeTestSuite } from './mobile/testGyroscope';
+
 // Export all test functions as a structured object
 export const tests = {
   // Integration Tests
@@ -74,6 +84,106 @@ export const tests = {
       ui: (window as any).testUIStores,
       faction: (window as any).testFactionStore,
       heat: (window as any).testHeatStore
+    }
+  },
+  
+  // Mobile Tests
+  mobile: {
+    detection: () => {
+      const suite = new MobileDetectionTestSuite();
+      return suite.runAllTests();
+    },
+    stationDashboard: () => {
+      const suite = new StationDashboardTestSuite();
+      return suite.runAllTests();
+    },
+    touchControls: () => {
+      const suite = new TouchControlsTestSuite();
+      return suite.runAllTests();
+    },
+    navigation: () => {
+      const suite = new MobileNavigationTestSuite();
+      return suite.runAllTests();
+    },
+    ui: () => {
+      const suite = new MobileUITestSuite();
+      return suite.runAllTests();
+    },
+    haptic: () => {
+      const suite = new HapticFeedbackTestSuite();
+      return suite.runAllTests();
+    },
+    panels: () => {
+      const suite = new MobilePanelsTestSuite();
+      return suite.runAllTests();
+    },
+    gyroscope: () => {
+      const suite = new GyroscopeTestSuite();
+      return suite.runAllTests();
+    },
+    // Run all mobile tests
+    all: async function() {
+      console.log('📱 Running All Mobile Tests...');
+      const results = { passed: 0, failed: 0, total: 8 };
+      
+      try {
+        await tests.mobile.detection();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.stationDashboard();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.touchControls();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.navigation();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.ui();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.haptic();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.panels();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      try {
+        await tests.mobile.gyroscope();
+        results.passed++;
+      } catch (e) {
+        results.failed++;
+      }
+      
+      console.log(`\n📱 Mobile Test Results: ${results.passed}/${results.total} passed`);
+      return results;
     }
   },
   
@@ -151,6 +261,49 @@ if (typeof window !== 'undefined') {
     return suite.runAllTests();
   };
   
+  // Register mobile test commands
+  (window as any).testMobileDetection = () => {
+    const suite = new MobileDetectionTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testStationDashboard = () => {
+    const suite = new StationDashboardTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testTouchControls = () => {
+    const suite = new TouchControlsTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testMobileNavigation = () => {
+    const suite = new MobileNavigationTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testMobileUI = () => {
+    const suite = new MobileUITestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testHapticFeedback = () => {
+    const suite = new HapticFeedbackTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testMobilePanels = () => {
+    const suite = new MobilePanelsTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testGyroscope = () => {
+    const suite = new GyroscopeTestSuite();
+    return suite.runAllTests();
+  };
+  
+  (window as any).testAllMobile = tests.mobile.all;
+  
   console.log('🧪 Test Suite Loaded!');
   console.log('Available test commands:');
   console.log('\n📋 Integration Tests:');
@@ -180,6 +333,22 @@ if (typeof window !== 'undefined') {
   console.log('  testShipStores(), testEconomyStores(), testMissionStores()');
   console.log('  testNavigationStores(), testUIStores()');
   console.log('  testFactionStore(), testHeatStore()');
+  console.log('\n📱 Mobile Tests:');
+  console.log('  tests.mobile.all() - Run ALL mobile tests');
+  console.log('  tests.mobile.detection() - Test mobile platform detection');
+  console.log('  tests.mobile.stationDashboard() - Test station dashboard');
+  console.log('  tests.mobile.touchControls() - Test touch input systems');
+  console.log('  tests.mobile.navigation() - Test mobile navigation');
+  console.log('  tests.mobile.ui() - Test mobile UI adaptations');
+  console.log('  tests.mobile.haptic() - Test haptic feedback');
+  console.log('  tests.mobile.panels() - Test mobile panels');
+  console.log('  tests.mobile.gyroscope() - Test gyroscope integration');
+  console.log('\n📱 Quick Mobile Test Commands:');
+  console.log('  testAllMobile() - Run all mobile tests');
+  console.log('  testMobileDetection(), testStationDashboard()');
+  console.log('  testTouchControls(), testMobileNavigation()');
+  console.log('  testMobileUI(), testHapticFeedback()');
+  console.log('  testMobilePanels(), testGyroscope()');
 }
 
 export default tests;
