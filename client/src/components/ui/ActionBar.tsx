@@ -51,11 +51,12 @@ export function ActionBar() {
         return;
       }
 
-      // Check for F1-F8 keys
+      // Check for F1-F6 keys (matching ACTION_BUTTONS array length)
       const fKeyMatch = event.key.match(/^F(\d+)$/);
       if (fKeyMatch) {
         const fNumber = parseInt(fKeyMatch[1]);
-        if (fNumber >= 1 && fNumber <= 8) {
+        // Only process keys that have corresponding buttons
+        if (fNumber >= 1 && fNumber <= ACTION_BUTTONS.length) {
           // Only prevent default for F-keys, don't stop propagation to allow game controls
           event.preventDefault();
           
