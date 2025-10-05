@@ -8,6 +8,7 @@ import { useSurfacePlayer } from "../../lib/stores/surface/useSurfacePlayer";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
+import { useSettings } from "../../lib/stores/ui/useSettings";
 
 enum SurfaceControls {
   forward = "forward",
@@ -27,11 +28,13 @@ function terrainHeightAt(x: number, z: number): number {
 }
 
 export function SurfaceMovementController() {
-  const { camera } = useThree();
+  const { camera, gl } = useThree();
   const [subscribe, get] = useKeyboardControls<SurfaceControls>();
   const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
-  const rotationRef = useRef(0);
+  const rotationRef = useRef(0); // Yaw (left/right)
+  const pitchRef = useRef(0); // Pitch (up/down)
   const velocityRef = useRef(new THREE.Vector3());
+  const { sensitivity } = useSettings();
 
   // Collision system
   const { checkCollision } = useSurfaceCollision();
@@ -79,6 +82,57 @@ export function SurfaceMovementController() {
       unsubscribeTurnRight();
     };
   }, [subscribe]);
+
+  // Mouse look controls with pointer lock
+  useEffect(() => {
+    const canvas = gl.domElement;
+    
+    // Mouse movement handler for first-person camera
+    const handleMouseMove = (event: MouseEvent) => {
+      if (document.pointerLockElement === canvas) {
+        // Use higher sensitivity multiplier for surface (10x base sensitivity)
+        const mouseSensitivity = sensitivity * 10;
+        
+        // Update yaw (left/right) - inverted for natural feel
+        rotationRef.current -= event.movementX * mouseSensitivity;
+        
+        // Update pitch (up/down) with clamping to prevent over-rotation
+        pitchRef.current -= event.movementY * mouseSensitivity;
+        
+        // Clamp pitch to prevent looking too far up or down (roughly -85 to +85 degrees)
+        const maxPitch = Math.PI / 2.1;
+        pitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current));
+      }
+    };
+
+    // Request pointer lock on click
+    const handleClick = () => {
+      if (document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock();
+        console.log('[Surface] Pointer lock requested - mouse will control camera');
+      }
+    };
+
+    // Log pointer lock changes
+    const handlePointerLockChange = () => {
+      if (document.pointerLockElement === canvas) {
+        console.log('[Surface] Pointer lock active - use ESC to release mouse');
+      } else {
+        console.log('[Surface] Pointer lock released - click to recapture mouse');
+      }
+    };
+
+    // Add event listeners
+    canvas.addEventListener('click', handleClick);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('pointerlockchange', handlePointerLockChange);
+
+    return () => {
+      canvas.removeEventListener('click', handleClick);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+    };
+  }, [gl, sensitivity]);
 
   useFrame((state, delta) => {
     const controls = get();
@@ -248,10 +302,12 @@ export function SurfaceMovementController() {
     // Update camera position and rotation with shake
     const finalCameraPosition = positionRef.current.clone().add(shake.offset);
     camera.position.copy(finalCameraPosition);
-    camera.rotation.y = rotationRef.current;
-    // Keep camera level with horizon (add subtle shake to rotation if needed)
-    camera.rotation.x = shake.offset.y * 0.5;
-    camera.rotation.z = shake.offset.x * 0.3;
+    
+    // Apply mouse look rotation (yaw and pitch) with shake effects
+    camera.rotation.order = 'YXZ'; // Yaw-Pitch-Roll order for proper FPS controls
+    camera.rotation.y = rotationRef.current; // Yaw (left/right) from mouse or keyboard
+    camera.rotation.x = pitchRef.current + shake.offset.y * 0.5; // Pitch (up/down) from mouse + shake
+    camera.rotation.z = shake.offset.x * 0.3; // Roll only from shake
     camera.updateMatrixWorld();
   });
 
