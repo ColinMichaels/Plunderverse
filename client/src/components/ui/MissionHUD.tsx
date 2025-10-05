@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronUp, ChevronDown, Trophy, Target, Clock, Star, Coins } from 'lucide-react';
 import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
+import { useCreditsStore } from '../../domain/economy/credits.store';
+import { usePlayer } from '../../lib/stores/player/usePlayer';
+import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
 import { Progress } from './progress';
 
 export function MissionHUD() {
@@ -16,6 +19,10 @@ export function MissionHUD() {
     currentMissionId,
     currentObjectiveProgress,
   } = usePlunderverseMissions();
+
+  const { credits } = useCreditsStore();
+  const { reputation } = usePlayer();
+  const { wantedLevel, wantedLevelInfo } = useHeatSystem();
 
   // Save collapse state to localStorage
   useEffect(() => {
@@ -91,6 +98,21 @@ export function MissionHUD() {
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
+  };
+
+  const getRankIcon = () => {
+    const totalRep = Object.values(reputation).reduce((sum, val) => sum + val, 0) / 4;
+    if (totalRep > 75) return '⭐⭐⭐';
+    if (totalRep > 50) return '⭐⭐';
+    if (totalRep > 25) return '⭐';
+    return '☆';
+  };
+
+  const getCreditsColor = () => {
+    if (credits > 1000) return 'text-green-400';
+    if (credits > 500) return 'text-yellow-400';
+    if (credits > 0) return 'text-orange-400';
+    return 'text-red-500';
   };
 
   return (
@@ -260,6 +282,43 @@ export function MissionHUD() {
                         </span>
                       </div>
                     )}
+                  </div>
+
+                  {/* Player Stats Section */}
+                  <div className="flex items-start space-x-4 border-l border-gray-700 pl-4">
+                    <div>
+                      <div className="flex items-center space-x-1 mb-1">
+                        <Star size={14} className="text-orange-400" />
+                        <span className="text-xs font-medium text-gray-300">Player Stats</span>
+                      </div>
+                      <div className="space-y-1">
+                        {/* Credits */}
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs">💰</span>
+                          <span className={`text-xs font-mono font-semibold ${getCreditsColor()}`}>
+                            {credits.toLocaleString()} CR
+                          </span>
+                        </div>
+                        
+                        {/* Rank */}
+                        <div className="flex items-center space-x-1">
+                          <span className="text-xs text-gray-400">Rank:</span>
+                          <span className="text-xs text-yellow-400">{getRankIcon()}</span>
+                        </div>
+
+                        {/* Wanted Level */}
+                        {wantedLevel > 0 && (
+                          <div className="flex items-center space-x-1">
+                            <span className="text-xs" style={{ color: wantedLevelInfo.color }}>
+                              {wantedLevelInfo.icon}
+                            </span>
+                            <span className="text-xs font-medium" style={{ color: wantedLevelInfo.color }}>
+                              LV.{wantedLevel}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
 

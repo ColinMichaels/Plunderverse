@@ -294,11 +294,12 @@ export function MissionDebugPanel() {
       type: "delivery" as const,
       difficulty: "easy" as const,
       rank: 1,
+      minRank: 1,
       faction: "corporations" as const,
       rewards: {
         base: {
           credits: 5000,
-          reputation: { corporations: 10, outlaws: -5 },
+          reputation: { corporations: 10, independents: 0, outlaws: -5, pirates: 0 },
         },
         variable: false,
       },
@@ -306,7 +307,7 @@ export function MissionDebugPanel() {
       objectives: [
         {
           id: "obj_test_1",
-          type: "investigation",
+          type: "investigation" as const,
           description: "Test objective 1",
           completed: false,
         },
@@ -783,7 +784,7 @@ export function MissionDebugPanel() {
                           Wanted Level
                         </Label>
                         <p className="text-cyan-400 font-mono">
-                          {player.wantedLevel}
+                          {player.heat}
                         </p>
                       </div>
                     </div>
@@ -1294,7 +1295,7 @@ export function MissionDebugPanel() {
                       <SelectContent>
                         {planets.map((planet) => (
                           <SelectItem key={planet.name} value={planet.name}>
-                            <span class="text-white/60 bg-black/60 p-2 w-full hover:text-cyan-500">
+                            <span className="text-white/60 bg-black/60 p-2 w-full hover:text-cyan-500">
                               {planet.name}
                             </span>
                           </SelectItem>
