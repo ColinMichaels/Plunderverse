@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin, Navigation, Zap, Target, Compass, Coins, Shield, Fuel, Heart, Crosshair, Save } from 'lucide-react';
+import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin, Navigation, Zap, Target, Compass, Coins, Shield, Fuel, Heart, Crosshair, Save, Cloud, CloudOff, AlertTriangle } from 'lucide-react';
 import { useLandedState } from '@/lib/stores/surface/useLandedState';
 import { useHUDContext } from '@/lib/stores/ui/useHUDContext';
 import { useFlashlight } from '@/lib/stores/surface/useFlashlight';
@@ -11,6 +11,7 @@ import { useCreditsStore } from '@/domain/economy/credits.store';
 import { useEquipment } from '@/lib/stores/ship/useEquipment';
 import { usePlayer } from '@/lib/stores/player/usePlayer';
 import { useAutoSave } from '@/hooks/useAutoSave';
+import { useCloudSync, cloudSyncManager } from '@/services/CloudSyncManager';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function BottomControlSidebar() {
@@ -18,6 +19,7 @@ export function BottomControlSidebar() {
     const saved = localStorage.getItem('bottomSidebar_collapsed');
     return saved === 'true';
   });
+  const [showConflictDialog, setShowConflictDialog] = useState(false);
 
   const { isLanded, landedPlanet, setIsTakingOff, isTakingOff } = useLandedState();
   const { isDocked, dockedStationName, currentContext } = useHUDContext();
@@ -30,13 +32,14 @@ export function BottomControlSidebar() {
   const { equipment } = useEquipment();
   const player = usePlayer();
   const { isSaving, lastSaveTime } = useAutoSave();
+  const { status: cloudSyncStatus, lastSyncedAt } = useCloudSync();
   
   // Get fuel from equipment
   const fuelEquipment = equipment.find(e => e.type === 'fuel');
   const fuel = fuelEquipment ? Math.round((fuelEquipment.currentDurability / fuelEquipment.maxDurability) * 100) : 100;
   
   // Get total enemy kills
-  const totalKills = player.enemyKills?.total || 0;
+  const totalKills = player.enemyKills?.totalKills || 0;
 
   // Save collapse state
   const handleToggleCollapse = () => {
@@ -52,6 +55,11 @@ export function BottomControlSidebar() {
     }
     setIsTakingOff(true);
     console.log(`Initiating takeoff sequence from ${landedPlanet}`);
+  };
+  
+  // Handle conflict resolution (user-triggered)
+  const handleConflictClick = () => {
+    setShowConflictDialog(true);
   };
 
   const getBatteryColor = () => {
@@ -107,12 +115,55 @@ export function BottomControlSidebar() {
   };
 
   return (
-    <motion.div
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      exit={{ y: 100 }}
-      className="fixed bottom-0 left-0 right-0 z-30"
-    >
+    <>
+      {/* Conflict Resolution Dialog */}
+      {showConflictDialog && cloudSyncStatus === 'conflict' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-gray-900 border border-red-500 rounded-lg p-6 max-w-md mx-4"
+          >
+            <div className="flex items-center gap-2 text-red-400 mb-4">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="text-lg font-bold">Save Conflict Detected</h3>
+            </div>
+            
+            <p className="text-gray-300 mb-4">
+              A newer save was found on the server. Which version would you like to keep?
+            </p>
+            
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  cloudSyncManager.resolveConflict(true);
+                  setShowConflictDialog(false);
+                }}
+                className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded transition-colors"
+              >
+                Load Server Save (Newer)
+              </button>
+              
+              <button
+                onClick={() => {
+                  cloudSyncManager.resolveConflict(false);
+                  setShowConflictDialog(false);
+                }}
+                className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded transition-colors"
+              >
+                Keep Current Progress
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      <motion.div
+        initial={{ y: 100 }}
+        animate={{ y: 0 }}
+        exit={{ y: 100 }}
+        className="fixed bottom-0 left-0 right-0 z-30"
+      >
       <div
         className={`bg-black/70 backdrop-blur-md border-t border-orange-600/30 transition-all duration-300 ${
           isCollapsed ? 'h-10' : 'h-24'
@@ -167,7 +218,7 @@ export function BottomControlSidebar() {
                 </div>
               )}
               
-              {/* Right: System Status + Save */}
+              {/* Right: System Status + Save + Cloud Sync */}
               <div className="flex items-center space-x-2">
                 {spaceStatuses.map((status, idx) => (
                   <div key={idx} className={`px-2 py-0.5 ${status.bg} border ${status.border} rounded text-xs ${status.color}`}>
@@ -177,6 +228,37 @@ export function BottomControlSidebar() {
                 {isSaving && (
                   <div className="flex items-center space-x-1 text-blue-400">
                     <Save size={14} className="animate-pulse" />
+                  </div>
+                )}
+                {/* Cloud Sync Status */}
+                {cloudSyncStatus === 'syncing' && (
+                  <div className="flex items-center gap-1 text-cyan-400">
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400" />
+                  </div>
+                )}
+                {cloudSyncStatus === 'synced' && lastSyncedAt && (
+                  <div className="flex items-center gap-1 text-green-400">
+                    <Cloud size={14} />
+                  </div>
+                )}
+                {cloudSyncStatus === 'offline' && (
+                  <div className="flex items-center gap-1 text-orange-400">
+                    <CloudOff size={14} />
+                  </div>
+                )}
+                {cloudSyncStatus === 'conflict' && (
+                  <motion.div 
+                    className="flex items-center justify-center text-red-400 cursor-pointer animate-pulse"
+                    onClick={handleConflictClick}
+                    title="Save conflict - click to resolve"
+                    whileHover={{ scale: 1.1 }}
+                  >
+                    <AlertTriangle className="w-4 h-4" />
+                  </motion.div>
+                )}
+                {cloudSyncStatus === 'error' && (
+                  <div className="flex items-center gap-1 text-red-400">
+                    <AlertTriangle size={14} />
                   </div>
                 )}
               </div>
@@ -222,6 +304,42 @@ export function BottomControlSidebar() {
                     <div className="bg-blue-900/30 border border-blue-400/50 rounded px-2 py-1 flex items-center space-x-1">
                       <Save size={14} className="text-blue-400 animate-pulse" />
                       <span className="text-xs text-blue-400">Saving...</span>
+                    </div>
+                  )}
+                  
+                  {/* Cloud Sync Status */}
+                  {cloudSyncStatus === 'syncing' && (
+                    <div className="bg-cyan-900/30 border border-cyan-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-cyan-400" />
+                      <span className="text-xs text-cyan-400">Syncing...</span>
+                    </div>
+                  )}
+                  {cloudSyncStatus === 'synced' && lastSyncedAt && (
+                    <div className="bg-green-900/30 border border-green-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                      <Cloud size={14} className="text-green-400" />
+                      <span className="text-xs text-green-400">Synced</span>
+                    </div>
+                  )}
+                  {cloudSyncStatus === 'offline' && (
+                    <div className="bg-orange-900/30 border border-orange-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                      <CloudOff size={14} className="text-orange-400" />
+                      <span className="text-xs text-orange-400">Offline</span>
+                    </div>
+                  )}
+                  {cloudSyncStatus === 'conflict' && (
+                    <div 
+                      className="flex items-center gap-2 bg-red-900/30 px-3 py-1.5 rounded border border-red-400/50 cursor-pointer animate-pulse"
+                      onClick={handleConflictClick}
+                      title="Click to resolve conflict"
+                    >
+                      <AlertTriangle className="w-3 h-3 text-red-400" />
+                      <span className="text-red-400 text-xs font-medium">Conflict! Click</span>
+                    </div>
+                  )}
+                  {cloudSyncStatus === 'error' && (
+                    <div className="bg-red-900/30 border border-red-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                      <AlertTriangle size={14} className="text-red-400" />
+                      <span className="text-xs text-red-400">Sync Error</span>
                     </div>
                   )}
                 </div>
@@ -361,5 +479,6 @@ export function BottomControlSidebar() {
         </AnimatePresence>
       </div>
     </motion.div>
+    </>
   );
 }

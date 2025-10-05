@@ -24,6 +24,8 @@ import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
+import { useAuthStore } from "./lib/stores/auth/useAuthStore";
+import { cloudSyncManager } from "./services/CloudSyncManager";
 import "./testSaveSystem"; // Import save system test module
 import "./utils/testSaveFixed"; // Import fixed save test
 import "./runImprovementTests"; // Import improvement tests
@@ -40,6 +42,10 @@ function GameContent() {
   
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
+  
+  // Track CloudSync initialization to prevent re-initialization loop
+  const cloudSyncInitializedRef = useRef(false);
+  const cloudSyncInitializingRef = useRef(false);
   
   // Update the keyboard map only when keybinds actually change
   useEffect(() => {
@@ -119,6 +125,95 @@ function GameContent() {
       resourceManager.logMemoryStatus();
     }
   }, [isLanded]);
+
+  // Initialize CloudSyncManager with proper auth state subscription
+  useEffect(() => {
+    // Track previous auth state for transition detection
+    let prevAuthState = {
+      isAuthenticated: useAuthStore.getState().isAuthenticated,
+      isGuest: useAuthStore.getState().isGuest,
+    };
+    
+    // Subscribe to auth state changes
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      const currentAuthState = {
+        isAuthenticated: state.isAuthenticated,
+        isGuest: state.isGuest,
+      };
+      
+      // Check if auth state actually changed
+      if (
+        currentAuthState.isAuthenticated === prevAuthState.isAuthenticated &&
+        currentAuthState.isGuest === prevAuthState.isGuest
+      ) {
+        return;
+      }
+      
+      // Detect login transition (not-authenticated → authenticated, excluding guests)
+      const wasNotAuthenticated = !prevAuthState.isAuthenticated || prevAuthState.isGuest;
+      const isNowAuthenticated = currentAuthState.isAuthenticated && !currentAuthState.isGuest;
+      
+      if (wasNotAuthenticated && isNowAuthenticated) {
+        // Prevent concurrent initialization
+        if (cloudSyncInitializedRef.current || cloudSyncInitializingRef.current) {
+          prevAuthState = currentAuthState;
+          return;
+        }
+        
+        cloudSyncInitializingRef.current = true;
+        
+        cloudSyncManager.initialize()
+          .then(() => {
+            cloudSyncInitializedRef.current = true;
+            console.log('[CLOUD-SYNC] Initialized successfully after login');
+          })
+          .catch((error) => {
+            console.error('[CLOUD-SYNC] Initialization failed:', error);
+          })
+          .finally(() => {
+            cloudSyncInitializingRef.current = false;
+          });
+      }
+      
+      // Detect logout transition
+      if (!currentAuthState.isAuthenticated && prevAuthState.isAuthenticated) {
+        cloudSyncManager.reset();
+        cloudSyncInitializedRef.current = false;
+        console.log('[CLOUD-SYNC] Cleaned up after logout');
+      }
+      
+      // Update previous state
+      prevAuthState = currentAuthState;
+    });
+    
+    // Also check immediately on mount in case already authenticated
+    const initCloudSyncIfAuthenticated = async () => {
+      const { isAuthenticated, isGuest } = useAuthStore.getState();
+      
+      if (isAuthenticated && !isGuest && !cloudSyncInitializedRef.current && !cloudSyncInitializingRef.current) {
+        cloudSyncInitializingRef.current = true;
+        
+        try {
+          await cloudSyncManager.initialize();
+          cloudSyncInitializedRef.current = true;
+          console.log('[CLOUD-SYNC] Initialized successfully on mount');
+        } catch (error) {
+          console.error('[CLOUD-SYNC] Initialization failed:', error);
+        } finally {
+          cloudSyncInitializingRef.current = false;
+        }
+      }
+    };
+    
+    initCloudSyncIfAuthenticated();
+    
+    return () => {
+      unsubscribe();
+      cloudSyncManager.reset();
+      cloudSyncInitializedRef.current = false;
+      cloudSyncInitializingRef.current = false;
+    };
+  }, []); // Empty array is fine now - we subscribe to changes internally
 
   // Initialize Plunderverse content and developer tools
   useEffect(() => {
