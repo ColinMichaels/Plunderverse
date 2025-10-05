@@ -25,7 +25,6 @@ import { SaveGamePanel } from "./SaveGamePanel";
 import { AutoSaveIndicator } from "./AutoSaveIndicator";
 import { HintModal } from "../screens/HintModal";
 import { DeathScreen } from "./DeathScreen";
-import { DebugPanel } from "../debug/DebugPanel";
 // Store Hooks
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useGame } from "../../lib/stores/ui/useGame";
@@ -207,9 +206,6 @@ export function GameUI() {
       
       {/* Death Screen - Shows when player ship is destroyed */}
       {phase === 'ended' && <DeathScreen />}
-      
-      {/* Debug Panel - Press backtick to toggle */}
-      <DebugPanel />
 
     </>
   );

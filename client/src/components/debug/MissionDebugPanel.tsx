@@ -60,6 +60,12 @@ import {
   Rocket,
   Shield,
   DollarSign,
+  User,
+  Skull,
+  Heart,
+  Sunrise,
+  Sunset,
+  Moon,
 } from "lucide-react";
 
 // Store imports
@@ -78,6 +84,8 @@ import {
   TIME_OF_DAY_PRESETS,
 } from "../../lib/stores/surface/useSurfaceLighting";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
+import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
+import { useGame } from "../../lib/stores/ui/useGame";
 
 // Utils
 import { MemoryProfiler } from "../../lib/utils/MemoryProfiler";
@@ -129,7 +137,6 @@ function useFPS(): number {
 }
 
 export function MissionDebugPanel() {
-  const [isVisible, setIsVisible] = useState(false);
   const [activeTab, setActiveTab] = useState("mission");
   const [creditAmount, setCreditAmount] = useState("1000");
   const [reputationAmount, setReputationAmount] = useState("10");
@@ -157,6 +164,11 @@ export function MissionDebugPanel() {
   const [interactionId, setInteractionId] = useState("trade_merchant");
   const [customValue, setCustomValue] = useState("50");
 
+  // Lighting debug state
+  const [currentSunAngle, setCurrentSunAngle] = useState(0);
+  const [currentSunElevation, setCurrentSunElevation] = useState(0);
+  const [estimatedTimeOfDay, setEstimatedTimeOfDay] = useState("Unknown");
+
   // Store hooks
   const missionsStore = usePlunderverseMissions();
   const player = usePlayer();
@@ -174,13 +186,17 @@ export function MissionDebugPanel() {
   const crew = useCrewManagement();
   const lighting = useSurfaceLighting();
   const {
+    isVisible,
     timeScale,
     showCollisionBoxes,
     showWireframes,
     setTimeScale,
     toggleCollisionBoxes,
     toggleWireframes,
+    toggleVisibility,
   } = useDebugTools();
+  const shipStatus = useShipStatus();
+  const { phase } = useGame();
 
   // Performance metrics
   const fps = useFPS();
@@ -200,19 +216,16 @@ export function MissionDebugPanel() {
       if (e.key === "`" || e.key === "~") {
         e.preventDefault();
         e.stopPropagation();
-        setIsVisible((prev) => {
-          const newValue = !prev;
-          console.log(
-            `[MISSION-DEBUG] Debug panel toggled: ${prev} -> ${newValue}`,
-          );
-          return newValue;
-        });
+        toggleVisibility();
+        console.log(
+          `[MISSION-DEBUG] Debug panel toggled to: ${!isVisible}`,
+        );
       }
     };
 
     window.addEventListener("keydown", handleKeyPress, true);
     return () => window.removeEventListener("keydown", handleKeyPress, true);
-  }, []);
+  }, [toggleVisibility, isVisible]);
 
   // Update memory history
   useEffect(() => {
@@ -250,6 +263,35 @@ export function MissionDebugPanel() {
     return () => clearInterval(interval);
   }, []);
 
+  // Update sun position calculations for lighting tab
+  useEffect(() => {
+    if (!lighting.manualOverride && landedPlanet) {
+      const planet = planets.find((p) => p.name === landedPlanet);
+      if (planet) {
+        const updateSunPosition = () => {
+          const universeTime = getUniverseTime();
+          const sunAngle = (planet.rotationSpeed * universeTime) % (2 * Math.PI);
+          const sunElevation = Math.sin(sunAngle);
+          
+          // Calculate time of day based on sun angle
+          let timeOfDay = "Night";
+          if (sunElevation >= 0.5) timeOfDay = "Noon";
+          else if (sunElevation >= 0.1) timeOfDay = "Morning";
+          else if (sunElevation >= -0.1) timeOfDay = "Dawn";
+          else if (sunElevation >= -0.3) timeOfDay = "Dusk";
+
+          setCurrentSunAngle(sunAngle);
+          setCurrentSunElevation(sunElevation);
+          setEstimatedTimeOfDay(timeOfDay);
+        };
+
+        updateSunPosition();
+        const interval = setInterval(updateSunPosition, 100);
+        return () => clearInterval(interval);
+      }
+    }
+  }, [lighting.manualOverride, landedPlanet, getUniverseTime]);
+
   if (!import.meta.env.DEV) {
     return null;
   }
@@ -257,6 +299,56 @@ export function MissionDebugPanel() {
   if (!isVisible) {
     return null;
   }
+
+  // Get time icon based on time of day
+  const getTimeIcon = () => {
+    switch (lighting.currentTimeOfDay) {
+      case "Dawn":
+        return <Sunrise className="h-4 h-4" />;
+      case "Noon":
+      case "Morning":
+        return <Sun className="h-4 w-4" />;
+      case "Dusk":
+        return <Sunset className="h-4 w-4" />;
+      case "Night":
+        return <Moon className="h-4 w-4" />;
+      default:
+        return <Sun className="h-4 w-4" />;
+    }
+  };
+
+  // === Player Debug Functions ===
+  const handleKillPlayer = () => {
+    console.log('[PLAYER-DEBUG] Killing player...');
+    shipStatus.takeDamage(1000, "Debug");
+    toast.success("Player killed (debug)");
+  };
+
+  const handleRevivePlayer = () => {
+    console.log('[PLAYER-DEBUG] Reviving player...');
+    useGame.getState().revive();
+    toast.success("Player revived");
+  };
+
+  const getRecentKills = () => {
+    if (!player.enemyKills || !player.enemyKills.killLog) return [];
+    return player.enemyKills.killLog.slice(-10).reverse();
+  };
+
+  const getKillsByType = () => {
+    if (!player.enemyKills || !player.enemyKills.killLog) return {};
+    
+    const killsByType: Record<string, number> = {};
+    player.enemyKills.killLog.forEach(kill => {
+      const key = `${kill.enemyType} ${kill.shipClass}`;
+      killsByType[key] = (killsByType[key] || 0) + 1;
+    });
+    
+    return killsByType;
+  };
+
+  const recentKills = getRecentKills();
+  const killsByType = getKillsByType();
 
   // === Mission Debug Functions ===
   const addCredits = () => {
@@ -655,7 +747,7 @@ export function MissionDebugPanel() {
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setIsVisible(false)}
+              onClick={toggleVisibility}
               className="text-cyan-400 hover:text-cyan-300"
             >
               <X className="w-4 h-4" />
@@ -677,6 +769,13 @@ export function MissionDebugPanel() {
               >
                 <Shield className="w-3 h-3 mr-1" />
                 Mission
+              </TabsTrigger>
+              <TabsTrigger
+                value="player"
+                className="data-[state=active]:bg-cyan-500/20 data-[state=active]:text-cyan-400"
+              >
+                <User className="w-3 h-3 mr-1" />
+                Player
               </TabsTrigger>
               <TabsTrigger
                 value="memory"
@@ -954,6 +1053,125 @@ export function MissionDebugPanel() {
                         Trigger Combat
                       </Button>
                     </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Player Debug Tab */}
+              <TabsContent value="player" className="mt-0 space-y-4">
+                {/* Player Actions */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-cyan-400 flex items-center gap-2">
+                    <User className="w-4 h-4" />
+                    Player Actions
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button
+                      onClick={handleKillPlayer}
+                      className="bg-red-600 hover:bg-red-700"
+                      size="sm"
+                      disabled={phase === 'ended'}
+                    >
+                      <Skull className="w-4 h-4 mr-2" />
+                      Kill Player
+                    </Button>
+                    <Button
+                      onClick={handleRevivePlayer}
+                      className="bg-green-600 hover:bg-green-700"
+                      size="sm"
+                      disabled={phase !== 'ended'}
+                    >
+                      <Heart className="w-4 h-4 mr-2" />
+                      Revive Player
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Player Stats */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-cyan-400">Ship Status</h3>
+                  <div className="bg-gray-900/50 p-3 rounded space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Hull:</span>
+                      <span className={shipStatus.hull > 50 ? "text-green-400" : shipStatus.hull > 20 ? "text-yellow-400" : "text-red-400"}>
+                        {shipStatus.hull.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Shield:</span>
+                      <span className={shipStatus.shield > 50 ? "text-cyan-400" : shipStatus.shield > 20 ? "text-yellow-400" : "text-red-400"}>
+                        {shipStatus.shield.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Credits:</span>
+                      <span className="text-green-400">{credits.credits}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Game Phase:</span>
+                      <span className={phase === 'playing' ? "text-green-400" : phase === 'ended' ? "text-red-400" : "text-yellow-400"}>
+                        {phase}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Status:</span>
+                      <span className={shipStatus.isDestroyed ? "text-red-400" : shipStatus.isCritical ? "text-yellow-400" : "text-green-400"}>
+                        {shipStatus.isDestroyed ? "Destroyed" : shipStatus.isCritical ? "Critical" : "OK"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Kill Statistics */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-semibold text-cyan-400">Combat Statistics</h3>
+                  <div className="bg-gray-900/50 p-3 rounded space-y-3">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-400">Total Kills:</span>
+                      <span className="text-cyan-400 font-bold">
+                        {player.enemyKills?.totalKills || 0}
+                      </span>
+                    </div>
+
+                    {/* Kill Breakdown by Type */}
+                    {Object.keys(killsByType).length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-400">Kills by Type:</Label>
+                        <div className="space-y-1">
+                          {Object.entries(killsByType).map(([type, count]) => (
+                            <div key={type} className="flex justify-between text-xs">
+                              <span className="text-gray-500">{type}:</span>
+                              <span className="text-cyan-400">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Recent Kills */}
+                    {recentKills.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-xs text-gray-400">Recent Kills:</Label>
+                        <ScrollArea className="h-32">
+                          <div className="space-y-1">
+                            {recentKills.map((kill, index) => (
+                              <div key={`${kill.timestamp}-${index}`} className="flex justify-between text-xs">
+                                <span className="text-gray-500">
+                                  {kill.enemyType} {kill.shipClass}
+                                </span>
+                                <span className="text-gray-600">
+                                  {new Date(kill.timestamp).toLocaleTimeString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </ScrollArea>
+                      </div>
+                    )}
+
+                    {recentKills.length === 0 && (
+                      <p className="text-xs text-gray-600 mt-2">No enemies killed yet</p>
+                    )}
                   </div>
                 </div>
               </TabsContent>
@@ -1462,14 +1680,78 @@ export function MissionDebugPanel() {
                     )}
 
                     {!lighting.manualOverride && (
-                      <div className="bg-gray-900/50 p-3 rounded">
-                        <p className="text-sm text-gray-400">
-                          Lighting is automatically calculated based on planet
-                          rotation and universe time.
-                        </p>
-                        <p className="text-xs text-cyan-400 mt-2">
-                          Current: {lighting.currentTimeOfDay}
-                        </p>
+                      <div className="bg-gray-900/50 p-3 rounded space-y-3">
+                        <div className="flex items-center gap-2">
+                          {getTimeIcon()}
+                          <div>
+                            <p className="text-sm font-semibold text-white">
+                              {estimatedTimeOfDay}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Automatic Mode - {landedPlanet}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Sun Angle:</span>
+                            <span className="text-white">
+                              {((currentSunAngle * 180) / Math.PI).toFixed(1)}°
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-400">Sun Elevation:</span>
+                            <span className="text-white">
+                              {((Math.asin(currentSunElevation) * 180) / Math.PI).toFixed(1)}°
+                            </span>
+                          </div>
+                          
+                          {planets.find((p) => p.name === landedPlanet) && (
+                            <>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Day Length:</span>
+                                <span className="text-white">
+                                  {planets.find((p) => p.name === landedPlanet)?.dayLength}
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-400">Rotation Speed:</span>
+                                <span className="text-white">
+                                  {planets.find((p) => p.name === landedPlanet)?.rotationSpeed.toFixed(4)}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+
+                        <div className="text-xs text-gray-500 border-t border-gray-700 pt-2">
+                          <p>Sun rises in the east (positive X) and sets in the west (negative X).</p>
+                          {(() => {
+                            const planet = planets.find((p) => p.name === landedPlanet);
+                            if (!planet) return null;
+                            
+                            return (
+                              <>
+                                {planet.rotationSpeed < 0 && (
+                                  <p className="text-yellow-400 mt-1">
+                                    ⚠️ This planet has retrograde rotation - sun moves backwards!
+                                  </p>
+                                )}
+                                {Math.abs(planet.rotationSpeed) < 0.005 && (
+                                  <p className="text-blue-400 mt-1">
+                                    Very slow rotation - days are extremely long.
+                                  </p>
+                                )}
+                                {Math.abs(planet.rotationSpeed) > 0.015 && (
+                                  <p className="text-green-400 mt-1">
+                                    Fast rotation - short day/night cycles.
+                                  </p>
+                                )}
+                              </>
+                            );
+                          })()}
+                        </div>
                       </div>
                     )}
                   </div>
