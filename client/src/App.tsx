@@ -261,11 +261,11 @@ function GameContent() {
             {/* Show splash screen */}
             {phase === "splash" && <SplashScreen />}
 
-            {/* Show game when playing */}
-            {phase === "playing" && showCanvas && (
+            {/* Show game when playing OR ended (for death screen) */}
+            {(phase === "playing" || phase === "ended") && showCanvas && (
               <KeyboardControls map={keyboardMapRef.current}>
                 {/* Conditionally render EITHER space scene OR planet surface scene */}
-                {!isLanded ? (
+                {phase === "playing" && !isLanded && (
                   // Space scene - only rendered when not landed
                   <TouchPropulsionControls>
                     <Canvas
@@ -288,7 +288,9 @@ function GameContent() {
                       </Suspense>
                     </Canvas>
                   </TouchPropulsionControls>
-                ) : (
+                )}
+                
+                {phase === "playing" && isLanded && (
                   // Planet surface scene - only rendered when landed
                   <PlanetSurfaceScene />
                 )}
