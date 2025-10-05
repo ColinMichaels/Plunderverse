@@ -110,22 +110,22 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
     
     switch (shipType) {
       case 'fighter':
-        stats = { hull: 40, shield: 20, weapon: WEAPON_TYPES.laser, credits: 100, scale: 0.8 };
+        stats = { hull: 40, shield: 20, weapon: WEAPON_TYPES.laser, credits: 100, scale: 1.0 };
         detectionRange = 60;
         attackRange = 40;
         break;
       case 'patrol':
-        stats = { hull: 60, shield: 40, weapon: WEAPON_TYPES.plasma, credits: 200, scale: 1.0 };
+        stats = { hull: 60, shield: 40, weapon: WEAPON_TYPES.plasma, credits: 200, scale: 1.2 };
         detectionRange = 80;
         attackRange = 50;
         break;
       case 'bomber':
-        stats = { hull: 80, shield: 30, weapon: WEAPON_TYPES.missile, credits: 300, scale: 1.2 };
+        stats = { hull: 80, shield: 30, weapon: WEAPON_TYPES.missile, credits: 300, scale: 1.5 };
         detectionRange = 70;
         attackRange = 60;
         break;
       case 'elite':
-        stats = { hull: 100, shield: 60, weapon: WEAPON_TYPES.rapidfire, credits: 500, scale: 1.1 };
+        stats = { hull: 100, shield: 60, weapon: WEAPON_TYPES.rapidfire, credits: 500, scale: 1.3 };
         detectionRange = 100;
         attackRange = 70;
         break;
@@ -232,8 +232,8 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
         // Calculate distance to player
         const distanceToPlayer = enemy.position.distanceTo(playerPosition);
         
-        // AI Behavior Logic
-        const speed = 20; // Base movement speed
+        // AI Behavior Logic - Reduced speed for easier targeting
+        const speed = 10; // Reduced from 20 to make enemies easier to hit
         let targetVelocity = new THREE.Vector3();
         
         // Apply crew hacker bonus to reduce enemy detection range

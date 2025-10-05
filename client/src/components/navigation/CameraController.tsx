@@ -331,7 +331,7 @@ export function CameraController() {
     const baseMaxVelocity = 50; // Increased terminal velocity
     const dragCoefficient = 0.995; // Reduced friction for stickier momentum
     const mobileThrustPower = 50; // Increased for faster mobile movement
-    const rotationalDamping = 0.98; // Increased for faster, more responsive aiming
+    const rotationalDamping = 0.96; // Increased responsiveness for combat targeting
 
     // Warp mode constants
     const warpThrustMultiplier = upgrades.warpCapability ? 4 : 2; // Enhanced thrust in warp
@@ -591,10 +591,10 @@ export function CameraController() {
     // Only apply look controls if not landing
     if (!isLanding) {
       // Combine mouse and mobile rotation inputs
-      const mouseX = mouse.x * sensitivity;
-      const mouseY = mouse.y * sensitivity * (invertY ? -1 : 1);
-      const mobileX = mobileRotationRef.current.x * 0.3; // Increased for faster combat aiming
-      const mobileY = mobileRotationRef.current.y * 0.3 * (invertY ? -1 : 1); // Increased for faster combat aiming
+      const mouseX = mouse.x * sensitivity * 2; // Doubled for better combat tracking
+      const mouseY = mouse.y * sensitivity * 2 * (invertY ? -1 : 1); // Doubled for better combat tracking
+      const mobileX = mobileRotationRef.current.x * 0.5; // Increased for faster combat aiming
+      const mobileY = mobileRotationRef.current.y * 0.5 * (invertY ? -1 : 1); // Increased for faster combat aiming
 
       const targetRotationY = camera.rotation.y - (mouseX + mobileX);
       const targetRotationX = THREE.MathUtils.clamp(
