@@ -26,6 +26,7 @@ interface CloudSyncState {
   setConflict: (serverTime: number, localTime: number) => void;
   clearConflict: () => void;
   setError: (error: string) => void;
+  clearError: () => void;
   
   initialize: () => Promise<void>;
   syncNow: () => Promise<void>;
@@ -102,6 +103,14 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
       lastError: error
     });
     console.error('[CloudSync] Error:', error);
+  },
+  
+  clearError: () => {
+    set({ 
+      status: 'idle',
+      lastError: null 
+    });
+    console.log('[CloudSync] Error cleared');
   },
   
   initialize: async () => {

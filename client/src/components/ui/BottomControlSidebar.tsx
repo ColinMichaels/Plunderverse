@@ -337,9 +337,16 @@ export function BottomControlSidebar() {
                     </div>
                   )}
                   {cloudSyncStatus === 'error' && (
-                    <div className="bg-red-900/30 border border-red-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                    <div 
+                      className="bg-red-900/30 border border-red-400/50 rounded px-2 py-1 flex items-center space-x-1 cursor-pointer hover:bg-red-900/50 transition-colors"
+                      onClick={() => {
+                        cloudSyncManager.clearError();
+                        cloudSyncManager.syncNow();
+                      }}
+                      title="Click to retry sync"
+                    >
                       <AlertTriangle size={14} className="text-red-400" />
-                      <span className="text-xs text-red-400">Sync Error</span>
+                      <span className="text-xs text-red-400">Sync Error - Click to Retry</span>
                     </div>
                   )}
                 </div>
