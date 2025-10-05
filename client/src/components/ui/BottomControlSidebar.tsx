@@ -110,7 +110,7 @@ export function BottomControlSidebar() {
                       <p className="text-xs text-gray-400 uppercase">Location</p>
                       <p className="text-sm text-orange-400 font-semibold">
                         {isLanded && landedPlanet}
-                        {isDocked && dockedStationName}
+                        {isDocked && (dockedStationName || 'Station')}
                       </p>
                     </div>
                   </div>

@@ -34,7 +34,7 @@ import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { planets } from "../../lib/planetData";
-import { TakeoffControls } from "../surface/TakeoffControls";
+import { BottomControlSidebar } from "./BottomControlSidebar";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -164,11 +164,6 @@ export function GameUI() {
         <FixedMiniMap />
       </div>
 
-      {/* Take Off Controls when landed */}
-      <div className="fixed bottom-4 left-40 z-30">
-        <TakeoffControls />
-      </div>
-
       {/* Music Player in bottom right corner */}
       <div className="fixed top-4 left-28 z-30">
         <MusicPlayer />
@@ -204,6 +199,9 @@ export function GameUI() {
       
       {/* Hint Modal - Shows tutorial hints */}
       <HintModal />
+      
+      {/* Bottom Control Sidebar - Shows location, flashlight, and takeoff controls */}
+      <BottomControlSidebar />
 
     </>
   );

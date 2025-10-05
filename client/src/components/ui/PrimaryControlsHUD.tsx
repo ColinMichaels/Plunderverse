@@ -323,13 +323,6 @@ export function PrimaryControlsHUD() {
       case 'docked':
         return (
           <div className="flex flex-col items-center gap-2 animate-fadeIn">
-            {/* Docked Status */}
-            <div className="bg-blue-900/50 border border-blue-400 rounded px-3 py-1">
-              <span className="text-sm text-blue-300 font-semibold">
-                🏢 Docked at {dockedStationName || 'Station'}
-              </span>
-            </div>
-            
             {/* Station Services */}
             <div className="grid grid-cols-4 gap-2">
               <button className="station-service-btn flex flex-col items-center justify-center p-2 bg-gray-800/60 hover:bg-gray-700/60 border border-gray-600 hover:border-blue-400 rounded transition-all group">
