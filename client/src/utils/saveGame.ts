@@ -296,9 +296,25 @@ export function restoreGameState(gameState: GameStateData): void {
     const economyState = usePlunderverseEconomy.getState();
     economyState.tuning = stores.plunderverseEconomy.tuning;
     economyState.currentSeed = stores.plunderverseEconomy.currentSeed || '';
-    economyState.priceModifiers = new Map(stores.plunderverseEconomy.priceModifiers || []);
-    economyState.demandModifiers = new Map(stores.plunderverseEconomy.demandModifiers || []);
-    economyState.factionEconomies = new Map(stores.plunderverseEconomy.factionEconomies || []);
+    
+    // Safely restore Maps - handle both array and object formats
+    try {
+      economyState.priceModifiers = Array.isArray(stores.plunderverseEconomy.priceModifiers) 
+        ? new Map(stores.plunderverseEconomy.priceModifiers) 
+        : new Map();
+      economyState.demandModifiers = Array.isArray(stores.plunderverseEconomy.demandModifiers)
+        ? new Map(stores.plunderverseEconomy.demandModifiers)
+        : new Map();
+      economyState.factionEconomies = Array.isArray(stores.plunderverseEconomy.factionEconomies)
+        ? new Map(stores.plunderverseEconomy.factionEconomies)
+        : new Map();
+    } catch (error) {
+      console.warn('[SaveGame] Failed to restore economy maps, using defaults:', error);
+      economyState.priceModifiers = new Map();
+      economyState.demandModifiers = new Map();
+      economyState.factionEconomies = new Map();
+    }
+    
     economyState.heatDecayInterval = stores.plunderverseEconomy.heatDecayInterval || 60000;
   }
   
@@ -307,16 +323,35 @@ export function restoreGameState(gameState: GameStateData): void {
     const missionsState = usePlunderverseMissions.getState();
     missionsState.availableMissions = stores.plunderverseMissions.availableMissions || [];
     missionsState.activeMissions = stores.plunderverseMissions.activeMissions || [];
-    missionsState.completedMissionIds = new Set(stores.plunderverseMissions.completedMissionIds || []);
-    missionsState.failedMissionIds = new Set(stores.plunderverseMissions.failedMissionIds || []);
+    
+    // Safely restore Sets
+    try {
+      missionsState.completedMissionIds = Array.isArray(stores.plunderverseMissions.completedMissionIds)
+        ? new Set(stores.plunderverseMissions.completedMissionIds)
+        : new Set();
+      missionsState.failedMissionIds = Array.isArray(stores.plunderverseMissions.failedMissionIds)
+        ? new Set(stores.plunderverseMissions.failedMissionIds)
+        : new Set();
+    } catch (error) {
+      console.warn('[SaveGame] Failed to restore mission sets, using defaults:', error);
+      missionsState.completedMissionIds = new Set();
+      missionsState.failedMissionIds = new Set();
+    }
+    
     missionsState.currentMissionId = stores.plunderverseMissions.currentMissionId;
     
     // Restore objective progress
     const progressMap = new Map<string, Map<string, number>>();
-    if (stores.plunderverseMissions.currentObjectiveProgress) {
-      stores.plunderverseMissions.currentObjectiveProgress.forEach((entry: any) => {
-        progressMap.set(entry.missionId, new Map(entry.objectives));
-      });
+    try {
+      if (Array.isArray(stores.plunderverseMissions.currentObjectiveProgress)) {
+        stores.plunderverseMissions.currentObjectiveProgress.forEach((entry: any) => {
+          if (entry && entry.missionId && Array.isArray(entry.objectives)) {
+            progressMap.set(entry.missionId, new Map(entry.objectives));
+          }
+        });
+      }
+    } catch (error) {
+      console.warn('[SaveGame] Failed to restore objective progress:', error);
     }
     missionsState.currentObjectiveProgress = progressMap;
     

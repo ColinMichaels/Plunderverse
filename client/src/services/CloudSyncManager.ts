@@ -367,6 +367,7 @@ export const cloudSyncManager = {
   stopPeriodicSync: () => useCloudSync.getState().stopPeriodicSync(),
   resolveConflict: (useServer: boolean) => useCloudSync.getState().resolveConflict(useServer),
   reset: () => useCloudSync.getState().reset(),
+  clearError: () => useCloudSync.getState().clearError(),
   getStatus: () => useCloudSync.getState().status,
   getLastSyncedAt: () => useCloudSync.getState().lastSyncedAt,
   hasConflict: () => !!useCloudSync.getState().conflictData,
