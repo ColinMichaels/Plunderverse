@@ -128,8 +128,6 @@ export function GameUI() {
       )}
 
 
-      {/* Bottom Center - Primary Controls */}
-      {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
 
       {/* Landing Transition */}
       <LandingTransition />

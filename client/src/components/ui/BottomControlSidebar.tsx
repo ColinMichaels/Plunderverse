@@ -1,9 +1,12 @@
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin } from 'lucide-react';
+import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin, Navigation, Zap, Target, Compass } from 'lucide-react';
 import { useLandedState } from '@/lib/stores/surface/useLandedState';
 import { useHUDContext } from '@/lib/stores/ui/useHUDContext';
 import { useFlashlight } from '@/lib/stores/surface/useFlashlight';
 import { useMining } from '@/lib/stores/economy/useMining';
+import { useAutopilot } from '@/lib/stores/navigation/useAutopilot';
+import { useShipStatus } from '@/lib/stores/ship/useShipStatus';
+import { useSolarSystem } from '@/lib/stores/space/useSolarSystem';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function BottomControlSidebar() {
@@ -13,9 +16,12 @@ export function BottomControlSidebar() {
   });
 
   const { isLanded, landedPlanet, setIsTakingOff, isTakingOff } = useLandedState();
-  const { isDocked, dockedStationName } = useHUDContext();
+  const { isDocked, dockedStationName, currentContext } = useHUDContext();
   const { isActive: isMining, stopMining } = useMining();
   const { isOn: flashlightOn, batteryLevel, toggle: toggleFlashlight, getBatteryStatus } = useFlashlight();
+  const { isActive: isAutopilotActive, deactivate: deactivateAutopilot } = useAutopilot();
+  const { isWarpMode, isThrusting } = useShipStatus();
+  const { selectedPlanet } = useSolarSystem();
 
   // Save collapse state
   const handleToggleCollapse = () => {
@@ -50,8 +56,25 @@ export function BottomControlSidebar() {
     }
   };
 
-  // Only show if landed or docked
-  if (!isLanded && !isDocked) return null;
+  // Determine location text based on context
+  const getLocationText = () => {
+    if (isLanded) return `Surface: ${landedPlanet}`;
+    if (isDocked) return `Docked: ${dockedStationName || 'Station'}`;
+    if (selectedPlanet) return `Near: ${selectedPlanet}`;
+    return 'Deep Space';
+  };
+
+  // Determine status indicators for space
+  const getSpaceStatus = () => {
+    const statuses = [];
+    if (isAutopilotActive) statuses.push({ text: 'Autopilot', color: 'text-cyan-400', bg: 'bg-cyan-900/30', border: 'border-cyan-400/50' });
+    if (isWarpMode) statuses.push({ text: 'Warp Drive', color: 'text-purple-400', bg: 'bg-purple-900/30', border: 'border-purple-400/50' });
+    if (isThrusting && !isWarpMode) statuses.push({ text: 'Thrusting', color: 'text-orange-400', bg: 'bg-orange-900/30', border: 'border-orange-400/50' });
+    if (isMining) statuses.push({ text: 'Mining', color: 'text-yellow-400', bg: 'bg-yellow-900/30', border: 'border-yellow-400/50' });
+    return statuses;
+  };
+
+  const spaceStatuses = getSpaceStatus();
 
   return (
     <motion.div
@@ -76,7 +99,7 @@ export function BottomControlSidebar() {
 
         <AnimatePresence mode="wait">
           {isCollapsed ? (
-            // Collapsed view - just show location
+            // Collapsed view - just show location and key statuses
             <motion.div
               key="collapsed"
               initial={{ opacity: 0 }}
@@ -86,14 +109,20 @@ export function BottomControlSidebar() {
             >
               <div className="flex items-center space-x-3 text-orange-400">
                 <MapPin size={18} />
-                <span className="text-sm font-medium">
-                  {isLanded && `On Surface: ${landedPlanet}`}
-                  {isDocked && `Docked at ${dockedStationName || 'Station'}`}
-                </span>
+                <span className="text-sm font-medium">{getLocationText()}</span>
+                {spaceStatuses.length > 0 && (
+                  <div className="flex items-center space-x-2 ml-4">
+                    {spaceStatuses.map((status, idx) => (
+                      <div key={idx} className={`px-2 py-0.5 ${status.bg} border ${status.border} rounded text-xs ${status.color}`}>
+                        {status.text}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           ) : (
-            // Expanded view - show all controls
+            // Expanded view - show all controls based on context
             <motion.div
               key="expanded"
               initial={{ opacity: 0 }}
@@ -102,66 +131,95 @@ export function BottomControlSidebar() {
               className="h-full px-4 py-2"
             >
               <div className="flex items-center justify-between h-full max-w-7xl mx-auto">
-                {/* Location Status */}
+                {/* Location Status & Active Systems */}
                 <div className="flex items-center space-x-4">
                   <div className="flex items-center space-x-2 bg-gray-900/50 px-4 py-2 rounded-lg border border-orange-500/30">
                     <MapPin size={20} className="text-orange-400" />
                     <div>
                       <p className="text-xs text-gray-400 uppercase">Location</p>
                       <p className="text-sm text-orange-400 font-semibold">
-                        {isLanded && landedPlanet}
-                        {isDocked && (dockedStationName || 'Station')}
+                        {getLocationText()}
                       </p>
                     </div>
                   </div>
 
-                  {isMining && (
-                    <div className="px-3 py-1 bg-yellow-900/30 border border-yellow-400/50 rounded text-yellow-400 text-xs font-mono">
-                      ⚠️ Mining in progress
+                  {/* Status Indicators */}
+                  {spaceStatuses.map((status, idx) => (
+                    <div key={idx} className={`px-3 py-1 ${status.bg} border ${status.border} rounded ${status.color} text-xs font-mono`}>
+                      {status.text}
                     </div>
-                  )}
+                  ))}
                 </div>
 
-                {/* Control Buttons */}
+                {/* Context-Specific Control Buttons */}
                 <div className="flex items-center space-x-3">
-                  {/* Flashlight Control - only show when landed */}
+                  {/* SURFACE CONTROLS - Show when landed */}
                   {isLanded && (
-                    <button
-                      onClick={toggleFlashlight}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
-                        flashlightOn
-                          ? 'bg-yellow-500/20 border-yellow-400/50 text-yellow-400'
-                          : 'bg-gray-900/50 border-gray-600/30 text-gray-400 hover:border-gray-500/50'
-                      }`}
-                      title={`Flashlight (F) - Battery: ${Math.round(batteryLevel)}%`}
-                    >
-                      <Flashlight size={20} />
-                      <div className="text-left">
-                        <p className="text-xs uppercase">Flashlight</p>
-                        <p className={`text-xs font-mono ${getBatteryColor()}`}>
-                          {Math.round(batteryLevel)}%
-                        </p>
-                      </div>
-                    </button>
+                    <>
+                      {/* Flashlight Control */}
+                      <button
+                        onClick={toggleFlashlight}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                          flashlightOn
+                            ? 'bg-yellow-500/20 border-yellow-400/50 text-yellow-400'
+                            : 'bg-gray-900/50 border-gray-600/30 text-gray-400 hover:border-gray-500/50'
+                        }`}
+                        title={`Flashlight (F) - Battery: ${Math.round(batteryLevel)}%`}
+                      >
+                        <Flashlight size={20} />
+                        <div className="text-left">
+                          <p className="text-xs uppercase">Flashlight</p>
+                          <p className={`text-xs font-mono ${getBatteryColor()}`}>
+                            {Math.round(batteryLevel)}%
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Takeoff Button */}
+                      <button
+                        onClick={handleTakeoff}
+                        disabled={isTakingOff}
+                        className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                          isTakingOff
+                            ? 'bg-gray-900/50 border-gray-600/30 text-gray-600 cursor-not-allowed'
+                            : 'bg-cyan-500/20 border-cyan-400/50 text-cyan-400 hover:bg-cyan-500/30 hover:border-cyan-400'
+                        }`}
+                        title={isTakingOff ? 'Taking off...' : 'Take Off'}
+                      >
+                        <Rocket size={20} />
+                        <span className="text-sm font-semibold">
+                          {isTakingOff ? 'Taking Off...' : 'Take Off'}
+                        </span>
+                      </button>
+                    </>
                   )}
 
-                  {/* Takeoff Button - only show when landed */}
-                  {isLanded && (
-                    <button
-                      onClick={handleTakeoff}
-                      disabled={isTakingOff}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
-                        isTakingOff
-                          ? 'bg-gray-900/50 border-gray-600/30 text-gray-600 cursor-not-allowed'
-                          : 'bg-cyan-500/20 border-cyan-400/50 text-cyan-400 hover:bg-cyan-500/30 hover:border-cyan-400'
-                      }`}
-                      title={isTakingOff ? 'Taking off...' : 'Take Off'}
-                    >
-                      <Rocket size={20} />
-                      <span className="text-sm font-semibold">
-                        {isTakingOff ? 'Taking Off...' : 'Take Off'}
-                      </span>
-                    </button>
+                  {/* SPACE CONTROLS - Show when in space */}
+                  {!isLanded && !isDocked && (
+                    <>
+                      {/* Autopilot Control */}
+                      {isAutopilotActive && (
+                        <button
+                          onClick={deactivateAutopilot}
+                          className="flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all bg-cyan-500/20 border-cyan-400/50 text-cyan-400 hover:bg-cyan-500/30 hover:border-cyan-400"
+                          title="Cancel Autopilot"
+                        >
+                          <Navigation size={20} />
+                          <span className="text-sm font-semibold">Cancel Autopilot</span>
+                        </button>
+                      )}
+
+                      {/* Target Indicator */}
+                      {selectedPlanet && (
+                        <div className="flex items-center space-x-2 px-4 py-2 rounded-lg border bg-purple-900/20 border-purple-400/30 text-purple-400">
+                          <Target size={20} />
+                          <div className="text-left">
+                            <p className="text-xs uppercase">Target</p>
+                            <p className="text-xs font-semibold">{selectedPlanet}</p>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
