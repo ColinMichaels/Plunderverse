@@ -16,57 +16,59 @@ export function DeathScreen() {
   const revive = useGame((state) => state.revive);
   const [isLoading, setIsLoading] = useState(false);
   const musicPlayer = useMusicPlayer();
-  
+
   const canAffordRevival = credits >= REVIVAL_COST;
-  
+
   // Play ambient/death music when death screen appears
   useEffect(() => {
-    console.log('[DeathScreen] Player died - playing ambient music');
-    
+    console.log("[DeathScreen] Player died - playing ambient music");
+
     // Start ambient music timer for death screen
     if (!musicPlayer.isPlaying) {
       musicPlayer.startAmbientTimer();
     }
-    
+
     return () => {
       // Cleanup on unmount
-      console.log('[DeathScreen] Unmounting death screen');
+      console.log("[DeathScreen] Unmounting death screen");
     };
   }, []);
 
   const handleRevive = () => {
     if (canAffordRevival) {
       // Stop ambient music before reviving
-      console.log('[DeathScreen] Stopping music and reviving player');
+      console.log("[DeathScreen] Stopping music and reviving player");
       musicPlayer.stopAmbientTimer();
       musicPlayer.pause();
-      
+
       revive();
     }
   };
 
   const handleLoadSave = async () => {
     setIsLoading(true);
-    
+
     // Stop ambient music before loading save
-    console.log('[DeathScreen] Stopping music and loading save');
+    console.log("[DeathScreen] Stopping music and loading save");
     musicPlayer.stopAmbientTimer();
     musicPlayer.pause();
-    
+
     try {
       await quickLoad();
       // quickLoad already handles state restoration and game start
     } catch (error: any) {
       console.error("Failed to load save:", error);
-      
+
       // Check if it's a "no saves" error vs a real error
-      const errorMessage = error?.message || '';
-      if (errorMessage.includes('No saves found') || errorMessage === '') {
-        alert("No save games found. You need to create a checkpoint save first by playing the game.\n\nTip: The game auto-saves when you dock at a station or complete missions.");
+      const errorMessage = error?.message || "";
+      if (errorMessage.includes("No saves found") || errorMessage === "") {
+        alert(
+          "No save games found. You need to create a checkpoint save first by playing the game.\n\nTip: The game auto-saves when you dock at a station or complete missions.",
+        );
       } else {
         alert(`Failed to load save game: ${errorMessage}`);
       }
-      
+
       // Restart music if load failed
       musicPlayer.startAmbientTimer();
     } finally {
@@ -83,7 +85,7 @@ export function DeathScreen() {
             <span className="text-2xl">Ship Destroyed</span>
           </CardTitle>
         </CardHeader>
-        
+
         <CardContent className="pt-6 space-y-4">
           <div className="text-center">
             <p className="text-gray-300 text-lg mb-2">
@@ -95,14 +97,22 @@ export function DeathScreen() {
             </p>
           </div>
 
-          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700">
+          <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700 text-white/60">
             <div className="flex justify-between items-center mb-2">
               <span className="text-gray-400">Revival Cost:</span>
-              <span className="text-cyan-400 font-bold">{REVIVAL_COST} Credits</span>
+              <span className="text-cyan-400 font-bold">
+                {REVIVAL_COST} Credits
+              </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-400">Your Credits:</span>
-              <span className={credits >= REVIVAL_COST ? "text-green-400 font-bold" : "text-red-400 font-bold"}>
+              <span
+                className={
+                  credits >= REVIVAL_COST
+                    ? "text-green-400 font-bold"
+                    : "text-red-400 font-bold"
+                }
+              >
                 {credits} Credits
               </span>
             </div>
@@ -116,9 +126,9 @@ export function DeathScreen() {
             </div>
           )}
         </CardContent>
-        
+
         <CardFooter className="flex flex-col gap-3 pt-2">
-          <Button 
+          <Button
             onClick={handleRevive}
             disabled={!canAffordRevival}
             className="w-full bg-cyan-600 hover:bg-cyan-700 disabled:bg-gray-700 disabled:text-gray-500"
@@ -127,12 +137,12 @@ export function DeathScreen() {
             <RotateCcw className="w-5 h-5 mr-2" />
             Revive Ship ({REVIVAL_COST} Credits)
           </Button>
-          
-          <Button 
+
+          <Button
             onClick={handleLoadSave}
             disabled={isLoading}
             variant="outline"
-            className="w-full border-gray-600 hover:bg-gray-800"
+            className="w-full border-gray-600 hover:bg-gray-600 text-white/60 disabled:text-gray-500"
             size="lg"
           >
             <FolderOpen className="w-5 h-5 mr-2" />
