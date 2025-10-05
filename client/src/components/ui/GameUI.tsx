@@ -13,7 +13,6 @@ import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
 // New HUD Components
 import { ShipCoreStatus } from "./ShipCoreStatus";
-import { MissionContextHUD } from "./MissionContextHUD";
 import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
@@ -128,8 +127,6 @@ export function GameUI() {
         </div>
       )}
 
-      {/* Top Right - Mission Context */}
-      {uiZoneVisibility.topRight && <MissionContextHUD />}
 
       {/* Bottom Center - Primary Controls */}
       {uiZoneVisibility.bottomCenter && <PrimaryControlsHUD />}
