@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../lib/stores/auth/useAuthStore';
 import { gameApi, SaveSlot } from '../../services/gameApi';
 import { collectGameState, restoreGameState } from '../../utils/saveGame';
+import { cloudSyncManager } from '../../services/CloudSyncManager';
 import { useGame } from '../../lib/stores/ui/useGame';
 import { useSettings } from '../../lib/stores/ui/useSettings';
 import { 
@@ -145,8 +146,23 @@ export const MainMenu: React.FC = () => {
     
     try {
       const gameState = await gameApi.loadGame(slot);
+      
+      // Check for conflict with server before loading
+      const hasConflict = await cloudSyncManager.checkForConflict(gameState.timestamp);
+      
+      if (hasConflict) {
+        // Conflict detected - don't load, let user resolve via conflict UI
+        setError('This save conflicts with your cloud save. Check the sync status to resolve.');
+        setIsLoading(false);
+        return;
+      }
+      
+      // No conflict, proceed with loading
       await restoreGameState(gameState);
       setIsOpen(false);
+      
+      // Trigger a sync to update the server with this loaded save
+      await cloudSyncManager.syncNow();
     } catch (err: any) {
       setError('Failed to load save');
       console.error('Load save error:', err);

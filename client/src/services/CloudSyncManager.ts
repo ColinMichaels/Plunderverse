@@ -27,6 +27,7 @@ interface CloudSyncState {
   clearConflict: () => void;
   setError: (error: string) => void;
   clearError: () => void;
+  checkForConflict: (saveTimestamp: number) => Promise<boolean>;
   
   initialize: () => Promise<void>;
   syncNow: () => Promise<void>;
@@ -113,6 +114,34 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
     console.log('[CloudSync] Error cleared');
   },
   
+  checkForConflict: async (saveTimestamp: number): Promise<boolean> => {
+    if (!isAuthenticated()) {
+      return false; // No conflict check if offline
+    }
+    
+    try {
+      const latestServerSave = await gameApi.getLatestSave();
+      if (!latestServerSave) {
+        return false; // No conflict if no server save
+      }
+      
+      const serverTime = new Date(latestServerSave.timestamp).getTime();
+      const localTime = saveTimestamp;
+      
+      // If server has a newer save, we have a conflict
+      if (serverTime > localTime) {
+        get().setConflict(serverTime, localTime);
+        console.log('[CloudSync] Conflict detected when loading old save');
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error('[CloudSync] Error checking for conflict:', error);
+      return false; // Don't block load on error
+    }
+  },
+  
   initialize: async () => {
     const state = get();
     
@@ -157,14 +186,24 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
         local: localLastSyncedAt ? new Date(localLastSyncedAt).toISOString() : 'never'
       });
       
+      // On initialization, always load from server if available (no conflict prompt)
+      // This ensures the latest cloud save is used when starting the game
       if (serverUpdatedAt > localLastSyncedAt) {
-        get().setConflict(serverUpdatedAt, localLastSyncedAt);
-        console.log('[CloudSync] Server has newer save, showing conflict');
-        set({ isInitialized: true });
-        return;
+        console.log('[CloudSync] Server has newer save, loading automatically...');
+        try {
+          restoreGameState(latestSave);
+          get().setLastSyncedAt(serverUpdatedAt);
+          console.log('[CloudSync] Server save loaded successfully');
+        } catch (error) {
+          console.error('[CloudSync] Failed to load server save:', error);
+          get().setError((error as Error).message);
+          set({ isInitialized: true });
+          return;
+        }
+      } else {
+        console.log('[CloudSync] Local state is current');
       }
       
-      console.log('[CloudSync] Local state is current');
       set({ 
         status: 'synced',
         isInitialized: true
@@ -368,6 +407,7 @@ export const cloudSyncManager = {
   resolveConflict: (useServer: boolean) => useCloudSync.getState().resolveConflict(useServer),
   reset: () => useCloudSync.getState().reset(),
   clearError: () => useCloudSync.getState().clearError(),
+  checkForConflict: (saveTimestamp: number) => useCloudSync.getState().checkForConflict(saveTimestamp),
   getStatus: () => useCloudSync.getState().status,
   getLastSyncedAt: () => useCloudSync.getState().lastSyncedAt,
   hasConflict: () => !!useCloudSync.getState().conflictData,
