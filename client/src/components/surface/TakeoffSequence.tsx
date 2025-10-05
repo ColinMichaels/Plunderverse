@@ -5,6 +5,7 @@ import { planets } from "@/lib/planetData";
 import { useAudio} from "@/lib/stores";
 import * as THREE from "three";
 
+
 type TakeoffStage = "preparing" | "igniting" | "ascending" | "breaking_atmosphere" | "entering_orbit" | "complete";
 
 export function TakeoffSequence() {
