@@ -24,8 +24,11 @@ import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
 import { AutoSaveIndicator } from "./AutoSaveIndicator";
 import { HintModal } from "../screens/HintModal";
+import { DeathScreen } from "./DeathScreen";
+import { DebugPanel } from "../debug/DebugPanel";
 // Store Hooks
 import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
+import { useGame } from "../../lib/stores/ui/useGame";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
@@ -42,6 +45,7 @@ export function GameUI() {
   
   const { isGuest } = useAuthStore();
   const { manualSave } = useAutoSave();
+  const { phase } = useGame();
 
   // Initialize docking detection
   useDockingDetection();
@@ -200,6 +204,12 @@ export function GameUI() {
       
       {/* Bottom Control Sidebar - Shows location, flashlight, and takeoff controls */}
       <BottomControlSidebar />
+      
+      {/* Death Screen - Shows when player ship is destroyed */}
+      {phase === 'ended' && <DeathScreen />}
+      
+      {/* Debug Panel - Press backtick to toggle */}
+      <DebugPanel />
 
     </>
   );

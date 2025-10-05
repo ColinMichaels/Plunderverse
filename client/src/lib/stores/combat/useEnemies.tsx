@@ -557,6 +557,10 @@ export const useEnemies = create<EnemiesState>((set, get) => ({
       const shooting = useShooting.getState();
       shooting.reportEnemyDestroyed(enemy.shipType, enemy.faction);
       
+      // Record enemy kill in player stats
+      const player = usePlayer.getState();
+      player.recordEnemyKill(enemy.faction, enemy.shipType);
+      
       set(state => ({
         totalEnemiesDestroyed: state.totalEnemiesDestroyed + 1
       }));

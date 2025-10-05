@@ -5,7 +5,8 @@ import { useCreditsStore } from "@/domain/economy/credits.store";
 import { useShipStatus } from "@/lib/stores/ship/useShipStatus";
 import { useGame } from "@/lib/stores/ui/useGame";
 import { quickLoad } from "@/utils/saveGame";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useMusicPlayer } from "@/lib/stores/ui/useMusicPlayer";
 
 const REVIVAL_COST = 300;
 
@@ -14,17 +15,44 @@ export function DeathScreen() {
   const lastDamageSource = useShipStatus((state) => state.lastDamageSource);
   const revive = useGame((state) => state.revive);
   const [isLoading, setIsLoading] = useState(false);
+  const musicPlayer = useMusicPlayer();
   
   const canAffordRevival = credits >= REVIVAL_COST;
+  
+  // Play ambient/death music when death screen appears
+  useEffect(() => {
+    console.log('[DeathScreen] Player died - playing ambient music');
+    
+    // Start ambient music timer for death screen
+    if (!musicPlayer.isPlaying) {
+      musicPlayer.startAmbientTimer();
+    }
+    
+    return () => {
+      // Cleanup on unmount
+      console.log('[DeathScreen] Unmounting death screen');
+    };
+  }, []);
 
   const handleRevive = () => {
     if (canAffordRevival) {
+      // Stop ambient music before reviving
+      console.log('[DeathScreen] Stopping music and reviving player');
+      musicPlayer.stopAmbientTimer();
+      musicPlayer.pause();
+      
       revive();
     }
   };
 
   const handleLoadSave = async () => {
     setIsLoading(true);
+    
+    // Stop ambient music before loading save
+    console.log('[DeathScreen] Stopping music and loading save');
+    musicPlayer.stopAmbientTimer();
+    musicPlayer.pause();
+    
     try {
       await quickLoad();
       // quickLoad already handles state restoration and game start

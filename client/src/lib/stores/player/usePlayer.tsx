@@ -53,6 +53,16 @@ interface PlayerState {
     outlaws: number; // -100 to 100
   };
   
+  // Enemy Kill Tracking
+  enemyKills: {
+    totalKills: number;
+    killLog: Array<{
+      enemyType: string;
+      shipClass: string;
+      timestamp: number;
+    }>;
+  };
+  
   // Status flags
   isAlive: boolean;
   needsMedicalAttention: boolean;
@@ -84,6 +94,9 @@ interface PlayerState {
   updateHeat: (change: number) => void;
   updateReputation: (faction: 'corporations' | 'independents' | 'outlaws', change: number) => void;
   getReputationStatus: (faction: 'corporations' | 'independents' | 'outlaws') => string;
+  
+  // Enemy Kill Tracking
+  recordEnemyKill: (enemyType: string, shipClass: string) => void;
 }
 
 export const usePlayer = create<PlayerState>((set, get) => ({
@@ -135,6 +148,12 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     outlaws: 0
   },
   
+  // Enemy Kill Tracking
+  enemyKills: {
+    totalKills: 0,
+    killLog: []
+  },
+  
   // Status
   isAlive: true,
   needsMedicalAttention: false,
@@ -178,6 +197,10 @@ export const usePlayer = create<PlayerState>((set, get) => ({
         corporations: 0,
         independents: 0,
         outlaws: 0
+      },
+      enemyKills: {
+        totalKills: 0,
+        killLog: []
       },
       isAlive: true,
       needsMedicalAttention: false,
@@ -432,6 +455,28 @@ export const usePlayer = create<PlayerState>((set, get) => ({
       const creditsStore = useCreditsStore.getState();
       creditsStore.addCredits(amount);
       console.log(`[Player] Added ${amount} credits from combat reward`);
+    });
+  },
+  
+  // Enemy Kill Tracking
+  recordEnemyKill: (enemyType, shipClass) => {
+    set(state => {
+      const newKillEntry = {
+        enemyType,
+        shipClass,
+        timestamp: Date.now()
+      };
+      
+      const newKillLog = [...state.enemyKills.killLog, newKillEntry];
+      
+      console.log(`[Player] Enemy kill recorded: ${enemyType} ${shipClass} (Total: ${state.enemyKills.totalKills + 1})`);
+      
+      return {
+        enemyKills: {
+          totalKills: state.enemyKills.totalKills + 1,
+          killLog: newKillLog
+        }
+      };
     });
   }
 }));
