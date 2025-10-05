@@ -1,12 +1,10 @@
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useMining } from "../../lib/stores/economy/useMining";
-import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useLandedState } from "@/lib/stores/surface/useLandedState";
+import { useMining } from "@/lib/stores/economy/useMining";
 
 export function TakeoffControls() {
   const { isLanded, landedPlanet, setIsTakingOff, isTakingOff } =
     useLandedState();
   const { isActive: isMining, stopMining } = useMining();
-  const { playTakeoff } = useAudio();
 
   if (!isLanded) return null;
 
@@ -18,7 +16,6 @@ export function TakeoffControls() {
 
     // Trigger the takeoff sequence
     setIsTakingOff(true);
-    playTakeoff();
     console.log(`Initiating takeoff sequence from ${landedPlanet}`);
   };
 

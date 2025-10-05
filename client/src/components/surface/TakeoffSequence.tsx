@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from "react";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { planets } from "../../lib/planetData";
+import { useLandedState } from "@/lib/stores/surface/useLandedState";
+import { useSolarSystem } from "@/lib/stores/space/useSolarSystem";
+import { planets } from "@/lib/planetData";
+import { useAudio} from "@/lib/stores";
 import * as THREE from "three";
 
 type TakeoffStage = "preparing" | "igniting" | "ascending" | "breaking_atmosphere" | "entering_orbit" | "complete";
@@ -12,6 +13,7 @@ export function TakeoffSequence() {
   const [stage, setStage] = useState<TakeoffStage>("preparing");
   const [progress, setProgress] = useState(0);
   const cameraAnimationRef = useRef<NodeJS.Timeout>();
+  const { playTakeoff } = useAudio();
 
   useEffect(() => {
     if (!isTakingOff) {
@@ -31,6 +33,7 @@ export function TakeoffSequence() {
           if (prev >= 100) {
             clearInterval(progressInterval);
             setStage("igniting");
+            playTakeoff();
             return 0;
           }
           return prev + 3;
