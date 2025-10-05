@@ -164,7 +164,7 @@ export function SplashScreen() {
   // Initialize sounds and start ambient music
   useEffect(() => {
     const { soundEffects } = AUDIO_CONFIG;
-    
+
     // Load space ambience
     const ambientAudio = new Audio(soundEffects.ambient.path);
     ambientAudio.volume = soundEffects.ambient.volume;
@@ -399,7 +399,9 @@ export function SplashScreen() {
         <div className="relative mb-4">
           <h1 className="text-6xl md:text-8xl font-bold text-orange-400 mb-4 tracking-wider relative">
             PLUNDERVERSE
-            <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12">2149</span>
+            <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12">
+              2149
+            </span>
           </h1>
         </div>
 
@@ -484,8 +486,8 @@ export function SplashScreen() {
 
               <div className="border-t border-slate-600 pt-4">
                 <p className="text-sm text-slate-400">
-                  Navigate the lawless frontier. Your ship, your crew, your rules.
-                  Just don't get caught by the authorities.
+                  Navigate the lawless frontier. Your ship, your crew, your
+                  rules. Just don't get caught by the authorities.
                 </p>
               </div>
             </div>
@@ -568,12 +570,6 @@ export function SplashScreen() {
       )}
       {/* Music Player - prominently displayed */}
       <div className="absolute bottom-4 right-4">
-        <div className="animate-pulse mb-1">
-          <div className="text-xs text-orange-400 font-semibold flex items-center gap-1">
-            <span>🎵</span>
-            <span>CANTINA JUKEBOX</span>
-          </div>
-        </div>
         <MusicPlayer />
       </div>
     </div>
