@@ -6,8 +6,6 @@ import { InventoryDisplay } from '../economy/InventoryDisplay';
 import { TradingInterface } from '../economy/TradingInterface';
 import { CrewManagementPanel } from '../ship/CrewManagementPanel';
 import { StoryProgressionPanel } from './StoryProgressionPanel';
-import { ControlsHelp } from '../screens/ControlsHelp';
-import { SettingsPanel } from '../screens/SettingsPanel';
 import { CryptoWallet } from '../economy/crypto/CryptoWallet';
 
 interface ActionButton {
@@ -23,9 +21,7 @@ const ACTION_BUTTONS: ActionButton[] = [
   { id: 'trading', icon: '💱', label: 'Trading', shortcut: 'F3' },
   { id: 'crew', icon: '👥', label: 'Crew', shortcut: 'F4' },
   { id: 'story', icon: '📖', label: 'Story', shortcut: 'F5' },
-  { id: 'controls', icon: '❓', label: 'Controls', shortcut: 'F6' },
-  { id: 'settings', icon: '⚙️', label: 'Settings', shortcut: 'F7' },
-  { id: 'crypto', icon: '💰', label: 'Crypto', shortcut: 'F8' },
+  { id: 'crypto', icon: '💰', label: 'Crypto', shortcut: 'F6' },
 ];
 
 export function ActionBar() {
@@ -264,38 +260,6 @@ export function ActionBar() {
             scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
           ">
             <StoryProgressionPanel />
-          </div>
-        )}
-        
-        {/* Controls Panel */}
-        {panels.get('controls')?.isOpen && (
-          <div className="
-            absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
-            border-l border-cyan-400/50 
-            rounded-l-lg 
-            pointer-events-auto
-            animate-slide-in-right
-            overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
-          ">
-            <ControlsHelp />
-          </div>
-        )}
-        
-        {/* Settings Panel */}
-        {panels.get('settings')?.isOpen && (
-          <div className="
-            absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
-            border-l border-cyan-400/50 
-            rounded-l-lg 
-            pointer-events-auto
-            animate-slide-in-right
-            overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
-          ">
-            <SettingsPanel open={true} onOpenChange={(open) => !open && togglePanel('settings')} />
           </div>
         )}
         
