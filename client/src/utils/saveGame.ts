@@ -17,6 +17,7 @@ import { useDestroyedNodes } from '../lib/stores/surface/useDestroyedNodes';
 import { useHeatSystem } from '../lib/stores/player/useHeatSystem';
 import { useRewards } from '../lib/stores/ui/useRewards';
 import { useSettings } from '../lib/stores/ui/useSettings';
+import { useGame } from '../lib/stores/ui/useGame';
 import { gameApi, GameStateData } from '../services/gameApi';
 
 // Save format version for compatibility checking
@@ -400,6 +401,11 @@ export function restoreGameState(gameState: GameStateData): void {
   }
   
   console.log('Game state restored successfully');
+  
+  // Transition game phase back to playing after restore
+  const gamePhase = useGame.getState();
+  gamePhase.start();
+  console.log('[SAVE-LOAD] Game phase transitioned to playing after restore');
 }
 
 // Check version compatibility

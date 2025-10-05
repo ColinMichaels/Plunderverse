@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin, Navigation, Zap, Target, Compass } from 'lucide-react';
+import { ChevronUp, ChevronDown, Flashlight, Rocket, MapPin, Navigation, Zap, Target, Compass, Coins, Shield, Fuel, Heart, Crosshair, Save } from 'lucide-react';
 import { useLandedState } from '@/lib/stores/surface/useLandedState';
 import { useHUDContext } from '@/lib/stores/ui/useHUDContext';
 import { useFlashlight } from '@/lib/stores/surface/useFlashlight';
@@ -7,6 +7,10 @@ import { useMining } from '@/lib/stores/economy/useMining';
 import { useAutopilot } from '@/lib/stores/navigation/useAutopilot';
 import { useShipStatus } from '@/lib/stores/ship/useShipStatus';
 import { useSolarSystem } from '@/lib/stores/space/useSolarSystem';
+import { useCreditsStore } from '@/domain/economy/credits.store';
+import { useEquipment } from '@/lib/stores/ship/useEquipment';
+import { usePlayer } from '@/lib/stores/player/usePlayer';
+import { useAutoSave } from '@/hooks/useAutoSave';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export function BottomControlSidebar() {
@@ -20,8 +24,19 @@ export function BottomControlSidebar() {
   const { isActive: isMining, stopMining } = useMining();
   const { isOn: flashlightOn, batteryLevel, toggle: toggleFlashlight, getBatteryStatus } = useFlashlight();
   const { isActive: isAutopilotActive, deactivate: deactivateAutopilot } = useAutopilot();
-  const { isWarpMode, isThrusting } = useShipStatus();
+  const { isWarpMode, isThrusting, hull, shield } = useShipStatus();
   const { selectedPlanet } = useSolarSystem();
+  const { credits } = useCreditsStore();
+  const { equipment } = useEquipment();
+  const player = usePlayer();
+  const { isSaving, lastSaveTime } = useAutoSave();
+  
+  // Get fuel from equipment
+  const fuelEquipment = equipment.find(e => e.type === 'fuel');
+  const fuel = fuelEquipment ? Math.round((fuelEquipment.currentDurability / fuelEquipment.maxDurability) * 100) : 100;
+  
+  // Get total enemy kills
+  const totalKills = player.enemyKills?.total || 0;
 
   // Save collapse state
   const handleToggleCollapse = () => {
@@ -75,6 +90,21 @@ export function BottomControlSidebar() {
   };
 
   const spaceStatuses = getSpaceStatus();
+  
+  // Helper functions for meter colors
+  const getMeterColor = (value: number) => {
+    if (value >= 70) return 'bg-green-500';
+    if (value >= 40) return 'bg-yellow-500';
+    if (value >= 20) return 'bg-orange-500';
+    return 'bg-red-500';
+  };
+  
+  const getTextColor = (value: number) => {
+    if (value >= 70) return 'text-green-400';
+    if (value >= 40) return 'text-yellow-400';
+    if (value >= 20) return 'text-orange-400';
+    return 'text-red-400';
+  };
 
   return (
     <motion.div
@@ -99,30 +129,60 @@ export function BottomControlSidebar() {
 
         <AnimatePresence mode="wait">
           {isCollapsed ? (
-            // Collapsed view - just show location and key statuses
+            // Collapsed view - compact row with key info
             <motion.div
               key="collapsed"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex items-center h-full px-4"
+              className="flex items-center justify-between h-full px-4"
             >
-              <div className="flex items-center space-x-3 text-orange-400">
-                <MapPin size={18} />
-                <span className="text-sm font-medium">{getLocationText()}</span>
-                {spaceStatuses.length > 0 && (
-                  <div className="flex items-center space-x-2 ml-4">
-                    {spaceStatuses.map((status, idx) => (
-                      <div key={idx} className={`px-2 py-0.5 ${status.bg} border ${status.border} rounded text-xs ${status.color}`}>
-                        {status.text}
-                      </div>
-                    ))}
+              {/* Left: Location + Credits */}
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 text-orange-400">
+                  <MapPin size={16} />
+                  <span className="text-sm font-medium">{getLocationText()}</span>
+                </div>
+                <div className="flex items-center space-x-1 text-cyan-400">
+                  <Coins size={14} />
+                  <span className="text-sm font-mono">{credits}c</span>
+                </div>
+              </div>
+              
+              {/* Center: Ship Status Bars (mini) */}
+              {!isLanded && (
+                <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-1">
+                    <Heart size={14} className={getTextColor(hull)} />
+                    <span className={`text-xs font-mono ${getTextColor(hull)}`}>{Math.round(hull)}%</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Shield size={14} className={getTextColor(shield)} />
+                    <span className={`text-xs font-mono ${getTextColor(shield)}`}>{Math.round(shield)}%</span>
+                  </div>
+                  <div className="flex items-center space-x-1">
+                    <Fuel size={14} className={getTextColor(fuel)} />
+                    <span className={`text-xs font-mono ${getTextColor(fuel)}`}>{fuel}%</span>
+                  </div>
+                </div>
+              )}
+              
+              {/* Right: System Status + Save */}
+              <div className="flex items-center space-x-2">
+                {spaceStatuses.map((status, idx) => (
+                  <div key={idx} className={`px-2 py-0.5 ${status.bg} border ${status.border} rounded text-xs ${status.color}`}>
+                    {status.text}
+                  </div>
+                ))}
+                {isSaving && (
+                  <div className="flex items-center space-x-1 text-blue-400">
+                    <Save size={14} className="animate-pulse" />
                   </div>
                 )}
               </div>
             </motion.div>
           ) : (
-            // Expanded view - show all controls based on context
+            // Expanded view - show all controls and detailed stats
             <motion.div
               key="expanded"
               initial={{ opacity: 0 }}
@@ -130,26 +190,99 @@ export function BottomControlSidebar() {
               exit={{ opacity: 0 }}
               className="h-full px-4 py-2"
             >
-              <div className="flex items-center justify-between h-full max-w-7xl mx-auto">
-                {/* Location Status & Active Systems */}
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2 bg-gray-900/50 px-4 py-2 rounded-lg border border-orange-500/30">
-                    <MapPin size={20} className="text-orange-400" />
-                    <div>
-                      <p className="text-xs text-gray-400 uppercase">Location</p>
-                      <p className="text-sm text-orange-400 font-semibold">
-                        {getLocationText()}
-                      </p>
+              <div className="flex items-center justify-between h-full max-w-7xl mx-auto gap-6">
+                {/* LEFT SECTION: Credits + Location */}
+                <div className="flex items-center space-x-3">
+                  {/* Credits Display */}
+                  <div className="bg-gray-900/50 px-4 py-2 rounded-lg border border-cyan-500/30">
+                    <div className="flex items-center space-x-2">
+                      <Coins size={18} className="text-cyan-400" />
+                      <div>
+                        <p className="text-xs text-gray-400 uppercase">Credits</p>
+                        <p className="text-sm text-cyan-400 font-mono font-semibold">{credits}c</p>
+                      </div>
                     </div>
                   </div>
-
+                  
+                  {/* Location */}
+                  <div className="bg-gray-900/50 px-3 py-2 rounded-lg border border-orange-500/30 flex items-center space-x-2">
+                    <MapPin size={16} className="text-orange-400" />
+                    <span className="text-xs text-orange-400 font-medium">{getLocationText()}</span>
+                  </div>
+                  
                   {/* Status Indicators */}
                   {spaceStatuses.map((status, idx) => (
-                    <div key={idx} className={`px-3 py-1 ${status.bg} border ${status.border} rounded ${status.color} text-xs font-mono`}>
+                    <div key={idx} className={`px-2 py-1 ${status.bg} border ${status.border} rounded text-xs ${status.color} font-mono`}>
                       {status.text}
                     </div>
                   ))}
+                  
+                  {/* Save Indicator */}
+                  {isSaving && (
+                    <div className="bg-blue-900/30 border border-blue-400/50 rounded px-2 py-1 flex items-center space-x-1">
+                      <Save size={14} className="text-blue-400 animate-pulse" />
+                      <span className="text-xs text-blue-400">Saving...</span>
+                    </div>
+                  )}
                 </div>
+                
+                {/* CENTER SECTION: Ship Status Bars (only in space) */}
+                {!isLanded && (
+                  <div className="flex items-center space-x-4 bg-gray-900/50 px-4 py-2 rounded-lg border border-gray-600/30">
+                    {/* Hull */}
+                    <div className="flex items-center space-x-2">
+                      <Heart size={16} className={getTextColor(hull)} />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-400 uppercase">Hull</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${getMeterColor(hull)} transition-all duration-300`} style={{ width: `${hull}%` }} />
+                          </div>
+                          <span className={`text-xs font-mono ${getTextColor(hull)}`}>{Math.round(hull)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Shield */}
+                    <div className="flex items-center space-x-2">
+                      <Shield size={16} className={getTextColor(shield)} />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-400 uppercase">Shield</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${getMeterColor(shield)} transition-all duration-300`} style={{ width: `${shield}%` }} />
+                          </div>
+                          <span className={`text-xs font-mono ${getTextColor(shield)}`}>{Math.round(shield)}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Fuel */}
+                    <div className="flex items-center space-x-2">
+                      <Fuel size={16} className={getTextColor(fuel)} />
+                      <div className="flex flex-col">
+                        <span className="text-xs text-gray-400 uppercase">Fuel</span>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-20 h-2 bg-gray-800 rounded-full overflow-hidden">
+                            <div className={`h-full ${getMeterColor(fuel)} transition-all duration-300`} style={{ width: `${fuel}%` }} />
+                          </div>
+                          <span className={`text-xs font-mono ${getTextColor(fuel)}`}>{fuel}%</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Combat Stats */}
+                    {totalKills > 0 && (
+                      <div className="flex items-center space-x-2 border-l border-gray-600/50 pl-4">
+                        <Crosshair size={16} className="text-red-400" />
+                        <div>
+                          <span className="text-xs text-gray-400 uppercase">Kills</span>
+                          <p className="text-sm text-red-400 font-mono font-semibold">{totalKills}</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {/* Context-Specific Control Buttons */}
                 <div className="flex items-center space-x-3">

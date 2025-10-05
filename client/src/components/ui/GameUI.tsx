@@ -57,7 +57,7 @@ export function GameUI() {
     hideWarning,
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
-  const { currentContext, uiZoneVisibility } = useHUDContext();
+  const { currentContext, uiZoneVisibility, isDocked } = useHUDContext();
   
   // Keyboard shortcut for save panel (F5 or Ctrl+S)
   useEffect(() => {
@@ -123,8 +123,8 @@ export function GameUI() {
       {/* Top Left - Objective Tracker (below ship status) */}
       {uiZoneVisibility.topLeft && <ObjectiveTracker />}
       
-      {/* Top Left - Economic Feedback (below objective tracker) */}
-      {uiZoneVisibility.topLeft && (
+      {/* Top Left - Economic Feedback (only on surface/docked, hidden in space since BottomControlSidebar shows credits) */}
+      {uiZoneVisibility.topLeft && (currentContext === 'planet-surface' || isDocked) && (
         <div className="fixed top-64 left-4 z-40 w-80">
           <EconomicFeedback />
         </div>
