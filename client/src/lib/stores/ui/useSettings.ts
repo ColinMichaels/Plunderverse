@@ -42,7 +42,7 @@ export const useSettings = create<SettingsState>()(
       }
       
       return {
-      sensitivity: 0.001,
+      sensitivity: 0.004,
       invertY: false,
       keybinds: { ...DEFAULT_KEYBINDS },
       graphicsQuality: 'medium',
@@ -108,7 +108,7 @@ export const useSettings = create<SettingsState>()(
 
       resetToDefaults: () => {
         set({
-          sensitivity: 0.001,
+          sensitivity: 0.004,
           invertY: false,
           keybinds: { ...DEFAULT_KEYBINDS },
           graphicsQuality: 'medium',
