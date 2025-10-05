@@ -7,6 +7,7 @@ import { TradingInterface } from '../economy/TradingInterface';
 import { CrewManagementPanel } from '../ship/CrewManagementPanel';
 import { StoryProgressionPanel } from './StoryProgressionPanel';
 import { CryptoWallet } from '../economy/crypto/CryptoWallet';
+import { FastTravelMenu } from '../navigation/FastTravelMenu';
 
 interface ActionButton {
   id: PanelId;
@@ -42,6 +43,7 @@ export function ActionBar() {
   
   // State to track which button was recently pressed for visual feedback
   const [pressedButton, setPressedButton] = useState<PanelId | null>(null);
+  const [showFastTravel, setShowFastTravel] = useState(false);
 
   // Set up keyboard shortcuts with proper keydown handling
   useEffect(() => {
@@ -78,8 +80,22 @@ export function ActionBar() {
         }
       }
 
+      // T key for Fast Travel
+      if (event.key.toLowerCase() === 't' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+        event.preventDefault();
+        setShowFastTravel(prev => !prev);
+        return;
+      }
+
       // ESC key to close all panels - only handle if panels are open
       if (event.key === 'Escape') {
+        // Check if fast travel is open
+        if (showFastTravel) {
+          event.preventDefault();
+          setShowFastTravel(false);
+          return;
+        }
+        
         // Check if any panels are open
         let anyPanelOpen = false;
         panels.forEach(panel => {
@@ -109,7 +125,7 @@ export function ActionBar() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [currentContext, togglePanel, closeAllPanels, setManualPanelOverride, refreshPanelOverrideTimeout]);
+  }, [currentContext, togglePanel, closeAllPanels, setManualPanelOverride, refreshPanelOverrideTimeout, showFastTravel]);
 
   // Don't show action bar if rightSidebar is hidden and no manual override
   if (!uiZoneVisibility.rightSidebar) {
@@ -175,7 +191,45 @@ export function ActionBar() {
             </button>
           );
         })}
+        
+        {/* Fast Travel Button (separate from panels, below action buttons) */}
+        <div className="my-2 border-t border-cyan-400/20" />
+        <button
+          onClick={() => setShowFastTravel(true)}
+          className="
+            bg-gray-900/90 text-orange-400 hover:text-white hover:bg-orange-600/90
+            w-12 h-12 rounded-xl 
+            border-2 border-orange-400/30 hover:border-orange-400
+            transition-all duration-200 backdrop-blur-md 
+            flex items-center justify-center
+            relative group
+            transform hover:scale-105
+            hover:shadow-md hover:shadow-orange-400/30
+          "
+          title="Fast Travel (T)"
+          aria-label="Fast Travel (T)"
+        >
+          <span className="text-xl transition-transform duration-150">⚡</span>
+          
+          {/* Tooltip on hover */}
+          <div className="
+            absolute right-full mr-2 
+            bg-black/90 text-white px-2 py-1 rounded 
+            text-xs whitespace-nowrap
+            opacity-0 group-hover:opacity-100
+            pointer-events-none
+            transition-opacity
+          ">
+            Fast Travel (T)
+          </div>
+        </button>
       </div>
+
+      {/* Fast Travel Menu */}
+      <FastTravelMenu 
+        isOpen={showFastTravel}
+        onClose={() => setShowFastTravel(false)}
+      />
 
       {/* Panels - sliding in from right with proper spacing from action bar */}
       <div className="fixed right-16 top-1/2 -translate-y-1/2 w-96 h-[80vh] max-h-[600px] z-50 pointer-events-none">
