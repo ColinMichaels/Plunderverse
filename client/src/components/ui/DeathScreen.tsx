@@ -56,9 +56,19 @@ export function DeathScreen() {
     try {
       await quickLoad();
       // quickLoad already handles state restoration and game start
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to load save:", error);
-      alert("Failed to load save game. No saves found or save is corrupted.");
+      
+      // Check if it's a "no saves" error vs a real error
+      const errorMessage = error?.message || '';
+      if (errorMessage.includes('No saves found') || errorMessage === '') {
+        alert("No save games found. You need to create a checkpoint save first by playing the game.\n\nTip: The game auto-saves when you dock at a station or complete missions.");
+      } else {
+        alert(`Failed to load save game: ${errorMessage}`);
+      }
+      
+      // Restart music if load failed
+      musicPlayer.startAmbientTimer();
     } finally {
       setIsLoading(false);
     }

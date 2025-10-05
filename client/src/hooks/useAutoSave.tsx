@@ -83,6 +83,7 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
   const lastCompletedMissionsRef = useRef(completedMissionIds.size);
   const messageClearTimeoutRef = useRef<NodeJS.Timeout>();
   const isPerformingSaveRef = useRef(false);
+  const initialSaveCreatedRef = useRef(false);
   
   // Subscribe to global state changes
   useEffect(() => {
@@ -194,6 +195,24 @@ export const useAutoSave = (options: AutoSaveOptions = {}) => {
     }
     lastCompletedMissionsRef.current = completedMissionIds.size;
   }, [completedMissionIds.size, performAutoSave]);
+  
+  // Create initial save when player first starts the game
+  useEffect(() => {
+    if (phase === 'playing' && !isGuest && isAuthenticated && !initialSaveCreatedRef.current) {
+      // Check if any saves exist
+      gameApi.listSaves().then(savesData => {
+        if (savesData.saves.length === 0) {
+          // No saves exist - create initial checkpoint
+          console.log('[AUTO-SAVE] Creating initial checkpoint save for new player');
+          performAutoSave();
+        }
+        initialSaveCreatedRef.current = true;
+      }).catch(error => {
+        console.error('[AUTO-SAVE] Failed to check for existing saves:', error);
+        initialSaveCreatedRef.current = true;
+      });
+    }
+  }, [phase, isGuest, isAuthenticated, performAutoSave]);
   
   // Interval-based auto-save
   useEffect(() => {

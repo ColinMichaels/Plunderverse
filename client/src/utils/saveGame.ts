@@ -460,6 +460,7 @@ export async function quickLoad(): Promise<void> {
       console.log('Game quick loaded');
     } else {
       console.log('No saves found');
+      throw new Error('No saves found');
     }
   } catch (error) {
     console.error('Failed to quick load:', error);
