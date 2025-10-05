@@ -31,7 +31,6 @@ import { useWind } from "../../lib/stores/surface/useWind";
 import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
-import { DebugLighting } from "../debug/DebugLighting";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -1447,9 +1446,6 @@ export function PlanetSurfaceScene() {
 
       {/* Unified collapsible stats panel */}
       <SurfaceStatsPanel />
-
-      {/* Lighting debug panel */}
-      <DebugLighting />
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />
