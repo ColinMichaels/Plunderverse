@@ -419,6 +419,27 @@ export function CameraController() {
       }
     } // End movement controls check (autopilot, mining, landing, landed)
 
+    // AIM-BASED DIRECTIONAL THRUST ENHANCEMENT
+    // When any thrust is active, add a component in the direction the camera is aiming
+    // This improves combat maneuvering and precise movement control
+    if (thrusterActive && hasFuel && !isAutopilotActive && !isMining && !isLanding && !isLanded) {
+      // Get the actual camera forward direction (where player is aiming)
+      const aimDirection = new THREE.Vector3();
+      camera.getWorldDirection(aimDirection);
+      aimDirection.normalize();
+      
+      // Calculate how much the aim direction differs from the ship's forward vector
+      const aimDivergence = aimDirection.dot(forward);
+      
+      // If aiming significantly away from ship forward (combat maneuvering scenario)
+      // Add extra thrust in the aimed direction (scaled by thrust power)
+      const aimAssistStrength = 0.35; // 35% of thrust power goes toward aim direction
+      const aimThrust = aimDirection.clone().multiplyScalar(thrustPower * aimAssistStrength);
+      
+      // Apply aim-based thrust (this creates more responsive, intuitive movement)
+      acceleration.add(aimThrust);
+    }
+
     // Add mobile thrust input (also disabled during autopilot, mining, landing, or landed)
     const mobileThrust = mobileThrustRef.current;
     
