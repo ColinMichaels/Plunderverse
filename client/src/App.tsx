@@ -190,7 +190,10 @@ function GameContent() {
     const initCloudSyncIfAuthenticated = async () => {
       const { isAuthenticated, isGuest } = useAuthStore.getState();
       
+      console.log('[CLOUD-SYNC] Checking auth state on mount:', { isAuthenticated, isGuest });
+      
       if (isAuthenticated && !isGuest && !cloudSyncInitializedRef.current && !cloudSyncInitializingRef.current) {
+        console.log('[CLOUD-SYNC] Starting initialization...');
         cloudSyncInitializingRef.current = true;
         
         try {
@@ -202,6 +205,13 @@ function GameContent() {
         } finally {
           cloudSyncInitializingRef.current = false;
         }
+      } else {
+        console.log('[CLOUD-SYNC] Skipping initialization:', {
+          isAuthenticated,
+          isGuest,
+          alreadyInitialized: cloudSyncInitializedRef.current,
+          isInitializing: cloudSyncInitializingRef.current
+        });
       }
     };
     
