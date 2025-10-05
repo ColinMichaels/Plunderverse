@@ -112,18 +112,26 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
       if (isDestroyed) {
         console.log(`[DEBUG-DEATH] PLAYER DIED! Hull reached 0. Triggering game over.`);
         
-        // Trigger game over state
+        // Clear combat state before showing death screen
         try {
-          // Import game store dynamically
+          import('../combat/useEnemies').then(({ useEnemies }) => {
+            useEnemies.getState().clearEnemies();
+            console.log('[DEBUG-DEATH] Cleared enemies');
+          });
+          
+          import('../combat/useShooting').then(({ useShooting }) => {
+            useShooting.setState({ projectiles: [] });
+            console.log('[DEBUG-DEATH] Cleared projectiles');
+          });
+        } catch (error) {
+          console.error('[DEBUG-DEATH] Error clearing combat state:', error);
+        }
+        
+        // Trigger game over state (death screen will be shown)
+        try {
           import('../ui/useGame').then(({ useGame }) => {
             console.log(`[DEBUG-DEATH] Setting game state to ended`);
             useGame.getState().end();
-            
-            // Return to splash screen after 3 seconds
-            setTimeout(() => {
-              console.log(`[DEBUG-DEATH] Returning to splash screen...`);
-              useGame.getState().showSplash();
-            }, 3000);
           });
         } catch (error) {
           console.error(`[DEBUG-DEATH] Error triggering game over:`, error);

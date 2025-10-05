@@ -4,6 +4,7 @@ import { useAudio } from "@/lib/stores/ui/useAudio";
 import { Button } from "./button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "./card";
 import { VolumeX, Volume2, RotateCw, Trophy } from "lucide-react";
+import { DeathScreen } from "./DeathScreen";
 
 export function Interface() {
   const restart = useGame((state) => state.restart);
@@ -50,31 +51,8 @@ export function Interface() {
         </Button>
       </div>
       
-      {/* Game completion overlay */}
-      {phase === "ended" && (
-        <div className="fixed inset-0 flex items-center justify-center z-20 bg-black/30">
-          <Card className="w-full max-w-md mx-4 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-center gap-2">
-                <Trophy className="text-yellow-500" />
-                Level Complete!
-              </CardTitle>
-            </CardHeader>
-            
-            <CardContent>
-              <p className="text-center text-muted-foreground">
-                Congratulations! You successfully navigated the course.
-              </p>
-            </CardContent>
-            
-            <CardFooter className="flex justify-center">
-              <Button onClick={restart} className="w-full">
-                Play Again
-              </Button>
-            </CardFooter>
-          </Card>
-        </div>
-      )}
+      {/* Death Screen overlay */}
+      {phase === "ended" && <DeathScreen />}
       
       {/* Instructions panel */}
       <div className="fixed bottom-4 left-4 z-10">
