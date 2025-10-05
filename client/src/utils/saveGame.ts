@@ -27,8 +27,8 @@ const SAVE_FORMAT_VERSION = '1.0.0';
 function calculatePlayTime(): number {
   // Get from solar system store if it tracks time
   const solarSystem = useSolarSystem.getState();
-  // Convert elapsed time to seconds, default to 0 if undefined
-  return Math.floor((solarSystem.elapsedTime || 0) / 1000);
+  // Use accumulatedTime which is already in seconds
+  return Math.floor(solarSystem.accumulatedTime || 0);
 }
 
 // Helper to get current location
@@ -182,11 +182,10 @@ export function collectGameState(): GameStateData {
       
       // World state
       solarSystem: {
-        elapsedTime: solarSystem.elapsedTime,
+        accumulatedTime: solarSystem.accumulatedTime,
+        universeStartTime: solarSystem.universeStartTime,
+        timeScale: solarSystem.timeScale,
         selectedPlanet: solarSystem.selectedPlanet,
-        cameraDistance: solarSystem.cameraDistance,
-        cameraPosition: solarSystem.cameraPosition,
-        isDocked: solarSystem.isDocked,
       },
       
       destroyedNodes: {
@@ -389,11 +388,19 @@ export function restoreGameState(gameState: GameStateData): void {
   // Restore solar system
   if (stores.solarSystem) {
     const solarState = useSolarSystem.getState();
-    solarState.elapsedTime = stores.solarSystem.elapsedTime || 0;
-    solarState.selectedPlanet = stores.solarSystem.selectedPlanet;
-    solarState.cameraDistance = stores.solarSystem.cameraDistance || 20;
-    solarState.cameraPosition = stores.solarSystem.cameraPosition || [10, 10, 10];
-    solarState.isDocked = stores.solarSystem.isDocked || false;
+    // Restore accumulated time and universe start time directly
+    if (stores.solarSystem.accumulatedTime !== undefined) {
+      Object.assign(solarState, { accumulatedTime: stores.solarSystem.accumulatedTime });
+    }
+    if (stores.solarSystem.universeStartTime !== undefined) {
+      Object.assign(solarState, { universeStartTime: stores.solarSystem.universeStartTime });
+    }
+    if (stores.solarSystem.timeScale !== undefined) {
+      Object.assign(solarState, { timeScale: stores.solarSystem.timeScale });
+    }
+    if (stores.solarSystem.selectedPlanet !== undefined) {
+      solarState.setSelectedPlanet(stores.solarSystem.selectedPlanet);
+    }
   }
   
   // Restore destroyed nodes
