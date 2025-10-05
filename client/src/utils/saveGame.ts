@@ -64,7 +64,7 @@ export function collectGameState(): GameStateData {
     version: SAVE_FORMAT_VERSION,
     timestamp: Date.now(),
     playTime: playTime || 0,
-    credits: credits.balance || 1000,  // Default to 1000 if undefined
+    credits: credits.credits || 1000,  // Default to 1000 if undefined
     location,
     shipStatus: {
       hull: shipStatus.hull || 100,
@@ -101,9 +101,7 @@ export function collectGameState(): GameStateData {
       
       // Credits
       credits: {
-        balance: credits.balance || 1000,
-        totalEarned: credits.totalEarned || 0,
-        totalSpent: credits.totalSpent || 0,
+        credits: credits.credits || 1000,
       },
       
       // Inventory
@@ -253,13 +251,7 @@ export function restoreGameState(gameState: GameStateData): void {
   // Restore credits
   if (stores.credits) {
     const creditsState = useCreditsStore.getState();
-    creditsState.setBalance(stores.credits.balance);
-    if (stores.credits.totalEarned !== undefined) {
-      creditsState.totalEarned = stores.credits.totalEarned;
-    }
-    if (stores.credits.totalSpent !== undefined) {
-      creditsState.totalSpent = stores.credits.totalSpent;
-    }
+    creditsState.setCredits(stores.credits.credits || 1000);
   }
   
   // Restore inventory
