@@ -327,11 +327,11 @@ export function CameraController() {
     const acceleration = accelerationRef.current;
 
     // Rocket propulsion physics constants
-    const baseThrustPower = 8; // Lower thrust for more realistic feel
-    const baseMaxVelocity = 25; // Terminal velocity
+    const baseThrustPower = 20; // Increased for faster movement and combat
+    const baseMaxVelocity = 50; // Increased terminal velocity
     const dragCoefficient = 0.995; // Reduced friction for stickier momentum
-    const mobileThrustPower = 25; // Much higher power for mobile controls
-    const rotationalDamping = 0.95; // Rotational drag
+    const mobileThrustPower = 50; // Increased for faster mobile movement
+    const rotationalDamping = 0.98; // Increased for faster, more responsive aiming
 
     // Warp mode constants
     const warpThrustMultiplier = upgrades.warpCapability ? 4 : 2; // Enhanced thrust in warp
@@ -593,8 +593,8 @@ export function CameraController() {
       // Combine mouse and mobile rotation inputs
       const mouseX = mouse.x * sensitivity;
       const mouseY = mouse.y * sensitivity * (invertY ? -1 : 1);
-      const mobileX = mobileRotationRef.current.x * 0.1; // Scale mobile input
-      const mobileY = mobileRotationRef.current.y * 0.1 * (invertY ? -1 : 1);
+      const mobileX = mobileRotationRef.current.x * 0.3; // Increased for faster combat aiming
+      const mobileY = mobileRotationRef.current.y * 0.3 * (invertY ? -1 : 1); // Increased for faster combat aiming
 
       const targetRotationY = camera.rotation.y - (mouseX + mobileX);
       const targetRotationX = THREE.MathUtils.clamp(

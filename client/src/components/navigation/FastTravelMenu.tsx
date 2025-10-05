@@ -35,6 +35,11 @@ export function FastTravelMenu({ isOpen, onClose }: FastTravelMenuProps) {
   const calculateCosts = (targetPlanet: string) => {
     const planet = planets.find(p => p.name === targetPlanet);
     if (!planet) return { distance: 0, fuelCost: 0, creditFee: 0, totalCredits: 0 };
+    
+    // Safety check for ship position
+    if (!shipPosition || shipPosition.x === undefined) {
+      return { distance: 0, fuelCost: 0, creditFee: 0, totalCredits: 0 };
+    }
 
     // Calculate distance from current position to planet
     const planetPos = new THREE.Vector3(planet.position.x, 0, planet.position.z);
