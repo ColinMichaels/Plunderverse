@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { Howl } from "howler";
 import { AUDIO_CONFIG } from "../../audioConfig";
-import { useMusicPlayer } from "./useMusicPlayer";
+import { useMusicPlayer } from "@/lib/stores";
 import { useEnhancedMusicPlayer } from "./useEnhancedMusicPlayer";
 import * as THREE from "three";
 
@@ -415,7 +415,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   playAmbientMusic: () => {
     const { ambientMusic, masterMute, musicMute } = get();
     if (ambientMusic && !masterMute && !musicMute) {
-      ambientMusic.volume = 0.2; // Low volume for background ambience
+      ambientMusic.volume = 0.4; // Low volume for background ambience
       ambientMusic.loop = true;
       ambientMusic.play().catch((error) => {
         console.log("Ambient music play prevented:", error);

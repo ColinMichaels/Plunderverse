@@ -13,31 +13,31 @@
  * These optimizations significantly reduce jittering and improve overall frame rate
  * while maintaining smooth and responsive controls.
  */
-import { useFrame, useThree } from "@react-three/fiber";
-import { useKeyboardControls, PerspectiveCamera } from "@react-three/drei";
-import { useRef, useState, useEffect } from "react";
+import {useFrame, useThree} from "@react-three/fiber";
+import {useKeyboardControls} from "@react-three/drei";
+import {useEffect, useRef, useState} from "react";
 import * as THREE from "three";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useShooting } from "../../lib/stores/combat/useShooting";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
-import { useGame } from "../../lib/stores/ui/useGame";
-import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
-import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
-import { useEquipment } from "../../lib/stores/ship/useEquipment";
-import { useMining } from "../../lib/stores/economy/useMining";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useSettings } from "../../lib/stores/ui/useSettings";
-import { planets } from "../../lib/planetData";
-import { bindInputHandlers, useInput } from "../../stores/useInput";
-import { Controls } from "../../lib/controls";
+import {useSolarSystem} from "@/lib/stores/space/useSolarSystem";
+import {useShooting} from "@/lib/stores/combat/useShooting";
+import {useAudio} from "@/lib/stores/ui/useAudio";
+import {useShipStatus} from "@/lib/stores/ship/useShipStatus";
+import {useGame} from "@/lib/stores/ui/useGame";
+import {useLandingWarning} from "@/lib/stores/surface/useLandingWarning";
+import {useAutopilot} from "@/lib/stores/navigation/useAutopilot";
+import {useEquipment} from "@/lib/stores/ship/useEquipment";
+import {useMining} from "@/lib/stores/economy/useMining";
+import {useLandedState} from "@/lib/stores/surface/useLandedState";
+import {useSettings} from "@/lib/stores/ui/useSettings";
+import {planets} from "@/lib/planetData";
+import {bindInputHandlers, useInput} from "@/stores/useInput";
+import {Controls} from "@/lib/controls";
 
 export function CameraController() {
   const { camera } = useThree();
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
-  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, time } =
+  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition } =
     useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
@@ -51,14 +51,12 @@ export function CameraController() {
   const lastCenterPressRef = useRef(0);
   const lastForwardPressRef = useRef(0);
   const forwardDoubleClickRef = useRef(false);
-  const warpSpeedMultiplierRef = useRef(1);
+
   
   // Dynamic FOV state for smooth camera adjustments
   const currentFOVRef = useRef(75);
   const targetFOVRef = useRef(75);
   const defaultFOV = 75;
-  const minFOV = 50;
-  const maxFOV = 90; // For warp mode
 
   // Mobile control states
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
@@ -270,15 +268,13 @@ export function CameraController() {
     checkForTakeoff();
     
     // Subscribe to changes in landed state
-    const unsubscribe = useLandedState.subscribe(
-      (state) => {
-        if (state.takeoffPlanetName) {
-          setHasTakeoffPending(true);
+      return useLandedState.subscribe(
+        (state) => {
+            if (state.takeoffPlanetName) {
+                setHasTakeoffPending(true);
+            }
         }
-      }
     );
-    
-    return unsubscribe;
   }, []);
 
   // Handle ship positioning after takeoff from planet surface
@@ -620,6 +616,7 @@ export function CameraController() {
         // 300ms cooldown
         lastCenterPressRef.current = currentTime;
         console.log("Centering camera...");
+        // Want the centering to be eased in and always target the last targeted planet if not landed else center on zero
 
         // Smoothly return camera to center position (looking forward)
         camera.rotation.x = 0;

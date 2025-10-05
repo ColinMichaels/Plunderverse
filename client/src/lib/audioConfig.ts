@@ -106,7 +106,7 @@ export const AUDIO_CONFIG: AudioConfig = {
     },
     takeoff: {
       path: "/sounds/takeoff.mp3",
-      volume: 0.7,
+      volume: 1.0,
     },
     hit: {
       path: "/sounds/hit.mp3",
@@ -141,12 +141,12 @@ export const AUDIO_CONFIG: AudioConfig = {
     },
     wind: {
       path: "/sounds/wind.mp3",
-      volume: 0.6,
+      volume: 1.0,
       loop: true,
     },
     rain: {
       path: "/sounds/rain.mp3",
-      volume: 0.2,
+      volume: 1.0,
       loop: true,
     },
   },
