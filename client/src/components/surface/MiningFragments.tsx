@@ -19,7 +19,7 @@ class ParticlePool {
   private activeParticles: Particle[] = [];
   private maxParticles: number;
 
-  constructor(maxParticles: number = 20) {  // Drastically reduced to 20 particles max
+  constructor(maxParticles: number = 80) {  // Increased for more dramatic effect while maintaining performance
     this.maxParticles = maxParticles;
   }
 
@@ -116,29 +116,30 @@ class Particle {
     );
     this.trailPositions = [];
 
-    // Set physics properties based on particle type
+    // Set physics properties based on particle type - more realistic values
     switch (type) {
       case ParticleType.SPARK:
         this.bounce = 0.3;
-        this.friction = 0.95;
-        this.gravity = -5;
-        this.maxTrailLength = 8;
+        this.friction = 0.92;
+        this.gravity = -8;
+        this.maxTrailLength = 10;
         break;
       case ParticleType.DUST:
         this.bounce = 0;
-        this.friction = 0.8;
-        this.gravity = -2;
+        this.friction = 0.7;
+        this.gravity = -3;
         break;
       case ParticleType.DROPLET:
         this.bounce = 0.2;
-        this.friction = 0.9;
+        this.friction = 0.85;
         this.gravity = -12;
         break;
       case ParticleType.FRAGMENT:
       default:
-        this.bounce = 0.6;
-        this.friction = 0.85;
-        this.gravity = -9.8;
+        // Realistic rock bounce coefficient (0.3-0.5)
+        this.bounce = 0.3 + Math.random() * 0.2;
+        this.friction = 0.75 + Math.random() * 0.1; // Variable friction
+        this.gravity = -9.8; // Real gravity
         break;
     }
   }
@@ -156,29 +157,59 @@ class Particle {
       }
     }
     
-    // Ground collision
+    // Enhanced ground collision with rolling physics
     const groundHeight = terrainHeightAt(this.position.x, this.position.z) + this.size * 0.5;
     if (this.position.y <= groundHeight) {
       this.position.y = groundHeight;
-      this.velocity.y = Math.abs(this.velocity.y) * this.bounce;
-      this.velocity.multiplyScalar(this.friction);
       
-      // Add some randomness to bounce direction
-      if (this.type === ParticleType.FRAGMENT) {
-        this.velocity.x += (Math.random() - 0.5) * 0.5;
-        this.velocity.z += (Math.random() - 0.5) * 0.5;
+      // Calculate impact force
+      const impactVelocity = Math.abs(this.velocity.y);
+      
+      // Only bounce if impact is strong enough
+      if (impactVelocity > 0.5) {
+        this.velocity.y = impactVelocity * this.bounce;
+        
+        // Energy loss on impact
+        const energyLoss = 1 - (this.bounce * 0.5);
+        this.velocity.x *= energyLoss;
+        this.velocity.z *= energyLoss;
+        
+        // Add slight random bounce direction for realism
+        if (this.type === ParticleType.FRAGMENT) {
+          this.velocity.x += (Math.random() - 0.5) * impactVelocity * 0.1;
+          this.velocity.z += (Math.random() - 0.5) * impactVelocity * 0.1;
+          
+          // Reduce rotation speed on impact
+          this.rotationSpeed.multiplyScalar(0.8);
+        }
+      } else {
+        // Fragment has settled - apply rolling physics
+        this.velocity.y = 0;
+        this.velocity.multiplyScalar(this.friction);
+        
+        // Gradually stop rotation when settled
+        this.rotationSpeed.multiplyScalar(0.95);
+        
+        // Apply stronger friction when moving slowly (simulate rolling resistance)
+        if (this.velocity.length() < 1) {
+          this.velocity.multiplyScalar(0.9);
+        }
       }
     }
     
-    // Apply air resistance
-    if (this.type === ParticleType.DUST) {
-      this.velocity.multiplyScalar(0.99);
-    }
+    // Apply air resistance based on particle type
+    const airResistance = this.type === ParticleType.DUST ? 0.98 : 
+                          this.type === ParticleType.SPARK ? 0.995 : 
+                          0.999;
+    this.velocity.multiplyScalar(airResistance);
     
-    // Update rotation
+    // Update rotation with angular damping
     this.rotation.x += this.rotationSpeed.x * deltaTime;
     this.rotation.y += this.rotationSpeed.y * deltaTime;
     this.rotation.z += this.rotationSpeed.z * deltaTime;
+    
+    // Apply angular damping
+    this.rotationSpeed.multiplyScalar(0.999);
     
     // Update lifetime
     this.lifetime -= deltaTime;
@@ -217,7 +248,7 @@ const getRarityColor = (rarity: string): THREE.Color => {
   }
 };
 
-// Get particle behavior based on resource type
+// Get particle behavior based on resource type - enhanced for more dramatic effects
 const getResourceParticleBehavior = (resourceType: string): {
   particleTypes: ParticleType[];
   sparkCount: number;
@@ -227,18 +258,20 @@ const getResourceParticleBehavior = (resourceType: string): {
   colorVariation: number;
   sparkSpeed: number;
   fragmentSpeed: number;
+  explosionForce: number;
 } => {
   // Metals: Sparks and metallic shards
   if (resourceType.includes("Iron") || resourceType.includes("Platinum") || resourceType.includes("Metal")) {
     return {
       particleTypes: [ParticleType.SPARK, ParticleType.FRAGMENT],
-      sparkCount: 8,
-      dustCount: 2,
-      fragmentCount: 5,
+      sparkCount: 15,
+      dustCount: 5,
+      fragmentCount: 12,
       dropletCount: 0,
       colorVariation: 0.1,
-      sparkSpeed: 8,
-      fragmentSpeed: 4,
+      sparkSpeed: 12,
+      fragmentSpeed: 8,
+      explosionForce: 10,
     };
   }
   
@@ -246,13 +279,14 @@ const getResourceParticleBehavior = (resourceType: string): {
   if (resourceType.includes("Crystal") || resourceType.includes("Diamond") || resourceType.includes("Gem")) {
     return {
       particleTypes: [ParticleType.SPARK, ParticleType.FRAGMENT],
-      sparkCount: 12,
-      dustCount: 3,
-      fragmentCount: 8,
+      sparkCount: 20,
+      dustCount: 8,
+      fragmentCount: 15,
       dropletCount: 0,
       colorVariation: 0.3,
-      sparkSpeed: 10,
-      fragmentSpeed: 3,
+      sparkSpeed: 15,
+      fragmentSpeed: 6,
+      explosionForce: 8,
     };
   }
   
@@ -261,12 +295,13 @@ const getResourceParticleBehavior = (resourceType: string): {
     return {
       particleTypes: [ParticleType.DROPLET, ParticleType.DUST],
       sparkCount: 0,
-      dustCount: 5,
+      dustCount: 10,
       fragmentCount: 0,
-      dropletCount: 15,
+      dropletCount: 25,
       colorVariation: 0.2,
       sparkSpeed: 0,
       fragmentSpeed: 0,
+      explosionForce: 5,
     };
   }
   
@@ -275,29 +310,31 @@ const getResourceParticleBehavior = (resourceType: string): {
     return {
       particleTypes: [ParticleType.DUST],
       sparkCount: 0,
-      dustCount: 20,
+      dustCount: 30,
       fragmentCount: 0,
       dropletCount: 0,
       colorVariation: 0.4,
       sparkSpeed: 0,
       fragmentSpeed: 0,
+      explosionForce: 3,
     };
   }
   
   // Default minerals: Rock chunks and dust
   return {
     particleTypes: [ParticleType.FRAGMENT, ParticleType.DUST],
-    sparkCount: 2,
-    dustCount: 8,
-    fragmentCount: 6,
+    sparkCount: 5,
+    dustCount: 12,
+    fragmentCount: 10,
     dropletCount: 0,
     colorVariation: 0.15,
-    sparkSpeed: 4,
-    fragmentSpeed: 3,
+    sparkSpeed: 8,
+    fragmentSpeed: 6,
+    explosionForce: 7,
   };
 };
 
-// Instanced mesh for fragments
+// Instanced mesh for fragments with enhanced visuals
 function FragmentParticles({ particles, color }: { particles: Particle[]; color: THREE.Color }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const fragments = particles.filter(p => p.type === ParticleType.FRAGMENT);
@@ -315,8 +352,17 @@ function FragmentParticles({ particles, color }: { particles: Particle[]; color:
       tempObject.updateMatrix();
       meshRef.current!.setMatrixAt(i, tempObject.matrix);
       
-      // Apply color with variation
+      // Apply color with variation and glow for fresh fragments
       tempColor.copy(particle.color);
+      const freshnessRatio = particle.lifetime / particle.maxLifetime;
+      
+      // Fresh fragments have a bright glow that fades over time
+      if (freshnessRatio > 0.7) {
+        // Add emissive glow effect for freshly broken fragments
+        const glowIntensity = (freshnessRatio - 0.7) / 0.3;
+        tempColor.multiplyScalar(1 + glowIntensity * 0.5);
+      }
+      
       const brightness = 0.5 + particle.getOpacity() * 0.5;
       tempColor.multiplyScalar(brightness);
       meshRef.current!.setColorAt(i, tempColor);
@@ -331,18 +377,36 @@ function FragmentParticles({ particles, color }: { particles: Particle[]; color:
   if (fragments.length === 0) return null;
   
   return (
-    <instancedMesh ref={meshRef} args={[undefined, undefined, fragments.length]} castShadow>
-      <boxGeometry args={[0.15, 0.15, 0.15]} />
-      <meshStandardMaterial
-        color={color}
-        roughness={0.8}
-        metalness={0.3}
-      />
-    </instancedMesh>
+    <group>
+      <instancedMesh ref={meshRef} args={[undefined, undefined, fragments.length]} castShadow>
+        <boxGeometry args={[0.15, 0.15, 0.15]} />
+        <meshStandardMaterial
+          color={color}
+          roughness={0.4}
+          metalness={0.5}
+          emissive={color}
+          emissiveIntensity={0.1}
+        />
+      </instancedMesh>
+      
+      {/* Add glow effect for fresh fragments */}
+      {fragments.filter(p => p.lifetime / p.maxLifetime > 0.7).length > 0 && (
+        <instancedMesh args={[undefined, undefined, fragments.filter(p => p.lifetime / p.maxLifetime > 0.7).length]}>
+          <boxGeometry args={[0.2, 0.2, 0.2]} />
+          <meshBasicMaterial
+            color={color}
+            transparent
+            opacity={0.3}
+            blending={THREE.AdditiveBlending}
+            depthWrite={false}
+          />
+        </instancedMesh>
+      )}
+    </group>
   );
 }
 
-// Points geometry for sparks
+// Points geometry for sparks with enhanced glow
 function SparkParticles({ particles, color }: { particles: Particle[]; color: THREE.Color }) {
   const pointsRef = useRef<THREE.Points>(null);
   const sparks = particles.filter(p => p.type === ParticleType.SPARK);
@@ -362,10 +426,15 @@ function SparkParticles({ particles, color }: { particles: Particle[]; color: TH
     sparks.forEach((particle, i) => {
       const c = particle.color.clone();
       const intensity = particle.getOpacity();
-      c.multiplyScalar(intensity * 2); // Make sparks brighter
-      col[i * 3] = c.r;
-      col[i * 3 + 1] = c.g;
-      col[i * 3 + 2] = c.b;
+      
+      // Make sparks glow brighter when fresh
+      const freshnessRatio = particle.lifetime / particle.maxLifetime;
+      const glowMultiplier = freshnessRatio > 0.5 ? 2.5 : 2;
+      
+      c.multiplyScalar(intensity * glowMultiplier);
+      col[i * 3] = Math.min(1, c.r);
+      col[i * 3 + 1] = Math.min(1, c.g);
+      col[i * 3 + 2] = Math.min(1, c.b);
     });
     return col;
   }, [sparks]);
@@ -373,7 +442,10 @@ function SparkParticles({ particles, color }: { particles: Particle[]; color: TH
   const sizes = useMemo(() => {
     const s = new Float32Array(sparks.length);
     sparks.forEach((particle, i) => {
-      s[i] = particle.getScale() * 5; // Larger size for visibility
+      // Larger sparks when fresh, smaller as they fade
+      const freshnessRatio = particle.lifetime / particle.maxLifetime;
+      const sizeMultiplier = freshnessRatio > 0.5 ? 8 : 5;
+      s[i] = particle.getScale() * sizeMultiplier;
     });
     return s;
   }, [sparks]);
@@ -403,7 +475,7 @@ function SparkParticles({ particles, color }: { particles: Particle[]; color: TH
         />
       </bufferGeometry>
       <pointsMaterial
-        size={0.1}
+        size={0.15}
         vertexColors
         sizeAttenuation
         transparent
@@ -514,9 +586,11 @@ interface MiningFragmentsProps {
 }
 
 export function MiningFragments({ resource, position, progress, isActive }: MiningFragmentsProps) {
-  const particlePoolRef = useRef(new ParticlePool(20)); // Drastically reduced to 20 particles for performance
+  const particlePoolRef = useRef(new ParticlePool(80)); // Increased for more dramatic effect
   const lastSpawnTimeRef = useRef(0);
+  const lastProgressRef = useRef(progress);
   const frameCountRef = useRef(0);
+  const impactPointRef = useRef(new THREE.Vector3());
   const [particles, setParticles] = useState<Particle[]>([]);
   const { equipment } = useEquipment();
   const { clock } = useThree();
@@ -567,134 +641,163 @@ export function MiningFragments({ resource, position, progress, isActive }: Mini
       return;
     }
     
-    // Calculate spawn rate based on progress and mining efficiency (drastically optimized for performance)
-    const baseSpawnRate = 0.5; // Much higher interval for less frequent spawning
-    const progressMultiplier = 1 + progress * 0.5; // Minimal multiplier
-    const efficiencyMultiplier = 0.7 + miningEfficiency * 0.1;
-    const spawnInterval = baseSpawnRate / (progressMultiplier * efficiencyMultiplier);
+    // Detect progress milestones for burst spawning
+    const progressDelta = progress - lastProgressRef.current;
+    const isMilestone = progressDelta > 0.05 || (progress > 0.25 && lastProgressRef.current <= 0.25) ||
+                        (progress > 0.5 && lastProgressRef.current <= 0.5) ||
+                        (progress > 0.75 && lastProgressRef.current <= 0.75) ||
+                        (progress >= 1.0 && lastProgressRef.current < 1.0);
     
-    // Spawn new particles
-    if (currentTime - lastSpawnTimeRef.current > spawnInterval) {
-      lastSpawnTimeRef.current = currentTime;
+    if (isMilestone) {
+      lastProgressRef.current = progress;
       
-      const spawnPos = new THREE.Vector3(
-        position[0] + (Math.random() - 0.5) * 0.5,
-        position[1] + Math.random() * 0.5,
-        position[2] + (Math.random() - 0.5) * 0.5
+      // Set impact point for explosion physics
+      impactPointRef.current.set(
+        position[0] + (Math.random() - 0.5) * 0.3,
+        position[1] + Math.random() * 0.2,
+        position[2] + (Math.random() - 0.5) * 0.3
       );
       
-      // Spawn sparks (drastically reduced probability and count)
-      if (particleBehavior.sparkCount > 0 && Math.random() < 0.2) {
-        const sparkCount = Math.max(1, Math.floor(particleBehavior.sparkCount * 0.1 * (0.5 + progress * 0.5)));
-        for (let i = 0; i < Math.min(sparkCount, 2); i++) {  // Max 2 sparks at a time
+      // Burst spawn particles on milestone
+      const burstMultiplier = progress >= 1.0 ? 2.5 : progress >= 0.75 ? 1.8 : progress >= 0.5 ? 1.5 : 1.2;
+      
+      // Spawn fragments with explosion physics
+      const fragmentCount = Math.floor(particleBehavior.fragmentCount * burstMultiplier * 0.5);
+      for (let i = 0; i < Math.min(fragmentCount, 15); i++) {
+        const spawnOffset = new THREE.Vector3(
+          (Math.random() - 0.5) * 0.3,
+          Math.random() * 0.3,
+          (Math.random() - 0.5) * 0.3
+        );
+        const spawnPos = impactPointRef.current.clone().add(spawnOffset);
+        
+        // Calculate outward explosion direction from impact point
+        const direction = spawnPos.clone().sub(impactPointRef.current).normalize();
+        
+        // Add upward and outward explosion force (5-15 units/s as per requirements)
+        const explosionForce = particleBehavior.explosionForce + Math.random() * 5;
+        const upwardForce = 3 + Math.random() * 4;
+        
+        const velocity = new THREE.Vector3(
+          direction.x * explosionForce,
+          upwardForce,
+          direction.z * explosionForce
+        );
+        
+        // Fragment color matches resource with slight variation
+        const fragmentColor = baseColor.clone();
+        fragmentColor.offsetHSL(
+          Math.random() * particleBehavior.colorVariation - particleBehavior.colorVariation / 2,
+          0,
+          Math.random() * 0.2 - 0.1
+        );
+        
+        // Size variation for fragments (mix of large chunks and small debris)
+        const sizeCategories = [0.05, 0.1, 0.15, 0.25, 0.35]; // Small to large
+        const size = sizeCategories[Math.floor(Math.random() * sizeCategories.length)];
+        
+        // Lifetime 5-10 seconds as per requirements
+        const lifetime = 5 + Math.random() * 5;
+        
+        pool.spawn(
+          ParticleType.FRAGMENT,
+          spawnPos,
+          velocity,
+          fragmentColor,
+          size,
+          lifetime
+        );
+      }
+      
+      // Spawn sparks at impact point
+      if (particleBehavior.sparkCount > 0) {
+        const sparkCount = Math.floor(particleBehavior.sparkCount * burstMultiplier * 0.4);
+        for (let i = 0; i < Math.min(sparkCount, 10); i++) {
           const angle = Math.random() * Math.PI * 2;
-          const pitch = (Math.random() - 0.5) * Math.PI * 0.5;
-          const speed = particleBehavior.sparkSpeed * (0.5 + Math.random());
+          const pitch = (Math.random() - 0.5) * Math.PI * 0.3;
+          const speed = particleBehavior.sparkSpeed * (0.8 + Math.random() * 0.4);
           
           const velocity = new THREE.Vector3(
             Math.cos(angle) * Math.cos(pitch) * speed,
-            Math.sin(pitch) * speed + 3,
+            Math.abs(Math.sin(pitch)) * speed + 2,
             Math.sin(angle) * Math.cos(pitch) * speed
           );
           
+          // Sparks with bright glow
           const sparkColor = baseColor.clone();
-          sparkColor.offsetHSL(0, 0, Math.random() * 0.3 - 0.15);
+          sparkColor.offsetHSL(0, 0.2, 0.3);
           
           pool.spawn(
             ParticleType.SPARK,
-            spawnPos.clone(),
+            impactPointRef.current.clone(),
             velocity,
             sparkColor,
-            0.05 + Math.random() * 0.05,
-            0.5 + Math.random() * 0.5
-          );
-        }
-      }
-      
-      // Spawn fragments (drastically reduced probability and count)
-      if (particleBehavior.fragmentCount > 0 && Math.random() < 0.15) {
-        const fragmentCount = Math.max(1, Math.floor(particleBehavior.fragmentCount * 0.15 * (0.3 + progress * 0.7)));
-        for (let i = 0; i < Math.min(fragmentCount, 3); i++) {  // Max 3 fragments at a time
-          const angle = Math.random() * Math.PI * 2;
-          const speed = particleBehavior.fragmentSpeed * (0.5 + Math.random());
-          
-          const velocity = new THREE.Vector3(
-            Math.cos(angle) * speed,
-            2 + Math.random() * 3,
-            Math.sin(angle) * speed
-          );
-          
-          const fragmentColor = baseColor.clone();
-          fragmentColor.offsetHSL(
-            Math.random() * particleBehavior.colorVariation - particleBehavior.colorVariation / 2,
-            0,
-            Math.random() * 0.2 - 0.1
-          );
-          
-          pool.spawn(
-            ParticleType.FRAGMENT,
-            spawnPos.clone(),
-            velocity,
-            fragmentColor,
-            0.1 + Math.random() * 0.2,
+            0.02 + Math.random() * 0.05,
             1 + Math.random() * 2
           );
         }
       }
       
-      // Spawn dust (drastically reduced count for performance)
-      if (particleBehavior.dustCount > 0 && Math.random() < 0.2) {
-        const dustCount = Math.max(1, Math.floor(particleBehavior.dustCount * 0.1 * (0.5 + progress * 0.5)));
-        for (let i = 0; i < Math.min(dustCount, 2); i++) {  // Max 2 dust particles at a time
+      // Spawn dust cloud at impact
+      if (particleBehavior.dustCount > 0) {
+        const dustCount = Math.floor(particleBehavior.dustCount * 0.5);
+        for (let i = 0; i < Math.min(dustCount, 8); i++) {
           const angle = Math.random() * Math.PI * 2;
-          const speed = 1 + Math.random() * 2;
+          const speed = 2 + Math.random() * 3;
           
           const velocity = new THREE.Vector3(
             Math.cos(angle) * speed,
-            Math.random() * 2,
+            Math.random() * 2 + 1,
             Math.sin(angle) * speed
           );
           
           const dustColor = baseColor.clone();
-          dustColor.lerp(new THREE.Color(0x8b7355), 0.5); // Mix with brown
+          dustColor.lerp(new THREE.Color(0x8b7355), 0.6);
           
           pool.spawn(
             ParticleType.DUST,
-            spawnPos.clone(),
+            impactPointRef.current.clone(),
             velocity,
             dustColor,
-            0.3 + Math.random() * 0.4,
-            2 + Math.random() * 3
+            0.4 + Math.random() * 0.6,
+            3 + Math.random() * 4
           );
         }
+      }
+    }
+    
+    // Regular continuous spawning for active mining
+    const baseSpawnRate = 0.1; // Faster spawn rate for continuous effect
+    const spawnInterval = baseSpawnRate;
+    
+    if (currentTime - lastSpawnTimeRef.current > spawnInterval && isActive && progress > 0 && progress < 1) {
+      lastSpawnTimeRef.current = currentTime;
+      
+      // Continuous smaller particles while mining
+      if (Math.random() < 0.3) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = 3 + Math.random() * 3;
+        
+        const velocity = new THREE.Vector3(
+          Math.cos(angle) * speed,
+          2 + Math.random() * 2,
+          Math.sin(angle) * speed
+        );
+        
+        pool.spawn(
+          ParticleType.FRAGMENT,
+          new THREE.Vector3(
+            position[0] + (Math.random() - 0.5) * 0.5,
+            position[1] + Math.random() * 0.3,
+            position[2] + (Math.random() - 0.5) * 0.5
+          ),
+          velocity,
+          baseColor.clone(),
+          0.05 + Math.random() * 0.1,
+          3 + Math.random() * 3
+        );
       }
       
-      // Spawn droplets for liquids
-      if (particleBehavior.dropletCount > 0 && Math.random() < 0.3) {
-        const dropletCount = Math.floor(particleBehavior.dropletCount * 0.2 * (0.5 + progress * 0.5));
-        for (let i = 0; i < Math.min(dropletCount, 3); i++) {  // Max 3 droplets at a time
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 2 + Math.random() * 4;
-          
-          const velocity = new THREE.Vector3(
-            Math.cos(angle) * speed,
-            3 + Math.random() * 4,
-            Math.sin(angle) * speed
-          );
-          
-          const dropletColor = baseColor.clone();
-          dropletColor.offsetHSL(0, 0.2, Math.random() * 0.2 - 0.1);
-          
-          pool.spawn(
-            ParticleType.DROPLET,
-            spawnPos.clone(),
-            velocity,
-            dropletColor,
-            0.05 + Math.random() * 0.1,
-            0.5 + Math.random() * 1.5
-          );
-        }
-      }
     }
     
     // Update particles
