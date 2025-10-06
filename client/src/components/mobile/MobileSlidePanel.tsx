@@ -33,8 +33,12 @@ export const MobileSlidePanel: React.FC<MobileSlidePanelProps> = ({
   
   // Haptic feedback on open/close (if available)
   const triggerHaptic = () => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(10);
+    try {
+      if ('vibrate' in navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(10);
+      }
+    } catch (error) {
+      // Vibration not supported or failed, silently ignore
     }
   };
 
