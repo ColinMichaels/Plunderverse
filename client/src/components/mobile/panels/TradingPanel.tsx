@@ -37,6 +37,7 @@ import {
 } from '../../../lib/stores/economy/enhancedMarketData';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
+import { MobileSyncAdapter } from '../../../services/MobileSyncAdapter';
 
 interface TradingPanelProps {
   station?: string;
@@ -236,68 +237,67 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     processBuyTransaction(selectedItem, quantity, pricePerUnit, totalCost);
   };
   
-  const processBuyTransaction = (item: MarketItem, qty: number, pricePerUnit: number, totalCost: number) => {
+  const processBuyTransaction = async (item: MarketItem, qty: number, pricePerUnit: number, totalCost: number) => {
     setIsProcessing(true);
     
-    setTimeout(() => {
-      if (spendCredits(totalCost)) {
-        // Add item to inventory
-        const resourceData = {
-          type: item.id,
-          rarity: item.rarity,
-          value: item.basePrice,
-          description: item.description,
-          complexity: 1
-        };
-        
-        const added = inventory.addResource(resourceData, qty, landedPlanet || station);
-        
-        if (added) {
-          // Record purchase for supply/demand tracking
-          const planetName = landedPlanet || station;
-          recordPurchase(planetName, item.id, qty, pricePerUnit);
-          
-          // Apply heat if contraband
-          if (item.heatOnPurchase) {
-            heatSystem.applyHeat('minor_smuggling', item.heatOnPurchase / 5);
-            player.updateHeat(item.heatOnPurchase);
-          }
-          
-          // Record transaction
-          tradeHistory.addTransaction({
-            itemType: item.id,
-            itemName: item.name,
-            quantity: qty,
-            pricePerUnit,
-            totalPrice: totalCost,
-            transactionType: 'buy',
-            station,
-            planet: planetName,
-            faction,
-            heatLevel: player.heat
-          });
-          
-          toast.success('Purchase successful', {
-            description: `Bought ${qty}x ${item.name} for ${totalCost}c`
-          });
-          
-          // Reset selection
-          setSelectedItem(null);
-          setQuantity(1);
-        } else {
-          // Refund if inventory add failed
-          earnCredits(totalCost);
-          toast.error('Failed to add to inventory');
-        }
-      } else {
-        toast.error('Transaction failed');
-      }
+    // Use MobileSyncAdapter for server-authoritative transaction
+    const mobileSyncAdapter = MobileSyncAdapter.getInstance();
+    const success = await mobileSyncAdapter.processTrade(
+      'buy',
+      item.id,
+      item.name,
+      qty,
+      pricePerUnit,
+      station
+    );
+    
+    if (success) {
+      // Add item to inventory locally (server already validated)
+      const resourceData = {
+        type: item.id,
+        rarity: item.rarity,
+        value: item.basePrice,
+        description: item.description,
+        complexity: 1
+      };
       
-      setIsProcessing(false);
-      setShowConfirmation(false);
-      setPendingTransaction(null);
-      triggerHaptic();
-    }, 500);
+      const added = inventory.addResource(resourceData, qty, landedPlanet || station);
+      
+      if (added) {
+        // Record purchase for supply/demand tracking
+        const planetName = landedPlanet || station;
+        recordPurchase(planetName, item.id, qty, pricePerUnit);
+        
+        // Apply heat if contraband
+        if (item.heatOnPurchase) {
+          heatSystem.applyHeat('minor_smuggling', item.heatOnPurchase / 5);
+          player.updateHeat(item.heatOnPurchase);
+        }
+        
+        // Record transaction
+        tradeHistory.addTransaction({
+          itemType: item.id,
+          itemName: item.name,
+          quantity: qty,
+          pricePerUnit,
+          totalPrice: totalCost,
+          transactionType: 'buy',
+          station,
+          planet: planetName,
+          faction,
+          heatLevel: player.heat
+        });
+        
+        // Reset selection
+        setSelectedItem(null);
+        setQuantity(1);
+      }
+    }
+    
+    setIsProcessing(false);
+    setShowConfirmation(false);
+    setPendingTransaction(null);
+    triggerHaptic();
   };
   
   // Execute sell transaction
@@ -335,7 +335,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     processSellTransaction(selectedItem, quantity, pricePerUnit, totalEarnings, profit);
   };
   
-  const processSellTransaction = (
+  const processSellTransaction = async (
     item: MarketItem, 
     qty: number, 
     pricePerUnit: number, 
@@ -344,12 +344,22 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
   ) => {
     setIsProcessing(true);
     
-    setTimeout(() => {
-      const removed = inventory.removeResource(item.id, qty);
+    // Remove from inventory first
+    const removed = inventory.removeResource(item.id, qty);
+    
+    if (removed) {
+      // Use MobileSyncAdapter for server-authoritative transaction
+      const mobileSyncAdapter = MobileSyncAdapter.getInstance();
+      const success = await mobileSyncAdapter.processTrade(
+        'sell',
+        item.id,
+        item.name,
+        qty,
+        pricePerUnit,
+        station
+      );
       
-      if (removed) {
-        earnCredits(totalEarnings);
-        
+      if (success) {
         // Record sale for supply/demand tracking
         const planetName = landedPlanet || station;
         recordSale(planetName, item.id, qty, pricePerUnit);
@@ -369,22 +379,36 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
           heatLevel: player.heat
         });
         
-        toast.success('Sale successful', {
-          description: `Sold ${qty}x ${item.name} for ${totalEarnings}c (Profit: ${profit > 0 ? '+' : ''}${profit}c)`
-        });
+        // Additional profit toast (adapter already shows base toast)
+        if (profit > 0) {
+          toast.info(`Profit: +${profit}c`, {
+            description: 'Nice trade!'
+          });
+        }
         
         // Reset selection
         setSelectedItem(null);
         setQuantity(1);
       } else {
-        toast.error('Failed to remove from inventory');
+        // Restore inventory if transaction failed
+        const resourceData = {
+          type: item.id,
+          rarity: item.rarity,
+          value: item.basePrice,
+          description: item.description,
+          complexity: 1
+        };
+        inventory.addResource(resourceData, qty, landedPlanet || station);
+        toast.error('Transaction failed - items returned to inventory');
       }
-      
-      setIsProcessing(false);
-      setShowConfirmation(false);
-      setPendingTransaction(null);
-      triggerHaptic();
-    }, 500);
+    } else {
+      toast.error('Failed to remove items from inventory');
+    }
+    
+    setIsProcessing(false);
+    setShowConfirmation(false);
+    setPendingTransaction(null);
+    triggerHaptic();
   };
   
   // Quick sell all cargo
