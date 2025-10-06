@@ -88,9 +88,11 @@ class MiniGameSyncService {
   private constructor() {
     this.clientId = this.generateClientId();
     this.offlineStorage = OfflineStorageService.getInstance();
-    this.initializeWebSocket();
+    // Don't initialize WebSocket until mini-game is active
+    // this.initializeWebSocket();
     this.setupStoreSubscriptions();
-    this.startHeartbeat();
+    // Don't start heartbeat until mini-game is active
+    // this.startHeartbeat();
     this.startAutoSave();
     this.loadOfflineState();
   }
@@ -573,9 +575,18 @@ class MiniGameSyncService {
     this.isMinigameActive = active;
     
     if (active) {
+      // Initialize WebSocket and heartbeat when mini-game becomes active
+      if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
+        console.log('[MiniGameSync] Mini-game activated, initializing WebSocket...');
+        this.initializeWebSocket();
+        this.startHeartbeat();
+      }
       this.requestFullStateSync();
     } else {
+      // Send any pending updates when mini-game becomes inactive
       this.sendBatchedUpdates();
+      // Stop heartbeat to save resources
+      this.stopHeartbeat();
     }
   }
 
