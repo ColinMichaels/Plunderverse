@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
 import { StationRoom, StationLayout } from './StationLayout';
+import { NPCDialogueSystem } from './NPCDialogueSystem';
+import { NPCMissionSystem } from './NPCMissionSystem';
 
 /**
  * MainGameScene - Enhanced station exploration with multiple rooms and areas
@@ -20,6 +22,11 @@ export class MainGameScene extends Phaser.Scene {
   
   // Station rooms
   private stationRooms: Map<string, StationRoom> = new Map();
+  
+  // Dialogue and Mission systems
+  private dialogueSystem!: NPCDialogueSystem;
+  private missionSystem!: NPCMissionSystem;
+  private activeNPCInteraction: string | null = null;
   
   // Touch controls
   private touchStartX: number = 0;
@@ -57,6 +64,10 @@ export class MainGameScene extends Phaser.Scene {
     // Set world bounds for large station
     this.physics.world.setBounds(0, 0, 3200, 2400);
     
+    // Initialize dialogue and mission systems
+    this.dialogueSystem = new NPCDialogueSystem(this);
+    this.missionSystem = new NPCMissionSystem(this);
+    
     // Initialize groups first
     this.roomFloors = this.add.group();
     this.roomLabels = this.add.group();
@@ -92,6 +103,9 @@ export class MainGameScene extends Phaser.Scene {
     
     // Set up collisions
     this.setupCollisions();
+    
+    // Set up system event listeners
+    this.setupSystemEvents();
     
     // Emit mini-map update
     this.updateMiniMap();
@@ -1092,10 +1106,14 @@ export class MainGameScene extends Phaser.Scene {
   }
 
   private interactWithNPC(npc: Phaser.Physics.Arcade.Sprite): void {
+    const npcId = npc.getData('id');
     const name = npc.getData('name');
-    const dialogue = npc.getData('dialogue');
-    this.events.emit('showDialogue', `${name}: ${dialogue}`);
-    console.log(`[MainGameScene] ${name} says: "${dialogue}"`);
+    
+    // Prevent multiple simultaneous interactions
+    if (this.activeNPCInteraction) return;
+    this.activeNPCInteraction = npcId;
+    
+    console.log(`[MainGameScene] Starting dialogue with ${name}`);
     
     // Visual feedback
     this.tweens.add({
@@ -1110,6 +1128,96 @@ export class MainGameScene extends Phaser.Scene {
     // Face the player
     const angle = Phaser.Math.Angle.Between(npc.x, npc.y, this.player.x, this.player.y);
     npc.setRotation(angle + Math.PI / 2);
+    
+    // Start dialogue with the NPC using the dialogue system
+    this.dialogueSystem.startDialogue(npcId, (text, choices) => {
+      this.events.emit('showEnhancedDialogue', {
+        npcId,
+        npcName: name,
+        text,
+        choices
+      });
+    });
+    
+    // Emit interaction event for mission system
+    this.events.emit('npcInteracted', npcId);
+  }
+  
+  private setupSystemEvents(): void {
+    // Handle dialogue choice selection from UI
+    this.events.on('dialogueChoiceSelected', (choiceId: string) => {
+      this.dialogueSystem.selectChoice(choiceId);
+    });
+    
+    // Handle dialogue end
+    this.events.on('dialogueEnded', () => {
+      this.activeNPCInteraction = null;
+    });
+    
+    // Handle mission acceptance from dialogue
+    this.events.on('startNPCMission', (missionId: string, npcId: string) => {
+      const accepted = this.missionSystem.acceptMission(missionId);
+      if (accepted) {
+        // Show quest marker above NPC
+        const npc = this.npcs.children.entries.find(
+          n => (n as any).getData('id') === npcId
+        );
+        if (npc) {
+          this.createQuestMarker(npc as Phaser.Physics.Arcade.Sprite);
+        }
+      }
+    });
+    
+    // Handle mission events
+    this.events.on('openShop', (npcId: string) => {
+      console.log(`[MainGameScene] Opening shop for ${npcId}`);
+      // Emit to UI for shop interface
+      this.events.emit('showShopInterface', npcId);
+    });
+    
+    // Handle item collection for missions
+    this.events.on('itemCollected', (itemId: string, quantity: number) => {
+      // Mission system already listening to this event
+    });
+    
+    // Handle location arrival for missions
+    this.events.on('roomDiscovered', (roomId: string) => {
+      this.events.emit('locationReached', roomId);
+    });
+    
+    // Clean up on scene shutdown
+    this.events.once('shutdown', () => {
+      this.events.off('dialogueChoiceSelected');
+      this.events.off('dialogueEnded');
+      this.events.off('startNPCMission');
+      this.events.off('openShop');
+      this.missionSystem.destroy();
+    });
+  }
+  
+  private createQuestMarker(npc: Phaser.Physics.Arcade.Sprite): void {
+    // Create a quest indicator above the NPC
+    const marker = this.add.text(npc.x, npc.y - 40, '!', {
+      fontSize: '24px',
+      color: '#ffff00',
+      stroke: '#000000',
+      strokeThickness: 3
+    });
+    marker.setOrigin(0.5);
+    marker.setDepth(15);
+    
+    // Animate the marker
+    this.tweens.add({
+      targets: marker,
+      y: marker.y - 10,
+      duration: 1000,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.inOut'
+    });
+    
+    // Store marker reference on NPC
+    npc.setData('questMarker', marker);
   }
 
   private interactWithTerminal(terminal: Phaser.Physics.Arcade.Sprite): void {

@@ -1,4 +1,6 @@
 import Phaser from 'phaser';
+import { DialogueChoice } from './NPCDialogueSystem';
+import { NPCMission } from './NPCMissionSystem';
 
 /**
  * UIOverlayScene - HUD and UI elements overlay for the mini-game
@@ -10,6 +12,21 @@ export class UIOverlayScene extends Phaser.Scene {
   private dialogueBox!: Phaser.GameObjects.Container;
   private dialogueText!: Phaser.GameObjects.Text;
   private notificationText!: Phaser.GameObjects.Text;
+  
+  // Enhanced dialogue system
+  private enhancedDialogueBox!: Phaser.GameObjects.Container;
+  private npcNameText!: Phaser.GameObjects.Text;
+  private dialogueChoices: Phaser.GameObjects.Container[] = [];
+  private currentChoices: DialogueChoice[] = [];
+  
+  // Mission tracking
+  private missionTracker!: Phaser.GameObjects.Container;
+  private activeMissions: NPCMission[] = [];
+  private missionTexts: Phaser.GameObjects.Text[] = [];
+  
+  // Reputation display
+  private reputationDisplay!: Phaser.GameObjects.Container;
+  private repTexts: Map<string, Phaser.GameObjects.Text> = new Map();
   
   private currentHealth: number = 100;
   private maxHealth: number = 100;
@@ -34,6 +51,9 @@ export class UIOverlayScene extends Phaser.Scene {
     this.createHealthBar();
     this.createCreditsDisplay();
     this.createDialogueBox();
+    this.createEnhancedDialogueBox();
+    this.createMissionTracker();
+    this.createReputationDisplay();
     this.createNotificationArea();
     this.createMiniMap();
     
@@ -50,6 +70,30 @@ export class UIOverlayScene extends Phaser.Scene {
     
     mainScene.events.on('showDialogue', (text: string) => {
       this.showDialogue(text);
+    });
+    
+    // Enhanced dialogue events
+    mainScene.events.on('showEnhancedDialogue', (data: any) => {
+      this.showEnhancedDialogue(data);
+    });
+    
+    // Mission events
+    mainScene.events.on('missionAccepted', (mission: NPCMission) => {
+      this.addMissionToTracker(mission);
+    });
+    
+    mainScene.events.on('missionProgress', (missionId: string, progress: number) => {
+      this.updateMissionProgress(missionId, progress);
+    });
+    
+    mainScene.events.on('missionCompleted', (mission: NPCMission) => {
+      this.removeMissionFromTracker(mission.id);
+      this.showNotification(`Mission Complete: ${mission.title}!`, 0x00ff00);
+    });
+    
+    mainScene.events.on('missionFailed', (mission: NPCMission) => {
+      this.removeMissionFromTracker(mission.id);
+      this.showNotification(`Mission Failed: ${mission.title}`, 0xff0000);
     });
     
     mainScene.events.on('terminalInteraction', () => {
@@ -198,6 +242,328 @@ export class UIOverlayScene extends Phaser.Scene {
   private hideDialogue(): void {
     this.dialogueBox.setVisible(false);
   }
+  
+  private createEnhancedDialogueBox(): void {
+    const width = this.cameras.main.width - 40;
+    const height = 180;
+    const x = this.cameras.main.width / 2;
+    const y = this.cameras.main.height - height / 2 - 20;
+    
+    // Create enhanced dialogue container
+    this.enhancedDialogueBox = this.add.container(x, y);
+    
+    // Background with gradient
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.95);
+    bg.fillRoundedRect(-width/2, -height/2, width, height, 10);
+    bg.lineStyle(3, 0x00ffff, 1);
+    bg.strokeRoundedRect(-width/2, -height/2, width, height, 10);
+    
+    // NPC Name
+    this.npcNameText = this.add.text(-width/2 + 20, -height/2 + 10, '', {
+      fontSize: '20px',
+      color: '#00ffff',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    });
+    
+    // Dialogue text
+    const dialogueText = this.add.text(0, -30, '', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'Arial',
+      align: 'left',
+      wordWrap: { width: width - 60 }
+    }).setOrigin(0.5);
+    
+    this.enhancedDialogueBox.add([bg, this.npcNameText, dialogueText]);
+    this.enhancedDialogueBox.setVisible(false);
+    
+    // Store reference to dialogue text
+    this.enhancedDialogueBox.setData('dialogueText', dialogueText);
+  }
+  
+  private showEnhancedDialogue(data: any): void {
+    const { npcId, npcName, text, choices } = data;
+    
+    // Hide simple dialogue box
+    if (this.dialogueBox) {
+      this.dialogueBox.setVisible(false);
+    }
+    
+    // Show enhanced dialogue
+    this.enhancedDialogueBox.setVisible(true);
+    
+    // Update NPC name
+    this.npcNameText.setText(npcName);
+    
+    // Update dialogue text
+    const dialogueText = this.enhancedDialogueBox.getData('dialogueText');
+    if (dialogueText) {
+      dialogueText.setText(text);
+    }
+    
+    // Clear existing choices
+    this.dialogueChoices.forEach(choice => choice.destroy());
+    this.dialogueChoices = [];
+    this.currentChoices = choices || [];
+    
+    // Create choice buttons
+    if (choices && choices.length > 0) {
+      const choiceStartY = 40;
+      const choiceSpacing = 35;
+      
+      choices.forEach((choice: DialogueChoice, index: number) => {
+        const choiceContainer = this.createChoiceButton(
+          0,
+          choiceStartY + index * choiceSpacing,
+          choice
+        );
+        this.enhancedDialogueBox.add(choiceContainer);
+        this.dialogueChoices.push(choiceContainer);
+      });
+    } else {
+      // No choices - add continue button
+      const continueBtn = this.createContinueButton(0, 60);
+      this.enhancedDialogueBox.add(continueBtn);
+      this.dialogueChoices.push(continueBtn);
+    }
+  }
+  
+  private createChoiceButton(x: number, y: number, choice: DialogueChoice): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    const width = this.cameras.main.width - 80;
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x003366, 0.8);
+    bg.fillRoundedRect(-width/2, -15, width, 30, 5);
+    bg.lineStyle(2, 0x0099ff, 1);
+    bg.strokeRoundedRect(-width/2, -15, width, 30, 5);
+    
+    // Choice text
+    const text = this.add.text(0, 0, `${choice.text}`, {
+      fontSize: '14px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    // Make interactive
+    bg.setInteractive(new Phaser.Geom.Rectangle(-width/2, -15, width, 30), Phaser.Geom.Rectangle.Contains);
+    
+    bg.on('pointerover', () => {
+      bg.clear();
+      bg.fillStyle(0x0066cc, 0.9);
+      bg.fillRoundedRect(-width/2, -15, width, 30, 5);
+      bg.lineStyle(2, 0x00ffff, 1);
+      bg.strokeRoundedRect(-width/2, -15, width, 30, 5);
+      text.setColor('#00ffff');
+    });
+    
+    bg.on('pointerout', () => {
+      bg.clear();
+      bg.fillStyle(0x003366, 0.8);
+      bg.fillRoundedRect(-width/2, -15, width, 30, 5);
+      bg.lineStyle(2, 0x0099ff, 1);
+      bg.strokeRoundedRect(-width/2, -15, width, 30, 5);
+      text.setColor('#ffffff');
+    });
+    
+    bg.on('pointerdown', () => {
+      this.selectDialogueChoice(choice.id);
+    });
+    
+    container.add([bg, text]);
+    return container;
+  }
+  
+  private createContinueButton(x: number, y: number): Phaser.GameObjects.Container {
+    const container = this.add.container(x, y);
+    const width = 120;
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x006600, 0.8);
+    bg.fillRoundedRect(-width/2, -15, width, 30, 5);
+    bg.lineStyle(2, 0x00ff00, 1);
+    bg.strokeRoundedRect(-width/2, -15, width, 30, 5);
+    
+    // Text
+    const text = this.add.text(0, 0, 'Continue', {
+      fontSize: '14px',
+      color: '#ffffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5);
+    
+    // Make interactive
+    bg.setInteractive(new Phaser.Geom.Rectangle(-width/2, -15, width, 30), Phaser.Geom.Rectangle.Contains);
+    
+    bg.on('pointerdown', () => {
+      this.hideEnhancedDialogue();
+    });
+    
+    container.add([bg, text]);
+    return container;
+  }
+  
+  private selectDialogueChoice(choiceId: string): void {
+    // Send choice to main scene
+    const mainScene = this.scene.get('MainGameScene');
+    mainScene.events.emit('dialogueChoiceSelected', choiceId);
+  }
+  
+  private hideEnhancedDialogue(): void {
+    this.enhancedDialogueBox.setVisible(false);
+    this.dialogueChoices.forEach(choice => choice.destroy());
+    this.dialogueChoices = [];
+    
+    // Notify main scene
+    const mainScene = this.scene.get('MainGameScene');
+    mainScene.events.emit('dialogueEnded');
+  }
+  
+  private createMissionTracker(): void {
+    const x = 20;
+    const y = 60;
+    const width = 250;
+    const maxHeight = 200;
+    
+    this.missionTracker = this.add.container(x, y);
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.7);
+    bg.fillRoundedRect(0, 0, width, maxHeight, 5);
+    bg.lineStyle(2, 0xffaa00, 0.8);
+    bg.strokeRoundedRect(0, 0, width, maxHeight, 5);
+    
+    // Title
+    const title = this.add.text(width / 2, 10, 'Active Missions', {
+      fontSize: '16px',
+      color: '#ffaa00',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0);
+    
+    this.missionTracker.add([bg, title]);
+    this.missionTracker.setVisible(false);
+  }
+  
+  private addMissionToTracker(mission: NPCMission): void {
+    if (!this.activeMissions.find(m => m.id === mission.id)) {
+      this.activeMissions.push(mission);
+      this.updateMissionDisplay();
+    }
+  }
+  
+  private updateMissionDisplay(): void {
+    // Clear existing mission texts
+    this.missionTexts.forEach(text => text.destroy());
+    this.missionTexts = [];
+    
+    if (this.activeMissions.length === 0) {
+      this.missionTracker.setVisible(false);
+      return;
+    }
+    
+    this.missionTracker.setVisible(true);
+    
+    // Display each mission
+    const startY = 35;
+    const spacing = 40;
+    
+    this.activeMissions.forEach((mission, index) => {
+      const missionText = this.add.text(10, startY + index * spacing, 
+        `• ${mission.title}\n  ${mission.objectives.filter(o => !o.isCompleted).length} objectives remaining`, {
+        fontSize: '12px',
+        color: '#ffffff',
+        fontFamily: 'Arial',
+        wordWrap: { width: 230 }
+      });
+      
+      // Progress bar
+      const progressBar = this.add.graphics();
+      const barY = startY + index * spacing + 25;
+      progressBar.fillStyle(0x333333, 1);
+      progressBar.fillRect(10, barY, 230, 5);
+      progressBar.fillStyle(0x00ff00, 1);
+      progressBar.fillRect(10, barY, 230 * (mission.progress / 100), 5);
+      
+      this.missionTracker.add([missionText, progressBar]);
+      this.missionTexts.push(missionText);
+    });
+  }
+  
+  private updateMissionProgress(missionId: string, progress: number): void {
+    const mission = this.activeMissions.find(m => m.id === missionId);
+    if (mission) {
+      mission.progress = progress;
+      this.updateMissionDisplay();
+    }
+  }
+  
+  private removeMissionFromTracker(missionId: string): void {
+    this.activeMissions = this.activeMissions.filter(m => m.id !== missionId);
+    this.updateMissionDisplay();
+  }
+  
+  private createReputationDisplay(): void {
+    const x = this.cameras.main.width - 150;
+    const y = 60;
+    
+    this.reputationDisplay = this.add.container(x, y);
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.7);
+    bg.fillRoundedRect(0, 0, 130, 100, 5);
+    bg.lineStyle(2, 0x9966ff, 0.8);
+    bg.strokeRoundedRect(0, 0, 130, 100, 5);
+    
+    // Title
+    const title = this.add.text(65, 5, 'Reputation', {
+      fontSize: '14px',
+      color: '#9966ff',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0);
+    
+    // Faction reputations
+    const factions = ['Corp', 'Indie', 'Outlaw'];
+    const colors = ['#0099ff', '#00ff99', '#ff6600'];
+    
+    factions.forEach((faction, index) => {
+      const y = 25 + index * 22;
+      const text = this.add.text(10, y, `${faction}: 0`, {
+        fontSize: '12px',
+        color: colors[index],
+        fontFamily: 'Arial'
+      });
+      this.repTexts.set(faction, text);
+    });
+    
+    this.reputationDisplay.add([bg, title, ...Array.from(this.repTexts.values())]);
+  }
+  
+  private showNotification(message: string, color: number = 0xffffff): void {
+    if (!this.notificationText) return;
+    
+    this.notificationText.setText(message);
+    this.notificationText.setColor(`#${color.toString(16).padStart(6, '0')}`);
+    this.notificationText.setVisible(true);
+    
+    // Fade out after 3 seconds
+    this.tweens.add({
+      targets: this.notificationText,
+      alpha: 0,
+      duration: 1000,
+      delay: 2000,
+      onComplete: () => {
+        this.notificationText.setVisible(false);
+        this.notificationText.setAlpha(1);
+      }
+    });
+  }
 
   private createNotificationArea(): void {
     const x = this.cameras.main.width / 2;
@@ -212,28 +578,6 @@ export class UIOverlayScene extends Phaser.Scene {
     }).setOrigin(0.5);
   }
 
-  private showNotification(text: string, color: string = '#00ffff'): void {
-    this.notificationText.setText(text);
-    this.notificationText.setColor(color);
-    
-    // Animate notification
-    this.tweens.add({
-      targets: this.notificationText,
-      alpha: { from: 0, to: 1 },
-      scale: { from: 0.5, to: 1 },
-      duration: 300,
-      ease: 'Back.out',
-      onComplete: () => {
-        this.time.delayedCall(2000, () => {
-          this.tweens.add({
-            targets: this.notificationText,
-            alpha: 0,
-            duration: 300
-          });
-        });
-      }
-    });
-  }
 
   private createMiniMap(): void {
     const mapSize = 180;
