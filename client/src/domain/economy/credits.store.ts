@@ -7,17 +7,31 @@ import {
   assert,
   DEBUG_PREFIXES
 } from './debug';
+import { TransactionClient } from '../../services/TransactionClient';
+import { CloudSyncManager } from '../../services/CloudSyncWebSocket';
 
 interface CreditsActions {
   spendCredits: (amount: number) => boolean;
   earnCredits: (amount: number) => void;
   setCredits: (amount: number) => void;
+  
+  // NEW: Transaction-based methods
+  spend: (amount: number, reason?: string) => Promise<boolean>;
+  earn: (amount: number, reason?: string) => Promise<boolean>;
+  setAmount: (amount: number) => void;
 }
 
-type CreditsStore = CreditsState & CreditsActions;
+type CreditsStore = CreditsState & CreditsActions & { 
+  amount: number; // Alias for credits for TransactionClient compatibility
+};
 
 export const useCreditsStore = create<CreditsStore>((set, get) => ({
   credits: 1000,
+  
+  // Alias for compatibility
+  get amount() {
+    return get().credits;
+  },
   
   spendCredits: (amount) => {
     checkpoint(`Credits spend attempt: ${amount}`, { amount });
@@ -141,5 +155,73 @@ export const useCreditsStore = create<CreditsStore>((set, get) => ({
   
   setCredits: (amount) => {
     set({ credits: amount });
+  },
+  
+  // NEW: Transaction-based methods with server authority
+  spend: async (amount: number, reason?: string): Promise<boolean> => {
+    const syncManager = CloudSyncManager.getInstance();
+    
+    // If connected, route through transaction system
+    if (syncManager.isAuthenticated()) {
+      try {
+        const transactionClient = TransactionClient.getInstance();
+        const result = await transactionClient.executeTransaction({
+          type: 'debit',
+          category: 'general',
+          amount,
+          metadata: { reason: reason || 'General spending' }
+        });
+        
+        if (result.success && result.newBalances) {
+          // Server will sync the new balance to all devices
+          console.log(`[CreditsStore] Transaction successful, new balance: ${result.newBalances.credits}`);
+        }
+        
+        return result.success;
+      } catch (error) {
+        console.error('[CreditsStore] Transaction failed:', error);
+        return false;
+      }
+    } else {
+      // Offline mode: use local spendCredits
+      return get().spendCredits(amount);
+    }
+  },
+  
+  earn: async (amount: number, reason?: string): Promise<boolean> => {
+    const syncManager = CloudSyncManager.getInstance();
+    
+    // If connected, route through transaction system
+    if (syncManager.isAuthenticated()) {
+      try {
+        const transactionClient = TransactionClient.getInstance();
+        const result = await transactionClient.executeTransaction({
+          type: 'credit',
+          category: 'general',
+          amount,
+          metadata: { reason: reason || 'General income' }
+        });
+        
+        if (result.success && result.newBalances) {
+          // Server will sync the new balance to all devices
+          console.log(`[CreditsStore] Transaction successful, new balance: ${result.newBalances.credits}`);
+        }
+        
+        return result.success;
+      } catch (error) {
+        console.error('[CreditsStore] Transaction failed:', error);
+        return false;
+      }
+    } else {
+      // Offline mode: use local earnCredits
+      get().earnCredits(amount);
+      return true;
+    }
+  },
+  
+  setAmount: (amount: number) => {
+    // Direct setter for server sync updates
+    set({ credits: amount });
+    console.log(`[CreditsStore] Credits set to ${amount} by server sync`);
   }
 }));
