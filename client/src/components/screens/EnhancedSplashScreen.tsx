@@ -41,6 +41,7 @@ export function EnhancedSplashScreen() {
   const [transitionSubtitle, setTransitionSubtitle] = useState('');
   const [transitionProgress, setTransitionProgress] = useState(0);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
+  const [showCanvas, setShowCanvas] = useState(true); // Control Canvas visibility
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
@@ -245,6 +246,12 @@ export function EnhancedSplashScreen() {
         autoPlayTimerRef.current = null;
       }
 
+      // Hide canvas before transition to prevent WebGL context conflicts
+      setShowCanvas(false);
+      
+      // Wait a moment for WebGL context to be properly disposed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       // Start transition
       setIsTransitioning(true);
       setTransitionStatus('Initializing Systems');
@@ -350,6 +357,12 @@ export function EnhancedSplashScreen() {
     
     useAuthStore.getState().playAsGuest();
     
+    // Hide canvas before transition to prevent WebGL context conflicts
+    setShowCanvas(false);
+    
+    // Wait a moment for WebGL context to be properly disposed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
     // Start transition for guest player
     setIsTransitioning(true);
     setTransitionStatus('Initializing Systems');
@@ -397,43 +410,51 @@ export function EnhancedSplashScreen() {
 
   return (
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
-      {/* 3D Solar System Background */}
-      <div className="absolute inset-0 z-0">
-        <Canvas
-          camera={{ position: [30, 10, 30], fov: 75 }}
-          style={{ background: '#000' }}
-        >
-          <Suspense fallback={null}>
-            {/* Use full solar system for better preloading if enabled */}
-            {useFullSystem ? (
-              <SplashSolarSystem useFullComponents={true} />
-            ) : (
-              <SolarSystemBackground />
-            )}
-            {/* Post-processing effects for sun glow and depth */}
-            <EffectComposer>
-              <Bloom
-                intensity={2.5}
-                luminanceThreshold={0.4}
-                luminanceSmoothing={0.9}
-                radius={0.95}
-                levels={8}
-                mipmapBlur={true}
-              />
-              <DepthOfField
-                focusDistance={0.01}
-                focalLength={0.02}
-                bokehScale={4}
-                height={480}
-              />
-              <Vignette
-                offset={0.3}
-                darkness={0.4}
-              />
-            </EffectComposer>
-          </Suspense>
-        </Canvas>
-      </div>
+      {/* 3D Solar System Background - Only render when not transitioning */}
+      {showCanvas && (
+        <div className="absolute inset-0 z-0">
+          <Canvas
+            camera={{ position: [30, 10, 30], fov: 75 }}
+            style={{ background: '#000' }}
+            gl={{
+              antialias: true,
+              powerPreference: "high-performance",
+              preserveDrawingBuffer: false,
+              failIfMajorPerformanceCaveat: false
+            }}
+          >
+            <Suspense fallback={null}>
+              {/* Use full solar system for better preloading if enabled */}
+              {useFullSystem ? (
+                <SplashSolarSystem useFullComponents={true} />
+              ) : (
+                <SolarSystemBackground />
+              )}
+              {/* Post-processing effects for sun glow and depth */}
+              <EffectComposer>
+                <Bloom
+                  intensity={2.5}
+                  luminanceThreshold={0.4}
+                  luminanceSmoothing={0.9}
+                  radius={0.95}
+                  levels={8}
+                  mipmapBlur={true}
+                />
+                <DepthOfField
+                  focusDistance={0.01}
+                  focalLength={0.02}
+                  bokehScale={4}
+                  height={480}
+                />
+                <Vignette
+                  offset={0.3}
+                  darkness={0.4}
+                />
+              </EffectComposer>
+            </Suspense>
+          </Canvas>
+        </div>
+      )}
       
       {/* Very light overlay for depth - minimal opacity to show more background */}
       <div className="absolute inset-0 z-10 bg-black/10" />
