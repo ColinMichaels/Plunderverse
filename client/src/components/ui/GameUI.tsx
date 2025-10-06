@@ -7,7 +7,6 @@ import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
 import { OrbitalInterface } from "../navigation/OrbitalInterface";
 import { NavigationSidebar } from "../navigation/NavigationSidebar";
-import { FixedMiniMap } from "../navigation/MiniMap/FixedMiniMap";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
@@ -180,11 +179,6 @@ export function GameUI() {
 
       {/* Mobile Controls - New Unified System */}
       <MobileHUD />
-
-      {/* Fixed minimap in bottom left corner */}
-      <div className="fixed bottom-4 left-8 z-30">
-        <FixedMiniMap />
-      </div>
 
       {/* Music Player in bottom right corner */}
       <div className="fixed top-4 left-28 z-30">
