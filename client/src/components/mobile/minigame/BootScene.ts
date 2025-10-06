@@ -73,13 +73,13 @@ export class BootScene extends Phaser.Scene {
     // Create placeholder graphics that we can use in the game
     
     // Create a player sprite placeholder
-    const playerGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const playerGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     playerGraphics.fillStyle(0x00ff00, 1);
     playerGraphics.fillCircle(16, 16, 16);
     playerGraphics.generateTexture('player', 32, 32);
     
     // Create station floor tile
-    const floorGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const floorGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     floorGraphics.fillStyle(0x333344, 1);
     floorGraphics.fillRect(0, 0, 64, 64);
     floorGraphics.lineStyle(1, 0x555566, 1);
@@ -87,7 +87,7 @@ export class BootScene extends Phaser.Scene {
     floorGraphics.generateTexture('floor_tile', 64, 64);
     
     // Create wall tile
-    const wallGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const wallGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     wallGraphics.fillStyle(0x1a1a2e, 1);
     wallGraphics.fillRect(0, 0, 64, 64);
     wallGraphics.lineStyle(2, 0x0f3460, 1);
@@ -95,13 +95,13 @@ export class BootScene extends Phaser.Scene {
     wallGraphics.generateTexture('wall_tile', 64, 64);
     
     // Create NPC placeholder
-    const npcGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const npcGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     npcGraphics.fillStyle(0xffa500, 1);
     npcGraphics.fillCircle(16, 16, 14);
     npcGraphics.generateTexture('npc', 32, 32);
     
     // Create interactive object (terminal)
-    const terminalGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const terminalGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     terminalGraphics.fillStyle(0x00aaff, 1);
     terminalGraphics.fillRect(0, 0, 48, 48);
     terminalGraphics.fillStyle(0x003366, 1);
@@ -109,7 +109,7 @@ export class BootScene extends Phaser.Scene {
     terminalGraphics.generateTexture('terminal', 48, 48);
     
     // Create collectible (credit chip)
-    const creditGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const creditGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     creditGraphics.fillStyle(0xffff00, 1);
     creditGraphics.fillCircle(12, 12, 8);
     creditGraphics.fillStyle(0xffaa00, 1);
@@ -117,7 +117,7 @@ export class BootScene extends Phaser.Scene {
     creditGraphics.generateTexture('credit_chip', 24, 24);
     
     // Create health pickup
-    const healthGraphics = this.make.graphics({ x: 0, y: 0, add: false });
+    const healthGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     healthGraphics.fillStyle(0xff0000, 1);
     healthGraphics.fillRect(8, 4, 8, 16);
     healthGraphics.fillRect(4, 8, 16, 8);

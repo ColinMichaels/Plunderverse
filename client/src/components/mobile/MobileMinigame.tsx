@@ -8,9 +8,9 @@ import { Button } from '../ui/button';
 import { ArrowLeft, RotateCw } from 'lucide-react';
 
 // Import Phaser scenes
-import { BootScene } from './minigame/BootScene';
-import { MainGameScene } from './minigame/MainGameScene';
-import { UIOverlayScene } from './minigame/UIOverlayScene';
+import { BootScene } from './minigame/BootScene.js';
+import { MainGameScene } from './minigame/MainGameScene.js';
+import { UIOverlayScene } from './minigame/UIOverlayScene.js';
 
 interface MobileMinigameProps {
   onBack: () => void;
