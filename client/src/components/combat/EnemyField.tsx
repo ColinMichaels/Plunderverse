@@ -7,6 +7,7 @@ import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useHints } from "../../lib/stores/ui/useHints";
+import { useWeaponSystems } from "../../lib/stores/combat/useWeaponSystems";
 import { Enemy } from "./Enemy";
 import { ExplosionEffect } from "./ExplosionEffect";
 import * as THREE from "three";
@@ -21,6 +22,7 @@ export function EnemyField() {
   } = useEnemies();
   const { cameraPosition } = useSolarSystem();
   const { projectiles, removeProjectile } = useShooting();
+  const { homingProjectiles, removeHomingProjectile } = useWeaponSystems();
   const { takeDamage } = useShipStatus();
   const { isActive: isAutopilotActive } = useAutopilot();
   const { playHit } = useAudio();
@@ -115,6 +117,33 @@ export function EnemyField() {
       }
     });
     
+    // Check collisions for homing projectiles (torpedoes and missiles)
+    homingProjectiles.forEach(projectile => {
+      if (projectile.ownerType === 'player') {
+        enemies.forEach(enemy => {
+          if (enemy.isDying) return;
+          
+          const distance = projectile.position.distanceTo(enemy.position);
+          const hitRadius = 4.0; // Larger hit radius for homing weapons
+          
+          if (distance < hitRadius) {
+            damageEnemy(enemy.id, projectile.damage);
+            removeHomingProjectile(projectile.id);
+            playHit();
+            
+            // Add larger explosion for torpedoes/missiles
+            explosions.current.push({
+              id: Math.random().toString(36).substr(2, 9),
+              position: enemy.position.clone(),
+              time: 0
+            });
+            
+            console.log(`[EnemyField] Homing weapon hit enemy ${enemy.id} for ${projectile.damage} damage`);
+          }
+        });
+      }
+    });
+    
     // Check collisions between enemies and player ship
     enemies.forEach(enemy => {
       if (enemy.isDying) return;
@@ -146,6 +175,23 @@ export function EnemyField() {
           enemy={enemy}
           onHit={(id) => console.log(`Enemy ${id} hit`)}
         />
+      ))}
+      
+      {/* Render homing projectiles (torpedoes and missiles) */}
+      {homingProjectiles.map(projectile => (
+        <mesh key={projectile.id} position={projectile.position}>
+          <sphereGeometry args={[0.5, 8, 8]} />
+          <meshBasicMaterial 
+            color={projectile.damage > 50 ? "#ff0000" : "#00ffff"} 
+            emissive={projectile.damage > 50 ? "#ff0000" : "#00ffff"}
+            emissiveIntensity={1}
+          />
+          {/* Exhaust trail */}
+          <mesh position={[0, 0, -0.8]} scale={0.3}>
+            <sphereGeometry args={[0.5, 6, 6]} />
+            <meshBasicMaterial color="#ffaa00" transparent opacity={0.6} />
+          </mesh>
+        </mesh>
       ))}
       
       {explosions.current.map(explosion => (
