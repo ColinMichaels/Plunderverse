@@ -516,7 +516,7 @@ export function EnhancedSplashScreen() {
         <VideoModal
           isOpen={showTrailer}
           onClose={() => setShowTrailer(false)}
-          videoUrl="https://www.youtube.com/embed/dQw4w9WgXcQ"
+          videoUrl="https://www.youtube.com/embed/flJzsWREAuc"
           title="Plunderverse - Official Trailer"
         />
       )}
