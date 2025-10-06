@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { 
   Book, Compass, Swords, Coins, Users, Rocket, Shield, Battery, 
   Map, Pickaxe, Hammer, Target, ChevronRight, ChevronDown, Gamepad2,
@@ -14,18 +14,36 @@ interface Section {
 
 export function HandbookContent() {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['overview']));
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const lastExpandedSection = useRef<string | null>(null);
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
       const newSet = new Set(prev);
       if (newSet.has(sectionId)) {
         newSet.delete(sectionId);
+        lastExpandedSection.current = null;
       } else {
         newSet.add(sectionId);
+        lastExpandedSection.current = sectionId;
       }
       return newSet;
     });
   };
+
+  // Auto-scroll to the expanded section
+  useEffect(() => {
+    if (lastExpandedSection.current && sectionRefs.current[lastExpandedSection.current]) {
+      const section = sectionRefs.current[lastExpandedSection.current];
+      setTimeout(() => {
+        section?.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'nearest',
+          inline: 'nearest' 
+        });
+      }, 100); // Small delay to allow content to expand first
+    }
+  }, [expandedSections]);
 
   const sections: Section[] = [
     {
@@ -828,47 +846,45 @@ export function HandbookContent() {
   ];
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col">
       {/* Header */}
       <div className="mb-4">
-        <h3 className="text-2xl font-bold text-amber-400 mb-2 flex items-center gap-2">
-          <Book className="w-6 h-6" />
-          Outlaw's Handbook
-        </h3>
         <p className="text-slate-400 text-sm">
           Everything you need to survive in the lawless solar system of 2149
         </p>
       </div>
 
-      {/* Table of Contents / Sections */}
-      <div className="flex-1 overflow-y-auto custom-scrollbar">
-        <div className="space-y-2">
-          {sections.map((section) => (
-            <div key={section.id} className="border border-amber-400/20 rounded-lg overflow-hidden">
-              <button
-                onClick={() => toggleSection(section.id)}
-                className="w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800/70 transition-colors 
-                         flex items-center justify-between text-left"
-              >
-                <div className="flex items-center gap-3">
-                  <section.icon className="w-5 h-5 text-amber-400" />
-                  <span className="text-amber-300 font-semibold">{section.title}</span>
-                </div>
-                {expandedSections.has(section.id) ? (
-                  <ChevronDown className="w-4 h-4 text-amber-400" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-amber-400" />
-                )}
-              </button>
-              
-              {expandedSections.has(section.id) && (
-                <div className="px-4 py-4 bg-slate-900/30">
-                  {section.content}
-                </div>
+      {/* Table of Contents / Sections - No overflow here since parent handles scrolling */}
+      <div className="space-y-2">
+        {sections.map((section) => (
+          <div 
+            key={section.id} 
+            ref={el => sectionRefs.current[section.id] = el}
+            className="border border-amber-400/20 rounded-lg overflow-hidden"
+          >
+            <button
+              onClick={() => toggleSection(section.id)}
+              className="w-full px-4 py-3 bg-slate-800/50 hover:bg-slate-800/70 transition-colors 
+                       flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-3">
+                <section.icon className="w-5 h-5 text-amber-400" />
+                <span className="text-amber-300 font-semibold">{section.title}</span>
+              </div>
+              {expandedSections.has(section.id) ? (
+                <ChevronDown className="w-4 h-4 text-amber-400" />
+              ) : (
+                <ChevronRight className="w-4 h-4 text-amber-400" />
               )}
-            </div>
-          ))}
-        </div>
+            </button>
+            
+            {expandedSections.has(section.id) && (
+              <div className="px-4 py-4 bg-slate-900/30">
+                {section.content}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Quick Reference */}

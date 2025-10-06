@@ -806,7 +806,7 @@ export function EnhancedSplashScreen() {
       {/* Help Modal */}
       {showHelp && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
-          <div className="bg-slate-800 border border-amber-400/30 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[85vh] flex flex-col">
+          <div className="bg-slate-800 border border-amber-400/30 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] flex flex-col">
             <style>{`
               .custom-scrollbar::-webkit-scrollbar {
                 width: 8px;
@@ -824,14 +824,22 @@ export function EnhancedSplashScreen() {
               }
             `}</style>
             
-            {/* Handbook Content Component */}
-            <HandbookContent />
+            {/* Modal Header */}
+            <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center">
+              <Gamepad2 className="w-6 h-6 mr-2" />
+              Plunderverse Handbook
+            </h2>
             
-            {/* Close Button */}
+            {/* Scrollable Content Container */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar pr-2 min-h-0">
+              <HandbookContent />
+            </div>
+            
+            {/* Close Button - Fixed at bottom */}
             <button
               onClick={() => setShowHelp(false)}
               className="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 rounded-lg
-                         transform transition-all duration-200 hover:scale-105 shadow-lg"
+                         transform transition-all duration-200 hover:scale-105 shadow-lg flex-shrink-0"
             >
               Ready to Break the Law
             </button>
