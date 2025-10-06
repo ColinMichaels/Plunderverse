@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { DialogueChoice } from './NPCDialogueSystem';
 import { NPCMission } from './NPCMissionSystem';
+import { SmugglingMission } from './SmugglingSystem';
+import { CrewMember, CrewTask } from './CrewManagementSystem';
 
 /**
  * UIOverlayScene - HUD and UI elements overlay for the mini-game
@@ -27,6 +29,18 @@ export class UIOverlayScene extends Phaser.Scene {
   // Reputation display
   private reputationDisplay!: Phaser.GameObjects.Container;
   private repTexts: Map<string, Phaser.GameObjects.Text> = new Map();
+  
+  // Smuggling UI
+  private smugglingHUD!: Phaser.GameObjects.Container;
+  private heatMeter!: Phaser.GameObjects.Graphics;
+  private detectionMeter!: Phaser.GameObjects.Graphics;
+  private smugglingTimer?: Phaser.GameObjects.Text;
+  private quickTimeEventDisplay?: Phaser.GameObjects.Container;
+  
+  // Crew Management UI
+  private crewPanel!: Phaser.GameObjects.Container;
+  private crewRosterDisplay: Phaser.GameObjects.Container[] = [];
+  private taskProgressBars: Map<string, Phaser.GameObjects.Graphics> = new Map();
   
   private currentHealth: number = 100;
   private maxHealth: number = 100;
@@ -56,6 +70,10 @@ export class UIOverlayScene extends Phaser.Scene {
     this.createReputationDisplay();
     this.createNotificationArea();
     this.createMiniMap();
+    
+    // Create smuggling and crew UI
+    this.createSmugglingHUD();
+    this.createCrewPanel();
     
     // Listen for game events from MainGameScene
     const mainScene = this.scene.get('MainGameScene');
@@ -98,6 +116,44 @@ export class UIOverlayScene extends Phaser.Scene {
     
     mainScene.events.on('terminalInteraction', () => {
       this.showTerminalMenu();
+    });
+    
+    // Smuggling events
+    mainScene.events.on('updateSmugglingStatus', (status: any) => {
+      this.updateSmugglingHUD(status);
+    });
+    
+    mainScene.events.on('showMissionBriefing', (mission: SmugglingMission) => {
+      this.showSmugglingBriefing(mission);
+    });
+    
+    mainScene.events.on('showQuickTimeEvent', (data: any) => {
+      this.showQuickTimeEvent(data);
+    });
+    
+    mainScene.events.on('updateQuickTimeEvent', (data: any) => {
+      this.updateQuickTimeEvent(data);
+    });
+    
+    mainScene.events.on('hideQuickTimeEvent', () => {
+      this.hideQuickTimeEvent();
+    });
+    
+    mainScene.events.on('updateHeat', (heat: number) => {
+      this.updateHeatMeter(heat);
+    });
+    
+    // Crew events
+    mainScene.events.on('crewTaskStarted', (data: any) => {
+      this.updateCrewTaskDisplay(data);
+    });
+    
+    mainScene.events.on('crewTaskProgress', (data: any) => {
+      this.updateTaskProgress(data);
+    });
+    
+    mainScene.events.on('crewTaskCompleted', (data: any) => {
+      this.onCrewTaskCompleted(data);
     });
     
     // Listen for registry updates (from React)
@@ -759,5 +815,369 @@ export class UIOverlayScene extends Phaser.Scene {
     this.currentHealth = Math.min(this.currentHealth + amount, this.maxHealth);
     this.updateHealthBar();
     this.showNotification(`+${amount} Health!`, '#00ff00');
+  }
+  
+  private createSmugglingHUD(): void {
+    const x = 20;
+    const y = this.cameras.main.height - 120;
+    
+    this.smugglingHUD = this.add.container(x, y);
+    
+    // Heat meter
+    const heatLabel = this.add.text(0, 0, '🔥 Heat', {
+      fontSize: '14px',
+      color: '#ff6600',
+      fontFamily: 'Arial'
+    });
+    
+    const heatBg = this.add.rectangle(60, 4, 100, 10, 0x000000, 0.7)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(1, 0xff6600);
+    
+    this.heatMeter = this.add.graphics();
+    
+    // Detection meter
+    const detectionLabel = this.add.text(0, 20, '👁️ Detection', {
+      fontSize: '14px',
+      color: '#ffff00',
+      fontFamily: 'Arial'
+    });
+    
+    const detectionBg = this.add.rectangle(60, 24, 100, 10, 0x000000, 0.7)
+      .setOrigin(0, 0.5)
+      .setStrokeStyle(1, 0xffff00);
+    
+    this.detectionMeter = this.add.graphics();
+    
+    // Timer (initially hidden)
+    this.smugglingTimer = this.add.text(0, 40, '⏱️ Time: 00:00', {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'Arial',
+      stroke: '#000000',
+      strokeThickness: 2
+    });
+    this.smugglingTimer.setVisible(false);
+    
+    this.smugglingHUD.add([
+      heatLabel, heatBg,
+      detectionLabel, detectionBg,
+      this.smugglingTimer
+    ]);
+    
+    // Initially hide smuggling HUD
+    this.smugglingHUD.setVisible(false);
+  }
+  
+  private updateSmugglingHUD(status: any): void {
+    if (!status.carrying && !status.mission) {
+      this.smugglingHUD.setVisible(false);
+      return;
+    }
+    
+    this.smugglingHUD.setVisible(true);
+    
+    // Update heat meter
+    this.heatMeter.clear();
+    const heatPercent = Math.min(status.heat / 100, 1);
+    const heatColor = heatPercent > 0.7 ? 0xff0000 : 
+                      heatPercent > 0.4 ? 0xff6600 : 0xffaa00;
+    this.heatMeter.fillStyle(heatColor, 1);
+    this.heatMeter.fillRect(62, -1, 96 * heatPercent, 8);
+    
+    // Update detection meter
+    this.detectionMeter.clear();
+    const detectionPercent = Math.min(status.detection / 100, 1);
+    const detectionColor = detectionPercent > 0.7 ? 0xff0000 : 
+                           detectionPercent > 0.4 ? 0xffaa00 : 0xffff00;
+    this.detectionMeter.fillStyle(detectionColor, 1);
+    this.detectionMeter.fillRect(62, 19, 96 * detectionPercent, 8);
+    
+    // Update timer if mission active
+    if (status.mission) {
+      this.smugglingTimer.setVisible(true);
+      const timeElapsed = Date.now() - status.mission.startTime;
+      const timeRemaining = Math.max(0, status.mission.timeLimit * 1000 - timeElapsed);
+      const minutes = Math.floor(timeRemaining / 60000);
+      const seconds = Math.floor((timeRemaining % 60000) / 1000);
+      this.smugglingTimer.setText(`⏱️ Time: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+      
+      if (timeRemaining < 30000) { // Less than 30 seconds
+        this.smugglingTimer.setColor('#ff0000');
+      } else if (timeRemaining < 60000) { // Less than 1 minute
+        this.smugglingTimer.setColor('#ffaa00');
+      } else {
+        this.smugglingTimer.setColor('#ffffff');
+      }
+    } else {
+      this.smugglingTimer.setVisible(false);
+    }
+  }
+  
+  private updateHeatMeter(heat: number): void {
+    if (this.heatMeter) {
+      this.heatMeter.clear();
+      const heatPercent = Math.min(heat / 100, 1);
+      const heatColor = heatPercent > 0.7 ? 0xff0000 : 
+                        heatPercent > 0.4 ? 0xff6600 : 0xffaa00;
+      this.heatMeter.fillStyle(heatColor, 1);
+      this.heatMeter.fillRect(62, -1, 96 * heatPercent, 8);
+    }
+  }
+  
+  private showSmugglingBriefing(mission: SmugglingMission): void {
+    const briefingContainer = this.add.container(
+      this.cameras.main.width / 2,
+      this.cameras.main.height / 2
+    );
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.95);
+    bg.fillRoundedRect(-300, -200, 600, 400, 10);
+    bg.lineStyle(3, 0xff6600, 1);
+    bg.strokeRoundedRect(-300, -200, 600, 400, 10);
+    
+    // Title
+    const title = this.add.text(0, -160, '📦 SMUGGLING MISSION', {
+      fontSize: '24px',
+      color: '#ff6600',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    
+    // Mission details
+    const details = this.add.text(0, -100, [
+      `Contraband: ${mission.contraband.name}`,
+      `Danger Level: ${'⚠️'.repeat(mission.contraband.dangerLevel)}`,
+      `Pickup: ${mission.pickupLocation}`,
+      `Dropoff: ${mission.dropoffLocation}`,
+      `Time Limit: ${mission.timeLimit} seconds`,
+      `Base Reward: ${mission.baseReward} credits`,
+      `Perfect Run Bonus: ${mission.bonusReward} credits`
+    ].join('\n'), {
+      fontSize: '16px',
+      color: '#ffffff',
+      fontFamily: 'Arial',
+      align: 'center',
+      lineSpacing: 8
+    }).setOrigin(0.5);
+    
+    // Accept/Decline buttons
+    const acceptBtn = this.add.text(-80, 150, 'ACCEPT', {
+      fontSize: '20px',
+      color: '#00ff00',
+      fontFamily: 'Arial',
+      backgroundColor: '#003300',
+      padding: { x: 20, y: 10 }
+    }).setOrigin(0.5)
+      .setInteractive()
+      .on('pointerdown', () => {
+        briefingContainer.destroy();
+        this.events.emit('smugglingMissionAccepted', mission);
+      });
+    
+    const declineBtn = this.add.text(80, 150, 'DECLINE', {
+      fontSize: '20px',
+      color: '#ff0000',
+      fontFamily: 'Arial',
+      backgroundColor: '#330000',
+      padding: { x: 20, y: 10 }
+    }).setOrigin(0.5)
+      .setInteractive()
+      .on('pointerdown', () => {
+        briefingContainer.destroy();
+      });
+    
+    briefingContainer.add([bg, title, details, acceptBtn, declineBtn]);
+  }
+  
+  private showQuickTimeEvent(data: any): void {
+    const { sequence, timeLimit } = data;
+    
+    this.quickTimeEventDisplay = this.add.container(
+      this.cameras.main.width / 2,
+      this.cameras.main.height / 2
+    );
+    
+    // Background
+    const bg = this.add.rectangle(0, 0, 400, 150, 0x000000, 0.9)
+      .setStrokeStyle(3, 0xff0000);
+    
+    // Title
+    const title = this.add.text(0, -50, 'QUICK! PRESS THE KEYS!', {
+      fontSize: '20px',
+      color: '#ff0000',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    
+    // Key sequence display
+    const keyDisplay = this.add.container(0, 0);
+    sequence.forEach((key: string, index: number) => {
+      const keyBg = this.add.rectangle(
+        -150 + index * 60, 0, 50, 50, 0x333333, 1
+      ).setStrokeStyle(2, 0xffffff);
+      
+      const keyText = this.add.text(
+        -150 + index * 60, 0, key,
+        {
+          fontSize: '24px',
+          color: '#ffffff',
+          fontFamily: 'Arial'
+        }
+      ).setOrigin(0.5);
+      
+      keyDisplay.add([keyBg, keyText]);
+      keyDisplay.setData(`key_${index}`, { bg: keyBg, text: keyText });
+    });
+    
+    // Timer bar
+    const timerBarBg = this.add.rectangle(0, 50, 300, 20, 0x333333, 1)
+      .setStrokeStyle(2, 0xffffff);
+    
+    const timerBar = this.add.rectangle(-150, 50, 300, 20, 0x00ff00, 1)
+      .setOrigin(0, 0.5);
+    
+    // Animate timer
+    this.tweens.add({
+      targets: timerBar,
+      scaleX: 0,
+      duration: timeLimit,
+      ease: 'Linear',
+      onComplete: () => {
+        if (this.quickTimeEventDisplay) {
+          this.hideQuickTimeEvent();
+        }
+      }
+    });
+    
+    this.quickTimeEventDisplay.add([bg, title, keyDisplay, timerBarBg, timerBar]);
+    this.quickTimeEventDisplay.setData('keyDisplay', keyDisplay);
+    this.quickTimeEventDisplay.setData('currentIndex', 0);
+  }
+  
+  private updateQuickTimeEvent(data: any): void {
+    if (!this.quickTimeEventDisplay) return;
+    
+    const keyDisplay = this.quickTimeEventDisplay.getData('keyDisplay');
+    const currentIndex = data.progress || 0;
+    
+    // Highlight completed keys
+    for (let i = 0; i < currentIndex; i++) {
+      const key = keyDisplay.getData(`key_${i}`);
+      if (key) {
+        key.bg.setFillStyle(0x00ff00, 1);
+      }
+    }
+  }
+  
+  private hideQuickTimeEvent(): void {
+    if (this.quickTimeEventDisplay) {
+      this.quickTimeEventDisplay.destroy();
+      this.quickTimeEventDisplay = undefined;
+    }
+  }
+  
+  private createCrewPanel(): void {
+    const width = 350;
+    const height = 400;
+    const x = this.cameras.main.width - width - 20;
+    const y = this.cameras.main.height / 2;
+    
+    this.crewPanel = this.add.container(x, y);
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000033, 0.9);
+    bg.fillRoundedRect(0, -height/2, width, height, 10);
+    bg.lineStyle(2, 0x0066ff, 1);
+    bg.strokeRoundedRect(0, -height/2, width, height, 10);
+    
+    // Title
+    const title = this.add.text(width/2, -height/2 + 20, '👥 CREW MANAGEMENT', {
+      fontSize: '18px',
+      color: '#0099ff',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5);
+    
+    // Toggle button
+    const toggleBtn = this.add.text(width - 30, -height/2 + 20, '◄', {
+      fontSize: '20px',
+      color: '#ffffff'
+    }).setOrigin(0.5)
+      .setInteractive()
+      .on('pointerdown', () => this.toggleCrewPanel());
+    
+    // Crew list area (will be populated dynamically)
+    const crewListY = -height/2 + 60;
+    
+    this.crewPanel.add([bg, title, toggleBtn]);
+    this.crewPanel.setData('isOpen', false);
+    this.crewPanel.setData('width', width);
+    
+    // Initially hide off-screen
+    this.crewPanel.x = this.cameras.main.width + 20;
+  }
+  
+  private toggleCrewPanel(): void {
+    const isOpen = this.crewPanel.getData('isOpen');
+    const width = this.crewPanel.getData('width');
+    const targetX = isOpen ? 
+      this.cameras.main.width + 20 : 
+      this.cameras.main.width - width - 20;
+    
+    this.tweens.add({
+      targets: this.crewPanel,
+      x: targetX,
+      duration: 300,
+      ease: 'Power2'
+    });
+    
+    this.crewPanel.setData('isOpen', !isOpen);
+  }
+  
+  private updateCrewTaskDisplay(data: any): void {
+    const { crew, task } = data;
+    
+    // Create or update task progress bar
+    let progressBar = this.taskProgressBars.get(crew.id);
+    
+    if (!progressBar) {
+      progressBar = this.add.graphics();
+      this.taskProgressBars.set(crew.id, progressBar);
+    }
+    
+    // Position based on crew member's position in roster
+    // This is simplified - in a real implementation you'd track positions
+  }
+  
+  private updateTaskProgress(data: any): void {
+    const { crew, task, progress } = data;
+    
+    const progressBar = this.taskProgressBars.get(crew.id);
+    if (progressBar) {
+      progressBar.clear();
+      progressBar.fillStyle(0x00ff00, 1);
+      progressBar.fillRect(0, 0, 100 * (progress / 100), 10);
+    }
+  }
+  
+  private onCrewTaskCompleted(data: any): void {
+    const { crew, task, success } = data;
+    
+    const message = success ? 
+      `✅ ${crew.name} completed: ${task.name}` :
+      `❌ ${crew.name} failed: ${task.name}`;
+    
+    const color = success ? 0x00ff00 : 0xff0000;
+    this.showNotification(message, color);
+    
+    // Clear progress bar
+    const progressBar = this.taskProgressBars.get(crew.id);
+    if (progressBar) {
+      progressBar.clear();
+    }
   }
 }

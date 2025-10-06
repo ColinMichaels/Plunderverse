@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import { StationRoom, StationLayout } from './StationLayout';
 import { NPCDialogueSystem } from './NPCDialogueSystem';
 import { NPCMissionSystem } from './NPCMissionSystem';
+import { SmugglingSystem, SmugglingMission, ContrabandType } from './SmugglingSystem';
+import { CrewManagementSystem, CrewTask } from './CrewManagementSystem';
 
 /**
  * MainGameScene - Enhanced station exploration with multiple rooms and areas
@@ -27,6 +29,11 @@ export class MainGameScene extends Phaser.Scene {
   private dialogueSystem!: NPCDialogueSystem;
   private missionSystem!: NPCMissionSystem;
   private activeNPCInteraction: string | null = null;
+  
+  // Smuggling and Crew systems
+  private smugglingSystem!: SmugglingSystem;
+  private crewManagementSystem!: CrewManagementSystem;
+  private securityPatrols!: Phaser.Physics.Arcade.Group;
   
   // Touch controls
   private touchStartX: number = 0;
@@ -68,6 +75,10 @@ export class MainGameScene extends Phaser.Scene {
     this.dialogueSystem = new NPCDialogueSystem(this);
     this.missionSystem = new NPCMissionSystem(this);
     
+    // Initialize smuggling and crew systems
+    this.smugglingSystem = new SmugglingSystem(this);
+    this.crewManagementSystem = new CrewManagementSystem(this);
+    
     // Initialize groups first
     this.roomFloors = this.add.group();
     this.roomLabels = this.add.group();
@@ -88,6 +99,9 @@ export class MainGameScene extends Phaser.Scene {
     
     // Create NPCs in different areas
     this.createNPCs();
+    
+    // Create smuggling elements
+    this.createSmugglingElements();
     
     // Create collectibles
     this.createCollectibles();
@@ -674,6 +688,196 @@ export class MainGameScene extends Phaser.Scene {
       frames: [{ key: 'player', frame: 0 }],
       ...animConfig
     });
+  }
+
+  private createSmugglingElements(): void {
+    // Initialize security patrol group
+    this.securityPatrols = this.physics.add.group();
+    
+    // Create security checkpoints in corridors
+    const corridor1 = this.stationRooms.get('corridor_1');
+    if (corridor1) {
+      this.smugglingSystem.createSecurityCheckpoint(
+        'corridor_1',
+        corridor1.x + corridor1.width / 2,
+        corridor1.y + corridor1.height / 2
+      );
+    }
+    
+    const corridor2 = this.stationRooms.get('corridor_2');
+    if (corridor2) {
+      this.smugglingSystem.createSecurityCheckpoint(
+        'corridor_2',
+        corridor2.x + corridor2.width / 2,
+        corridor2.y + corridor2.height / 2
+      );
+    }
+    
+    // Create security patrols in key areas
+    this.createSecurityPatrols();
+    
+    // Create stealth zones
+    this.createStealthZones();
+    
+    // Add contraband pickup NPCs
+    this.addSmugglingNPCs();
+  }
+  
+  private createSecurityPatrols(): void {
+    // Patrol in docking bay
+    const dockingBay = this.stationRooms.get('docking_bay');
+    if (dockingBay) {
+      const path = [
+        new Phaser.Math.Vector2(dockingBay.x + 100, dockingBay.y + 100),
+        new Phaser.Math.Vector2(dockingBay.x + dockingBay.width - 100, dockingBay.y + 100),
+        new Phaser.Math.Vector2(dockingBay.x + dockingBay.width - 100, dockingBay.y + dockingBay.height - 100),
+        new Phaser.Math.Vector2(dockingBay.x + 100, dockingBay.y + dockingBay.height - 100)
+      ];
+      const patrol = this.smugglingSystem.createSecurityPatrol(
+        dockingBay.x + 100,
+        dockingBay.y + 100,
+        path
+      );
+      this.securityPatrols.add(patrol.sprite);
+    }
+    
+    // Patrol in market
+    const market = this.stationRooms.get('market');
+    if (market) {
+      const path = [
+        new Phaser.Math.Vector2(market.x + 200, market.y + 200),
+        new Phaser.Math.Vector2(market.x + market.width - 200, market.y + 200),
+        new Phaser.Math.Vector2(market.x + market.width - 200, market.y + market.height - 200),
+        new Phaser.Math.Vector2(market.x + 200, market.y + market.height - 200)
+      ];
+      const patrol = this.smugglingSystem.createSecurityPatrol(
+        market.x + 200,
+        market.y + 200,
+        path
+      );
+      this.securityPatrols.add(patrol.sprite);
+    }
+    
+    // Patrol in engineering
+    const engineering = this.stationRooms.get('engineering');
+    if (engineering) {
+      const path = [
+        new Phaser.Math.Vector2(engineering.x + 150, engineering.y + 150),
+        new Phaser.Math.Vector2(engineering.x + engineering.width - 150, engineering.y + 150),
+        new Phaser.Math.Vector2(engineering.x + engineering.width - 150, engineering.y + engineering.height - 150),
+        new Phaser.Math.Vector2(engineering.x + 150, engineering.y + engineering.height - 150)
+      ];
+      const patrol = this.smugglingSystem.createSecurityPatrol(
+        engineering.x + 150,
+        engineering.y + 150,
+        path
+      );
+      this.securityPatrols.add(patrol.sprite);
+    }
+  }
+  
+  private createStealthZones(): void {
+    // Shadow zones in cargo hold
+    const cargoHold = this.stationRooms.get('cargo_hold');
+    if (cargoHold) {
+      // Behind crates
+      this.smugglingSystem.createStealthZone(
+        cargoHold.x + 50,
+        cargoHold.y + 100,
+        100,
+        400,
+        'shadow'
+      );
+      
+      // Maintenance vent
+      this.smugglingSystem.createStealthZone(
+        cargoHold.x + cargoHold.width - 150,
+        cargoHold.y + cargoHold.height - 200,
+        100,
+        100,
+        'vent'
+      );
+    }
+    
+    // Crowd zone in cantina
+    const cantina = this.stationRooms.get('cantina');
+    if (cantina) {
+      this.smugglingSystem.createStealthZone(
+        cantina.x + 100,
+        cantina.y + 200,
+        400,
+        200,
+        'crowd'
+      );
+    }
+    
+    // Maintenance tunnels in engineering
+    const engineering = this.stationRooms.get('engineering');
+    if (engineering) {
+      this.smugglingSystem.createStealthZone(
+        engineering.x + 50,
+        engineering.y + 50,
+        150,
+        engineering.height - 100,
+        'maintenance'
+      );
+    }
+  }
+  
+  private addSmugglingNPCs(): void {
+    // Add shady dealer in cargo hold
+    const cargoHold = this.stationRooms.get('cargo_hold');
+    if (cargoHold) {
+      const dealer = this.npcs.create(
+        cargoHold.x + cargoHold.width - 200,
+        cargoHold.y + 300,
+        'npc'
+      );
+      dealer.setDepth(10);
+      dealer.setScale(1.3);
+      dealer.setTint(0x666666); // Dark tint for shady character
+      dealer.setData('id', 'npc_smuggler');
+      dealer.setData('name', 'Shadow Dealer');
+      dealer.setData('role', 'smuggler');
+      dealer.setData('dialogue', "Got some... special cargo that needs moving. Interested?");
+      dealer.setData('room', 'cargo_hold');
+    }
+    
+    // Add informant in cantina
+    const cantina = this.stationRooms.get('cantina');
+    if (cantina) {
+      const informant = this.npcs.create(
+        cantina.x + 500,
+        cantina.y + 350,
+        'npc'
+      );
+      informant.setDepth(10);
+      informant.setScale(1.3);
+      informant.setTint(0x996633); // Brown tint
+      informant.setData('id', 'npc_informant');
+      informant.setData('name', 'Whisper');
+      informant.setData('role', 'informant');
+      informant.setData('dialogue', "I know when the guards change shifts... for a price.");
+      informant.setData('room', 'cantina');
+    }
+    
+    // Add fence in crew quarters
+    const crewQuarters = this.stationRooms.get('crew_quarters');
+    if (crewQuarters) {
+      const fence = this.npcs.create(
+        crewQuarters.x + 300,
+        crewQuarters.y + 400,
+        'npc'
+      );
+      fence.setDepth(10);
+      fence.setScale(1.3);
+      fence.setTint(0x9966ff); // Purple tint
+      fence.setData('id', 'npc_fence');
+      fence.setData('name', 'The Fence');
+      fence.setData('role', 'fence');
+      fence.setData('dialogue', "I'll take that contraband off your hands... no questions asked.");
+      fence.setData('room', 'crew_quarters');
+    }
   }
 
   private createNPCs(): void {
@@ -1304,7 +1508,7 @@ export class MainGameScene extends Phaser.Scene {
     this.events.emit('updateMiniMap', mapData);
   }
 
-  update(): void {
+  update(time: number, delta: number): void {
     // Handle player movement
     const speed = 250;
     let velocityX = 0;
@@ -1437,5 +1641,18 @@ export class MainGameScene extends Phaser.Scene {
         }
       }
     });
+    
+    // Update smuggling system
+    if (this.smugglingSystem) {
+      this.smugglingSystem.update(this.player, delta);
+      
+      // Update UI with heat and detection levels
+      this.events.emit('updateSmugglingStatus', {
+        heat: this.smugglingSystem.getHeat(),
+        detection: this.smugglingSystem.getDetectionLevel(),
+        carrying: this.smugglingSystem.isCarryingContraband(),
+        mission: this.smugglingSystem.getActiveMission()
+      });
+    }
   }
 }
