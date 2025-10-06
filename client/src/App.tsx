@@ -21,6 +21,7 @@ import { HintModal } from "./components/screens/HintModal";
 import { AUDIO_CONFIG } from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
 import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
+import { CombatDebugPanel } from "./components/debug/CombatDebugPanel";
 import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
@@ -487,6 +488,7 @@ function GameContent() {
         
         {/* Debug panel available even on splash screen in dev mode */}
         {import.meta.env.DEV && <MissionDebugPanel />}
+        {import.meta.env.DEV && <CombatDebugPanel />}
         
         {/* Toaster for notifications */}
         <Toaster position="top-center" richColors expand={false} />

@@ -29,8 +29,8 @@ export const useCreditsStore = create<CreditsStore>((set, get) => ({
     validateCreditsConsistency(state.credits, 'spendCredits-start');
     
     assert(
-      amount > 0,
-      `Attempting to spend negative or zero credits: ${amount}`,
+      amount >= 0,
+      `Attempting to spend negative credits: ${amount}`,
       { amount, currentCredits: state.credits }
     );
     

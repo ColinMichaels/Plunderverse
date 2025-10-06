@@ -29,10 +29,13 @@ export function EnemyHealthBar({ enemy }: EnemyHealthBarProps) {
         userSelect: "none",
       }}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-1">
         {/* Shield bar (if has shield) */}
         {enemy.maxShield > 0 && (
-          <div className="w-24 h-1.5 bg-gray-800 rounded-full overflow-hidden border border-gray-600">
+          <div 
+            className="h-3 bg-gray-800 rounded-full overflow-hidden border-2 border-blue-500/50"
+            style={{ width: '220px' }}
+          >
             <div
               className="h-full bg-blue-400 transition-all duration-100"
               style={{ width: `${shieldPercentage}%` }}
@@ -41,22 +44,25 @@ export function EnemyHealthBar({ enemy }: EnemyHealthBarProps) {
         )}
 
         {/* Health bar */}
-        <div className="w-24 h-2 bg-gray-800 rounded-full overflow-hidden border border-gray-600">
+        <div 
+          className="h-4 bg-gray-800 rounded-full overflow-hidden border-2 border-gray-600"
+          style={{ width: '220px' }}
+        >
           <div
             className="h-full transition-all duration-100"
             style={{
               width: `${healthPercentage}%`,
               backgroundColor: healthColor,
-              boxShadow: `0 0 4px ${healthColor}`,
+              boxShadow: `0 0 6px ${healthColor}`,
             }}
           />
         </div>
 
         {/* Health text */}
         <div
-          className="text-center text-xs font-bold text-white"
+          className="text-center text-base font-bold text-white"
           style={{
-            textShadow: "0 0 4px rgba(0,0,0,0.8)",
+            textShadow: "0 0 6px rgba(0,0,0,0.9), 2px 2px 4px rgba(0,0,0,0.8)",
           }}
         >
           {enemy.hull}/{enemy.maxHull}

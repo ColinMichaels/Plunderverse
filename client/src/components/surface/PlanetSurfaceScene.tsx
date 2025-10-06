@@ -31,7 +31,6 @@ import { useWind } from "../../lib/stores/surface/useWind";
 import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
-import { FlashlightChargingUI } from "./FlashlightChargingUI";
 import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
@@ -1441,9 +1440,6 @@ export function PlanetSurfaceScene() {
 
       {/* Surface controls and mining interface */}
       <SurfaceControls planetName={landedPlanet} />
-      
-      {/* Flashlight Charging UI */}
-      <FlashlightChargingUI />
       
       {/* Atmospheric sounds */}
       <AtmosphericSounds 
