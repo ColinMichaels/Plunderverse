@@ -182,9 +182,7 @@ export function EnemyField() {
         <mesh key={projectile.id} position={projectile.position}>
           <sphereGeometry args={[0.5, 8, 8]} />
           <meshBasicMaterial 
-            color={projectile.damage > 50 ? "#ff0000" : "#00ffff"} 
-            emissive={projectile.damage > 50 ? "#ff0000" : "#00ffff"}
-            emissiveIntensity={1}
+            color={projectile.damage > 50 ? "#ff0000" : "#00ffff"}
           />
           {/* Exhaust trail */}
           <mesh position={[0, 0, -0.8]} scale={0.3}>
