@@ -16,6 +16,7 @@ import { VideoModal } from "../shared/VideoModal";
 import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
 import { AuthScreen } from "../auth/AuthScreen";
 import { GameTransitionOverlay } from "./GameTransitionOverlay";
+import { HandbookContent } from "./HandbookContent";
 import { gameApi } from "../../services/gameApi";
 import { restoreGameState } from "../../utils/saveGame";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
@@ -805,43 +806,32 @@ export function EnhancedSplashScreen() {
       {/* Help Modal */}
       {showHelp && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-20">
-          <div className="bg-slate-800 border border-slate-600 rounded-xl p-8 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-2xl font-bold text-orange-400 mb-6">Outlaw's Handbook</h3>
-            <div className="space-y-6">
-              <div>
-                <h4 className="text-lg font-semibold text-orange-400 mb-3">Ship Controls</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  <div className="flex justify-between items-center bg-slate-700 p-2 rounded-lg">
-                    <span className="text-slate-300 text-sm">Ship Forward</span>
-                    <kbd className="bg-slate-600 text-orange-400 px-2 py-1 rounded text-xs font-mono">W / ↑</kbd>
-                  </div>
-                  <div className="flex justify-between items-center bg-slate-700 p-2 rounded-lg">
-                    <span className="text-slate-300 text-sm">Ship Backward</span>
-                    <kbd className="bg-slate-600 text-orange-400 px-2 py-1 rounded text-xs font-mono">S / ↓</kbd>
-                  </div>
-                  <div className="flex justify-between items-center bg-slate-700 p-2 rounded-lg">
-                    <span className="text-slate-300 text-sm">Fire Weapons</span>
-                    <kbd className="bg-slate-600 text-orange-400 px-2 py-1 rounded text-xs font-mono">Space</kbd>
-                  </div>
-                  <div className="flex justify-between items-center bg-slate-700 p-2 rounded-lg">
-                    <span className="text-slate-300 text-sm">Land/Dock</span>
-                    <kbd className="bg-slate-600 text-orange-400 px-2 py-1 rounded text-xs font-mono">L</kbd>
-                  </div>
-                </div>
-              </div>
-              <div>
-                <h4 className="text-lg font-semibold text-orange-400 mb-3">Survival Tips</h4>
-                <ul className="text-slate-300 text-sm space-y-2">
-                  <li>• Keep your heat low - high notoriety brings bounty hunters</li>
-                  <li>• Manage fuel carefully - running out leaves you stranded</li>
-                  <li>• Build faction reputation for better prices and missions</li>
-                  <li>• Your choices have consequences - think before acting</li>
-                </ul>
-              </div>
-            </div>
+          <div className="bg-slate-800 border border-amber-400/30 rounded-xl p-6 max-w-4xl w-full mx-4 max-h-[85vh] flex flex-col">
+            <style>{`
+              .custom-scrollbar::-webkit-scrollbar {
+                width: 8px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-track {
+                background: rgba(0, 0, 0, 0.2);
+                border-radius: 4px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb {
+                background: rgba(251, 146, 60, 0.4);
+                border-radius: 4px;
+              }
+              .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+                background: rgba(251, 146, 60, 0.6);
+              }
+            `}</style>
+            
+            {/* Handbook Content Component */}
+            <HandbookContent />
+            
+            {/* Close Button */}
             <button
               onClick={() => setShowHelp(false)}
-              className="mt-6 w-full bg-orange-500 hover:bg-orange-400 text-slate-900 font-semibold py-2 rounded-lg"
+              className="mt-4 w-full bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold py-3 rounded-lg
+                         transform transition-all duration-200 hover:scale-105 shadow-lg"
             >
               Ready to Break the Law
             </button>
