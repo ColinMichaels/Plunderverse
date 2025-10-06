@@ -22,7 +22,7 @@ type MobileViewState = 'status' | 'station' | 'minigame';
  * Syncs with desktop game state through Zustand stores
  */
 export const MobileGame: React.FC = () => {
-  // Component state and hooks
+  // Component state and hooks - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [viewState, setViewState] = useState<MobileViewState>('status');
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
   
@@ -52,6 +52,15 @@ export const MobileGame: React.FC = () => {
       if (interval) clearInterval(interval);
     };
   }, []);
+
+  // Get fuel data (calculate before conditional returns)
+  const fuelTank = equipment.getEquipment('fuel-tank');
+  const fuel = fuelTank?.currentDurability || 0;
+  const maxFuel = fuelTank?.maxDurability || 100;
+  const fuelPercentage = (fuel / maxFuel) * 100;
+
+  // Get current mission (calculate before conditional returns)
+  const activeMission = missions.activeMissions.find((m: Mission) => !m.completed && m.active);
 
   // Mobile splash screen
   if (phase === 'splash') {
@@ -83,15 +92,6 @@ export const MobileGame: React.FC = () => {
         </div>
     );
   }
-
-  // Get fuel data
-  const fuelTank = equipment.getEquipment('fuel-tank');
-  const fuel = fuelTank?.currentDurability || 0;
-  const maxFuel = fuelTank?.maxDurability || 100;
-  const fuelPercentage = (fuel / maxFuel) * 100;
-
-  // Get current mission
-  const activeMission = missions.activeMissions.find((m: Mission) => !m.completed && m.active);
 
   // Show comprehensive status screen when not at a station
   if (!isLanded) {
