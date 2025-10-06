@@ -170,7 +170,7 @@ function AdvancedCinematicCamera() {
   // Helper function to generate smooth curve points using Catmull-Rom splines
   const generateSplinePath = (
     points: THREE.Vector3[],
-    segments = 50,
+    segments = 70,
   ): THREE.Vector3[] => {
     if (points.length < 2) return points;
 
@@ -426,7 +426,7 @@ function AdvancedCinematicCamera() {
       case CameraShotType.CINEMATIC_PULLBACK: {
         // Epic pullback revealing entire solar system
         const startRadius = 20;
-        const endRadius = 150;
+        const endRadius = 130;
 
         for (let i = 0; i <= 12; i++) {
           const t = i / 12;
