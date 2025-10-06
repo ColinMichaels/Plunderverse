@@ -23,7 +23,7 @@ import { SplashSolarSystem } from "../space/SplashSolarSystem";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
   User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target,
-  ChevronDown, ChevronUp
+  ChevronDown, ChevronUp, Github, AlertCircle
 } from 'lucide-react';
 
 export function EnhancedSplashScreen() {
@@ -834,6 +834,38 @@ export function EnhancedSplashScreen() {
           </div>
         </div>
       )}
+
+      {/* Development Disclaimer */}
+      <div className="absolute bottom-4 left-4 z-30 max-w-md">
+        <div className="bg-black/60 backdrop-blur-sm border border-amber-400/30 rounded-lg p-3">
+          <div className="flex items-start gap-2">
+            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+            <div className="space-y-2">
+              <h4 className="text-amber-400 text-sm font-semibold flex items-center gap-2">
+                Development Build
+              </h4>
+              <div className="text-xs text-slate-300 space-y-1">
+                <p>⚠️ This game is still in active development and not ready for full release.</p>
+                <p>🐛 Expect tons of bugs, glitches, and unfinished features.</p>
+                <p>👥 We're actively looking for developers to help build this game!</p>
+                <p className="pt-1">
+                  <span>Join the development on </span>
+                  <a 
+                    href="https://github.com/plunderverse/game"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 
+                               underline underline-offset-2 transition-colors"
+                  >
+                    <Github className="w-3 h-3" />
+                    <span>GitHub</span>
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Music Player */}
       <div className="absolute bottom-4 right-4">
