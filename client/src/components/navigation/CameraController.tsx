@@ -57,7 +57,7 @@ export function CameraController() {
   const lastMissilePressRef = useRef(0);
   
   // Focus state management - use global focus state store
-  const { hasFocus, setFocus } = useFocusState();
+  const { hasFocus, isPaused, setFocus } = useFocusState();
 
   
   // Dynamic FOV state for smooth camera adjustments
@@ -381,6 +381,9 @@ export function CameraController() {
   }, [hasTakeoffPending, camera, setCameraPosition, getTakeoffOrbitPosition]);
 
   useFrame((state, delta) => {
+    // Don't update if the game is paused
+    if (isPaused) return;
+    
     // Performance monitoring
     const frameStartTime = performance.now();
     
@@ -725,11 +728,12 @@ export function CameraController() {
     const mouse = state.mouse;
     camera.rotation.order = "YXZ";
 
-    // Only apply look controls if not landing
-    if (!isLanding) {
+    // Only apply look controls if not landing, has focus, and not paused
+    if (!isLanding && hasFocus && !isPaused) {
       // Combine mouse and mobile rotation inputs
-      const mouseX = mouse.x * sensitivity * 5.0; // Much more responsive for combat
-      const mouseY = mouse.y * sensitivity * 5.0 * (invertY ? -1 : 1); // Much more responsive for combat
+      // Dramatically increased sensitivity for instant, snappy combat aiming
+      const mouseX = mouse.x * sensitivity * 20.0; // Increased from 5.0 to 20.0 for instant response
+      const mouseY = mouse.y * sensitivity * 20.0 * (invertY ? -1 : 1); // Increased from 5.0 to 20.0
       const mobileX = mobileRotationRef.current.x * 1.0; // Increased mobile rotation sensitivity
       const mobileY = mobileRotationRef.current.y * 1.0 * (invertY ? -1 : 1); // Increased mobile rotation sensitivity
 
@@ -754,6 +758,9 @@ export function CameraController() {
 
       // Decay mobile rotation input
       mobileRotationRef.current.multiplyScalar(0.95);
+    } else if (!hasFocus || isPaused) {
+      // Clear mobile rotation when paused or unfocused
+      mobileRotationRef.current.set(0, 0);
     }
 
     // Exit to menu

@@ -42,7 +42,7 @@ export const useSettings = create<SettingsState>()(
       }
       
       return {
-      sensitivity: 0.004,
+      sensitivity: 0.02, // Increased from 0.004 to 0.02 for snappy combat aiming
       invertY: false,
       keybinds: { ...DEFAULT_KEYBINDS },
       graphicsQuality: 'medium',
@@ -108,7 +108,7 @@ export const useSettings = create<SettingsState>()(
 
       resetToDefaults: () => {
         set({
-          sensitivity: 0.004,
+          sensitivity: 0.02, // Increased from 0.004 to 0.02 for snappy combat aiming
           invertY: false,
           keybinds: { ...DEFAULT_KEYBINDS },
           graphicsQuality: 'medium',

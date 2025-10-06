@@ -38,6 +38,7 @@ import { useAutoSave } from "../../hooks/useAutoSave";
 import { planets } from "../../lib/planetData";
 import { BottomControlSidebar } from "./BottomControlSidebar";
 import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
+import { PauseOverlay } from "./PauseOverlay";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -108,6 +109,9 @@ export function GameUI() {
 
   return (
     <>
+      {/* Pause Overlay - Shows when game loses focus */}
+      <PauseOverlay />
+      
       {/* Focus State Indicators */}
       <FocusIndicator />
       <FocusStatusIndicator />

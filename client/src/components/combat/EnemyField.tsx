@@ -1,5 +1,5 @@
 import { useFrame } from "@react-three/fiber";
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useEnemies } from "../../lib/stores/combat/useEnemies";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useShooting } from "../../lib/stores/combat/useShooting";
@@ -8,8 +8,10 @@ import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useHints } from "../../lib/stores/ui/useHints";
 import { useWeaponSystems } from "../../lib/stores/combat/useWeaponSystems";
+import { useFocusState } from "@/lib/stores/ui/useFocusState";
 import { Enemy } from "./Enemy";
 import { ExplosionEffect } from "./ExplosionEffect";
+import { DamageNumber } from "./DamageNumber";
 import * as THREE from "three";
 
 export function EnemyField() {
@@ -27,11 +29,19 @@ export function EnemyField() {
   const { isActive: isAutopilotActive } = useAutopilot();
   const { playHit } = useAudio();
   const { showHint, hasSeenHint } = useHints();
+  const { isPaused } = useFocusState();
   
   const lastSpawnCheck = useRef(0);
   const previousAutopilotState = useRef(false);
   const explosions = useRef<Array<{ id: string, position: THREE.Vector3, time: number }>>([]);
   const combatTutorialShown = useRef(false);
+  
+  // State for damage numbers
+  const [damageNumbers, setDamageNumbers] = useState<Array<{ 
+    id: string, 
+    position: THREE.Vector3, 
+    damage: number 
+  }>>([]);
   
   useEffect(() => {
     // Show combat tutorial on first load
@@ -52,6 +62,9 @@ export function EnemyField() {
   }, [isAutopilotActive, clearEnemies, showHint, hasSeenHint]);
   
   useFrame((state, delta) => {
+    // Don't update anything if the game is paused
+    if (isPaused) return;
+    
     // Update enemy AI
     updateEnemies(delta, cameraPosition);
     
@@ -83,6 +96,14 @@ export function EnemyField() {
             damageEnemy(enemy.id, projectile.damage);
             removeProjectile(projectile.id);
             playHit();
+            
+            // Add damage number
+            const damageId = Math.random().toString(36).substr(2, 9);
+            setDamageNumbers(prev => [...prev, {
+              id: damageId,
+              position: enemy.position.clone(),
+              damage: projectile.damage
+            }]);
             
             // Add explosion if enemy died
             if (enemy.hull <= 0) {
@@ -130,6 +151,14 @@ export function EnemyField() {
             damageEnemy(enemy.id, projectile.damage);
             removeHomingProjectile(projectile.id);
             playHit();
+            
+            // Add damage number for homing weapons
+            const damageId = Math.random().toString(36).substr(2, 9);
+            setDamageNumbers(prev => [...prev, {
+              id: damageId,
+              position: enemy.position.clone(),
+              damage: projectile.damage
+            }]);
             
             // Add larger explosion for torpedoes/missiles
             explosions.current.push({
@@ -198,6 +227,18 @@ export function EnemyField() {
           position={explosion.position}
           scale={1.5}
           duration={2}
+        />
+      ))}
+      
+      {/* Render damage numbers */}
+      {damageNumbers.map(dmg => (
+        <DamageNumber
+          key={dmg.id}
+          position={dmg.position}
+          damage={dmg.damage}
+          onComplete={() => {
+            setDamageNumbers(prev => prev.filter(d => d.id !== dmg.id));
+          }}
         />
       ))}
     </group>
