@@ -580,11 +580,37 @@ export function EnhancedSplashScreen() {
             <img 
               src="/media/Plunderverse_logo.png" 
               alt="Plunderverse - Space Outlaw Adventure Game"
-              className="w-auto h-32 md:h-48 object-contain drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]"
+              className="w-auto h-48 md:h-64 lg:h-72 object-contain drop-shadow-[0_0_30px_rgba(251,146,60,0.6)]"
             />
             <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12 font-bold">2149</span>
+            {/* BETA Badge - Prominent and animated */}
+            <div className="absolute -top-6 -left-8 md:-top-8 md:-left-10 transform -rotate-12 animate-pulse">
+              <div className="relative">
+                <div className="bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 px-6 py-3 md:px-8 md:py-4 
+                                rounded-xl shadow-2xl border-4 border-amber-400
+                                drop-shadow-[0_0_25px_rgba(251,146,60,0.8)]">
+                  <span className="text-white font-black text-2xl md:text-3xl lg:text-4xl tracking-wider
+                                   drop-shadow-[2px_2px_4px_rgba(0,0,0,0.8)]">
+                    BETA
+                  </span>
+                </div>
+                {/* Decorative corner ribbons */}
+                <div className="absolute -bottom-2 -left-2 w-4 h-4 bg-orange-700 transform rotate-45"></div>
+                <div className="absolute -bottom-2 -right-2 w-4 h-4 bg-orange-700 transform rotate-45"></div>
+                {/* Glowing effect animation */}
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-400 via-amber-400 to-orange-400 
+                                rounded-xl opacity-50 blur-md animate-ping"></div>
+              </div>
+            </div>
+            {/* Additional BETA warning text */}
+            <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 
+                            bg-orange-900/80 px-4 py-1 rounded-full border border-orange-500/50">
+              <span className="text-orange-300 text-xs md:text-sm font-semibold uppercase tracking-wide">
+                Early Access • Game in Development
+              </span>
+            </div>
           </div>
-          <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic">
+          <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic mt-12">
             {isAuthenticated && !isGuest 
               ? `Welcome back, ${user?.username || 'Captain'}. Your crew awaits your command.`
               : "The Solar System is Bankrupt. Survival Means Breaking the Law."}
