@@ -4,6 +4,8 @@ import { useRewards } from "../../lib/stores/ui/useRewards";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useHints } from "../../lib/stores/ui/useHints";
 import { planets } from "../../lib/planetData";
+import { toast } from "sonner";
+import { generateWeatherData, formatWeatherNotifications } from "../../lib/utils/weatherGenerator";
 
 export function LandingTransition() {
   const { selectedPlanet, isLanding, setIsLanding } = useSolarSystem();
@@ -68,6 +70,87 @@ export function LandingTransition() {
             const reward = processLandingReward(selectedPlanet);
             setRewardAmount(reward);
             setLanded(selectedPlanet); // Set landed state for mining operations
+            
+            // Generate and display weather notifications
+            const planetData = planets.find(p => p.name === selectedPlanet);
+            if (planetData) {
+              const weather = generateWeatherData(planetData);
+              const notifications = formatWeatherNotifications(weather, selectedPlanet);
+              
+              // Show main weather notification
+              setTimeout(() => {
+                // Custom styled toast with orange/amber theme
+                toast.custom((t) => (
+                  <div className="bg-gradient-to-br from-orange-900/95 via-amber-900/95 to-orange-900/95 backdrop-blur-sm p-4 rounded-lg border border-orange-500/50 shadow-2xl max-w-md">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                          <span className="text-2xl">🌍</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-lg font-bold text-orange-300 mb-2">
+                          {notifications.title}
+                        </h3>
+                        <div className="space-y-1 text-sm text-amber-100">
+                          {notifications.messages.map((msg, index) => (
+                            <div key={index} className="flex items-start">
+                              <span className="text-orange-400 mr-2">▸</span>
+                              <span>{msg}</span>
+                            </div>
+                          ))}
+                        </div>
+                        {weather.hazards.length > 0 && (
+                          <div className="mt-3 pt-3 border-t border-orange-500/30">
+                            <div className="flex items-center gap-2">
+                              <span className="text-red-400 text-lg">⚠️</span>
+                              <span className="text-sm font-semibold text-red-300">
+                                {weather.hazards.length} hazard{weather.hazards.length > 1 ? 's' : ''} detected!
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ), {
+                  duration: 8000,
+                  position: 'top-center'
+                });
+
+                // Show simplified description as a follow-up
+                setTimeout(() => {
+                  if (notifications.type === 'error') {
+                    toast.error(weather.description, {
+                      duration: 5000,
+                      style: {
+                        background: '#991b1b',
+                        color: '#fef2f2',
+                        border: '1px solid #dc2626'
+                      }
+                    });
+                  } else if (notifications.type === 'warning') {
+                    toast.warning(weather.description, {
+                      duration: 5000,
+                      style: {
+                        background: '#854d0e',
+                        color: '#fef3c7',
+                        border: '1px solid #f59e0b'
+                      }
+                    });
+                  } else {
+                    toast.info(weather.description, {
+                      duration: 5000,
+                      style: {
+                        background: '#1e40af',
+                        color: '#dbeafe',
+                        border: '1px solid #3b82f6'
+                      }
+                    });
+                  }
+                }, 2000);
+              }, 500);
+            }
             
             // Show first-landing hint if player hasn't seen it yet
             if (!hasSeenHint("first-landing")) {

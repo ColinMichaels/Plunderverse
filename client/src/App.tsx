@@ -26,6 +26,7 @@ import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import { useAuthStore } from "./lib/stores/auth/useAuthStore";
 import { cloudSyncManager } from "./services/CloudSyncManager";
+import { Toaster } from "./components/ui/sonner";
 import "./testSaveSystem"; // Import save system test module
 import "./utils/testSaveFixed"; // Import fixed save test
 import "./runImprovementTests"; // Import improvement tests
@@ -412,6 +413,9 @@ function GameContent() {
         
         {/* Debug panel available even on splash screen in dev mode */}
         {import.meta.env.DEV && <MissionDebugPanel />}
+        
+        {/* Toaster for notifications */}
+        <Toaster position="top-center" richColors expand={false} />
       </div>
     </UILayoutProvider>
   );

@@ -31,6 +31,7 @@ import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
 import { FlashlightChargingUI } from "./FlashlightChargingUI";
+import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -1362,6 +1363,9 @@ export function PlanetSurfaceScene() {
   const { isLanded, landedPlanet } = useLandedState();
   const { isOn: isFlashlightOn } = useFlashlight();
   const resourceManager = ResourceManager.getInstance();
+
+  // Initialize weather updates for periodic notifications
+  useWeatherUpdates();
 
   // Cleanup all planet surface resources when component unmounts or planet changes
   useEffect(() => {
