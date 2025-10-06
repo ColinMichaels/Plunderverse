@@ -55,8 +55,13 @@ export const MobileGame: React.FC = () => {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">
         <div className="text-center px-8">
+          <img 
+            src="/media/Plunderverse_logo.png" 
+            alt="Plunderverse" 
+            className="w-32 h-32 mx-auto mb-6 object-contain"
+          />
           <h1 className="text-4xl font-bold text-orange-500 mb-4">
-            Solar Plunder
+            Plunderverse
           </h1>
           <p className="text-gray-400 mb-8">Mobile Commander Interface</p>
           <button
