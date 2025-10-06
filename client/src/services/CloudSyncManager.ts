@@ -191,7 +191,7 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
       if (serverUpdatedAt > localLastSyncedAt) {
         console.log('[CloudSync] Server has newer save, loading automatically...');
         try {
-          restoreGameState(latestSave);
+          restoreGameState(latestSave.stores || latestSave);
           get().setLastSyncedAt(serverUpdatedAt);
           console.log('[CloudSync] Server save loaded successfully');
         } catch (error) {
@@ -296,7 +296,7 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
     try {
       if (useServer) {
         const serverSave = await gameApi.loadGame(CLOUD_SYNC_SLOT);
-        restoreGameState(serverSave);
+        restoreGameState(serverSave.stores || serverSave);
         get().setLastSyncedAt(state.conflictData.serverTime);
         console.log('[CloudSync] Loaded server save');
       } else {

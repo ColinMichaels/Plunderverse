@@ -233,13 +233,14 @@ export function collectGameState(): GameStateData {
 }
 
 // Restore game state to all stores
-export function restoreGameState(gameState: GameStateData): void {
-  // Validate version compatibility
-  if (!isVersionCompatible(gameState.version)) {
+export function restoreGameState(gameState: GameStateData | any): void {
+  // Handle both full GameStateData and just the stores object
+  const stores = gameState.stores || gameState;
+  
+  // Validate version compatibility only if version is present
+  if (gameState.version && !isVersionCompatible(gameState.version)) {
     console.warn(`Save version ${gameState.version} may not be fully compatible with current version ${SAVE_FORMAT_VERSION}`);
   }
-  
-  const stores = gameState.stores;
   
   // Restore player state
   if (stores.player) {
@@ -322,6 +323,9 @@ export function restoreGameState(gameState: GameStateData): void {
     const missionsState = usePlunderverseMissions.getState();
     missionsState.availableMissions = stores.plunderverseMissions.availableMissions || [];
     missionsState.activeMissions = stores.plunderverseMissions.activeMissions || [];
+    missionsState.missions = stores.plunderverseMissions.missions || [];
+    missionsState.failedMissions = stores.plunderverseMissions.failedMissions || 0;
+    missionsState.maxActiveMissions = stores.plunderverseMissions.maxActiveMissions || 3;
     
     // Safely restore Sets
     try {

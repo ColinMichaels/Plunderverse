@@ -14,7 +14,9 @@ import { ShipUpgradePanel } from './panels/ShipUpgradePanel';
 import { MarketPanel } from './panels/MarketPanel';
 import { TradingPanel } from './panels/TradingPanel';
 import { TradeHistoryPanel } from './panels/TradeHistoryPanel';
+import { MissionsPanel } from './panels/MissionsPanel';
 import { useTradeHistory } from '../../lib/stores/economy/useTradeHistory';
+import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
 import { toast } from 'sonner';
 import ReputationWarning from '../ReputationWarning';
 import { 
@@ -36,7 +38,8 @@ import {
   Sparkles,
   History,
   Store,
-  Coins
+  Coins,
+  Flag
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -67,6 +70,7 @@ export const StationDashboard: React.FC = () => {
   const [showMarketPanel, setShowMarketPanel] = useState(false);
   const [showTradingPanel, setShowTradingPanel] = useState(false);
   const [showTradeHistoryPanel, setShowTradeHistoryPanel] = useState(false);
+  const [showMissionsPanel, setShowMissionsPanel] = useState(false);
   
   // Fuel management state
   const [fuelAmount, setFuelAmount] = useState(10);
@@ -85,6 +89,7 @@ export const StationDashboard: React.FC = () => {
   const heatSystem = useHeatSystem();
   const { selectedPlanet } = useSolarSystem();
   const tradeHistory = useTradeHistory();
+  const missions = usePlunderverseMissions();
   
   // Get fuel data from equipment store
   const fuelTank = equipment.getEquipment('fuel-tank');
@@ -595,8 +600,8 @@ export const StationDashboard: React.FC = () => {
                 </button>
               </div>
               
-              {/* Trading Actions */}
-              <div className="grid grid-cols-3 gap-3 mt-3">
+              {/* Trading & Mission Actions */}
+              <div className="grid grid-cols-4 gap-3 mt-3">
                 <button
                   onClick={() => setShowTradingPanel(true)}
                   className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold
@@ -605,6 +610,21 @@ export const StationDashboard: React.FC = () => {
                 >
                   <ShoppingCart className="w-5 h-5" />
                   <span className="text-xs">Trade</span>
+                </button>
+                
+                <button
+                  onClick={() => setShowMissionsPanel(true)}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold
+                           py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1
+                           active:scale-95 transition-transform relative"
+                >
+                  <Flag className="w-5 h-5" />
+                  <span className="text-xs">Missions</span>
+                  {missions.missions.filter(m => m.status === 'active' && !m.completed).length > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 text-white rounded-full text-xs flex items-center justify-center">
+                      {missions.missions.filter(m => m.status === 'active' && !m.completed).length}
+                    </span>
+                  )}
                 </button>
                 
                 <button
@@ -1324,6 +1344,19 @@ export const StationDashboard: React.FC = () => {
           onClose={() => setShowTradeHistoryPanel(false)}
         />
       </MobileSlidePanel>
+
+      {/* Missions Panel */}
+      <MobileSlidePanel
+        isOpen={showMissionsPanel}
+        onClose={() => setShowMissionsPanel(false)}
+        title="Mission Board"
+        height="full"
+      >
+        <MissionsPanel
+          onClose={() => setShowMissionsPanel(false)}
+        />
+      </MobileSlidePanel>
+      
       {/* Reputation Warning */}
       <ReputationWarning />
     </div>
