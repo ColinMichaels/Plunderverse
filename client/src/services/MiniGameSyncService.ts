@@ -177,6 +177,14 @@ class MiniGameSyncService {
   }
 
   private scheduleReconnect(): void {
+    // Only reconnect if minigame is actually active
+    if (!this.isMinigameActive) {
+      console.log('[MiniGameSync] Skipping reconnect - minigame not active');
+      this.setSyncStatus('offline');
+      this.reconnectAttempts = 0; // Reset attempts
+      return;
+    }
+    
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.log('[MiniGameSync] Max reconnection attempts reached - continuing in offline mode');
       // Don't show toast - mini-game works fine offline
@@ -193,7 +201,8 @@ class MiniGameSyncService {
     console.log(`[MiniGameSync] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
     
     setTimeout(() => {
-      if (this.syncStatus === 'offline') {
+      // Double-check minigame is still active before reconnecting
+      if (this.isMinigameActive && this.syncStatus === 'offline') {
         this.initializeWebSocket();
       }
     }, delay);
@@ -572,12 +581,14 @@ class MiniGameSyncService {
 
   // Public API
   public setMinigameActive(active: boolean): void {
+    console.log(`[MiniGameSync] Mini-game ${active ? 'activated' : 'deactivated'}`);
+    
     this.isMinigameActive = active;
     
     if (active) {
       // Initialize WebSocket and heartbeat when mini-game becomes active
       if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
-        console.log('[MiniGameSync] Mini-game activated, initializing WebSocket...');
+        console.log('[MiniGameSync] Initializing WebSocket connection...');
         this.initializeWebSocket();
         this.startHeartbeat();
       }
@@ -587,6 +598,8 @@ class MiniGameSyncService {
       this.sendBatchedUpdates();
       // Stop heartbeat to save resources
       this.stopHeartbeat();
+      // Reset reconnection attempts when deactivating
+      this.reconnectAttempts = 0;
     }
   }
 
