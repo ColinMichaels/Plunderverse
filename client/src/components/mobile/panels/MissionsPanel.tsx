@@ -44,18 +44,14 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
   const { selectedPlanet } = useSolarSystem();
   const { isLanded, landedPlanet } = useLandedState();
 
-  // Filter missions by status
-  const activeMissions = useMemo(() => {
-    return missions.missions.filter(m => m.status === 'active' && !m.completed);
-  }, [missions.missions]);
-
-  const availableMissions = useMemo(() => {
-    return missions.missions.filter(m => m.status === 'available' && !m.completed);
-  }, [missions.missions]);
-
-  const completedMissions = useMemo(() => {
-    return missions.missions.filter(m => m.completed);
-  }, [missions.missions]);
+  // Get missions by status from store
+  const activeMissionsData = missions.activeMissions;
+  const availableMissionsData = missions.availableMissions;
+  
+  // Convert completed mission IDs to an array for display
+  const completedMissionsData = useMemo(() => {
+    return Array.from(missions.completedMissionIds);
+  }, [missions.completedMissionIds]);
 
   // Check if mission requirements are met
   const canAcceptMission = (mission: any): { canAccept: boolean; reason?: string } => {
@@ -158,7 +154,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
 
   // Claim mission rewards
   const claimRewards = (mission: any) => {
-    if (!mission.completed || !mission.reward) return;
+    if (!mission.reward) return;
 
     // Award credits
     if (mission.reward.credits) {
@@ -180,7 +176,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
       }
     }
 
-    missions.claimRewards(mission.id);
+    // Note: There's no claimRewards method in the store, rewards are given when mission completes
     toast.success('Rewards claimed!', {
       description: `+${mission.reward.credits}c${
         mission.reward.experience ? ` +${mission.reward.experience}xp` : ''
@@ -275,7 +271,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
           <div className="text-right">
             <p className="text-xs text-gray-400">Active Missions</p>
             <p className="text-lg font-mono text-orange-400">
-              {activeMissions.length}/{missions.maxActiveMissions || 3}
+              {activeMissionsData.length}/5
             </p>
           </div>
         </div>
@@ -284,20 +280,20 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
         <div className="grid grid-cols-3 gap-2 mt-2">
           <div className="bg-slate-800/50 rounded px-2 py-1">
             <p className="text-xs text-gray-400">Completed</p>
-            <p className="text-sm font-bold text-green-400">{completedMissions.length}</p>
+            <p className="text-sm font-bold text-green-400">{completedMissionsData.length}</p>
           </div>
           <div className="bg-slate-800/50 rounded px-2 py-1">
             <p className="text-xs text-gray-400">Success Rate</p>
             <p className="text-sm font-bold text-cyan-400">
-              {completedMissions.length > 0 
-                ? Math.round((completedMissions.length / (completedMissions.length + missions.failedMissions)) * 100)
+              {completedMissionsData.length > 0 
+                ? Math.round((completedMissionsData.length / (completedMissionsData.length + missions.failedMissionIds.size)) * 100)
                 : 0}%
             </p>
           </div>
           <div className="bg-slate-800/50 rounded px-2 py-1">
-            <p className="text-xs text-gray-400">Earnings</p>
+            <p className="text-xs text-gray-400">Total</p>
             <p className="text-sm font-bold text-yellow-400">
-              {completedMissions.reduce((sum, m) => sum + (m.reward?.credits || 0), 0).toLocaleString()}c
+              {completedMissionsData.length + missions.failedMissionIds.size}
             </p>
           </div>
         </div>
@@ -316,7 +312,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
                        ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white'
                        : 'bg-slate-700 text-gray-400'}`}
           >
-            Active ({activeMissions.length})
+            Active ({activeMissionsData.length})
           </button>
           <button
             onClick={() => {
@@ -328,7 +324,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
                        : 'bg-slate-700 text-gray-400'}`}
           >
-            Available ({availableMissions.length})
+            Available ({availableMissionsData.length})
           </button>
           <button
             onClick={() => {
@@ -340,7 +336,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
                        : 'bg-slate-700 text-gray-400'}`}
           >
-            Done ({completedMissions.length})
+            Done ({completedMissionsData.length})
           </button>
         </div>
       </div>
@@ -349,8 +345,8 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'active' && (
           <div className="space-y-3">
-            {activeMissions.length > 0 ? (
-              activeMissions.map(mission => (
+            {activeMissionsData.length > 0 ? (
+              activeMissionsData.map((mission: any) => (
                 <MissionCard key={mission.id} mission={mission} type="active" />
               ))
             ) : (
@@ -365,8 +361,8 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
 
         {activeTab === 'available' && (
           <div className="space-y-3">
-            {availableMissions.length > 0 ? (
-              availableMissions.map(mission => (
+            {availableMissionsData.length > 0 ? (
+              availableMissionsData.map((mission: any) => (
                 <MissionCard key={mission.id} mission={mission} type="available" />
               ))
             ) : (
@@ -381,10 +377,11 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
 
         {activeTab === 'completed' && (
           <div className="space-y-3">
-            {completedMissions.length > 0 ? (
-              completedMissions.map(mission => (
-                <MissionCard key={mission.id} mission={mission} type="completed" />
-              ))
+            {completedMissionsData.length > 0 ? (
+              <div className="text-center py-4">
+                <Trophy className="w-12 h-12 text-green-600 mx-auto mb-2" />
+                <p className="text-gray-400">Completed {completedMissionsData.length} mission{completedMissionsData.length !== 1 ? 's' : ''}</p>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <Trophy className="w-12 h-12 text-gray-600 mx-auto mb-3" />
@@ -528,17 +525,20 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
                           </span>
                         </div>
                       )}
-                      {selectedMission.reward.reputation && Object.entries(selectedMission.reward.reputation).map(([faction, change]) => (
-                        <div key={faction} className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Shield className="w-4 h-4 text-amber-400" />
-                            <span className="text-gray-300">{faction}</span>
+                      {selectedMission.reward.reputation && Object.entries(selectedMission.reward.reputation).map(([faction, change]) => {
+                        const repChange = Number(change);
+                        return (
+                          <div key={faction} className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Shield className="w-4 h-4 text-amber-400" />
+                              <span className="text-gray-300">{faction}</span>
+                            </div>
+                            <span className={`font-bold ${repChange > 0 ? 'text-green-400' : 'text-red-400'}`}>
+                              {repChange > 0 ? '+' : ''}{repChange}
+                            </span>
                           </div>
-                          <span className={`font-bold ${(change as number) > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                            {(change as number) > 0 ? '+' : ''}{change}
-                          </span>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
