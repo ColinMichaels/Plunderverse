@@ -317,7 +317,7 @@ export function EnhancedSplashScreen() {
         }
         
         if (isLanded) {
-          setLanded(true);
+          setLanded(savedLocation);
         }
         
         await new Promise(resolve => setTimeout(resolve, 1000));
@@ -396,7 +396,7 @@ export function EnhancedSplashScreen() {
 
   // Show auth screen when requested
   if (showAuthScreen) {
-    return <AuthScreen onBack={() => setShowAuthScreen(false)} />;
+    return <AuthScreen onClose={() => setShowAuthScreen(false)} />;
   }
 
   return (
