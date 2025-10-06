@@ -435,8 +435,8 @@ export function EnhancedSplashScreen() {
         </Canvas>
       </div>
       
-      {/* Very light overlay for depth - reduced blur to show more background */}
-      <div className="absolute inset-0 z-10 bg-black/20" />
+      {/* Very light overlay for depth - minimal opacity to show more background */}
+      <div className="absolute inset-0 z-10 bg-black/10" />
       
       {/* Compact Player Stats Widget - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
@@ -446,7 +446,7 @@ export function EnhancedSplashScreen() {
           onMouseLeave={() => setIsStatsExpanded(false)}
         >
           {/* Minimized View - Always visible */}
-          <div className={`bg-black/50 backdrop-blur-sm border border-cyan-400/20 rounded-lg px-3 py-2 
+          <div className={`bg-black/30 border border-cyan-400/20 rounded-lg px-3 py-2 
                           transition-all duration-300 ${isStatsExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-cyan-400/10 p-1.5 rounded-full">
@@ -482,7 +482,7 @@ export function EnhancedSplashScreen() {
           </div>
 
           {/* Expanded View - Shown on hover */}
-          <div className={`absolute top-0 right-0 bg-black/70 backdrop-blur-sm border border-cyan-400/30 
+          <div className={`absolute top-0 right-0 bg-black/50 border border-cyan-400/30 
                           rounded-lg p-3 min-w-[280px] transition-all duration-300 transform origin-top-right
                           ${isStatsExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-cyan-400/20">
@@ -573,7 +573,7 @@ export function EnhancedSplashScreen() {
         </div>
       )}
 
-      <div className="relative z-20 text-center max-w-6xl px-8 bg-black/50 backdrop-blur-sm rounded-2xl p-12 border border-white/10">
+      <div className="relative z-20 text-center max-w-6xl px-8 bg-black/30 rounded-2xl p-12 border border-white/10">
         {/* Main Title */}
         <div className="mb-4">
           <div className="relative inline-block mb-4">

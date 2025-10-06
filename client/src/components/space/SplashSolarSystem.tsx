@@ -4,7 +4,7 @@ import * as THREE from "three";
 import { Sun } from "./Sun";
 import { Planet } from "./Planet";
 import { Moon } from "./Moon";
-import { EnhancedStarfield } from "./EnhancedStarfield";
+import { Starfield } from "./Starfield";
 import { AsteroidField } from "./AsteroidField";
 import { planets } from "../../lib/planetData";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
@@ -87,13 +87,8 @@ export function SplashSolarSystem({ useFullComponents = false }: { useFullCompon
         {/* Very minimal ambient lighting */}
         <ambientLight intensity={0.025} />
         
-        {/* Enhanced starfield with many more stars */}
-        <EnhancedStarfield 
-          count={20000}
-          depth={3000}
-          minRadius={500}
-          enableAnimation={true}
-        />
+        {/* Standard starfield for cleaner, simpler star generation */}
+        <Starfield />
         
         {/* Sun at the center - main light source */}
         <Sun />
