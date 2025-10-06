@@ -1,13 +1,20 @@
 import { useState, useEffect } from "react";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
+import { usePlayer } from "../../lib/stores/player/usePlayer";
+import { useCredits } from "../../lib/stores/economy/useCredits";
+import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { MusicPlayer } from "./MusicPlayer";
 import { VideoModal } from "../shared/VideoModal";
 import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
 import { AuthScreen } from "../auth/AuthScreen";
+import { gameApi } from "../../services/gameApi";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
-import { Play, Image, Video, LogIn, UserPlus, Gamepad2, Star } from 'lucide-react';
+import { 
+  Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
+  User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target
+} from 'lucide-react';
 
 export function EnhancedSplashScreen() {
   const [showHelp, setShowHelp] = useState(false);
@@ -17,9 +24,38 @@ export function EnhancedSplashScreen() {
   const [showVideos, setShowVideos] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [showAuthScreen, setShowAuthScreen] = useState(false);
+  const [hasSaves, setHasSaves] = useState(false);
   
-  const { isAuthenticated, isGuest } = useAuthStore();
+  const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
+  
+  // Get player stats from stores
+  const { 
+    level, 
+    experience, 
+    rankTitle, 
+    reputation,
+    planetsVisited,
+    totalMiningOperations,
+    totalJumps
+  } = usePlayer();
+  const { credits } = useCredits();
+  const { completedMissionIds } = usePlunderverseMissions();
+  
+  // Check for existing saves when authenticated
+  useEffect(() => {
+    const checkSaves = async () => {
+      if (isAuthenticated && !isGuest) {
+        try {
+          const { saves } = await gameApi.listSaves();
+          setHasSaves(saves && saves.length > 0);
+        } catch (error) {
+          console.error('Failed to check saves:', error);
+        }
+      }
+    };
+    checkSaves();
+  }, [isAuthenticated, isGuest]);
   
   // Game screenshots for gallery
   const gameScreenshots: GalleryImage[] = [
@@ -170,7 +206,7 @@ export function EnhancedSplashScreen() {
   };
 
   const handlePlayAsGuest = () => {
-    useAuthStore.getState().loginAsGuest();
+    useAuthStore.getState().playAsGuest();
     start();
   };
 
@@ -181,6 +217,95 @@ export function EnhancedSplashScreen() {
 
   return (
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
+      {/* Player Stats Panel - Only show when authenticated */}
+      {isAuthenticated && !isGuest && (
+        <div className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg p-4 max-w-sm">
+          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-cyan-400/20">
+            <div className="bg-cyan-400/10 p-2 rounded-full">
+              <User className="w-6 h-6 text-cyan-400" />
+            </div>
+            <div>
+              <h3 className="text-cyan-400 font-bold text-lg">
+                {user?.username || 'Space Outlaw'}
+              </h3>
+              <p className="text-xs text-slate-400">{rankTitle || 'Space Drifter'}</p>
+            </div>
+          </div>
+          
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Coins className="w-4 h-4 text-yellow-400" />
+                <span className="text-slate-300 text-sm">Credits</span>
+              </div>
+              <span className="text-yellow-400 font-bold">{credits.toLocaleString()}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Award className="w-4 h-4 text-purple-400" />
+                <span className="text-slate-300 text-sm">Level</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-purple-400 font-bold">Lvl {level}</span>
+                <span className="text-xs text-slate-500">({experience} XP)</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="w-4 h-4 text-green-400" />
+                <span className="text-slate-300 text-sm">Missions</span>
+              </div>
+              <span className="text-green-400 font-bold">{completedMissionIds.size} completed</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-orange-400" />
+                <span className="text-slate-300 text-sm">Planets Visited</span>
+              </div>
+              <span className="text-orange-400 font-bold">{planetsVisited.length}</span>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-blue-400" />
+                <span className="text-slate-300 text-sm">Total Jumps</span>
+              </div>
+              <span className="text-blue-400 font-bold">{totalJumps}</span>
+            </div>
+            
+            {/* Faction Standings */}
+            {reputation && (
+              <div className="mt-3 pt-3 border-t border-cyan-400/20">
+                <p className="text-xs text-slate-400 mb-2">Faction Standings</p>
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">Corporations</span>
+                    <span className={reputation.corporations >= 0 ? "text-green-400" : "text-red-400"}>
+                      {reputation.corporations > 0 ? '+' : ''}{reputation.corporations}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">Independents</span>
+                    <span className={reputation.independents >= 0 ? "text-green-400" : "text-red-400"}>
+                      {reputation.independents > 0 ? '+' : ''}{reputation.independents}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-300">Outlaws</span>
+                    <span className={reputation.outlaws >= 0 ? "text-green-400" : "text-red-400"}>
+                      {reputation.outlaws > 0 ? '+' : ''}{reputation.outlaws}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       {/* Starfield background */}
       <div className="absolute inset-0">
         <div className="absolute inset-0">
@@ -223,7 +348,9 @@ export function EnhancedSplashScreen() {
             <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12">2149</span>
           </h1>
           <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic">
-            The Solar System is Bankrupt. Survival Means Breaking the Law.
+            {isAuthenticated && !isGuest 
+              ? `Welcome back, ${user?.username || 'Captain'}. Your crew awaits your command.`
+              : "The Solar System is Bankrupt. Survival Means Breaking the Law."}
           </h2>
         </div>
 
@@ -244,7 +371,7 @@ export function EnhancedSplashScreen() {
                          transform transition-all duration-300 hover:scale-105 shadow-lg border-2 border-orange-600"
             >
               <Gamepad2 className="inline mr-2" />
-              BEGIN YOUR JOURNEY
+              {hasSaves ? 'CONTINUE JOURNEY' : 'BEGIN YOUR JOURNEY'}
             </button>
           ) : (
             <div className="flex justify-center gap-4 flex-wrap">
