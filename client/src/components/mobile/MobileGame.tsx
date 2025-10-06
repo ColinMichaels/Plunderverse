@@ -12,6 +12,8 @@ import { useInventory } from '../../lib/stores/economy/useInventory';
 import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+import { useAuthStore } from '../../lib/stores/auth/useAuthStore';
+import { useCloudSync } from '../../services/CloudSyncManager';
 import type { Mission, MissionObjective } from '../../lib/plunderverse/types';
 
 type MobileViewState = 'status' | 'station' | 'minigame';
@@ -24,6 +26,7 @@ type MobileViewState = 'status' | 'station' | 'minigame';
 export const MobileGame: React.FC = () => {
   // Component state and hooks - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [viewState, setViewState] = useState<MobileViewState>('status');
+  const [isLoadingSave, setIsLoadingSave] = useState(true);
   
   const { phase, start } = useGame();
   const { isLanded, landedPlanet } = useLandedState();
@@ -36,6 +39,36 @@ export const MobileGame: React.FC = () => {
   const missions = usePlunderverseMissions();
   const { selectedPlanet, cameraPosition } = useSolarSystem();
   const heatSystem = useHeatSystem();
+  const { isAuthenticated, isGuest, isAuthReady } = useAuthStore();
+  const { status: cloudSyncStatus, isInitialized } = useCloudSync();
+
+  // Wait for CloudSync to load save data before showing UI
+  useEffect(() => {
+    console.log('[MobileGame] CloudSync status:', { cloudSyncStatus, isInitialized, isAuthenticated, isGuest, isAuthReady });
+    
+    // Wait for auth to resolve first
+    if (!isAuthReady) {
+      console.log('[MobileGame] Auth not ready yet, waiting...');
+      return;
+    }
+    
+    // If not authenticated or guest, don't wait for CloudSync
+    if (!isAuthenticated || isGuest) {
+      console.log('[MobileGame] Not authenticated or guest, skipping save load');
+      setIsLoadingSave(false);
+      return;
+    }
+    
+    // Wait for CloudSync to be initialized
+    // Status will be 'idle', 'synced', or 'offline' when ready
+    if (isInitialized || cloudSyncStatus === 'synced' || cloudSyncStatus === 'idle' || cloudSyncStatus === 'offline') {
+      console.log('[MobileGame] CloudSync initialized, showing game UI');
+      setIsLoadingSave(false);
+    } else if (cloudSyncStatus === 'error') {
+      console.warn('[MobileGame] CloudSync error, continuing with local state');
+      setIsLoadingSave(false);
+    }
+  }, [cloudSyncStatus, isInitialized, isAuthenticated, isGuest, isAuthReady]);
 
   // Mobile platform initialization and state refresh
   useEffect(() => {
@@ -96,6 +129,28 @@ export const MobileGame: React.FC = () => {
             </button>
           </div>
         </div>
+    );
+  }
+
+  // Loading save data screen
+  if (isLoadingSave) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="text-center px-8">
+          <img 
+            src="/media/Plunderverse_logo.png" 
+            alt="Plunderverse" 
+            className="w-32 h-32 mx-auto mb-6 object-contain animate-pulse"
+          />
+          <h2 className="text-2xl font-bold text-cyan-400 mb-2">
+            Loading Commander Data
+          </h2>
+          <p className="text-gray-400">Syncing with cloud saves...</p>
+          <div className="mt-6 flex justify-center">
+            <div className="w-8 h-8 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+        </div>
+      </div>
     );
   }
 

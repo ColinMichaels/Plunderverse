@@ -22,6 +22,7 @@ interface AuthState {
   isLoading: boolean;
   isRefreshing: boolean; // Separate flag for silent refreshes
   isGuest: boolean;
+  isAuthReady: boolean; // Tracks if initial auth check is complete
   rememberMe: boolean;
   tokenRefreshTimeout?: NodeJS.Timeout;
   
@@ -62,6 +63,7 @@ export const useAuthStore = create<AuthState>()(
       isLoading: false,
       isRefreshing: false,
       isGuest: false,
+      isAuthReady: false, // Not ready until initial check completes
       rememberMe: false,
       
       // Login action
@@ -98,6 +100,7 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: data.refreshToken,
               isAuthenticated: true,
               isGuest: false,
+              isAuthReady: true,
               rememberMe: remember,
               isLoading: false,
             });
@@ -142,6 +145,7 @@ export const useAuthStore = create<AuthState>()(
               refreshToken: data.refreshToken,
               isAuthenticated: true,
               isGuest: false,
+              isAuthReady: true,
               rememberMe: true,
               isLoading: false,
             });
@@ -184,6 +188,7 @@ export const useAuthStore = create<AuthState>()(
             refreshToken: null,
             isAuthenticated: false,
             isGuest: false,
+            isAuthReady: true, // Ready to show login screen
             rememberMe: false,
             isLoading: false,
           });
@@ -240,6 +245,8 @@ export const useAuthStore = create<AuthState>()(
         const { accessToken } = get();
         
         if (!accessToken) {
+          // No token means user needs to login or play as guest
+          set({ isAuthReady: true, isLoading: false, isRefreshing: false });
           return false;
         }
         
@@ -273,6 +280,7 @@ export const useAuthStore = create<AuthState>()(
               set({
                 user: meData.user,
                 isAuthenticated: true,
+                isAuthReady: true,
                 isLoading: false,
                 isRefreshing: false,
               });
@@ -284,12 +292,12 @@ export const useAuthStore = create<AuthState>()(
             }
           }
           
-          // Token invalid, logout
+          // Token invalid, logout (sets isAuthReady)
           await get().logout();
           return false;
         } catch (error) {
           console.error('Auth check failed:', error);
-          set({ isLoading: false, isRefreshing: false });
+          set({ isLoading: false, isRefreshing: false, isAuthReady: true });
           return false;
         }
       },
@@ -302,6 +310,7 @@ export const useAuthStore = create<AuthState>()(
           refreshToken: null,
           isAuthenticated: false,
           isGuest: true,
+          isAuthReady: true, // Ready to play as guest
           isLoading: false,
         });
       },
