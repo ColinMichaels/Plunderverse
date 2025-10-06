@@ -24,7 +24,7 @@ import { SplashSolarSystem } from "../space/SplashSolarSystem";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
   User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target,
-  ChevronDown, ChevronUp, Github, AlertCircle
+  ChevronDown, ChevronUp, Github, AlertCircle, Camera
 } from 'lucide-react';
 
 export function EnhancedSplashScreen() {
@@ -43,6 +43,7 @@ export function EnhancedSplashScreen() {
   const [transitionProgress, setTransitionProgress] = useState(0);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [showCanvas, setShowCanvas] = useState(true); // Control Canvas visibility
+  const [cameraMode, setCameraMode] = useState<'simple' | 'cinematic'>('cinematic'); // Camera mode toggle
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
@@ -465,7 +466,7 @@ export function EnhancedSplashScreen() {
               <Suspense fallback={null}>
               {/* Use full solar system for better preloading if enabled */}
               {useFullSystem ? (
-                <SplashSolarSystem useFullComponents={true} />
+                <SplashSolarSystem useFullComponents={true} cameraMode={cameraMode} />
               ) : (
                 <SolarSystemBackground />
               )}
@@ -926,6 +927,28 @@ export function EnhancedSplashScreen() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Camera Mode Toggle - Middle Bottom */}
+      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30">
+        <button
+          onClick={() => setCameraMode(cameraMode === 'cinematic' ? 'simple' : 'cinematic')}
+          className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-4 py-2
+                     hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group"
+          title={`Switch to ${cameraMode === 'cinematic' ? 'Simple' : 'Cinematic'} camera`}
+        >
+          <div className="flex items-center gap-2">
+            <Camera className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
+            <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
+              {cameraMode === 'cinematic' ? 'Cinematic Camera' : 'Simple Camera'}
+            </span>
+          </div>
+          <p className="text-xs text-slate-400 mt-1">
+            {cameraMode === 'cinematic' 
+              ? 'Epic flybys & dramatic shots' 
+              : 'Simple Earth orbit'}
+          </p>
+        </button>
       </div>
 
       {/* Music Player */}
