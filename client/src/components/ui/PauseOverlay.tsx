@@ -1,9 +1,10 @@
 import { useFocusState } from "@/lib/stores/ui/useFocusState";
 
 export function PauseOverlay() {
-  const { isPaused } = useFocusState();
+  const { hasFocus, isPaused } = useFocusState();
   
-  if (!isPaused) return null;
+  // Only show if the game lost focus, not when manually paused
+  if (hasFocus || !isPaused) return null;
   
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/75 backdrop-blur-sm">

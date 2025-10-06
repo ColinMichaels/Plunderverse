@@ -40,6 +40,7 @@ import { planets } from "../../lib/planetData";
 import { BottomControlSidebar } from "./BottomControlSidebar";
 import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
 import { PauseOverlay } from "./PauseOverlay";
+import { PauseMenu } from "./PauseMenu";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -113,7 +114,10 @@ export function GameUI() {
       {/* Autopilot Indicator */}
       <AutopilotIndicator />
       
-      {/* Pause Overlay - Shows when game loses focus */}
+      {/* Pause Menu - Player-controlled pause with ESC key */}
+      <PauseMenu />
+      
+      {/* Pause Overlay - Shows when game loses focus (but not when pause menu is open) */}
       <PauseOverlay />
       
       {/* Focus State Indicators */}

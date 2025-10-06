@@ -53,17 +53,8 @@ export const MainMenu: React.FC = () => {
     }
   }, [activePanel, isGuest]);
   
-  // Toggle menu with ESC key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && phase === 'playing') {
-        setIsOpen(!isOpen);
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, phase]);
+  // MainMenu ESC key is now disabled - PauseMenu handles ESC key instead
+  // This prevents conflicts between the two menus
   
   // Keybind editing
   useEffect(() => {
