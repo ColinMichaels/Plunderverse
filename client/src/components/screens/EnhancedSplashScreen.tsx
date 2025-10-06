@@ -21,7 +21,8 @@ import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { SolarSystemBackground } from "../space/SolarSystemBackground";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
-  User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target
+  User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 
 export function EnhancedSplashScreen() {
@@ -37,6 +38,7 @@ export function EnhancedSplashScreen() {
   const [transitionStatus, setTransitionStatus] = useState('');
   const [transitionSubtitle, setTransitionSubtitle] = useState('');
   const [transitionProgress, setTransitionProgress] = useState(0);
+  const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
@@ -419,91 +421,137 @@ export function EnhancedSplashScreen() {
       {/* Glassmorphism Overlay Container */}
       <div className="absolute inset-0 z-10 bg-black/30 backdrop-blur-sm" />
       
-      {/* Player Stats Panel - Only show when authenticated */}
+      {/* Compact Player Stats Widget - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
-        <div className="absolute top-4 right-4 z-30 bg-black/60 backdrop-blur-lg border border-cyan-400/30 rounded-lg p-4 max-w-sm">
-          <div className="flex items-center gap-3 mb-3 pb-3 border-b border-cyan-400/20">
-            <div className="bg-cyan-400/10 p-2 rounded-full">
-              <User className="w-6 h-6 text-cyan-400" />
-            </div>
-            <div>
-              <h3 className="text-cyan-400 font-bold text-lg">
-                {user?.username || 'Space Outlaw'}
-              </h3>
-              <p className="text-xs text-slate-400">{rankTitle || 'Space Drifter'}</p>
-            </div>
-          </div>
-          
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Coins className="w-4 h-4 text-yellow-400" />
-                <span className="text-slate-300 text-sm">Credits</span>
+        <div 
+          className="absolute top-6 right-6 z-30 transition-all duration-300 ease-in-out"
+          onMouseEnter={() => setIsStatsExpanded(true)}
+          onMouseLeave={() => setIsStatsExpanded(false)}
+        >
+          {/* Minimized View - Always visible */}
+          <div className={`bg-black/40 backdrop-blur-md border border-cyan-400/20 rounded-lg px-3 py-2 
+                          transition-all duration-300 ${isStatsExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+            <div className="flex items-center gap-3">
+              <div className="bg-cyan-400/10 p-1.5 rounded-full">
+                <User className="w-4 h-4 text-cyan-400" />
               </div>
-              <span className="text-yellow-400 font-bold">{credits.toLocaleString()}</span>
+              <div className="flex flex-col">
+                <span className="text-cyan-400 text-sm font-semibold">{user?.username || 'Captain'}</span>
+                <div className="flex items-center gap-3 text-xs">
+                  <span className="text-purple-300">Lvl {level}</span>
+                  <span className="text-yellow-300">{credits.toLocaleString()} ₢</span>
+                </div>
+              </div>
+              <ChevronDown className="w-3 h-3 text-cyan-400/50 ml-2" />
             </div>
             
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-purple-400" />
-                <span className="text-slate-300 text-sm">Level</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-purple-400 font-bold">Lvl {level}</span>
-                <span className="text-xs text-slate-500">({experience} XP)</span>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-4 h-4 text-green-400" />
-                <span className="text-slate-300 text-sm">Missions</span>
-              </div>
-              <span className="text-green-400 font-bold">{completedMissionIds.size} completed</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-orange-400" />
-                <span className="text-slate-300 text-sm">Planets Visited</span>
-              </div>
-              <span className="text-orange-400 font-bold">{planetsVisited.length}</span>
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-blue-400" />
-                <span className="text-slate-300 text-sm">Total Jumps</span>
-              </div>
-              <span className="text-blue-400 font-bold">{totalJumps}</span>
-            </div>
-            
-            {/* Faction Standings */}
+            {/* Quick Faction Indicators */}
             {reputation && (
-              <div className="mt-3 pt-3 border-t border-cyan-400/20">
-                <p className="text-xs text-slate-400 mb-2">Faction Standings</p>
-                <div className="space-y-1">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300">Corporations</span>
-                    <span className={reputation.corporations >= 0 ? "text-green-400" : "text-red-400"}>
-                      {reputation.corporations > 0 ? '+' : ''}{reputation.corporations}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300">Independents</span>
-                    <span className={reputation.independents >= 0 ? "text-green-400" : "text-red-400"}>
-                      {reputation.independents > 0 ? '+' : ''}{reputation.independents}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-slate-300">Outlaws</span>
-                    <span className={reputation.outlaws >= 0 ? "text-green-400" : "text-red-400"}>
-                      {reputation.outlaws > 0 ? '+' : ''}{reputation.outlaws}
-                    </span>
-                  </div>
+              <div className="flex gap-2 mt-1.5 ml-8">
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${reputation.corporations >= 0 ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-[10px] text-slate-400">Corp</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${reputation.independents >= 0 ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-[10px] text-slate-400">Indie</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full ${reputation.outlaws >= 0 ? 'bg-green-400' : 'bg-red-400'}`} />
+                  <span className="text-[10px] text-slate-400">Outlaw</span>
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Expanded View - Shown on hover */}
+          <div className={`absolute top-0 right-0 bg-black/60 backdrop-blur-lg border border-cyan-400/30 
+                          rounded-lg p-3 min-w-[280px] transition-all duration-300 transform origin-top-right
+                          ${isStatsExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
+            <div className="flex items-center gap-2 mb-2 pb-2 border-b border-cyan-400/20">
+              <div className="bg-cyan-400/10 p-1.5 rounded-full">
+                <User className="w-5 h-5 text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-cyan-400 font-bold text-sm">
+                  {user?.username || 'Space Outlaw'}
+                </h3>
+                <p className="text-[11px] text-slate-400">{rankTitle || 'Space Drifter'}</p>
+              </div>
+              <ChevronUp className="w-3 h-3 text-cyan-400/50 ml-auto" />
+            </div>
+            
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Coins className="w-3 h-3 text-yellow-400" />
+                  <span className="text-slate-300 text-xs">Credits</span>
+                </div>
+                <span className="text-yellow-400 font-semibold text-xs">{credits.toLocaleString()}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Award className="w-3 h-3 text-purple-400" />
+                  <span className="text-slate-300 text-xs">Level</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-purple-400 font-semibold text-xs">Lvl {level}</span>
+                  <span className="text-[10px] text-slate-500">({experience} XP)</span>
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Target className="w-3 h-3 text-green-400" />
+                  <span className="text-slate-300 text-xs">Missions</span>
+                </div>
+                <span className="text-green-400 font-semibold text-xs">{completedMissionIds.size}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <MapPin className="w-3 h-3 text-orange-400" />
+                  <span className="text-slate-300 text-xs">Planets</span>
+                </div>
+                <span className="text-orange-400 font-semibold text-xs">{planetsVisited.length}</span>
+              </div>
+              
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Sparkles className="w-3 h-3 text-blue-400" />
+                  <span className="text-slate-300 text-xs">Jumps</span>
+                </div>
+                <span className="text-blue-400 font-semibold text-xs">{totalJumps}</span>
+              </div>
+              
+              {/* Faction Standings */}
+              {reputation && (
+                <div className="mt-2 pt-2 border-t border-cyan-400/20">
+                  <p className="text-[10px] text-slate-400 mb-1">Faction Standings</p>
+                  <div className="space-y-0.5">
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">Corporations</span>
+                      <span className={reputation.corporations >= 0 ? "text-green-400" : "text-red-400"}>
+                        {reputation.corporations > 0 ? '+' : ''}{reputation.corporations}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">Independents</span>
+                      <span className={reputation.independents >= 0 ? "text-green-400" : "text-red-400"}>
+                        {reputation.independents > 0 ? '+' : ''}{reputation.independents}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-[11px]">
+                      <span className="text-slate-300">Outlaws</span>
+                      <span className={reputation.outlaws >= 0 ? "text-green-400" : "text-red-400"}>
+                        {reputation.outlaws > 0 ? '+' : ''}{reputation.outlaws}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
