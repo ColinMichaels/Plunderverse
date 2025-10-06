@@ -358,7 +358,7 @@
       "insurance": 10,
       "supplies": 10,
       "total_daily_minimum": 60,
-      "payment_interval_minutes": 1,
+      "payment_interval_minutes": 7,
       "warning_credit_threshold": 200,
       "critical_credit_threshold": 50,
       "bankruptcy_threshold": -500

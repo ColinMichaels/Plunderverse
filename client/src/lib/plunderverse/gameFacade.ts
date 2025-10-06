@@ -240,9 +240,14 @@ export class GameFacade {
     this.stopEconomicPressure();
 
     // Daily costs timer (every minute = 1 game day)
-    const dailyCostInterval =
-      (tuning?.economy?.daily_costs?.payment_interval_minutes || 1) * 60000;
+    const paymentIntervalMinutes = tuning?.economy?.daily_costs?.payment_interval_minutes || 1;
+    const dailyCostInterval = paymentIntervalMinutes * 60000;
+    
+    console.log(`[GameFacade] Daily costs deduction interval set to ${paymentIntervalMinutes} minutes (${dailyCostInterval}ms)`);
+    console.log(`[GameFacade] Daily costs will now be deducted every ${paymentIntervalMinutes} minute(s) instead of every minute`);
+    
     this.economicPressureInterval = setInterval(async () => {
+      console.log(`[GameFacade] Processing daily costs deduction (interval: ${paymentIntervalMinutes} minutes)`);
       await this.applyDailyCosts();
       await this.applyHeatDecay();
       await this.applyReputationDecay();
