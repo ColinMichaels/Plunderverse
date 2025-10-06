@@ -1,4 +1,6 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
+import { Canvas } from "@react-three/fiber";
+import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -12,6 +14,7 @@ import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
 import { AuthScreen } from "../auth/AuthScreen";
 import { gameApi } from "../../services/gameApi";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
+import { SolarSystemBackground } from "../space/SolarSystemBackground";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
   User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target
@@ -202,31 +205,6 @@ export function EnhancedSplashScreen() {
     return () => clearInterval(interval);
   }, [slideContent.length]);
 
-  // Pre-calculate star configurations
-  const starConfigs = useState(() =>
-    Array.from({ length: 60 }, (_, i) => {
-      const size = Math.random() * 4 + 0.5;
-      const brightness = Math.random() * 0.9 + 0.3;
-      const twinkleSpeed = Math.random() * 8 + 4;
-      const color = Math.random() > 0.6
-        ? Math.random() > 0.5 ? "#E6F3FF" : "#FFF8E1"
-        : "#FFFFFF";
-      const angle = Math.random() * Math.PI * 2;
-      const distanceFromCenter = Math.pow(Math.random(), 0.4) * 0.8;
-      const x = 50 + Math.cos(angle) * distanceFromCenter * 50;
-      const y = 50 + Math.sin(angle) * distanceFromCenter * 50;
-      const depth = Math.random() * 10 + 1;
-      const edgeSpeed = distanceFromCenter * 10 + 1;
-      const travelSpeed = Math.random() * 2000 + 10;
-      const radialX = Math.cos(angle) * edgeSpeed * (depth + 2);
-      const radialY = Math.sin(angle) * edgeSpeed * (depth + 2);
-      return {
-        size, brightness, twinkleSpeed, color, x, y, depth,
-        edgeSpeed, travelSpeed, radialX, radialY, distanceFromCenter,
-      };
-    }),
-  )[0];
-
   const { setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic } = useAudio();
 
   // Initialize sounds
@@ -277,9 +255,35 @@ export function EnhancedSplashScreen() {
 
   return (
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
+      {/* 3D Solar System Background */}
+      <div className="absolute inset-0 z-0">
+        <Canvas
+          camera={{ position: [30, 10, 30], fov: 75 }}
+          style={{ background: '#000' }}
+        >
+          <Suspense fallback={null}>
+            <SolarSystemBackground />
+            {/* Post-processing effects for sun glow */}
+            <EffectComposer>
+              <Bloom
+                intensity={2.5}
+                luminanceThreshold={0.4}
+                luminanceSmoothing={0.9}
+                radius={0.95}
+                levels={8}
+                mipmapBlur={true}
+              />
+            </EffectComposer>
+          </Suspense>
+        </Canvas>
+      </div>
+      
+      {/* Glassmorphism Overlay Container */}
+      <div className="absolute inset-0 z-10 bg-black/30 backdrop-blur-sm" />
+      
       {/* Player Stats Panel - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
-        <div className="absolute top-4 right-4 z-20 bg-black/40 backdrop-blur-md border border-cyan-400/30 rounded-lg p-4 max-w-sm">
+        <div className="absolute top-4 right-4 z-30 bg-black/60 backdrop-blur-lg border border-cyan-400/30 rounded-lg p-4 max-w-sm">
           <div className="flex items-center gap-3 mb-3 pb-3 border-b border-cyan-400/20">
             <div className="bg-cyan-400/10 p-2 rounded-full">
               <User className="w-6 h-6 text-cyan-400" />
@@ -365,42 +369,8 @@ export function EnhancedSplashScreen() {
           </div>
         </div>
       )}
-      
-      {/* Starfield background */}
-      <div className="absolute inset-0">
-        <div className="absolute inset-0">
-          {starConfigs.map((config, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full star-fisheye"
-              style={{
-                width: `${config.size}px`,
-                height: `${config.size}px`,
-                left: `${config.x}%`,
-                top: `${config.y}%`,
-                backgroundColor: config.color,
-                opacity: config.brightness,
-                boxShadow: `0 0 ${config.size * 3}px ${config.color}`,
-                animationDuration: `${config.twinkleSpeed}s`,
-                animationDelay: `${i * 0.2}s`,
-              } as React.CSSProperties}
-            />
-          ))}
-        </div>
-      </div>
 
-      {/* Custom animations */}
-      <style>{`
-        .star-fisheye {
-          animation: starTwinkle linear infinite;
-        }
-        @keyframes starTwinkle {
-          0%, 100% { opacity: 0.3; transform: scale(0.8); }
-          50% { opacity: 1; transform: scale(1.8); }
-        }
-      `}</style>
-
-      <div className="relative z-10 text-center max-w-6xl px-8">
+      <div className="relative z-20 text-center max-w-6xl px-8 bg-black/40 backdrop-blur-md rounded-2xl p-12 border border-white/10">
         {/* Main Title */}
         <div className="mb-4">
           <h1 className="text-6xl md:text-8xl font-bold text-orange-400 mb-4 tracking-wider">
