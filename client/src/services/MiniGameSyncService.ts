@@ -598,8 +598,17 @@ class MiniGameSyncService {
       this.sendBatchedUpdates();
       // Stop heartbeat to save resources
       this.stopHeartbeat();
-      // Reset reconnection attempts when deactivating
+      // Close WebSocket connection to prevent auto-reconnection
+      if (this.ws) {
+        console.log('[MiniGameSync] Closing WebSocket connection...');
+        this.ws.close();
+        this.ws = null;
+      }
+      // Reset reconnection attempts and status when deactivating
       this.reconnectAttempts = 0;
+      this.setSyncStatus('offline');
+      // Save final state before deactivating
+      this.saveOfflineState();
     }
   }
 
