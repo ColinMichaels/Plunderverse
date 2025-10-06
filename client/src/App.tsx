@@ -237,8 +237,56 @@ function GameContent() {
     (window as any).testTerrainCacheManagement = testTerrainCacheManagement;
     console.log('[TERRAIN-CACHE] Test function available: Run `testTerrainCacheManagement()` in the browser console to test terrain cache management.');
     
+    // Add test notifications command for verifying dark theme styling
+    (window as any).testNotifications = () => {
+      import("sonner").then(({ toast }) => {
+        console.log('%c[NOTIFICATION TEST] Triggering all notification types...', 'color: #fbbf24; font-weight: bold');
+        
+        // Success notification - amber/gold theme
+        toast.success("🎯 Mission Completed!", {
+          description: "You've successfully delivered cargo to Mars Station",
+          duration: 5000,
+        });
+        
+        // Error notification - red with dark theme
+        setTimeout(() => {
+          toast.error("⚠️ Hull Breach Detected!", {
+            description: "Critical damage to ship systems - seek immediate repairs",
+            duration: 5000,
+          });
+        }, 1000);
+        
+        // Warning notification - orange theme
+        setTimeout(() => {
+          toast.warning("⛽ Low Fuel Warning", {
+            description: "Only 25% fuel remaining - find a refueling station",
+            duration: 5000,
+          });
+        }, 2000);
+        
+        // Info notification - cyan accent
+        setTimeout(() => {
+          toast.info("📡 New Trade Route Available", {
+            description: "Profitable route discovered between Earth and Venus",
+            duration: 5000,
+          });
+        }, 3000);
+        
+        // Basic notification (default styling)
+        setTimeout(() => {
+          toast("🚀 Autopilot Engaged", {
+            description: "Heading to Jupiter at maximum velocity",
+            duration: 5000,
+          });
+        }, 4000);
+        
+        return 'All notification types triggered - check visual styling';
+      });
+    };
+    
     // Add memory profiling console commands (development only)
     if (import.meta.env.DEV) {
+      console.log('%c[NOTIFICATION TEST] Run window.testNotifications() to test dark theme notifications', 'color: #fbbf24; font-weight: bold');
       const resourceManager = ResourceManager.getInstance();
       
       // Memory profile command - shows current memory state
