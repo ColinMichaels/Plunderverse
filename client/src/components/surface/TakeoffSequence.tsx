@@ -3,6 +3,7 @@ import { useLandedState } from "@/lib/stores/surface/useLandedState";
 import { useSolarSystem } from "@/lib/stores/space/useSolarSystem";
 import { planets } from "@/lib/planetData";
 import { useAudio} from "@/lib/stores";
+import { GameTransitionOverlay } from "@/components/screens/GameTransitionOverlay";
 import * as THREE from "three";
 
 
@@ -13,28 +14,39 @@ export function TakeoffSequence() {
   const { setCameraPosition, getUniverseTime } = useSolarSystem();
   const [stage, setStage] = useState<TakeoffStage>("preparing");
   const [progress, setProgress] = useState(0);
+  const [showOverlay, setShowOverlay] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [subtitle, setSubtitle] = useState("");
   const cameraAnimationRef = useRef<NodeJS.Timeout>();
+  const soundPlayedRef = useRef(false);
   const { playTakeoff } = useAudio();
 
   useEffect(() => {
     if (!isTakingOff) {
       setStage("preparing");
       setProgress(0);
+      setShowOverlay(false);
+      soundPlayedRef.current = false;
       return;
     }
 
     let progressInterval: NodeJS.Timeout;
     
+    // Show overlay immediately when takeoff starts
+    setShowOverlay(true);
+    
     // Simulate takeoff sequence
     const takeoffSequence = async () => {
       // Preparing phase
       setStage("preparing");
+      setStatusMessage("Preparing for Launch");
+      setSubtitle(`Departing from ${landedPlanet}`);
+      
       progressInterval = setInterval(() => {
         setProgress(prev => {
           if (prev >= 100) {
             clearInterval(progressInterval);
             setStage("igniting");
-            playTakeoff();
             return 0;
           }
           return prev + 3;
@@ -45,7 +57,16 @@ export function TakeoffSequence() {
       setTimeout(() => {
         clearInterval(progressInterval);
         setStage("igniting");
+        setStatusMessage("Engaging Thrusters");
+        setSubtitle("Main engines online");
         setProgress(0);
+        
+        // Play takeoff sound prominently when engines engage
+        if (!soundPlayedRef.current) {
+          playTakeoff();
+          soundPlayedRef.current = true;
+          console.log(`[TAKEOFF] Playing takeoff sound for departure from ${landedPlanet}`);
+        }
 
         // Igniting phase
         progressInterval = setInterval(() => {
@@ -63,6 +84,8 @@ export function TakeoffSequence() {
         setTimeout(() => {
           clearInterval(progressInterval);
           setStage("ascending");
+          setStatusMessage("Lifting Off");
+          setSubtitle("Ascending from surface");
           setProgress(0);
           
           progressInterval = setInterval(() => {
@@ -80,6 +103,8 @@ export function TakeoffSequence() {
           setTimeout(() => {
             clearInterval(progressInterval);
             setStage("breaking_atmosphere");
+            setStatusMessage("Leaving Atmosphere");
+            setSubtitle("Breaking through planetary boundary");
             setProgress(0);
             
             progressInterval = setInterval(() => {
@@ -97,6 +122,8 @@ export function TakeoffSequence() {
             setTimeout(() => {
               clearInterval(progressInterval);
               setStage("entering_orbit");
+              setStatusMessage("Achieving Orbit");
+              setSubtitle("Stabilizing trajectory");
               setProgress(0);
               
               progressInterval = setInterval(() => {
@@ -114,6 +141,8 @@ export function TakeoffSequence() {
               setTimeout(() => {
                 clearInterval(progressInterval);
                 setStage("complete");
+                setStatusMessage("Takeoff Complete");
+                setSubtitle("Welcome back to space");
                 
                 // Camera pull-back effect - position camera in orbit around planet
                 const planet = planets.find((p) => p.name === landedPlanet);
@@ -149,10 +178,14 @@ export function TakeoffSequence() {
                     
                     if (t >= 1) {
                       clearInterval(cameraAnimationRef.current);
-                      // Reset states and return to space
-                      setNotLanded();
-                      setIsTakingOff(false);
-                      console.log(`Successfully took off from ${landedPlanet}, camera at orbital position`);
+                      // Fade out overlay before resetting
+                      setTimeout(() => {
+                        setShowOverlay(false);
+                        // Reset states and return to space
+                        setNotLanded();
+                        setIsTakingOff(false);
+                        console.log(`Successfully took off from ${landedPlanet}, camera at orbital position`);
+                      }, 500);
                     }
                   }, 16); // ~60fps
                 }
@@ -169,65 +202,18 @@ export function TakeoffSequence() {
       if (progressInterval) clearInterval(progressInterval);
       if (cameraAnimationRef.current) clearInterval(cameraAnimationRef.current);
     };
-  }, [isTakingOff, setIsTakingOff, setNotLanded, landedPlanet, setCameraPosition, getUniverseTime]);
+  }, [isTakingOff, setIsTakingOff, setNotLanded, landedPlanet, setCameraPosition, getUniverseTime, playTakeoff]);
 
+  // Don't render anything if not taking off
   if (!isTakingOff) return null;
 
-  const getStageMessage = () => {
-    switch (stage) {
-      case "preparing": return "Preparing engines...";
-      case "igniting": return "Igniting thrusters...";
-      case "ascending": return "Ascending from surface...";
-      case "breaking_atmosphere": return "Breaking atmosphere...";
-      case "entering_orbit": return "Entering orbit...";
-      case "complete": return "Takeoff complete!";
-    }
-  };
-
+  // Use the cinematic GameTransitionOverlay component
   return (
-    <div className="fixed inset-0 z-50 bg-black/90 flex flex-col items-center justify-center">
-      {/* Main takeoff UI */}
-      <div className="relative">
-        {/* Animated ship icon */}
-        <div className={`mb-8 transition-transform duration-1000 ${
-          stage === "ascending" || stage === "breaking_atmosphere" ? "-translate-y-8" : ""
-        }`}>
-          <div className="text-6xl animate-pulse">🚀</div>
-        </div>
-
-        {/* Stage message */}
-        <h2 className="text-3xl font-bold text-white mb-4 text-center animate-pulse">
-          {getStageMessage()}
-        </h2>
-
-        {/* Planet name */}
-        <p className="text-xl text-gray-300 mb-8 text-center">
-          Departing from {landedPlanet}
-        </p>
-
-        {/* Progress bar */}
-        <div className="w-96 bg-gray-800 rounded-full h-4 overflow-hidden">
-          <div 
-            className="bg-gradient-to-r from-blue-500 to-cyan-400 h-full transition-all duration-100 rounded-full"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Progress percentage */}
-        <p className="text-center text-gray-400 mt-2">
-          {Math.round(progress)}%
-        </p>
-      </div>
-
-      {/* Atmospheric effect overlay */}
-      {(stage === "ascending" || stage === "breaking_atmosphere") && (
-        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-blue-500/10 to-cyan-400/20 animate-pulse pointer-events-none" />
-      )}
-
-      {/* Space transition effect */}
-      {stage === "entering_orbit" && (
-        <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-900/30 to-transparent animate-pulse pointer-events-none" />
-      )}
-    </div>
+    <GameTransitionOverlay
+      isVisible={showOverlay}
+      status={statusMessage}
+      subtitle={subtitle}
+      progress={progress}
+    />
   );
 }

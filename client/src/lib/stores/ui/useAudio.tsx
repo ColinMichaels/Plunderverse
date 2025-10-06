@@ -190,8 +190,51 @@ export const useAudio = create<AudioState>((set, get) => ({
       (window as any).audioStore.explosionSound = sound;
     }
   },
-  playExplosion() {},
-  playTakeoff() {},
+  playExplosion: async (position?: THREE.Vector3) => {
+    const { masterMute, sfxMute, soundEffectsCache } = get();
+    
+    if (masterMute || sfxMute) {
+      console.log("Explosion sound skipped (muted)");
+      return;
+    }
+    
+    try {
+      const explosionSound = await soundEffectsCache.getSound(
+        "explosion",
+        AUDIO_CONFIG.soundEffects.explosion
+      );
+      
+      // Optional: Add 3D positioning logic here if position is provided
+      explosionSound.play();
+      console.log("Explosion sound played");
+    } catch (error) {
+      console.error("Failed to play explosion sound:", error);
+    }
+  },
+  
+  playTakeoff: async () => {
+    const { masterMute, sfxMute, soundEffectsCache } = get();
+    
+    if (masterMute || sfxMute) {
+      console.log("Takeoff sound skipped (muted)");
+      return;
+    }
+    
+    try {
+      const takeoffSound = await soundEffectsCache.getSound(
+        "takeoff",
+        AUDIO_CONFIG.soundEffects.takeoff
+      );
+      
+      // Play at full volume for prominent effect
+      takeoffSound.volume(AUDIO_CONFIG.soundEffects.takeoff.volume);
+      takeoffSound.play();
+      console.log("[AUDIO] Takeoff sound played prominently at full volume");
+    } catch (error) {
+      console.error("Failed to play takeoff sound:", error);
+    }
+  },
+  
   toggleMute: () => {
     // Legacy support - toggles master mute
     get().toggleMasterMute();
