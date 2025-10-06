@@ -121,6 +121,16 @@ export function EnhancedSplashScreen() {
   // Game screenshots for gallery
   const gameScreenshots: GalleryImage[] = [
     {
+      src: "/screenshots/Screenshot 2025-10-01 at 10.55.04 AM.jpg",
+      alt: "Plunderverse Space Combat",
+      caption: "Engage in thrilling space battles as you navigate the dangerous solar system"
+    },
+    {
+      src: "/screenshots/Screenshot 2025-10-02 at 1.27.37 AM.jpg",
+      alt: "Plunderverse Planetary View",
+      caption: "Explore diverse planets and moons throughout the solar system"
+    },
+    {
       src: "/textures/planets/2k_earth_daymap.jpg",
       alt: "Earth - The Cradle of Humanity",
       caption: "Visit Earth, now under corporate control, where the wealthy live in orbital stations while the surface struggles"
@@ -139,16 +149,6 @@ export function EnhancedSplashScreen() {
       src: "/textures/planets/2k_saturn.jpg",
       alt: "Saturn - Ring Mining Operations",
       caption: "Raid Saturn's ring mining stations for valuable resources and contraband"
-    },
-    {
-      src: "/textures/sky.png",
-      alt: "Deep Space Navigation",
-      caption: "Travel through the vast emptiness between planets, avoiding patrols and ambushes"
-    },
-    {
-      src: "/textures/planets/2k_moon.jpg",
-      alt: "Luna - Earth's Moon",
-      caption: "Trade in Luna's underground markets, where anything can be bought for the right price"
     }
   ];
   
@@ -559,10 +559,14 @@ export function EnhancedSplashScreen() {
       <div className="relative z-20 text-center max-w-6xl px-8 bg-black/40 backdrop-blur-md rounded-2xl p-12 border border-white/10">
         {/* Main Title */}
         <div className="mb-4">
-          <h1 className="text-6xl md:text-8xl font-bold text-orange-400 mb-4 tracking-wider">
-            PLUNDERVERSE
-            <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12">2149</span>
-          </h1>
+          <div className="relative inline-block mb-4">
+            <img 
+              src="/media/Plunderverse_logo.png" 
+              alt="Plunderverse - Space Outlaw Adventure Game"
+              className="w-auto h-32 md:h-48 object-contain drop-shadow-[0_0_20px_rgba(251,146,60,0.5)]"
+            />
+            <span className="absolute -top-2 -right-4 text-sm text-yellow-400 rotate-12 font-bold">2149</span>
+          </div>
           <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic">
             {isAuthenticated && !isGuest 
               ? `Welcome back, ${user?.username || 'Captain'}. Your crew awaits your command.`
