@@ -123,7 +123,22 @@ export class BootScene extends Phaser.Scene {
     healthGraphics.fillRect(4, 8, 16, 8);
     healthGraphics.generateTexture('health_pickup', 24, 24);
     
-    console.log('[BootScene] Placeholder assets created');
+    // Create particle texture for effects
+    const particleGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    particleGraphics.fillStyle(0xffffff, 1);
+    particleGraphics.fillCircle(4, 4, 4);
+    particleGraphics.generateTexture('particle', 8, 8);
+    
+    // Create target texture for touch-to-move
+    const targetGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    targetGraphics.lineStyle(3, 0x00ff00, 1);
+    targetGraphics.strokeCircle(16, 16, 12);
+    targetGraphics.strokeCircle(16, 16, 6);
+    targetGraphics.fillStyle(0x00ff00, 1);
+    targetGraphics.fillCircle(16, 16, 2);
+    targetGraphics.generateTexture('target', 32, 32);
+    
+    console.log('[BootScene] All assets created successfully');
   }
 
   create(): void {

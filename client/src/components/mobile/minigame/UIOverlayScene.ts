@@ -14,6 +14,8 @@ export class UIOverlayScene extends Phaser.Scene {
   private currentHealth: number = 100;
   private maxHealth: number = 100;
   private currentCredits: number = 0;
+  private miniMapGraphics?: Phaser.GameObjects.Graphics;
+  private playerIndicator?: Phaser.GameObjects.Graphics;
 
   constructor() {
     super({ key: 'UIOverlayScene' });
@@ -234,32 +236,102 @@ export class UIOverlayScene extends Phaser.Scene {
   }
 
   private createMiniMap(): void {
-    const size = 150;
+    const mapSize = 180;
     const x = this.cameras.main.width - 20;
     const y = this.cameras.main.height - 20;
     
     // Mini-map background
-    const mapBg = this.add.rectangle(x - size, y - size, size, size, 0x000000, 0.7)
+    const mapBg = this.add.rectangle(x - mapSize, y - mapSize, mapSize, mapSize, 0x000000, 0.8)
       .setOrigin(0, 0)
-      .setStrokeStyle(2, 0x00ffff);
+      .setStrokeStyle(2, 0xffaa00);
+    mapBg.setDepth(90);
     
     // Mini-map title
-    this.add.text(x - size / 2, y - size - 5, 'STATION MAP', {
-      fontSize: '10px',
-      color: '#00ffff',
-      fontFamily: 'Arial'
+    const mapTitle = this.add.text(x - mapSize / 2, y - mapSize - 5, 'STATION MAP', {
+      fontSize: '12px',
+      color: '#ffaa00',
+      fontFamily: 'Arial',
+      stroke: '#000000',
+      strokeThickness: 2
     }).setOrigin(0.5, 1);
+    mapTitle.setDepth(91);
     
-    // Simple map dots (placeholder)
-    const mapGraphics = this.add.graphics();
-    mapGraphics.fillStyle(0x00ff00, 1);
-    mapGraphics.fillCircle(x - size / 2, y - size / 2, 3); // Player position
+    // Create map graphics container
+    this.miniMapGraphics = this.add.graphics();
+    this.miniMapGraphics.setDepth(92);
     
-    // Add some static points of interest
-    mapGraphics.fillStyle(0xffaa00, 0.5);
-    mapGraphics.fillCircle(x - size * 0.3, y - size * 0.3, 2);
-    mapGraphics.fillCircle(x - size * 0.7, y - size * 0.3, 2);
-    mapGraphics.fillCircle(x - size * 0.5, y - size * 0.5, 2);
+    // Create player indicator
+    this.playerIndicator = this.add.graphics();
+    this.playerIndicator.setDepth(93);
+    
+    // Store map position for updates
+    this.mapX = x - mapSize;
+    this.mapY = y - mapSize;
+    this.mapSize = mapSize;
+    
+    // Listen for map updates from MainGameScene
+    const mainScene = this.scene.get('MainGameScene');
+    mainScene.events.on('updateMiniMap', (mapData: any) => {
+      this.updateMiniMapDisplay(mapData);
+    });
+    
+    mainScene.events.on('roomDiscovered', (roomName: string) => {
+      this.showNotification(`New Area Discovered: ${roomName}`, '#00ffff');
+    });
+  }
+  
+  private mapX: number = 0;
+  private mapY: number = 0;
+  private mapSize: number = 0;
+  
+  private updateMiniMapDisplay(mapData: any): void {
+    if (!this.miniMapGraphics || !this.playerIndicator) return;
+    
+    this.miniMapGraphics.clear();
+    this.playerIndicator.clear();
+    
+    // Calculate scale to fit station in mini-map
+    const stationWidth = 3200;
+    const stationHeight = 2400;
+    const scale = Math.min(this.mapSize / stationWidth, this.mapSize / stationHeight) * 0.9;
+    
+    // Draw rooms
+    if (mapData.rooms) {
+      mapData.rooms.forEach((room: any) => {
+        const roomX = this.mapX + (room.x * scale) + 10;
+        const roomY = this.mapY + (room.y * scale) + 10;
+        const roomWidth = room.width * scale;
+        const roomHeight = room.height * scale;
+        
+        // Check if room is explored
+        const isExplored = mapData.exploredRooms.includes(room.id);
+        const isCurrent = mapData.currentRoom === room.id;
+        
+        if (isExplored) {
+          // Draw explored room
+          this.miniMapGraphics.fillStyle(isCurrent ? 0xffaa00 : 0x334455, isCurrent ? 0.6 : 0.4);
+          this.miniMapGraphics.fillRect(roomX, roomY, roomWidth, roomHeight);
+          this.miniMapGraphics.lineStyle(1, isCurrent ? 0xffaa00 : 0x556677, 0.8);
+          this.miniMapGraphics.strokeRect(roomX, roomY, roomWidth, roomHeight);
+        } else {
+          // Draw unexplored room (darker)
+          this.miniMapGraphics.fillStyle(0x111111, 0.2);
+          this.miniMapGraphics.fillRect(roomX, roomY, roomWidth, roomHeight);
+        }
+      });
+    }
+    
+    // Draw player position
+    if (mapData.playerPos) {
+      const playerX = this.mapX + (mapData.playerPos.x * scale) + 10;
+      const playerY = this.mapY + (mapData.playerPos.y * scale) + 10;
+      
+      // Pulsing player dot
+      this.playerIndicator.fillStyle(0x00ff00, 1);
+      this.playerIndicator.fillCircle(playerX, playerY, 3);
+      this.playerIndicator.lineStyle(1, 0x00ff00, 0.5);
+      this.playerIndicator.strokeCircle(playerX, playerY, 6);
+    }
   }
 
   private showTerminalMenu(): void {
