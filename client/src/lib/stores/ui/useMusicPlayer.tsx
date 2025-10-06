@@ -746,13 +746,24 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   }
 }));
 
-// Auto-load tracks when the store is first accessed
+// Track initialization state globally to prevent multiple initializations
+let isInitialized = false;
 let isAutoLoading = false;
+
 export const initializeMusicPlayer = () => {
-  if (!isAutoLoading) {
+  if (!isAutoLoading && !isInitialized) {
     isAutoLoading = true;
+    console.log('[MusicPlayer] Initializing music player (singleton)');
     setTimeout(() => {
-      useMusicPlayer.getState().loadTracks();
+      const state = useMusicPlayer.getState();
+      if (!state.isLoaded && !state.isLoading) {
+        state.loadTracks();
+        isInitialized = true;
+      } else {
+        console.log('[MusicPlayer] Already loaded, skipping initialization');
+      }
     }, 1000); // Delay to ensure audio context is ready
+  } else {
+    console.log('[MusicPlayer] Music player already initialized, skipping');
   }
 };

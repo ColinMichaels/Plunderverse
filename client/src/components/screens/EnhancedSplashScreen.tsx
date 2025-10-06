@@ -49,11 +49,9 @@ export function EnhancedSplashScreen() {
   const { start } = useGame();
   const { setSelectedPlanet } = useSolarSystem();
   const { setLanded } = useLandedState();
-  const { loadTracks, selectTrack, play, isLoaded } = useMusicPlayer();
+  // Removed music player hooks since MusicPlayer component handles its own state
   
-  // Timer ref for auto-play
-  const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
-  // Track if user started the game to prevent auto-play
+  // Track if user started the game
   const hasStartedGameRef = useRef(false);
   
   // Get player stats from stores
@@ -84,44 +82,9 @@ export function EnhancedSplashScreen() {
     checkSaves();
   }, [isAuthenticated, isGuest]);
 
-  // Auto-play theme song after random delay
-  useEffect(() => {
-    // Load tracks when component mounts
-    if (!isLoaded) {
-      loadTracks();
-    }
-
-    // Set up auto-play timer (15-45 seconds)
-    const setupAutoPlay = async () => {
-      // Wait a bit to ensure tracks are loaded
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Random delay between 15 and 45 seconds
-      const randomDelay = Math.random() * (45000 - 15000) + 15000;
-      
-      console.log(`[EnhancedSplashScreen] Setting up auto-play timer for ${Math.round(randomDelay / 1000)} seconds`);
-      
-      autoPlayTimerRef.current = setTimeout(() => {
-        // Only play if user hasn't started the game yet
-        if (!hasStartedGameRef.current) {
-          console.log('[EnhancedSplashScreen] Auto-playing Plunderverse Theme');
-          selectTrack(0); // Select first track (Plunderverse Theme)
-          play(); // Play the selected track
-        }
-      }, randomDelay);
-    };
-
-    setupAutoPlay();
-
-    // Cleanup timer on unmount
-    return () => {
-      if (autoPlayTimerRef.current) {
-        console.log('[EnhancedSplashScreen] Clearing auto-play timer');
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
-    };
-  }, []); // Only run once on mount
+  // Note: Removed auto-play logic since MusicPlayer component handles its own initialization
+  // This prevents duplicate music playing from both the splash screen and MusicPlayer component
+  // The MusicPlayer component below will handle all music playback
   
   // Game screenshots for gallery
   const gameScreenshots: GalleryImage[] = [
@@ -272,12 +235,6 @@ export function EnhancedSplashScreen() {
   const handleBeginJourney = async () => {
     if (isAuthenticated || isGuest) {
       hasStartedGameRef.current = true;
-      // Clear the timer immediately when user starts the game
-      if (autoPlayTimerRef.current) {
-        console.log('[EnhancedSplashScreen] User started game, clearing auto-play timer');
-        clearTimeout(autoPlayTimerRef.current);
-        autoPlayTimerRef.current = null;
-      }
 
       // Fade out music smoothly before transition
       await fadeOutMusic();
@@ -384,12 +341,6 @@ export function EnhancedSplashScreen() {
 
   const handlePlayAsGuest = async () => {
     hasStartedGameRef.current = true;
-    // Clear the timer immediately when user starts the game
-    if (autoPlayTimerRef.current) {
-      console.log('[EnhancedSplashScreen] User started game (guest), clearing auto-play timer');
-      clearTimeout(autoPlayTimerRef.current);
-      autoPlayTimerRef.current = null;
-    }
     
     useAuthStore.getState().playAsGuest();
     
