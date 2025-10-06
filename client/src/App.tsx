@@ -433,7 +433,7 @@ function GameContent() {
         {/* Route to mobile experience for mobile devices */}
         {effectivePlatformType === 'mobile' ? (
           // Mobile Experience
-          <MobileGameFix />
+          <MobileGame />
         ) : (
           // Desktop Experience
           <>

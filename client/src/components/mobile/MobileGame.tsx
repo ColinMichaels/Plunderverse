@@ -71,6 +71,11 @@ export const MobileGame: React.FC = () => {
               onClick={() => start()}
               className="px-8 py-4 bg-orange-600 text-white rounded-lg font-semibold
                        active:bg-orange-700 transition-colors min-h-[44px]"
+              style={{ 
+                touchAction: 'manipulation',
+                WebkitTapHighlightColor: 'transparent',
+                userSelect: 'none'
+              }}
             >
               Launch Game
             </button>
