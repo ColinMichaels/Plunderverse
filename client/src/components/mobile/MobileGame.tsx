@@ -24,7 +24,6 @@ type MobileViewState = 'status' | 'station' | 'minigame';
 export const MobileGame: React.FC = () => {
   // Component state and hooks - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [viewState, setViewState] = useState<MobileViewState>('status');
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
   
   const { phase, start } = useGame();
   const { isLanded, landedPlanet } = useLandedState();
@@ -46,12 +45,19 @@ export const MobileGame: React.FC = () => {
       // Stores are already synced via Zustand
     }, 1000); // Refresh every second
     
-    setRefreshInterval(interval);
-    
     return () => {
-      if (interval) clearInterval(interval);
+      clearInterval(interval);
     };
   }, []);
+
+  // Update viewState based on landing status (moved before conditional returns)
+  useEffect(() => {
+    if (isLanded && viewState === 'status') {
+      setViewState('station');
+    } else if (!isLanded && viewState === 'station') {
+      setViewState('status');
+    }
+  }, [isLanded, viewState]);
 
   // Get fuel data (calculate before conditional returns)
   const fuelTank = equipment.getEquipment('fuel-tank');
@@ -337,15 +343,6 @@ export const MobileGame: React.FC = () => {
       </div>
     );
   }
-
-  // Update viewState based on landing status
-  useEffect(() => {
-    if (isLanded && viewState === 'status') {
-      setViewState('station');
-    } else if (!isLanded && viewState === 'station') {
-      setViewState('status');
-    }
-  }, [isLanded, viewState]);
 
   // Handle mini-game navigation
   if (viewState === 'minigame') {
