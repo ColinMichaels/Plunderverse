@@ -39,7 +39,8 @@ import {
   History,
   Store,
   Coins,
-  Flag
+  Flag,
+  Gamepad2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -56,11 +57,15 @@ const STATION_DATA = {
   services: ['Refuel', 'Repair', 'Trade', 'Lay Low']
 };
 
+interface StationDashboardProps {
+  onOpenMinigame?: () => void;
+}
+
 /**
  * StationDashboard - Enhanced mobile UI for station management
  * Features interactive resource management, transactions, and station services
  */
-export const StationDashboard: React.FC = () => {
+export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMinigame }) => {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [expandedCard, setExpandedCard] = useState<string | null>(null);
   const [activePanel, setActivePanel] = useState<ResourcePanelType>(null);
@@ -601,7 +606,7 @@ export const StationDashboard: React.FC = () => {
               </div>
               
               {/* Trading & Mission Actions */}
-              <div className="grid grid-cols-4 gap-3 mt-3">
+              <div className="grid grid-cols-5 gap-3 mt-3">
                 <button
                   onClick={() => setShowTradingPanel(true)}
                   className="bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold
@@ -670,6 +675,21 @@ export const StationDashboard: React.FC = () => {
                 >
                   <History className="w-5 h-5" />
                   <span className="text-xs">History</span>
+                </button>
+                
+                <button
+                  onClick={() => {
+                    if (onOpenMinigame) {
+                      onOpenMinigame();
+                      triggerHaptic(15);
+                    }
+                  }}
+                  className="bg-gradient-to-r from-cyan-600 to-blue-600 text-white font-semibold
+                           py-3 px-4 rounded-lg flex flex-col items-center justify-center gap-1
+                           active:scale-95 transition-transform"
+                >
+                  <Gamepad2 className="w-5 h-5" />
+                  <span className="text-xs">Explore</span>
                 </button>
               </div>
             </div>

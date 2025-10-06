@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { StationDashboard } from './StationDashboard';
+import { MobileMinigame } from './MobileMinigame';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useGame } from '../../lib/stores/ui/useGame';
 import { usePlatform } from '../../lib/stores/ui/usePlatform';
@@ -11,6 +12,8 @@ import { useInventory } from '../../lib/stores/economy/useInventory';
 import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+
+type MobileViewState = 'status' | 'station' | 'minigame';
 
 /**
  * MobileGame - Main entry point for mobile experience
@@ -30,6 +33,7 @@ export const MobileGame: React.FC = () => {
   const { selectedPlanet, playerPosition } = useSolarSystem();
   const heatSystem = useHeatSystem();
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
+  const [viewState, setViewState] = useState<MobileViewState>('status');
 
   // Mobile platform initialization and state refresh
   useEffect(() => {
@@ -321,6 +325,28 @@ export const MobileGame: React.FC = () => {
     );
   }
 
+  // Update viewState based on landing status
+  useEffect(() => {
+    if (isLanded && viewState === 'status') {
+      setViewState('station');
+    } else if (!isLanded && viewState === 'station') {
+      setViewState('status');
+    }
+  }, [isLanded, viewState]);
+
+  // Handle mini-game navigation
+  if (viewState === 'minigame') {
+    return (
+      <MobileMinigame 
+        onBack={() => setViewState(isLanded ? 'station' : 'status')}
+      />
+    );
+  }
+
   // Main mobile game interface when landed
-  return <StationDashboard />;
+  return (
+    <StationDashboard 
+      onOpenMinigame={() => setViewState('minigame')}
+    />
+  );
 };
