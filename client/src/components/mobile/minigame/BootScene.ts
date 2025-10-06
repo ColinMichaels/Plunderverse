@@ -335,7 +335,8 @@ export class BootScene extends Phaser.Scene {
       indicatorGraphics.fillStyle(0xffffff, 1);
       if (indicator.name === 'indicator_talk') {
         indicatorGraphics.fillRect(8, 10, 8, 6);
-        indicatorGraphics.fillPolygon([6, 16, 10, 16, 8, 20]);
+        // Speech bubble tail - use fillTriangle instead of fillPolygon
+        indicatorGraphics.fillTriangle(6, 16, 10, 16, 8, 20);
       } else if (indicator.name === 'indicator_quest') {
         indicatorGraphics.fillRect(11, 7, 2, 8);
         indicatorGraphics.fillCircle(12, 17, 1.5);
@@ -343,7 +344,8 @@ export class BootScene extends Phaser.Scene {
         indicatorGraphics.fillRect(8, 10, 8, 1);
         indicatorGraphics.fillRect(9, 11, 6, 5);
       } else {
-        indicatorGraphics.fillPolygon([12, 7, 8, 15, 16, 15]);
+        // Warning triangle - use fillTriangle instead of fillPolygon
+        indicatorGraphics.fillTriangle(12, 7, 8, 15, 16, 15);
         indicatorGraphics.fillCircle(12, 17, 1);
       }
       indicatorGraphics.generateTexture(indicator.name, 24, 24);

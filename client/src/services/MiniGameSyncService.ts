@@ -163,7 +163,7 @@ class MiniGameSyncService {
   }
 
   private handleWebSocketError(error: Event): void {
-    console.error('[MiniGameSync] WebSocket error:', error);
+    console.log('[MiniGameSync] WebSocket error:', error);
     this.setSyncStatus('error');
   }
 
@@ -176,8 +176,9 @@ class MiniGameSyncService {
 
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('[MiniGameSync] Max reconnection attempts reached');
-      toast.warning('Offline mode active. Progress will be synced when connection is restored.');
+      console.log('[MiniGameSync] Max reconnection attempts reached - continuing in offline mode');
+      // Don't show toast - mini-game works fine offline
+      // toast.warning('Offline mode active. Progress will be synced when connection is restored.');
       
       // Save state to offline storage
       this.saveOfflineState();
