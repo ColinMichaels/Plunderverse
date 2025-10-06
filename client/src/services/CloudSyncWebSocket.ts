@@ -1,0 +1,367 @@
+// WebSocket-based Cloud Sync Manager for real-time sync
+// This handles the WebSocket connection and message routing
+
+export type SyncMessageType = 
+  | 'state_update'
+  | 'state_delta'
+  | 'state_request'
+  | 'state_ack'
+  | 'state_conflict'
+  | 'heartbeat'
+  | 'sync_complete'
+  | 'transaction'
+  | 'transaction_result';
+
+export interface SyncPayload {
+  type: SyncMessageType;
+  timestamp: number;
+  version: number;
+  clientId?: string;
+  data: any;
+  checksum?: string;
+  transaction?: any;
+  actionId?: string;
+}
+
+export class CloudSyncManager {
+  private static instance: CloudSyncManager | null = null;
+  
+  // WebSocket connection
+  private ws: WebSocket | null = null;
+  private reconnectAttempts = 0;
+  private readonly maxReconnectAttempts = 5;
+  private readonly reconnectDelay = 2000;
+  
+  // Connection state
+  private connected = false;
+  private authenticated = false;
+  private clientId: string = '';
+  private userId: string = '';
+  private deviceId: string = '';
+  
+  // Sync version tracking
+  private localVersion = 0;
+  private serverVersion = 0;
+  
+  // Message handlers
+  private messageHandlers: Set<(data: any) => void> = new Set();
+  
+  // Queue for messages while reconnecting
+  private messageQueue: SyncPayload[] = [];
+  private reconnectTimeout: NodeJS.Timeout | null = null;
+  
+  private constructor() {
+    this.deviceId = this.generateDeviceId();
+    console.log('[CloudSyncManager] Initialized with device ID:', this.deviceId);
+  }
+  
+  static getInstance(): CloudSyncManager {
+    if (!CloudSyncManager.instance) {
+      CloudSyncManager.instance = new CloudSyncManager();
+    }
+    return CloudSyncManager.instance;
+  }
+  
+  /**
+   * Connect to WebSocket server
+   */
+  async connect(): Promise<void> {
+    if (this.ws && this.connected) {
+      console.log('[CloudSyncManager] Already connected');
+      return;
+    }
+    
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    if (!token) {
+      console.log('[CloudSyncManager] No auth token, skipping connection');
+      this.authenticated = false;
+      return;
+    }
+    
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const host = window.location.hostname;
+    const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+    
+    const wsUrl = `${protocol}//${host}:${port}/ws?deviceId=${this.deviceId}`;
+    
+    console.log('[CloudSyncManager] Connecting to:', wsUrl);
+    
+    try {
+      this.ws = new WebSocket(wsUrl);
+      this.setupEventHandlers();
+    } catch (error) {
+      console.error('[CloudSyncManager] Failed to create WebSocket:', error);
+      this.scheduleReconnect();
+    }
+  }
+  
+  private setupEventHandlers(): void {
+    if (!this.ws) return;
+    
+    this.ws.onopen = () => {
+      console.log('[CloudSyncManager] WebSocket connected');
+      this.connected = true;
+      this.reconnectAttempts = 0;
+      
+      // Authenticate
+      this.authenticate();
+      
+      // Process queued messages
+      this.flushMessageQueue();
+    };
+    
+    this.ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data) as SyncPayload;
+        this.handleMessage(payload);
+      } catch (error) {
+        console.error('[CloudSyncManager] Failed to parse message:', error);
+      }
+    };
+    
+    this.ws.onerror = (error) => {
+      console.error('[CloudSyncManager] WebSocket error:', error);
+    };
+    
+    this.ws.onclose = () => {
+      console.log('[CloudSyncManager] WebSocket disconnected');
+      this.connected = false;
+      this.authenticated = false;
+      
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.scheduleReconnect();
+      }
+    };
+  }
+  
+  private authenticate(): void {
+    const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
+    if (!token) {
+      console.log('[CloudSyncManager] No auth token');
+      return;
+    }
+    
+    // Send auth message
+    this.sendMessage({
+      type: 'state_request',
+      timestamp: Date.now(),
+      version: this.localVersion,
+      data: {
+        authToken: token,
+        deviceId: this.deviceId,
+        stores: []  // Request all stores
+      }
+    });
+    
+    this.authenticated = true;
+    this.userId = this.getUserIdFromToken(token);
+    console.log('[CloudSyncManager] Authenticated as user:', this.userId);
+  }
+  
+  private handleMessage(payload: SyncPayload): void {
+    console.log(`[CloudSyncManager] Received ${payload.type}`);
+    
+    // Update version tracking
+    if (payload.version) {
+      this.serverVersion = payload.version;
+    }
+    
+    // Notify all handlers
+    for (const handler of this.messageHandlers) {
+      try {
+        handler(payload);
+      } catch (error) {
+        console.error('[CloudSyncManager] Handler error:', error);
+      }
+    }
+    
+    // Handle specific message types
+    switch (payload.type) {
+      case 'state_update':
+        this.handleStateUpdate(payload);
+        break;
+      case 'transaction_result':
+        // Transaction results are handled by registered handlers
+        break;
+      case 'sync_complete':
+        console.log('[CloudSyncManager] Sync completed');
+        break;
+    }
+  }
+  
+  private handleStateUpdate(payload: SyncPayload): void {
+    if (!payload.data) return;
+    
+    // Update local stores with server state
+    const data = payload.data;
+    
+    // Update credits if present
+    if (data.credits !== undefined) {
+      import('../domain/economy/credits.store').then(({ useCreditsStore }) => {
+        useCreditsStore.getState().setAmount(data.credits);
+        console.log(`[CloudSyncManager] Credits updated to ${data.credits}`);
+      });
+    }
+    
+    // Update fuel if present
+    if (data.fuel !== undefined) {
+      import('../domain/resources/fuel.store').then(({ useFuelStore }) => {
+        useFuelStore.getState().setFuel(data.fuel);
+        console.log(`[CloudSyncManager] Fuel updated to ${data.fuel}`);
+      });
+    }
+    
+    // Update inventory if present
+    if (data.inventory) {
+      import('../domain/inventory/inventory.store').then(({ useInventoryStore }) => {
+        useInventoryStore.getState().loadInventory(data.inventory);
+        console.log('[CloudSyncManager] Inventory updated');
+      });
+    }
+    
+    // Update location if present
+    if (data.location) {
+      import('../domain/player/player.store').then(({ usePlayerStore }) => {
+        usePlayerStore.getState().setLocation(data.location);
+        console.log(`[CloudSyncManager] Location updated to ${data.location}`);
+      });
+    }
+    
+    // Update ship stats if present
+    if (data.shipHull !== undefined || data.shipShield !== undefined) {
+      import('../domain/combat/ship.store').then(({ useShipStore }) => {
+        const state = useShipStore.getState();
+        if (data.shipHull !== undefined) state.setHull(data.shipHull);
+        if (data.shipShield !== undefined) state.setShield(data.shipShield);
+        console.log('[CloudSyncManager] Ship stats updated');
+      });
+    }
+  }
+  
+  /**
+   * Send a message through WebSocket
+   */
+  sendMessage(message: SyncPayload): void {
+    if (!this.ws || !this.connected) {
+      console.log('[CloudSyncManager] Queueing message (not connected)');
+      this.messageQueue.push(message);
+      
+      // Try to reconnect
+      if (!this.reconnectTimeout) {
+        this.connect();
+      }
+      return;
+    }
+    
+    try {
+      this.ws.send(JSON.stringify(message));
+      this.localVersion++;
+    } catch (error) {
+      console.error('[CloudSyncManager] Failed to send message:', error);
+      this.messageQueue.push(message);
+    }
+  }
+  
+  /**
+   * Add a message handler
+   */
+  addMessageHandler(handler: (data: any) => void): void {
+    this.messageHandlers.add(handler);
+    console.log('[CloudSyncManager] Added message handler');
+  }
+  
+  /**
+   * Remove a message handler
+   */
+  removeMessageHandler(handler: (data: any) => void): void {
+    this.messageHandlers.delete(handler);
+    console.log('[CloudSyncManager] Removed message handler');
+  }
+  
+  /**
+   * Check if authenticated
+   */
+  isAuthenticated(): boolean {
+    return this.authenticated;
+  }
+  
+  /**
+   * Check if connected
+   */
+  isConnected(): boolean {
+    return this.connected;
+  }
+  
+  private flushMessageQueue(): void {
+    if (!this.connected || this.messageQueue.length === 0) return;
+    
+    console.log(`[CloudSyncManager] Flushing ${this.messageQueue.length} queued messages`);
+    const queue = [...this.messageQueue];
+    this.messageQueue = [];
+    
+    for (const message of queue) {
+      this.sendMessage(message);
+    }
+  }
+  
+  private scheduleReconnect(): void {
+    if (this.reconnectTimeout) return;
+    
+    this.reconnectAttempts++;
+    const delay = Math.min(this.reconnectDelay * this.reconnectAttempts, 30000);
+    
+    console.log(`[CloudSyncManager] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    
+    this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = null;
+      this.connect();
+    }, delay);
+  }
+  
+  private generateDeviceId(): string {
+    const stored = localStorage.getItem('deviceId');
+    if (stored) return stored;
+    
+    const id = `device_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    localStorage.setItem('deviceId', id);
+    return id;
+  }
+  
+  private getUserIdFromToken(token: string): string {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.userId || payload.sub || 'unknown';
+    } catch {
+      return 'unknown';
+    }
+  }
+  
+  /**
+   * Initialize and connect
+   */
+  async initialize(): Promise<void> {
+    await this.connect();
+  }
+  
+  /**
+   * Disconnect and cleanup
+   */
+  disconnect(): void {
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = null;
+    }
+    
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    
+    this.connected = false;
+    this.authenticated = false;
+    this.messageHandlers.clear();
+    this.messageQueue = [];
+    
+    console.log('[CloudSyncManager] Disconnected and cleaned up');
+  }
+}
