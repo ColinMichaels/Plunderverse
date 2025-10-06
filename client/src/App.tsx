@@ -409,7 +409,10 @@ function GameContent() {
         {/* Route to mobile experience for mobile devices */}
         {platformType === 'mobile' ? (
           // Mobile Experience
-          <MobileGame />
+          <>
+            {console.log('[APP] Rendering MobileGame component for mobile platform')}
+            <MobileGame />
+          </>
         ) : (
           // Desktop Experience
           <>
