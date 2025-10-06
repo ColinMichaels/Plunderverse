@@ -1,14 +1,12 @@
-import React, { useState } from "react";
+import React from "react";
 import { motion } from "framer-motion";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useUILayout } from "../ui/UILayoutManager";
 import { usePanelManager } from "../../lib/stores/ui/usePanelManager";
 import { planets } from "../../lib/planetData";
-import { FastTravelMenu } from "./FastTravelMenu";
 import { Map, Navigation2, Zap } from "lucide-react";
 
 export const MinimapPanel: React.FC = () => {
-  const [showFastTravel, setShowFastTravel] = useState(false);
   const { time, cameraPosition } = useSolarSystem();
   const { togglePanel } = useUILayout();
   const { openPanel } = usePanelManager();
@@ -62,26 +60,16 @@ export const MinimapPanel: React.FC = () => {
 
   return (
     <div className="p-4 space-y-3">
-      {/* Quick Navigation Buttons */}
-      <div className="flex gap-2 mb-3">
+      {/* Quick Navigation Button - Opens unified navigation panel */}
+      <div className="mb-3">
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setShowFastTravel(true)}
-          className="flex-1 px-3 py-2 bg-gradient-to-r from-cyan-500/20 to-cyan-600/20 hover:from-cyan-500/30 hover:to-cyan-600/30 border border-cyan-500/30 rounded-lg text-xs font-mono text-cyan-400 flex items-center justify-center gap-2 transition-all"
-        >
-          <Zap className="w-3 h-3" />
-          <span>FAST TRAVEL</span>
-        </motion.button>
-        
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           onClick={() => togglePanel('autopilot')}
-          className="flex-1 px-3 py-2 bg-gradient-to-r from-orange-500/20 to-orange-600/20 hover:from-orange-500/30 hover:to-orange-600/30 border border-orange-500/30 rounded-lg text-xs font-mono text-orange-400 flex items-center justify-center gap-2 transition-all"
+          className="w-full px-3 py-2 bg-gradient-to-r from-orange-500/20 to-cyan-600/20 hover:from-orange-500/30 hover:to-cyan-600/30 border border-cyan-500/30 rounded-lg text-xs font-mono text-cyan-400 flex items-center justify-center gap-2 transition-all"
         >
           <Navigation2 className="w-3 h-3" />
-          <span>AUTOPILOT</span>
+          <span>OPEN NAVIGATION</span>
         </motion.button>
       </div>
       
@@ -225,13 +213,6 @@ export const MinimapPanel: React.FC = () => {
         </div>
       </div>
       
-      {/* Fast Travel Menu Modal */}
-      {showFastTravel && (
-        <FastTravelMenu 
-          isOpen={showFastTravel} 
-          onClose={() => setShowFastTravel(false)} 
-        />
-      )}
     </div>
   );
 };

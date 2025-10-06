@@ -3,7 +3,7 @@ import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
 import { useUILayout } from '../ui/UILayoutManager';
 import { SpaceUIPanel } from '../ui/SpaceUIPanel';
-import { AutopilotPanel } from './AutopilotPanel';
+import { NavigationPanel } from './NavigationPanel';
 import { MinimapPanel } from './MinimapPanel';
 import { ShipSystemsPanel } from '../../components/ship/ShipSystemsPanel';
 import { ShipUpgradesPanel } from '../../components/ship/ShipUpgradesPanel';
@@ -89,18 +89,18 @@ export const NavigationSidebar: React.FC = () => {
         </SpaceUIPanel>
       )}
       
-      {/* Autopilot - Only in space */}
+      {/* Navigation Panel - Only in space (combines autopilot and fast travel) */}
       {showAutopilot && (
         <SpaceUIPanel
           id="autopilot"
-          title="AUTOPILOT"
+          title="NAVIGATION"
           icon="🧭"
           zone="left-sidebar"
           priority={2}
           defaultExpanded={false}
           canCollapse={true}
         >
-          <AutopilotPanel />
+          <NavigationPanel />
         </SpaceUIPanel>
       )}
       
