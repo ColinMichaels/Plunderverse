@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { usePlayer } from "../../lib/stores/player/usePlayer";
 import { useCredits } from "../../lib/stores/economy/useCredits";
 import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
 import { useAudio } from "../../lib/stores/ui/useAudio";
+import { useMusicPlayer } from "../../lib/stores/ui/useMusicPlayer";
 import { MusicPlayer } from "./MusicPlayer";
 import { VideoModal } from "../shared/VideoModal";
 import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
@@ -28,6 +29,12 @@ export function EnhancedSplashScreen() {
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
+  const { loadTracks, selectTrack, play, isLoaded } = useMusicPlayer();
+  
+  // Timer ref for auto-play
+  const autoPlayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  // Track if user started the game to prevent auto-play
+  const hasStartedGameRef = useRef(false);
   
   // Get player stats from stores
   const { 
@@ -56,6 +63,45 @@ export function EnhancedSplashScreen() {
     };
     checkSaves();
   }, [isAuthenticated, isGuest]);
+
+  // Auto-play theme song after random delay
+  useEffect(() => {
+    // Load tracks when component mounts
+    if (!isLoaded) {
+      loadTracks();
+    }
+
+    // Set up auto-play timer (15-45 seconds)
+    const setupAutoPlay = async () => {
+      // Wait a bit to ensure tracks are loaded
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Random delay between 15 and 45 seconds
+      const randomDelay = Math.random() * (45000 - 15000) + 15000;
+      
+      console.log(`[EnhancedSplashScreen] Setting up auto-play timer for ${Math.round(randomDelay / 1000)} seconds`);
+      
+      autoPlayTimerRef.current = setTimeout(() => {
+        // Only play if user hasn't started the game yet
+        if (!hasStartedGameRef.current) {
+          console.log('[EnhancedSplashScreen] Auto-playing Plunderverse Theme');
+          selectTrack(0); // Select first track (Plunderverse Theme)
+          play(); // Play the selected track
+        }
+      }, randomDelay);
+    };
+
+    setupAutoPlay();
+
+    // Cleanup timer on unmount
+    return () => {
+      if (autoPlayTimerRef.current) {
+        console.log('[EnhancedSplashScreen] Clearing auto-play timer');
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
+    };
+  }, []); // Only run once on mount
   
   // Game screenshots for gallery
   const gameScreenshots: GalleryImage[] = [
@@ -199,6 +245,13 @@ export function EnhancedSplashScreen() {
 
   const handleBeginJourney = () => {
     if (isAuthenticated || isGuest) {
+      hasStartedGameRef.current = true;
+      // Clear the timer immediately when user starts the game
+      if (autoPlayTimerRef.current) {
+        console.log('[EnhancedSplashScreen] User started game, clearing auto-play timer');
+        clearTimeout(autoPlayTimerRef.current);
+        autoPlayTimerRef.current = null;
+      }
       start();
     } else {
       setShowAuthScreen(true);
@@ -206,6 +259,13 @@ export function EnhancedSplashScreen() {
   };
 
   const handlePlayAsGuest = () => {
+    hasStartedGameRef.current = true;
+    // Clear the timer immediately when user starts the game
+    if (autoPlayTimerRef.current) {
+      console.log('[EnhancedSplashScreen] User started game (guest), clearing auto-play timer');
+      clearTimeout(autoPlayTimerRef.current);
+      autoPlayTimerRef.current = null;
+    }
     useAuthStore.getState().playAsGuest();
     start();
   };
