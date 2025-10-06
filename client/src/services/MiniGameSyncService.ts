@@ -8,6 +8,8 @@ import { usePlunderverseMissions } from '../lib/stores/economy/usePlunderverseMi
 import { useShipStatus } from '../lib/stores/ship/useShipStatus';
 import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
 import OfflineStorageService, { OfflineGameState, SyncQueueItem } from './OfflineStorageService';
+import { TransactionClient } from './TransactionClient';
+import { CloudSyncManager } from './CloudSyncWebSocket';
 
 // Sync message types
 export type SyncMessageType = 
