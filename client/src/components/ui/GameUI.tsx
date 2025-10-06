@@ -41,6 +41,7 @@ import { BottomControlSidebar } from "./BottomControlSidebar";
 import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
 import { PauseOverlay } from "./PauseOverlay";
 import { PauseMenu } from "./PauseMenu";
+import { PlanetInfo } from "../shared/PlanetInfo";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -164,6 +165,9 @@ export function GameUI() {
         onClose={hideWarning}
         onAutopilot={handleAutopilot}
       />
+
+      {/* Planet Info Display - shows when a planet (not Sun) is selected */}
+      <PlanetInfo />
 
       {/* Orbital Interface - when orbiting a planet */}
       <OrbitalInterface />

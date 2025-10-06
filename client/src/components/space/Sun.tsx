@@ -73,8 +73,17 @@ export function Sun() {
         shadow-camera-far={500}
       />
 
-      {/* Sun glow */}
-      <Sphere ref={glowRef} args={[6, 32, 32]}>
+      {/* Sun glow - Non-interactive */}
+      <Sphere 
+        ref={glowRef} 
+        args={[6, 32, 32]}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("[Sun] Click blocked - Sun is not targetable");
+        }}
+        onPointerEnter={(e) => e.stopPropagation()}
+        onPointerLeave={(e) => e.stopPropagation()}
+      >
         <meshBasicMaterial
           color="#FDB813"
           transparent
@@ -83,8 +92,17 @@ export function Sun() {
         />
       </Sphere>
 
-      {/* Sun core with enhanced emission for better lighting */}
-      <Sphere ref={meshRef} args={[5, 32, 32]}>
+      {/* Sun core with enhanced emission for better lighting - Non-interactive */}
+      <Sphere 
+        ref={meshRef} 
+        args={[5, 32, 32]}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("[Sun] Click blocked - Sun is not targetable");
+        }}
+        onPointerEnter={(e) => e.stopPropagation()}
+        onPointerLeave={(e) => e.stopPropagation()}
+      >
         <meshStandardMaterial
           map={sunTexture}
           emissive="#FDB813"
@@ -95,8 +113,16 @@ export function Sun() {
         />
       </Sphere>
 
-      {/* Enhanced corona effect for realistic sun appearance */}
-      <Sphere args={[7, 32, 32]}>
+      {/* Enhanced corona effect for realistic sun appearance - Non-interactive */}
+      <Sphere 
+        args={[7, 32, 32]}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("[Sun] Click blocked - Sun is not targetable");
+        }}
+        onPointerEnter={(e) => e.stopPropagation()}
+        onPointerLeave={(e) => e.stopPropagation()}
+      >
         <meshBasicMaterial
           color="#FFFF00"
           transparent
@@ -105,8 +131,16 @@ export function Sun() {
         />
       </Sphere>
       
-      {/* Outer corona layer for more depth */}
-      <Sphere args={[8.5, 32, 32]}>
+      {/* Outer corona layer for more depth - Non-interactive */}
+      <Sphere 
+        args={[8.5, 32, 32]}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log("[Sun] Click blocked - Sun is not targetable");
+        }}
+        onPointerEnter={(e) => e.stopPropagation()}
+        onPointerLeave={(e) => e.stopPropagation()}
+      >
         <meshBasicMaterial
           color="#FFA500"
           transparent
