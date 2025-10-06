@@ -20,6 +20,7 @@ import { usePlunderverseMissions } from '../../lib/stores/economy/usePlundervers
 import { toast } from 'sonner';
 import ReputationWarning from '../ReputationWarning';
 import type { Mission } from '../../lib/plunderverse/types';
+import { triggerHaptic } from '../../utils/hapticFeedback';
 import { 
   Fuel, 
   Package, 
@@ -116,12 +117,6 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
   const actualRepairPrice = Math.round(STATION_DATA.repairPrice * priceModifier);
   const actualLayLowCost = Math.round(STATION_DATA.layLowCost * priceModifier);
   
-  // Haptic feedback helper
-  const triggerHaptic = (duration = 10) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(duration);
-    }
-  };
   
   // Toggle card expansion
   const handleCardTap = (cardId: string) => {

@@ -19,6 +19,7 @@ import { useTradeHistory } from '../../../lib/stores/economy/useTradeHistory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
 import { MARKET_ITEMS } from '../../../lib/stores/economy/marketData';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 
 interface TradeHistoryPanelProps {
   onClose?: () => void;
@@ -102,7 +103,7 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
   // Toggle favorite item
   const toggleFavorite = (itemType: string) => {
     tradeHistory.toggleFavoriteItem(itemType);
-    if ('vibrate' in navigator) navigator.vibrate(10);
+    triggerHaptic();
     
     const isFavorite = tradeHistory.favoriteItems.includes(itemType);
     toast.success(isFavorite ? 'Removed from favorites' : 'Added to favorites');
@@ -113,7 +114,7 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
     if (window.confirm('Are you sure you want to clear all trade history?')) {
       tradeHistory.clearHistory();
       toast.success('Trade history cleared');
-      if ('vibrate' in navigator) navigator.vibrate(20);
+      triggerHaptic(20);
     }
   };
   
@@ -308,7 +309,7 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
                          ${config.panel.radius} p-3 cursor-pointer transition-all`}
                 onClick={() => {
                   setExpandedTransaction(isExpanded ? null : transaction.id);
-                  if ('vibrate' in navigator) navigator.vibrate(10);
+                  triggerHaptic();
                 }}
               >
                 {/* Transaction Summary */}

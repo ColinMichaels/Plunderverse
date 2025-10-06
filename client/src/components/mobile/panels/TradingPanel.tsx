@@ -36,6 +36,7 @@ import {
   getItemById
 } from '../../../lib/stores/economy/enhancedMarketData';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 
 interface TradingPanelProps {
   station?: string;
@@ -154,10 +155,6 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
     return tradeHistory.calculateProfit(item.id, sellPrice, qty);
   };
   
-  // Trigger haptic feedback
-  const triggerHaptic = (duration = 10) => {
-    if ('vibrate' in navigator) navigator.vibrate(duration);
-  };
   
   // Handle quantity change
   const adjustQuantity = (delta: number) => {

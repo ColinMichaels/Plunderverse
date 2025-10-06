@@ -25,6 +25,7 @@ import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
 import { useLandedState } from '../../../lib/stores/surface/useLandedState';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 
 interface MissionsPanelProps {
   onClose?: () => void;
@@ -116,10 +117,6 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
     }
   };
 
-  // Trigger haptic feedback
-  const triggerHaptic = (duration = 10) => {
-    if ('vibrate' in navigator) navigator.vibrate(duration);
-  };
 
   // Accept a mission
   const acceptMission = (mission: any) => {

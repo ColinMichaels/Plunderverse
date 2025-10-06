@@ -24,6 +24,7 @@ import {
   isProfitableTrade
 } from '../../../lib/stores/economy/marketData';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 
 interface MarketPanelProps {
   station?: string;
@@ -131,7 +132,7 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
   
   // Handle item selection
   const handleItemClick = (item: MarketItem) => {
-    if ('vibrate' in navigator) navigator.vibrate(10);
+    triggerHaptic();
     
     if (expandedItem === item.id) {
       setExpandedItem(null);

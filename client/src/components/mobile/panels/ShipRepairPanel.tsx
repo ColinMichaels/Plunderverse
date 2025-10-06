@@ -6,6 +6,7 @@ import { useCredits } from '../../../lib/stores/economy/useCredits';
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 import { 
   Shield, 
   Zap, 
@@ -220,12 +221,6 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
     return () => clearInterval(timer);
   }, [repairJobs.length]);
 
-  // Haptic feedback
-  const triggerHaptic = (duration = 10) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(duration);
-    }
-  };
 
   // Repair single system
   const handleRepairSystem = (systemId: string) => {

@@ -8,6 +8,7 @@ import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useInventory } from '../../../lib/stores/economy/useInventory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
 import { toast } from 'sonner';
+import { triggerHaptic } from '../../../utils/hapticFeedback';
 import { 
   Shield, 
   Zap, 
@@ -170,12 +171,6 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
     }
   };
 
-  // Haptic feedback
-  const triggerHaptic = (duration = 10) => {
-    if ('vibrate' in navigator) {
-      navigator.vibrate(duration);
-    }
-  };
 
   // Calculate ship stats with bonuses
   const calculateShipStats = () => {
