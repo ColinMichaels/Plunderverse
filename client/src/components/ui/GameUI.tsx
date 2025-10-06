@@ -41,6 +41,7 @@ import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
 import { PauseOverlay } from "./PauseOverlay";
 import { PauseMenu } from "./PauseMenu";
 import { PlanetInfo } from "../shared/PlanetInfo";
+import { TargetLockNotification } from "../combat/TargetLockNotification";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -127,8 +128,11 @@ export function GameUI() {
       {/* Mission HUD - horizontal display at top of screen */}
       <MissionHUD />
       
-      {/* Cockpit Overlay - background frame */}
+      {/* Cockpit Overlay - contextual background frame (only when planet selected or in combat) */}
       <CockpitOverlay />
+      
+      {/* Target Lock Notifications - shows when weapons are locking */}
+      <TargetLockNotification />
 
       {/* Navigation Sidebar - Desktop only, left side of screen */}
       <NavigationSidebar />

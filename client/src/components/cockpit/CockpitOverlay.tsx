@@ -1,7 +1,23 @@
 import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useEnemies } from "../../lib/stores/combat/useEnemies";
+import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 
 export function CockpitOverlay() {
   const { isThrusting } = useShipStatus();
+  const { selectedPlanet } = useSolarSystem();
+  const { enemies } = useEnemies();
+  const { isInCombat } = useHUDContext();
+  
+  // Only show overlay when:
+  // 1. A planet is selected/targeted
+  // 2. In active combat (enemies nearby or actively fighting)
+  const shouldShowOverlay = selectedPlanet || isInCombat || enemies.length > 0;
+  
+  // If conditions aren't met, don't render the overlay
+  if (!shouldShowOverlay) {
+    return null;
+  }
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
