@@ -51,10 +51,8 @@ function GameContent() {
       const width = window.innerWidth;
       const height = window.innerHeight;
       const shouldBeMobile = width < 768 || (width <= 414 && height >= 600);
-      console.error(`🚨 [APP-FORCE-CHECK] Viewport: ${width}x${height}, Should be mobile: ${shouldBeMobile}`);
       
       if (shouldBeMobile && platformType !== 'mobile') {
-        console.error('🚨 [APP-FORCE-CHECK] FORCING MOBILE MODE!');
         setForceMobile(true);
       } else {
         setForceMobile(shouldBeMobile);
@@ -67,7 +65,6 @@ function GameContent() {
   
   // Use forced mobile if needed
   const effectivePlatformType = forceMobile ? 'mobile' : platformType;
-  console.error(`🚨 [APP] Effective platform type: ${effectivePlatformType} (forced: ${forceMobile}, detected: ${platformType})`);
   
   
   // Create a stable keyboard map using a ref to prevent infinite loops
@@ -88,27 +85,10 @@ function GameContent() {
   // Initialize platform detection on mount and handle window resize
   useEffect(() => {
     updatePlatform();
-    console.error(`🚨 [APP] Platform detected: ${platformType}`);
-    console.error(`🚨 [APP] Viewport: ${window.innerWidth}x${window.innerHeight}px`);
-    console.error(`🚨 [APP] User Agent: ${navigator.userAgent}`);
-    console.error(`🚨 [APP] Touch Support: ${('ontouchstart' in window) ? 'YES' : 'NO'}`);
-    
-    // Get platform state
-    const platformState = usePlatform.getState();
-    console.error('🚨 [APP] Full Platform State:', {
-      platformType: platformState.platformType,
-      isMobile: platformState.isMobile,
-      isTablet: platformState.isTablet,
-      isDesktop: platformState.isDesktop,
-      isTouch: platformState.isTouch,
-      viewport: platformState.viewport,
-      orientation: platformState.orientation
-    });
     
     // Handle orientation changes on mobile
     const handleOrientationChange = () => {
       updatePlatform();
-      console.error('🚨 [APP] Orientation changed, updating platform');
     };
     
     window.addEventListener('orientationchange', handleOrientationChange);
@@ -451,13 +431,9 @@ function GameContent() {
         }}
       >
         {/* Route to mobile experience for mobile devices */}
-        {console.error(`🚨 [APP-RENDER] About to check platform type. effectivePlatformType = '${effectivePlatformType}' (forced=${forceMobile}, detected=${platformType})`)}
         {effectivePlatformType === 'mobile' ? (
           // Mobile Experience
-          <>
-            {console.error('🚨🚨🚨 [APP-RENDER] MOBILE BRANCH TAKEN! Rendering MobileGameFix component! 🚨🚨🚨')}
-            <MobileGameFix />
-          </>
+          <MobileGameFix />
         ) : (
           // Desktop Experience
           <>

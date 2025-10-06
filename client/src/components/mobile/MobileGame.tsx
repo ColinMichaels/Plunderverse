@@ -22,11 +22,7 @@ type MobileViewState = 'status' | 'station' | 'minigame';
  * Syncs with desktop game state through Zustand stores
  */
 export const MobileGame: React.FC = () => {
-  // Debug logging to verify component is being called (v2.0 - cleaned)
-  console.log('[MobileGame] Component function called - v2.0 (Test screens removed)');
-  
   // Component state and hooks
-  const [debugVisible, setDebugVisible] = useState(true);
   const [viewState, setViewState] = useState<MobileViewState>('status');
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
   
@@ -41,17 +37,6 @@ export const MobileGame: React.FC = () => {
   const missions = usePlunderverseMissions();
   const { selectedPlanet, cameraPosition } = useSolarSystem();
   const heatSystem = useHeatSystem();
-  
-  // Debug logging for mobile rendering
-  useEffect(() => {
-    console.log('[MobileGame] Component mounted with:', {
-      phase,
-      isLanded,
-      landedPlanet,
-      viewState,
-      viewport
-    });
-  }, [phase, isLanded, landedPlanet, viewState, viewport]);
 
   // Mobile platform initialization and state refresh
   useEffect(() => {
@@ -68,25 +53,10 @@ export const MobileGame: React.FC = () => {
     };
   }, []);
 
-  // Add debug banner at the top for visibility
-  const debugBanner = debugVisible && (
-    <div className="fixed top-0 left-0 right-0 bg-red-600 text-white p-2 z-50 text-center text-xs">
-      MobileGame Rendering | Phase: {phase} | Landed: {isLanded ? 'Yes' : 'No'}
-      <button 
-        onClick={() => setDebugVisible(false)}
-        className="ml-4 px-2 py-1 bg-red-800 rounded"
-      >
-        Hide Debug
-      </button>
-    </div>
-  );
-
   // Mobile splash screen
   if (phase === 'splash') {
     return (
-      <>
-        {debugBanner}
-        <div className="fixed inset-0 bg-black flex items-center justify-center">
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
           <div className="text-center px-8">
             <img 
               src="/media/Plunderverse_logo.png" 
@@ -106,7 +76,6 @@ export const MobileGame: React.FC = () => {
             </button>
           </div>
         </div>
-      </>
     );
   }
 
@@ -121,11 +90,8 @@ export const MobileGame: React.FC = () => {
 
   // Show comprehensive status screen when not at a station
   if (!isLanded) {
-    console.log('[MobileGame] Rendering ship status (not landed)');
     return (
-      <>
-        {debugBanner}
-        <div className="fixed inset-0 bg-black flex flex-col">
+      <div className="fixed inset-0 bg-black flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-orange-600/30 px-4 py-3">
           <div className="flex items-center justify-between">
@@ -364,7 +330,6 @@ export const MobileGame: React.FC = () => {
           </p>
         </div>
       </div>
-      </>
     );
   }
 
@@ -379,7 +344,6 @@ export const MobileGame: React.FC = () => {
 
   // Handle mini-game navigation
   if (viewState === 'minigame') {
-    console.log('[MobileGame] Rendering minigame');
     return (
       <MobileMinigame 
         onBack={() => setViewState(isLanded ? 'station' : 'status')}
@@ -388,13 +352,9 @@ export const MobileGame: React.FC = () => {
   }
 
   // Main mobile game interface when landed or in station view
-  console.log('[MobileGame] Rendering StationDashboard (landed or station view)');
   return (
-    <>
-      {debugBanner}
-      <StationDashboard 
-        onOpenMinigame={() => setViewState('minigame')}
-      />
-    </>
+    <StationDashboard 
+      onOpenMinigame={() => setViewState('minigame')}
+    />
   );
 };
