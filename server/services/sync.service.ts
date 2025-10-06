@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from 'ws';
 import { Server as HTTPServer } from 'http';
+import { TransactionManager, Transaction, TransactionResult } from './TransactionManager';
 
 // Sync message types matching client
 export type SyncMessageType = 
@@ -9,7 +10,9 @@ export type SyncMessageType =
   | 'state_ack'
   | 'state_conflict'
   | 'heartbeat'
-  | 'sync_complete';
+  | 'sync_complete'
+  | 'transaction'  // NEW: Handle generic transactions
+  | 'transaction_result';  // NEW: Transaction results
 
 // Sync payload structure
 export interface SyncPayload {
@@ -19,6 +22,8 @@ export interface SyncPayload {
   clientId?: string;
   data: any;
   checksum?: string;
+  transaction?: Transaction;  // NEW: Transaction data
+  actionId?: string;  // NEW: For tracking responses
 }
 
 // Client connection
@@ -52,8 +57,12 @@ class SyncService {
   // Store latest game states per user for sync
   private gameStates: Map<string, any> = new Map();
   
+  // NEW: Transaction manager for authoritative economy
+  private transactionManager: TransactionManager;
+  
   constructor() {
     console.log('[SyncService] Initialized');
+    this.transactionManager = new TransactionManager();
   }
 
   public setupWebSocketServer(server: HTTPServer): void {
@@ -125,6 +134,9 @@ class SyncService {
       console.log(`[SyncService] Received ${payload.type} from ${clientId}`);
 
       switch (payload.type) {
+        case 'transaction':  // NEW: Handle generic transactions
+          this.handleTransaction(clientId, payload);
+          break;
         case 'state_update':
           this.handleStateUpdate(clientId, payload);
           break;
@@ -272,6 +284,114 @@ class SyncService {
     const client = this.clients.get(clientId);
     if (client) {
       client.lastActivity = Date.now();
+    }
+  }
+
+  // NEW: Handle generic transactions with server authority
+  private async handleTransaction(clientId: string, payload: SyncPayload): Promise<void> {
+    const client = this.clients.get(clientId);
+    if (!client || !client.userId) {
+      this.sendToClient(clientId, {
+        type: 'transaction_result',
+        timestamp: Date.now(),
+        version: this.globalVersion,
+        data: {
+          success: false,
+          error: 'Not authenticated',
+          actionId: payload.actionId
+        }
+      });
+      return;
+    }
+    
+    const userId = client.userId;
+    
+    // Initialize transaction manager with current game state if needed
+    const currentState = this.gameStates.get(userId) || {};
+    if (currentState.credits !== undefined || currentState.fuel !== undefined) {
+      this.transactionManager.setBalances(userId, {
+        credits: currentState.credits || 1000,
+        fuel: currentState.fuel || 100,
+        shipHull: currentState.shipHull || 100,
+        shipShield: currentState.shipShield || 100,
+        location: currentState.location || 'Earth'
+      });
+    }
+    
+    // Process the transaction
+    const transaction = payload.transaction || payload.data;
+    console.log(`[SyncService] Processing transaction for ${userId}: ${transaction.category}/${transaction.subtype || 'default'}`);
+    
+    const result = await this.transactionManager.processTransaction(userId, transaction);
+    
+    if (result.success) {
+      // Update the game state with new balances
+      const updatedState = this.gameStates.get(userId) || {};
+      
+      if (result.newBalances) {
+        updatedState.credits = result.newBalances.credits;
+        updatedState.fuel = result.newBalances.fuel;
+        updatedState.location = result.newBalances.location || updatedState.location;
+        updatedState.shipHull = result.newBalances.shipHull;
+        updatedState.shipShield = result.newBalances.shipShield;
+        
+        // Update inventory if changed
+        if (result.newBalances.inventory) {
+          updatedState.inventory = result.newBalances.inventory;
+        }
+      }
+      
+      this.gameStates.set(userId, updatedState);
+      this.globalVersion++;
+      
+      // Broadcast the updated state to ALL user's devices
+      const stateUpdate = {
+        type: 'state_update' as SyncMessageType,
+        timestamp: Date.now(),
+        version: this.globalVersion,
+        data: {
+          credits: result.newBalances?.credits,
+          fuel: result.newBalances?.fuel,
+          inventory: result.newBalances?.inventory,
+          shipHull: result.newBalances?.shipHull,
+          shipShield: result.newBalances?.shipShield,
+          location: result.newBalances?.location,
+          source: 'transaction'
+        }
+      };
+      
+      this.broadcastToUserClients(userId, stateUpdate);
+      
+      // Send success acknowledgment to requesting client
+      this.sendToClient(clientId, {
+        type: 'transaction_result',
+        timestamp: Date.now(),
+        version: this.globalVersion,
+        data: {
+          success: true,
+          transactionId: result.transactionId,
+          newBalances: result.newBalances,
+          sideEffects: result.sideEffects,
+          actionId: payload.actionId
+        }
+      });
+      
+      console.log(`[SyncService] Transaction successful. Broadcasted to all devices for ${userId}`);
+      
+    } else {
+      // Send error only to requesting client
+      this.sendToClient(clientId, {
+        type: 'transaction_result',
+        timestamp: Date.now(),
+        version: this.globalVersion,
+        data: {
+          success: false,
+          error: result.error,
+          actionId: payload.actionId
+        }
+      });
+      
+      console.log(`[SyncService] Transaction failed: ${result.error}`);
     }
   }
 
