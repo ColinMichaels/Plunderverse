@@ -77,7 +77,14 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   },
   
   setTime: (time) => set({ time }),
-  setSelectedPlanet: (planet) => set({ selectedPlanet: planet }),
+  setSelectedPlanet: (planet) => {
+    // Explicitly prevent sun from being selected
+    if (planet === "Sun") {
+      console.log("[useSolarSystem] Prevented Sun from being selected");
+      return;
+    }
+    set({ selectedPlanet: planet });
+  },
   setIsLanding: (landing) => set({ isLanding: landing }),
   setCameraPosition: (position) => set({ cameraPosition: position.clone() }),
   setDistanceToTarget: (distance) => set({ distanceToTarget: distance }),

@@ -67,6 +67,11 @@ export function CockpitHUD() {
     .sort((a, b) => a.currentDistance - b.currentDistance); // Sort by distance
 
   const handleSelectPlanet = (planetName: string) => {
+    // Prevent sun from being selected
+    if (planetName === "Sun") {
+      console.log("Cannot select the Sun - it's not a targetable object");
+      return;
+    }
     setSelectedPlanet(planetName);
     console.log(`Selected ${planetName} from navigation log`);
   };

@@ -5,6 +5,9 @@ export function PlanetInfo() {
   const { selectedPlanet } = useSolarSystem();
   
   if (!selectedPlanet) return null;
+  
+  // Explicitly exclude Sun from showing info
+  if (selectedPlanet === "Sun") return null;
 
   // Check both planets and moon data
   const planet = planets.find((p: any) => p.name === selectedPlanet);
