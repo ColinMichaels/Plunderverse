@@ -12,6 +12,7 @@ import { useInventory } from '../../lib/stores/economy/useInventory';
 import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+import type { Mission, MissionObjective } from '../../lib/plunderverse/types';
 
 type MobileViewState = 'status' | 'station' | 'minigame';
 
@@ -30,7 +31,7 @@ export const MobileGame: React.FC = () => {
   const { credits } = useCredits();
   const inventory = useInventory();
   const missions = usePlunderverseMissions();
-  const { selectedPlanet, playerPosition } = useSolarSystem();
+  const { selectedPlanet, cameraPosition } = useSolarSystem();
   const heatSystem = useHeatSystem();
   const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
   const [viewState, setViewState] = useState<MobileViewState>('status');
@@ -83,7 +84,7 @@ export const MobileGame: React.FC = () => {
   const fuelPercentage = (fuel / maxFuel) * 100;
 
   // Get current mission
-  const activeMission = missions.missions.find(m => !m.completed && m.status === 'active');
+  const activeMission = missions.activeMissions.find((m: Mission) => !m.completed && m.active);
 
   // Show comprehensive status screen when not at a station
   if (!isLanded) {
@@ -124,7 +125,7 @@ export const MobileGame: React.FC = () => {
               <div className="flex justify-between">
                 <span className="text-gray-400 text-sm">Coordinates:</span>
                 <span className="text-gray-300 text-sm font-mono">
-                  [{Math.round(playerPosition?.x || 0)}, {Math.round(playerPosition?.y || 0)}, {Math.round(playerPosition?.z || 0)}]
+                  [{Math.round(cameraPosition?.x || 0)}, {Math.round(cameraPosition?.y || 0)}, {Math.round(cameraPosition?.z || 0)}]
                 </span>
               </div>
               <div className="flex justify-between">
@@ -269,7 +270,7 @@ export const MobileGame: React.FC = () => {
               <p className="text-gray-400 text-sm mb-3">{activeMission.description}</p>
               {activeMission.objectives && activeMission.objectives.length > 0 && (
                 <div className="space-y-1">
-                  {activeMission.objectives.map((obj, idx) => (
+                  {activeMission.objectives.map((obj: MissionObjective, idx: number) => (
                     <div key={idx} className="flex items-center gap-2">
                       <div className={`w-4 h-4 rounded-full border-2 ${
                         obj.completed ? 'bg-green-500 border-green-500' : 'border-gray-500'
@@ -281,10 +282,10 @@ export const MobileGame: React.FC = () => {
                   ))}
                 </div>
               )}
-              {activeMission.reward && (
+              {activeMission.rewards?.base?.credits && (
                 <div className="mt-3 pt-3 border-t border-slate-700">
                   <p className="text-xs text-gray-400">Reward: 
-                    <span className="text-cyan-400 font-bold ml-2">{activeMission.reward.credits}c</span>
+                    <span className="text-cyan-400 font-bold ml-2">{activeMission.rewards.base.credits}c</span>
                   </p>
                 </div>
               )}

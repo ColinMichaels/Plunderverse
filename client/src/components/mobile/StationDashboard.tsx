@@ -19,6 +19,7 @@ import { useTradeHistory } from '../../lib/stores/economy/useTradeHistory';
 import { usePlunderverseMissions } from '../../lib/stores/economy/usePlunderverseMissions';
 import { toast } from 'sonner';
 import ReputationWarning from '../ReputationWarning';
+import type { Mission } from '../../lib/plunderverse/types';
 import { 
   Fuel, 
   Package, 
@@ -625,9 +626,9 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
                 >
                   <Flag className="w-5 h-5" />
                   <span className="text-xs">Missions</span>
-                  {missions.missions.filter(m => m.status === 'active' && !m.completed).length > 0 && (
+                  {missions.activeMissions.filter((m: Mission) => m.active && !m.completed).length > 0 && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-orange-600 text-white rounded-full text-xs flex items-center justify-center">
-                      {missions.missions.filter(m => m.status === 'active' && !m.completed).length}
+                      {missions.activeMissions.filter((m: Mission) => m.active && !m.completed).length}
                     </span>
                   )}
                 </button>
