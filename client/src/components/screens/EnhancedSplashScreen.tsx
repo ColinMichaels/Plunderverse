@@ -8,11 +8,15 @@ import { useCredits } from "../../lib/stores/economy/useCredits";
 import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useMusicPlayer } from "../../lib/stores/ui/useMusicPlayer";
+import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { MusicPlayer } from "./MusicPlayer";
 import { VideoModal } from "../shared/VideoModal";
 import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
 import { AuthScreen } from "../auth/AuthScreen";
+import { GameTransitionOverlay } from "./GameTransitionOverlay";
 import { gameApi } from "../../services/gameApi";
+import { restoreGameState } from "../../utils/saveGame";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { SolarSystemBackground } from "../space/SolarSystemBackground";
 import { 
@@ -29,9 +33,15 @@ export function EnhancedSplashScreen() {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
   const [showAuthScreen, setShowAuthScreen] = useState(false);
   const [hasSaves, setHasSaves] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionStatus, setTransitionStatus] = useState('');
+  const [transitionSubtitle, setTransitionSubtitle] = useState('');
+  const [transitionProgress, setTransitionProgress] = useState(0);
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
+  const { setSelectedPlanet } = useSolarSystem();
+  const { setLanded } = useLandedState();
   const { loadTracks, selectTrack, play, isLoaded } = useMusicPlayer();
   
   // Timer ref for auto-play
@@ -221,7 +231,7 @@ export function EnhancedSplashScreen() {
     return () => stopAmbientMusic();
   }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
 
-  const handleBeginJourney = () => {
+  const handleBeginJourney = async () => {
     if (isAuthenticated || isGuest) {
       hasStartedGameRef.current = true;
       // Clear the timer immediately when user starts the game
@@ -230,13 +240,102 @@ export function EnhancedSplashScreen() {
         clearTimeout(autoPlayTimerRef.current);
         autoPlayTimerRef.current = null;
       }
-      start();
+
+      // Start transition
+      setIsTransitioning(true);
+      setTransitionStatus('Initializing Systems');
+      setTransitionSubtitle('Preparing your ship for departure...');
+      setTransitionProgress(10);
+
+      try {
+        // Check for saved game
+        let savedLocation: string | null = null;
+        let isLanded = false;
+        
+        if (isAuthenticated && !isGuest) {
+          setTransitionStatus('Loading Your Ship');
+          setTransitionSubtitle('Retrieving saved position...');
+          setTransitionProgress(30);
+          
+          try {
+            const latestSave = await gameApi.getLatestSave();
+            if (latestSave) {
+              console.log('[EnhancedSplashScreen] Found saved game, loading state...');
+              
+              setTransitionStatus('Restoring Ship Systems');
+              setTransitionSubtitle('Loading your saved progress...');
+              setTransitionProgress(50);
+              
+              // Restore the game state
+              await restoreGameState(latestSave);
+              
+              // Get the saved location from the restored state
+              savedLocation = latestSave.location || null;
+              
+              // Check if player was landed on a planet
+              if (savedLocation && savedLocation !== 'Space') {
+                isLanded = true;
+                setTransitionStatus('Approaching ' + savedLocation);
+                setTransitionSubtitle('Preparing landing sequence...');
+              } else {
+                setTransitionStatus('Returning to Deep Space');
+                setTransitionSubtitle('Navigation systems online...');
+              }
+              
+              setTransitionProgress(70);
+            }
+          } catch (error) {
+            console.error('[EnhancedSplashScreen] Error loading save:', error);
+            // Continue with new game if save fails
+          }
+        }
+        
+        // If no saved location or new player, default to Earth
+        if (!savedLocation) {
+          savedLocation = 'Earth';
+          isLanded = false; // Start in space view of Earth
+          setTransitionStatus('Approaching Earth');
+          setTransitionSubtitle('Welcome to the Plunderverse, Captain...');
+          setTransitionProgress(70);
+        }
+
+        // Simulate loading time for cinematic effect
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
+        setTransitionStatus('Systems Online');
+        setTransitionSubtitle('Ready for adventure!');
+        setTransitionProgress(90);
+        
+        // Set the appropriate game state based on saved location
+        if (savedLocation !== 'Space') {
+          setSelectedPlanet(savedLocation);
+        }
+        
+        if (isLanded) {
+          setLanded(true);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setTransitionProgress(100);
+        
+        // Short delay before starting the game
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Start the game - this will trigger the phase change
+        start();
+        
+      } catch (error) {
+        console.error('[EnhancedSplashScreen] Error during transition:', error);
+        // Fallback to just starting the game
+        setIsTransitioning(false);
+        start();
+      }
     } else {
       setShowAuthScreen(true);
     }
   };
 
-  const handlePlayAsGuest = () => {
+  const handlePlayAsGuest = async () => {
     hasStartedGameRef.current = true;
     // Clear the timer immediately when user starts the game
     if (autoPlayTimerRef.current) {
@@ -244,8 +343,47 @@ export function EnhancedSplashScreen() {
       clearTimeout(autoPlayTimerRef.current);
       autoPlayTimerRef.current = null;
     }
+    
     useAuthStore.getState().playAsGuest();
-    start();
+    
+    // Start transition for guest player
+    setIsTransitioning(true);
+    setTransitionStatus('Initializing Systems');
+    setTransitionSubtitle('Preparing your ship for departure...');
+    setTransitionProgress(10);
+
+    try {
+      // Simulate loading time
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      setTransitionStatus('Approaching Earth');
+      setTransitionSubtitle('Welcome to the Plunderverse, Captain...');
+      setTransitionProgress(50);
+      
+      // Set default starting position for guest
+      setSelectedPlanet('Earth');
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setTransitionStatus('Systems Online');
+      setTransitionSubtitle('Ready for adventure!');
+      setTransitionProgress(90);
+      
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setTransitionProgress(100);
+      
+      // Short delay before starting the game
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Start the game
+      start();
+      
+    } catch (error) {
+      console.error('[EnhancedSplashScreen] Error during guest transition:', error);
+      // Fallback to just starting the game
+      setIsTransitioning(false);
+      start();
+    }
   };
 
   // Show auth screen when requested
@@ -606,6 +744,14 @@ export function EnhancedSplashScreen() {
       <div className="absolute bottom-4 right-4">
         <MusicPlayer />
       </div>
+      
+      {/* Game Transition Overlay */}
+      <GameTransitionOverlay
+        isVisible={isTransitioning}
+        status={transitionStatus}
+        subtitle={transitionSubtitle}
+        progress={transitionProgress}
+      />
     </div>
   );
 }

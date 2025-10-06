@@ -17,6 +17,31 @@
   }
 }
 
+/* Stars background animation for game transition */
+.stars-bg {
+  background-image: 
+    radial-gradient(2px 2px at 20px 30px, white, transparent),
+    radial-gradient(2px 2px at 40px 70px, white, transparent),
+    radial-gradient(1px 1px at 50px 50px, white, transparent),
+    radial-gradient(1px 1px at 80px 10px, white, transparent),
+    radial-gradient(2px 2px at 90px 40px, white, transparent),
+    radial-gradient(1px 1px at 130px 80px, white, transparent),
+    radial-gradient(1px 1px at 150px 60px, white, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars-move 30s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes stars-move {
+  from {
+    transform: translateX(0) translateY(0);
+  }
+  to {
+    transform: translateX(-200px) translateY(-200px);
+  }
+}
+
 /* Slide-in animations for panels - smoother */
 @keyframes slide-in-right {
   from {
