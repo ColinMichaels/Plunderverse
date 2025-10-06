@@ -33,6 +33,7 @@ import {bindInputHandlers, useInput} from "@/stores/useInput";
 import {Controls} from "@/lib/controls";
 import {useWeaponSystems} from "@/lib/stores/combat/useWeaponSystems";
 import {useFocusState} from "@/lib/stores/ui/useFocusState";
+import {BoostMeter} from "@/components/ui/BoostMeter";
 
 export function CameraController() {
   const { camera } = useThree();
@@ -60,6 +61,62 @@ export function CameraController() {
   const { hasFocus, isPaused, setFocus } = useFocusState();
 
   
+  // ===== ADVANCED FLIGHT CONTROL SYSTEM =====
+  // Thrust ramping system
+  const thrustHoldTimeRef = useRef<Record<string, number>>({
+    forward: 0,
+    backward: 0,
+    left: 0,
+    right: 0,
+    up: 0,
+    down: 0
+  });
+  const thrustRampDuration = 0.5; // Ramp to 100% over 0.5 seconds
+  const tapThreshold = 0.15; // 150ms for tap detection
+  
+  // Boost system state
+  const boostMeterRef = useRef(100); // Max 100 units
+  const maxBoostMeter = 100;
+  const boostDrainRate = 20; // Units per second
+  const boostRegenRate = 10; // Units per second
+  const boostMultiplier = 2.5; // 2.5x thrust when boosting
+  const boostVelocityMultiplier = 1.5; // 50% velocity increase
+  const isBoostingRef = useRef(false);
+  
+  // Rotation ramping system
+  const rotationHoldTimeRef = useRef<Record<string, number>>({
+    left: 0,
+    right: 0,
+    up: 0,
+    down: 0
+  });
+  const rotationRampDuration = 0.3; // Ramp rotation over 0.3 seconds
+  
+  // Friction damping
+  const frictionCoefficient = 0.95; // Applied when not thrusting
+  const minVelocityThreshold = 0.01; // Below this, velocity is clamped to 0
+  
+  // Track key press times for tap detection
+  const keyPressTimeRef = useRef<Record<string, number>>({
+    forward: 0,
+    backward: 0,
+    left: 0,
+    right: 0,
+    up: 0,
+    down: 0
+  });
+  
+  // Track key states
+  const previousKeyStateRef = useRef<Record<string, boolean>>({
+    forward: false,
+    backward: false,
+    left: false,
+    right: false,
+    up: false,
+    down: false,
+    boost: false
+  });
+
   // Dynamic FOV state for smooth camera adjustments
   const currentFOVRef = useRef(75);
   const targetFOVRef = useRef(75);
@@ -100,6 +157,30 @@ export function CameraController() {
   const tempVec3_2 = useRef(new THREE.Vector3());
   const tempQuaternion = useRef(new THREE.Quaternion());
   const tempMatrix = useRef(new THREE.Matrix4());
+  
+  // ===== HELPER FUNCTIONS =====
+  // Easing function for smooth acceleration curves
+  const easeInOutQuad = (t: number): number => {
+    return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+  };
+  
+  // Calculate thrust multiplier based on hold time
+  const calculateThrustMultiplier = (holdTime: number, isTap: boolean): number => {
+    if (isTap) {
+      return 0.3; // 30% instant thrust for taps
+    }
+    const rampProgress = Math.min(1.0, holdTime / thrustRampDuration);
+    return easeInOutQuad(rampProgress);
+  };
+  
+  // Calculate rotation multiplier based on hold time
+  const calculateRotationMultiplier = (holdTime: number, isTap: boolean): number => {
+    if (isTap) {
+      return 0.3; // 30% instant rotation for taps
+    }
+    const rampProgress = Math.min(1.0, holdTime / rotationRampDuration);
+    return easeInOutQuad(rampProgress);
+  };
 
   // Mobile control handlers for InputBus
   const handleMobileShoot = () => {
@@ -454,58 +535,161 @@ export function CameraController() {
       ? warpMaxVelocity * enginePerformance
       : baseMaxVelocity * enginePerformance;
 
+    // ===== ADVANCED FLIGHT CONTROL IMPLEMENTATION =====
     // Disable movement controls when autopilot is active, mining, landing, or landed on surface
     if (!isAutopilotActive && !isMining && !isLanding && !isLanded) {
-      // Detect double-click for warp mode
-      const currentTime = performance.now();
+      const currentTime = performance.now() / 1000; // Convert to seconds
+      const thrustKeys = ['forward', 'backward', 'left', 'right', 'up', 'down'] as const;
+      
+      // Update boost state
+      const isBoosting = controls.boost && boostMeterRef.current > 0;
+      if (isBoosting !== isBoostingRef.current) {
+        isBoostingRef.current = isBoosting;
+        if (isBoosting) {
+          console.log(`[BOOST] Activated! Meter: ${boostMeterRef.current.toFixed(0)}`);
+        }
+      }
+      
+      // Update boost meter
+      if (isBoosting) {
+        boostMeterRef.current = Math.max(0, boostMeterRef.current - boostDrainRate * delta);
+      } else {
+        boostMeterRef.current = Math.min(maxBoostMeter, boostMeterRef.current + boostRegenRate * delta);
+      }
+      
+      // Calculate boost modifiers
+      const currentBoostMultiplier = isBoosting ? boostMultiplier : 1.0;
+      const currentMaxVelocity = isBoosting ? maxVelocity * boostVelocityMultiplier : maxVelocity;
+      
+      // Track key states and detect taps for each thrust direction
+      thrustKeys.forEach(key => {
+        const isPressed = controls[key];
+        const wasPressed = previousKeyStateRef.current[key];
+        
+        // Key just pressed
+        if (isPressed && !wasPressed) {
+          keyPressTimeRef.current[key] = currentTime;
+          thrustHoldTimeRef.current[key] = 0;
+        }
+        // Key held
+        else if (isPressed && wasPressed) {
+          thrustHoldTimeRef.current[key] += delta;
+        }
+        // Key just released - check for tap
+        else if (!isPressed && wasPressed) {
+          const pressDuration = currentTime - keyPressTimeRef.current[key];
+          const isTap = pressDuration < tapThreshold;
+          
+          if (isTap && hasFuel) {
+            // Apply instant tap boost
+            const tapMultiplier = 0.3; // 30% instant thrust
+            let tapThrust = baseThrustWithPerformance * tapMultiplier * currentBoostMultiplier;
+            
+            // Apply tap boost in appropriate direction
+            switch (key) {
+              case 'forward':
+                tempVec3_1.current.copy(forward).multiplyScalar(tapThrust);
+                break;
+              case 'backward':
+                tempVec3_1.current.copy(forward).multiplyScalar(-tapThrust * 0.7);
+                break;
+              case 'left':
+                tempVec3_1.current.copy(right).multiplyScalar(-tapThrust * 0.8);
+                break;
+              case 'right':
+                tempVec3_1.current.copy(right).multiplyScalar(tapThrust * 0.8);
+                break;
+              case 'up':
+                tempVec3_1.current.copy(up).multiplyScalar(tapThrust * 0.6);
+                break;
+              case 'down':
+                tempVec3_1.current.copy(up).multiplyScalar(-tapThrust * 0.6);
+                break;
+            }
+            
+            // Apply the tap boost directly to velocity for instant response
+            velocity.add(tempVec3_1.current.multiplyScalar(delta * 3)); // Amplify tap effect
+            console.log(`[TAP-BOOST] ${key} tap detected! Duration: ${pressDuration.toFixed(3)}s`);
+          }
+          
+          // Reset hold time
+          thrustHoldTimeRef.current[key] = 0;
+        }
+        
+        // Update previous state
+        previousKeyStateRef.current[key] = isPressed;
+      });
+      
+      // Apply held thrust with ramping
       if (controls.forward && hasFuel) {
-        // Check for double-click
-        if (currentTime - lastForwardPressRef.current < 300) {
-          // 300ms window for double-click
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.forward, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier;
+        
+        // Check for double-click warp mode (preserve existing logic)
+        if (currentTime - lastForwardPressRef.current < 0.3) {
           const currentFuel = fuelTank?.currentDurability || 0;
           if (upgrades.warpCapability || currentFuel > 30) {
-            // Need warp upgrade OR sufficient fuel
             setWarpMode(true);
             forwardDoubleClickRef.current = true;
-            console.log("Warp mode activated!");
+            console.log("[WARP] Mode activated!");
           }
         }
         lastForwardPressRef.current = currentTime;
-
-        // Use temp vector to avoid creating new objects
-        tempVec3_1.current.copy(forward).multiplyScalar(thrustPower);
+        
+        // Apply ramped thrust
+        const finalThrust = isWarpMode ? effectiveThrust * warpThrustMultiplier : effectiveThrust;
+        tempVec3_1.current.copy(forward).multiplyScalar(finalThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
       } else if (!controls.forward && isWarpMode) {
-        // Deactivate warp when forward key is released
         setWarpMode(false);
         forwardDoubleClickRef.current = false;
-        console.log("Warp mode deactivated");
+        console.log("[WARP] Mode deactivated");
       }
+      
       if (controls.backward && hasFuel) {
-        tempVec3_1.current.copy(forward).multiplyScalar(-thrustPower * 0.7);
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.backward, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier * 0.7;
+        tempVec3_1.current.copy(forward).multiplyScalar(-effectiveThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
       }
+      
       if (controls.left && hasFuel) {
-        tempVec3_1.current.copy(right).multiplyScalar(-thrustPower * 0.8);
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.left, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier * 0.8;
+        tempVec3_1.current.copy(right).multiplyScalar(-effectiveThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
       }
+      
       if (controls.right && hasFuel) {
-        tempVec3_1.current.copy(right).multiplyScalar(thrustPower * 0.8);
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.right, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier * 0.8;
+        tempVec3_1.current.copy(right).multiplyScalar(effectiveThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
       }
+      
       if (controls.up && hasFuel) {
-        tempVec3_1.current.copy(up).multiplyScalar(thrustPower * 0.6);
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.up, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier * 0.6;
+        tempVec3_1.current.copy(up).multiplyScalar(effectiveThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
       }
+      
       if (controls.down && hasFuel) {
-        tempVec3_1.current.copy(up).multiplyScalar(-thrustPower * 0.6);
+        const multiplier = calculateThrustMultiplier(thrustHoldTimeRef.current.down, false);
+        const effectiveThrust = baseThrustWithPerformance * multiplier * currentBoostMultiplier * 0.6;
+        tempVec3_1.current.copy(up).multiplyScalar(-effectiveThrust);
         acceleration.add(tempVec3_1.current);
         thrusterActive = true;
+      }
+      
+      // Clamp velocity to max speed (with boost modifier)
+      if (velocity.length() > currentMaxVelocity) {
+        velocity.normalize().multiplyScalar(currentMaxVelocity);
       }
     } // End movement controls check (autopilot, mining, landing, landed)
 
@@ -576,8 +760,25 @@ export function CameraController() {
       tempVec3_1.current.copy(acceleration).multiplyScalar(delta);
       velocity.add(tempVec3_1.current);
 
-      // Apply drag/friction
-      velocity.multiplyScalar(dragCoefficient);
+      // ===== IMPROVED FRICTION DAMPING SYSTEM =====
+      // Apply smooth friction-based deceleration instead of hard clamping
+      if (!thrusterActive) {
+        // Only apply friction when not actively thrusting
+        velocity.multiplyScalar(frictionCoefficient);
+        
+        // Clamp very small velocities to zero to prevent drift
+        if (velocity.length() < minVelocityThreshold) {
+          velocity.set(0, 0, 0);
+        }
+      } else {
+        // Apply reduced drag when thrusting (allows momentum buildup)
+        velocity.multiplyScalar(dragCoefficient);
+      }
+      
+      // Log velocity for debugging when boosting
+      if (isBoostingRef.current && frameCount % 30 === 0) {
+        console.log(`[PHYSICS] Velocity: ${velocity.length().toFixed(1)} / ${currentMaxVelocity.toFixed(1)} | Boost: ${boostMeterRef.current.toFixed(0)}`);
+      }
     }
 
     // Planet collision detection - THROTTLED (only check every N frames)
@@ -1061,5 +1262,13 @@ export function CameraController() {
     };
   }, []);
 
-  return null;
+  return (
+    <>
+      <BoostMeter 
+        boostMeterRef={boostMeterRef} 
+        maxBoost={maxBoostMeter} 
+        isBoostingRef={isBoostingRef} 
+      />
+    </>
+  );
 }

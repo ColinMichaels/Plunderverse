@@ -453,7 +453,8 @@ export const usePlayer = create<PlayerState>((set, get) => ({
     // Use the domain credits store for proper credit management
     import('../../../domain/economy/credits.store').then(({ useCreditsStore }) => {
       const creditsStore = useCreditsStore.getState();
-      creditsStore.addCredits(amount);
+      // FIXED: Use earnCredits instead of non-existent addCredits
+      creditsStore.earnCredits(amount);
       console.log(`[Player] Added ${amount} credits from combat reward`);
     });
   },
