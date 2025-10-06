@@ -820,7 +820,8 @@ export function CameraController() {
     }
 
     // Landing mode - only allow if close to planet and not recently attempted
-    if (controls.land && selectedPlanet && !isLanding) {
+    // Disable landing during autopilot to prevent interference
+    if (controls.land && selectedPlanet && !isLanding && !isAutopilotActive) {
       const currentTime = state.clock.elapsedTime;
 
       // Check if enough time has passed since last landing attempt (2 second cooldown)
@@ -854,83 +855,92 @@ export function CameraController() {
       }
     }
 
-    // Shooting
-    if (controls && controls.shoot) {
-      try {
-        const currentTime = state.clock.elapsedTime;
-        if (currentTime - lastShotTimeRef.current > 0.2) {
-          // 200ms cooldown
-          lastShotTimeRef.current = currentTime;
+    // Shooting - disable all weapon controls during autopilot to prevent interference
+    if (!isAutopilotActive) {
+      // Basic shooting
+      if (controls && controls.shoot) {
+        try {
+          const currentTime = state.clock.elapsedTime;
+          if (currentTime - lastShotTimeRef.current > 0.2) {
+            // 200ms cooldown
+            lastShotTimeRef.current = currentTime;
 
-          // Use cached forward direction
-          const shootDirection = cachedDirectionsRef.current.forward.clone();
+            // Use cached forward direction
+            const shootDirection = cachedDirectionsRef.current.forward.clone();
+            
+            // Create projectile from camera position
+            console.log("Firing laser...");
+            addProjectile(camera.position.clone(), shootDirection);
+            playLaser();
+          }
+        } catch (error) {
+          console.error("Error firing laser:", error);
+        }
+      }
+      
+      // Torpedo lock-on and fire (T key)
+      if (controls && controls.torpedo) {
+        const currentTime = state.clock.elapsedTime;
+        if (currentTime - lastTorpedoPressRef.current > 0.5) {
+          lastTorpedoPressRef.current = currentTime;
           
-          // Create projectile from camera position
-          console.log("Firing laser...");
-          addProjectile(camera.position.clone(), shootDirection);
-          playLaser();
+          const cameraDirection = cachedDirectionsRef.current.forward.clone();
+          
+          if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
+            // Fire torpedo if locked
+            fireTorpedo(camera.position.clone(), cameraDirection);
+          } else {
+            // Start locking
+            startLocking(camera.position.clone(), cameraDirection);
+          }
         }
-      } catch (error) {
-        console.error("Error firing laser:", error);
+      } else if (isLocking && !controls.torpedo) {
+        // Release key cancels lock
+        cancelLocking();
       }
-    }
-    
-    // Torpedo lock-on and fire (T key)
-    if (controls && controls.torpedo) {
-      const currentTime = state.clock.elapsedTime;
-      if (currentTime - lastTorpedoPressRef.current > 0.5) {
-        lastTorpedoPressRef.current = currentTime;
-        
+      
+      // Missile lock-on and fire (M key)
+      if (controls && controls.missile) {
+        const currentTime = state.clock.elapsedTime;
+        if (currentTime - lastMissilePressRef.current > 0.5) {
+          lastMissilePressRef.current = currentTime;
+          
+          const cameraDirection = cachedDirectionsRef.current.forward.clone();
+          
+          if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
+            // Fire missile if locked
+            fireMissile(camera.position.clone(), cameraDirection);
+          } else {
+            // Start locking
+            startLocking(camera.position.clone(), cameraDirection);
+          }
+        }
+      } else if (isLocking && !controls.missile) {
+        // Release key cancels lock
+        cancelLocking();
+      }
+      
+      // Update weapon systems
+      updateCooldowns(delta);
+      updateHomingProjectiles(delta);
+      if (isLocking) {
         const cameraDirection = cachedDirectionsRef.current.forward.clone();
-        
-        if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
-          // Fire torpedo if locked
-          fireTorpedo(camera.position.clone(), cameraDirection);
-        } else {
-          // Start locking
-          startLocking(camera.position.clone(), cameraDirection);
-        }
+        updateLocking(delta, camera.position.clone(), cameraDirection);
       }
-    } else if (isLocking && !controls.torpedo) {
-      // Release key cancels lock
-      cancelLocking();
-    }
-    
-    // Missile lock-on and fire (M key)
-    if (controls && controls.missile) {
-      const currentTime = state.clock.elapsedTime;
-      if (currentTime - lastMissilePressRef.current > 0.5) {
-        lastMissilePressRef.current = currentTime;
-        
-        const cameraDirection = cachedDirectionsRef.current.forward.clone();
-        
-        if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
-          // Fire missile if locked
-          fireMissile(camera.position.clone(), cameraDirection);
-        } else {
-          // Start locking
-          startLocking(camera.position.clone(), cameraDirection);
-        }
+    } else {
+      // Cancel any active lock during autopilot
+      if (isLocking) {
+        cancelLocking();
       }
-    } else if (isLocking && !controls.missile) {
-      // Release key cancels lock
-      cancelLocking();
-    }
-    
-    // Update weapon systems
-    updateCooldowns(delta);
-    updateHomingProjectiles(delta);
-    if (isLocking) {
-      const cameraDirection = cachedDirectionsRef.current.forward.clone();
-      updateLocking(delta, camera.position.clone(), cameraDirection);
     }
 
     // Mouse and mobile look controls with damping for smoother rotation
     const mouse = state.mouse;
     camera.rotation.order = "YXZ";
 
-    // Only apply look controls if not landing, has focus, and not paused
-    if (!isLanding && hasFocus && !isPaused) {
+    // Only apply look controls if not landing, has focus, not paused, AND not in autopilot
+    // Autopilot should have full control of camera orientation
+    if (!isLanding && hasFocus && !isPaused && !isAutopilotActive) {
       // Combine mouse and mobile rotation inputs
       // Dramatically increased sensitivity for instant, snappy combat aiming
       const mouseX = mouse.x * sensitivity * 20.0; // Increased from 5.0 to 20.0 for instant response
@@ -959,8 +969,8 @@ export function CameraController() {
 
       // Decay mobile rotation input
       mobileRotationRef.current.multiplyScalar(0.95);
-    } else if (!hasFocus || isPaused) {
-      // Clear mobile rotation when paused or unfocused
+    } else if (!hasFocus || isPaused || isAutopilotActive) {
+      // Clear mobile rotation when paused, unfocused, or in autopilot
       mobileRotationRef.current.set(0, 0);
     }
 
