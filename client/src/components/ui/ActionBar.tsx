@@ -226,10 +226,11 @@ export function ActionBar() {
       </div>
 
       {/* Fast Travel Menu */}
-      <FastTravelMenu 
-        isOpen={showFastTravel}
-        onClose={() => setShowFastTravel(false)}
-      />
+      {showFastTravel && (
+        <FastTravelMenu 
+          onClose={() => setShowFastTravel(false)}
+        />
+      )}
 
       {/* Panels - sliding in from right with proper spacing from action bar */}
       <div className="fixed right-16 top-1/2 -translate-y-1/2 w-96 h-[80vh] max-h-[600px] z-50 pointer-events-none">

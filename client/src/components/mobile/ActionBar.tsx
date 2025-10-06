@@ -58,10 +58,11 @@ export function ActionBar() {
       </div>
       
       {/* Fast Travel Menu */}
-      <FastTravelMenu 
-        isOpen={showFastTravel}
-        onClose={() => setShowFastTravel(false)}
-      />
+      {showFastTravel && (
+        <FastTravelMenu 
+          onClose={() => setShowFastTravel(false)}
+        />
+      )}
     </>
   );
 }

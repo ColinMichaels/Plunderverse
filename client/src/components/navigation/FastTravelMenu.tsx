@@ -3,6 +3,7 @@ import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 import { useCredits } from "../../lib/stores/economy/useCredits";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { planets } from "../../lib/planetData";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { Fuel, Coins, Clock, AlertCircle } from "lucide-react";
@@ -13,12 +14,19 @@ interface FastTravelMenuProps {
 }
 
 export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
-  const { planets, selectedPlanetIndex, warpToPlanet } = useSolarSystem();
+  const { selectedPlanet, setSelectedPlanet } = useSolarSystem();
   const { fuel, maxFuel, consumeFuel } = useShipStatus();
   const { credits, deductCredits } = useCredits();
   const { equipment } = useEquipment();
   
-  const currentPlanet = planets[selectedPlanetIndex];
+  // Find current planet index safely
+  const currentPlanetIndex = selectedPlanet 
+    ? planets.findIndex(p => p.name === selectedPlanet)
+    : 0; // Default to Mercury (index 0) if no planet selected
+  
+  // Ensure we have a valid index
+  const selectedPlanetIndex = currentPlanetIndex >= 0 ? currentPlanetIndex : 0;
+  
   const hasFastTravelModule = equipment.some(e => e.type === "navigation" && e.name.includes("Fast Travel"));
   
   const calculateTravelCost = (targetIndex: number) => {
@@ -54,9 +62,14 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     // Perform the fast travel
     consumeFuel(fuelCost);
     deductCredits(creditCost);
-    warpToPlanet(targetIndex);
     
-    toast.success(`Fast traveled to ${planets[targetIndex].name}!`);
+    // Update selected planet using planet name
+    const targetPlanet = planets[targetIndex];
+    if (targetPlanet) {
+      setSelectedPlanet(targetPlanet.name);
+      toast.success(`Fast traveled to ${targetPlanet.name}!`);
+    }
+    
     if (onClose) onClose();
   };
   
