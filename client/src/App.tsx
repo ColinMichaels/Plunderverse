@@ -10,7 +10,6 @@ import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { PatrolEncounter } from "./components/space/PatrolEncounter";
 import { MobileGame } from "./components/mobile/MobileGame";
-import { MobileGameFix } from "./components/mobile/MobileGameFix";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
