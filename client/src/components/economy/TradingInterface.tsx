@@ -4,6 +4,7 @@ import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useMining } from "../../lib/stores/economy/useMining";
 import { economyService } from "../../domain/economy/economy.service";
 import { gameFacade } from "../../lib/plunderverse/gameFacade";
+import { toast } from "sonner";
 
 interface TradingInterfaceProps {
   isVisible: boolean;
@@ -46,6 +47,13 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
     
     const result = economyService.sellResource(resourceType, quantity);
     if (result.success) {
+      // Show success toast with details
+      const creditsEarned = result.details?.creditsEarned || 0;
+      toast.success(`💰 ${result.message}`, {
+        description: `Earned ${creditsEarned} credits`,
+        duration: 3000
+      });
+      
       // Reset quantity selection
       setSelectedQuantity(prev => ({ ...prev, [resourceType]: 1 }));
       
@@ -63,6 +71,12 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
       } catch (error) {
         console.error('[OBJECTIVE-TRIGGER] Error reporting trade:', error);
       }
+    } else {
+      // Show error toast
+      toast.error('Sale failed', {
+        description: result.message,
+        duration: 3000
+      });
     }
     
     // Clear loading state
@@ -70,24 +84,79 @@ export function TradingInterface({ isVisible, onClose }: TradingInterfaceProps) 
   };
 
   const handleBuyFuel = (amount: number) => {
-    economyService.buyFuel(amount);
+    const result = economyService.buyFuel(amount);
+    if (result.success) {
+      toast.success('⛽ ' + result.message, {
+        description: `Spent ${result.details?.creditsSpent || 0} credits`,
+        duration: 3000
+      });
+    } else {
+      toast.error('Fuel purchase failed', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleRepairEquipment = (equipmentId: string) => {
-    economyService.repairEquipment(equipmentId);
+    const result = economyService.repairEquipment(equipmentId);
+    if (result.success) {
+      toast.success('🔧 ' + result.message, {
+        description: `Spent ${result.details?.creditsSpent || 0} credits`,
+        duration: 3000
+      });
+    } else {
+      toast.error('Repair failed', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleUpgradeDrill = () => {
-    economyService.upgradeDrill();
+    const result = economyService.upgradeDrill();
+    if (result.success) {
+      toast.success('⛏️ Mining drill upgraded!', {
+        description: result.message,
+        duration: 3000
+      });
+    } else {
+      toast.error('Upgrade failed', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleUpgradeExtractor = () => {
-    economyService.upgradeExtractor();
+    const result = economyService.upgradeExtractor();
+    if (result.success) {
+      toast.success('🔬 Extractor upgraded!', {
+        description: result.message,
+        duration: 3000
+      });
+    } else {
+      toast.error('Upgrade failed', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleUpgradeStorage = () => {
     const additionalCapacity = 50;
-    economyService.upgradeStorage(additionalCapacity);
+    const result = economyService.upgradeStorage(additionalCapacity);
+    if (result.success) {
+      toast.success('📦 Storage upgraded!', {
+        description: `Added ${additionalCapacity} storage units`,
+        duration: 3000
+      });
+    } else {
+      toast.error('Upgrade failed', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const getQuantityToSell = (resourceType: string, maxQuantity: number) => {
