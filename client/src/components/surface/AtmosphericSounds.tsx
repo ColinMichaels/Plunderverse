@@ -58,47 +58,59 @@ export function AtmosphericSounds({
   const getWindParams = useCallback((planet: string, intensity: number) => {
     let shouldPlayWind = false;
     let windVolume = 0.3;
+    let windRate = 1.0;  // Playback rate for pitch variation
 
     switch (planet) {
       case "Mars":
         shouldPlayWind = true;
-        windVolume = 0.4 + intensity * 0.3;
+        windVolume = 0.2 + intensity * 0.4;  // 0.2 to 0.6 range
+        windRate = 0.8 + intensity * 0.4;    // Deeper sound for dust storms
         break;
       case "Venus":
         shouldPlayWind = true;
-        windVolume = 0.2; // Muffled due to thick atmosphere
+        windVolume = 0.15 + intensity * 0.1; // 0.15 to 0.25 - Muffled thick atmosphere
+        windRate = 0.6;                      // Very low pitch for dense atmosphere
         break;
       case "Earth":
-        shouldPlayWind = intensity > 0.3;
-        windVolume = 0.2 + intensity * 0.2;
+        shouldPlayWind = intensity > 0.2;
+        windVolume = 0.1 + intensity * 0.3;  // 0.1 to 0.4 range
+        windRate = 0.9 + intensity * 0.2;    // Natural wind sound
         break;
       case "Jupiter":
       case "Saturn":
       case "Neptune":
         shouldPlayWind = true;
-        windVolume = 0.5 + intensity * 0.4; // Strong winds
+        windVolume = 0.3 + intensity * 0.5;  // 0.3 to 0.8 - Strong winds
+        windRate = 1.0 + intensity * 0.5;    // Higher pitch for fast winds
         break;
       case "Moon":
       case "Mercury":
         shouldPlayWind = false; // No atmosphere
+        windVolume = 0;
+        windRate = 1.0;
+        break;
+      default:
+        shouldPlayWind = intensity > 0.3;
+        windVolume = 0.15 + intensity * 0.25;
+        windRate = 0.9 + intensity * 0.2;
         break;
     }
 
-    return { shouldPlayWind, windVolume };
+    return { shouldPlayWind, windVolume, windRate };
   }, []);
 
   // Initialize wind sound
   useEffect(() => {
     if (soundVolume === 0) return;
 
-    const { shouldPlayWind, windVolume } = getWindParams(planetName, safeWindIntensity);
+    const { shouldPlayWind, windVolume, windRate } = getWindParams(planetName, safeWindIntensity);
 
     const playWindSound = async () => {
       if (shouldPlayWind && !activeWindSoundRef.current) {
         try {
           // Get or load the sound from cache
           const windSound = await soundEffectsCache.getSound(windSoundKey, {
-            path: AUDIO_CONFIG.soundEffects.ambient.path,
+            path: AUDIO_CONFIG.soundEffects.wind.path,
             volume: windVolume * soundVolume,
             loop: true
           });
@@ -106,7 +118,7 @@ export function AtmosphericSounds({
           activeWindSoundRef.current = windSound;
           
           // Set the rate to vary pitch with intensity
-          const safeRate = Math.max(0.1, Math.min(4, 0.5 + safeWindIntensity * 0.5));
+          const safeRate = Math.max(0.5, Math.min(2, windRate));
           windSound.rate(safeRate);
           
           // Play the sound and store the ID
@@ -149,11 +161,11 @@ export function AtmosphericSounds({
   // Update wind volume/rate separately when intensity changes
   useEffect(() => {
     if (activeWindSoundRef.current && windSoundIdRef.current !== null) {
-      const { windVolume } = getWindParams(planetName, safeWindIntensity);
+      const { windVolume, windRate } = getWindParams(planetName, safeWindIntensity);
       const updateVolume = Math.max(0, Math.min(1, windVolume * soundVolume));
       activeWindSoundRef.current.volume(updateVolume);
       
-      const safeRate = Math.max(0.1, Math.min(4, 0.5 + safeWindIntensity * 0.5));
+      const safeRate = Math.max(0.5, Math.min(2, windRate));
       activeWindSoundRef.current.rate(safeRate);
     }
   }, [safeWindIntensity, planetName, soundVolume, getWindParams]);
@@ -165,7 +177,7 @@ export function AtmosphericSounds({
     const playStormSound = async () => {
       if (stormActive && !activeStormSoundRef.current) {
         try {
-          const stormVolume = Math.max(0, Math.min(1, 0.6 * soundVolume));
+          const stormVolume = Math.max(0, Math.min(1, 0.3 * soundVolume));  // Reduced from 0.6 to 0.3
           
           // Get or load the storm sound from cache
           const stormSound = await soundEffectsCache.getSound(stormSoundKey, {

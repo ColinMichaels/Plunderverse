@@ -39,62 +39,70 @@ export const useWind = create<WindState>((set, get) => ({
     
     switch (planetName) {
       case "Mars":
-        // Strong dust storms with high turbulence
-        baseIntensity = 0.7;
-        baseTurbulence = 0.3;
-        gustFrequency = 1.2;
+        // Strong dust storms with moderate turbulence (reduced for stability)
+        baseIntensity = 0.6;
+        baseTurbulence = 0.15;
+        gustFrequency = 0.4;
         break;
       case "Venus":
         // Slow but steady dense atmosphere
-        baseIntensity = 0.4;
-        baseTurbulence = 0.05;
-        gustFrequency = 0.2;
+        baseIntensity = 0.35;
+        baseTurbulence = 0.03;
+        gustFrequency = 0.1;
         break;
       case "Earth":
-        // Moderate winds with regular gusts
-        baseIntensity = 0.5;
-        baseTurbulence = 0.15;
-        gustFrequency = 0.8;
+        // Moderate winds with gentle gusts
+        baseIntensity = 0.45;
+        baseTurbulence = 0.08;
+        gustFrequency = 0.3;
         break;
       case "Jupiter":
       case "Saturn":
       case "Neptune":
-        // Gas giants with extreme winds
-        baseIntensity = 1.0;
-        baseTurbulence = 0.5;
-        gustFrequency = 2.0;
+        // Gas giants with strong but stable winds
+        baseIntensity = 0.8;
+        baseTurbulence = 0.2;
+        gustFrequency = 0.5;
         break;
       case "Moon":
       case "Mercury":
         // No atmosphere, minimal wind
-        baseIntensity = 0.05;
-        baseTurbulence = 0.01;
-        gustFrequency = 0.1;
+        baseIntensity = 0.02;
+        baseTurbulence = 0.005;
+        gustFrequency = 0.05;
         break;
       default:
         break;
     }
     
-    // Apply time-based variations
-    const gustCycle = Math.sin(newTimeFactor * gustFrequency) * 0.5 + 0.5;
-    const turbulenceCycle = Math.sin(newTimeFactor * 2.3) * 0.3 + 
-                           Math.sin(newTimeFactor * 3.7) * 0.2;
+    // Apply time-based variations with much slower changes to reduce jitter
+    const gustCycle = Math.sin(newTimeFactor * gustFrequency * 0.3) * 0.5 + 0.5;  // Slowed down by 0.3x
+    const turbulenceCycle = Math.sin(newTimeFactor * 0.5) * 0.15 +   // Reduced amplitude and frequency
+                           Math.sin(newTimeFactor * 0.8) * 0.1;
     
-    // Update wind direction with slow rotation
-    const directionAngle = newTimeFactor * 0.1 + turbulenceCycle * 0.2;
-    const newDirection = new THREE.Vector3(
+    // Update wind direction with VERY slow rotation to reduce jitter
+    const directionAngle = newTimeFactor * 0.02 + turbulenceCycle * 0.05;  // Much slower rotation
+    const targetDirection = new THREE.Vector3(
       Math.cos(directionAngle),
-      Math.sin(newTimeFactor * 0.3) * 0.2, // Vertical component
+      Math.sin(newTimeFactor * 0.1) * 0.1, // Reduced vertical component
       Math.sin(directionAngle)
-    ).normalize();
+    );
     
-    // Calculate final intensity
-    const finalIntensity = baseIntensity + gustCycle * state.gustStrength;
-    const finalTurbulence = baseTurbulence + Math.abs(turbulenceCycle) * 0.1;
+    // Smooth interpolation of direction to prevent sudden changes
+    const currentDirection = state.direction;
+    const smoothedDirection = currentDirection.clone().lerp(targetDirection, deltaTime * 0.5);
+    smoothedDirection.normalize();
+    
+    // Calculate final intensity with reduced variations
+    const targetIntensity = baseIntensity + gustCycle * state.gustStrength * 0.5;  // Reduced gust effect
+    const currentIntensity = state.intensity;
+    const smoothedIntensity = currentIntensity + (targetIntensity - currentIntensity) * deltaTime * 2;
+    
+    const finalTurbulence = baseTurbulence + Math.abs(turbulenceCycle) * 0.05;  // Reduced turbulence
     
     set({
-      direction: newDirection,
-      intensity: finalIntensity,
+      direction: smoothedDirection,
+      intensity: smoothedIntensity,
       turbulence: finalTurbulence,
       planetName: planetName,
       timeFactor: newTimeFactor
