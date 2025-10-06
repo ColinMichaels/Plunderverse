@@ -260,8 +260,8 @@ class MiniGameSyncService {
     const unsubInventory = useInventoryStore.subscribe((state, prevState) => {
       if (!this.isMinigameActive) return;
       
-      if (JSON.stringify(state.inventory) !== JSON.stringify(prevState.inventory)) {
-        this.queueStateChange('inventory', 'items', prevState.inventory, state.inventory);
+      if (JSON.stringify(state.items) !== JSON.stringify(prevState.items)) {
+        this.queueStateChange('inventory', 'items', prevState.items, state.items);
       }
     });
     this.unsubscribers.push(unsubInventory);
@@ -270,8 +270,8 @@ class MiniGameSyncService {
     const unsubHeat = useHeatSystem.subscribe((state, prevState) => {
       if (!this.isMinigameActive) return;
       
-      if (state.heat !== prevState.heat) {
-        this.queueStateChange('heat', 'level', prevState.heat, state.heat);
+      if (state.currentHeat !== prevState.currentHeat) {
+        this.queueStateChange('heat', 'level', prevState.currentHeat, state.currentHeat);
       }
       
       if (state.wantedLevel !== prevState.wantedLevel) {
@@ -284,8 +284,8 @@ class MiniGameSyncService {
     const unsubCrew = useCrewManagement.subscribe((state, prevState) => {
       if (!this.isMinigameActive) return;
       
-      if (JSON.stringify(state.crew) !== JSON.stringify(prevState.crew)) {
-        this.queueStateChange('crew', 'members', prevState.crew, state.crew);
+      if (JSON.stringify(state.activeCrew) !== JSON.stringify(prevState.activeCrew)) {
+        this.queueStateChange('crew', 'members', prevState.activeCrew, state.activeCrew);
       }
     });
     this.unsubscribers.push(unsubCrew);
@@ -298,8 +298,8 @@ class MiniGameSyncService {
         this.queueStateChange('missions', 'active', prevState.activeMissions, state.activeMissions);
       }
       
-      if (JSON.stringify(state.completedMissions) !== JSON.stringify(prevState.completedMissions)) {
-        this.queueStateChange('missions', 'completed', prevState.completedMissions, state.completedMissions);
+      if (JSON.stringify(Array.from(state.completedMissionIds)) !== JSON.stringify(Array.from(prevState.completedMissionIds))) {
+        this.queueStateChange('missions', 'completed', Array.from(prevState.completedMissionIds), Array.from(state.completedMissionIds));
       }
     });
     this.unsubscribers.push(unsubMissions);
@@ -441,7 +441,7 @@ class MiniGameSyncService {
     }
 
     if (stores.inventory) {
-      useInventoryStore.setState({ inventory: stores.inventory });
+      useInventoryStore.setState({ items: stores.inventory });
     }
 
     if (stores.missions) {
@@ -449,7 +449,7 @@ class MiniGameSyncService {
     }
 
     if (stores.crew) {
-      useCrewManagement.setState({ crew: stores.crew });
+      useCrewManagement.setState({ activeCrew: stores.crew });
     }
 
     if (stores.ship) {
@@ -472,7 +472,7 @@ class MiniGameSyncService {
         
       case 'inventory':
         if (delta.changes.items) {
-          useInventoryStore.setState({ inventory: delta.changes.items });
+          useInventoryStore.setState({ items: delta.changes.items });
         }
         break;
         
@@ -483,7 +483,7 @@ class MiniGameSyncService {
         
       case 'crew':
         if (delta.changes.members) {
-          useCrewManagement.setState({ crew: delta.changes.members });
+          useCrewManagement.setState({ activeCrew: delta.changes.members });
         }
         break;
         

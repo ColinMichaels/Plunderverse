@@ -141,10 +141,12 @@ export interface Mission {
   timeLimit?: number;
   active: boolean;
   completed: boolean;
+  faction?: FactionId; // Added faction property for faction-aligned missions
 }
 
 export interface MissionRequirements {
   reputation?: Record<FactionId, number>;
+  maxReputation?: Record<FactionId, number>; // Maximum reputation limits (e.g., for outlaw missions requiring bad corp rep)
   cargoSpace?: number;
   heatLevel?: { max?: number; min?: number };
   credits?: number;

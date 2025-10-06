@@ -47,7 +47,7 @@ class SyncService {
   private clients: Map<string, SyncClient> = new Map();
   private stateVersions: Map<string, StateVersion> = new Map();
   private globalVersion: number = 0;
-  private heartbeatInterval: NodeJS.Timer | null = null;
+  private heartbeatInterval: NodeJS.Timeout | null = null;
   
   // Store latest game states per user for sync
   private gameStates: Map<string, any> = new Map();
@@ -418,11 +418,11 @@ class SyncService {
 
   private broadcastToUserClients(userId: string, payload: SyncPayload, excludeClientId?: string): void {
     // Find all clients for this user
-    for (const [clientId, client] of this.clients) {
+    Array.from(this.clients.entries()).forEach(([clientId, client]) => {
       if (client.userId === userId && clientId !== excludeClientId) {
         this.sendToClient(clientId, payload);
       }
-    }
+    });
   }
 
   private sendToClient(clientId: string, payload: SyncPayload): void {
@@ -456,20 +456,20 @@ class SyncService {
 
   private startHeartbeatMonitor(): void {
     if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
+      clearInterval(this.heartbeatInterval as NodeJS.Timeout);
     }
 
     this.heartbeatInterval = setInterval(() => {
       const now = Date.now();
       const timeout = 60000; // 60 seconds timeout
       
-      for (const [clientId, client] of this.clients) {
+      Array.from(this.clients.entries()).forEach(([clientId, client]) => {
         if (now - client.lastActivity > timeout) {
           console.log(`[SyncService] Client ${clientId} timed out`);
           client.ws.terminate();
           this.clients.delete(clientId);
         }
-      }
+      });
     }, 30000); // Check every 30 seconds
   }
 
@@ -510,12 +510,12 @@ class SyncService {
 
   public shutdown(): void {
     if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
+      clearInterval(this.heartbeatInterval as NodeJS.Timeout);
     }
 
-    for (const client of this.clients.values()) {
+    Array.from(this.clients.values()).forEach(client => {
       client.ws.close();
-    }
+    });
 
     this.clients.clear();
     

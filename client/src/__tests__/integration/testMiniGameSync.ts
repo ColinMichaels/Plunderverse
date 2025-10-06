@@ -46,7 +46,7 @@ export async function testMiniGameSync() {
     
     // Simulate earning credits in mini-game
     syncService.setMinigameActive(true);
-    credits.addCredits(500);
+    credits.earnCredits(500);
     
     // Wait for sync
     await new Promise(resolve => setTimeout(resolve, 200));
@@ -91,7 +91,7 @@ export async function testMiniGameSync() {
   // Test 4: Smuggling Mission Sync
   console.log('\n4. Testing Smuggling Mission Synchronization...');
   try {
-    const initialHeat = heat.heat;
+    const initialHeat = heat.currentHeat;
     console.log(`   - Initial heat level: ${initialHeat}`);
     
     // Simulate completing a smuggling mission
@@ -109,7 +109,7 @@ export async function testMiniGameSync() {
     // Wait for sync
     await new Promise(resolve => setTimeout(resolve, 200));
     
-    const newHeat = useHeatSystem.getState().heat;
+    const newHeat = useHeatSystem.getState().currentHeat;
     console.log(`   - Heat level after smuggling: ${newHeat}`);
     
     console.log('   ✅ Smuggling mission sync tested');
@@ -149,8 +149,8 @@ export async function testMiniGameSync() {
     // In real scenario, WebSocket would be closed
     
     // Queue some updates
-    credits.addCredits(100);
-    player.updateHeat(5);
+    credits.earnCredits(100);
+    heat.updateHeat(5);
     
     const queueSize = syncService.getQueueSize();
     console.log(`   - Queue size after offline updates: ${queueSize}`);
@@ -170,11 +170,11 @@ export async function testMiniGameSync() {
   console.log('\n7. Testing Batch Update System...');
   try {
     // Rapidly fire multiple updates
-    credits.addCredits(50);
-    credits.addCredits(50);
-    credits.addCredits(50);
-    player.updateHeat(1);
-    player.updateHeat(1);
+    credits.earnCredits(50);
+    credits.earnCredits(50);
+    credits.earnCredits(50);
+    heat.updateHeat(1);
+    heat.updateHeat(1);
     
     // Wait for batch to be sent
     await new Promise(resolve => setTimeout(resolve, 150));
