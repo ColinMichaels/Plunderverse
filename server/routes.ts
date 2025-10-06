@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import authRoutes from "./routes/auth.routes";
 import gameSaveRoutes from "./routes/game-save.routes";
+import { syncService } from "./services/sync.service";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Register authentication routes
@@ -461,6 +462,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+
+  // Setup WebSocket server for real-time sync
+  syncService.setupWebSocketServer(httpServer);
 
   return httpServer;
 }

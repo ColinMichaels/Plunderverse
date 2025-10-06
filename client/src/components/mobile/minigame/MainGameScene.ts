@@ -4,6 +4,8 @@ import { NPCDialogueSystem } from './NPCDialogueSystem';
 import { NPCMissionSystem } from './NPCMissionSystem';
 import { SmugglingSystem, SmugglingMission, ContrabandType } from './SmugglingSystem';
 import { CrewManagementSystem, CrewTask } from './CrewManagementSystem';
+import MiniGameSyncService from '../../../services/MiniGameSyncService';
+import { SyncIntegration } from './SyncIntegration';
 
 /**
  * MainGameScene - Enhanced station exploration with multiple rooms and areas
@@ -60,13 +62,22 @@ export class MainGameScene extends Phaser.Scene {
   // Animation state
   private playerDirection: string = 'down';
   private isMoving: boolean = false;
+  
+  // Sync service
+  private syncService: MiniGameSyncService;
+  private syncIntegration!: SyncIntegration;
 
   constructor() {
     super({ key: 'MainGameScene' });
+    this.syncService = MiniGameSyncService.getInstance();
   }
 
   create(): void {
     console.log('[MainGameScene] Creating enhanced station world...');
+    
+    // Activate mini-game sync
+    this.syncService.setMinigameActive(true);
+    this.syncIntegration = new SyncIntegration(this);
     
     // Set world bounds for large station
     this.physics.world.setBounds(0, 0, 3200, 2400);

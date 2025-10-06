@@ -6,6 +6,8 @@ import { useCredits } from '../../lib/stores/economy/useCredits';
 import { useInventory } from '../../lib/stores/economy/useInventory';
 import { Button } from '../ui/button';
 import { ArrowLeft, RotateCw } from 'lucide-react';
+import { MobileSyncIndicator } from '../ui/SyncStatusIndicator';
+import { useMiniGameSync } from '../../hooks/useMiniGameSync';
 
 // Import Phaser scenes
 import { BootScene } from './minigame/BootScene.js';
@@ -34,6 +36,7 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
   const { credits } = useCredits();
   const inventory = useInventory();
   const economy = usePlunderverseEconomy();
+  const { forceSync, getSyncStatus } = useMiniGameSync();
 
   // Handle orientation changes
   useEffect(() => {
@@ -200,6 +203,9 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
             userSelect: 'none'
           }}
         />
+        
+        {/* Sync indicator */}
+        <MobileSyncIndicator />
         
         {/* Loading overlay */}
         {isLoading && (
