@@ -32,6 +32,7 @@ import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
+import { AutopilotIndicator } from "../navigation/AutopilotIndicator";
 // Other Hooks
 import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { useAutoSave } from "../../hooks/useAutoSave";
@@ -109,6 +110,9 @@ export function GameUI() {
 
   return (
     <>
+      {/* Autopilot Indicator */}
+      <AutopilotIndicator />
+      
       {/* Pause Overlay - Shows when game loses focus */}
       <PauseOverlay />
       

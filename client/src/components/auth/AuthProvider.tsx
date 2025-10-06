@@ -47,11 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
   }
   
-  // Show auth screen if not authenticated and not guest
-  if (!isAuthenticated && !isGuest) {
-    return <AuthScreen />;
-  }
-  
-  // Render children when authenticated or playing as guest
+  // Always render children - let them handle auth state
+  // This allows the splash screen to be shown first
   return <>{children}</>;
 };

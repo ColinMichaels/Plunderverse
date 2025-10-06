@@ -3,7 +3,7 @@ import { Suspense, useEffect, useState, useRef } from "react";
 import { KeyboardControls } from "@react-three/drei";
 import { SolarSystem } from "./components/space/SolarSystem";
 import { GameUI } from "./components/ui/GameUI";
-import { SplashScreen } from "./components/screens/SplashScreen";
+import { EnhancedSplashScreen } from "./components/screens/EnhancedSplashScreen";
 import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
 import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
@@ -364,7 +364,7 @@ function GameContent() {
           // Desktop Experience
           <>
             {/* Show splash screen */}
-            {phase === "splash" && <SplashScreen />}
+            {phase === "splash" && <EnhancedSplashScreen />}
 
             {/* Show game when playing OR ended (for death screen) */}
             {(phase === "playing" || phase === "ended") && showCanvas && (

@@ -6,6 +6,7 @@ import React, {
   useCallback,
   useEffect,
 } from "react";
+import { useUIInteraction } from "@/hooks/useUIInteraction";
 
 export type UIZone = "left-sidebar" | "right-sidebar";
 
@@ -68,9 +69,13 @@ function ExpandedPanel({
   panel: UIPanel;
   onToggle: () => void;
 }) {
+  // Track hover state for this panel
+  const panelRef = useUIInteraction(`panel-${panel.id}`, panel.isExpanded);
+  
   return (
     <div className="expanded-panel-overlay">
       <div
+        ref={panelRef}
         className={`expanded-panel ${panel.zone === "left-sidebar" ? "expanded-panel-left" : "expanded-panel-right"}`}
       >
         <div className="space-panel-header">
