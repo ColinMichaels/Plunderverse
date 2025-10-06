@@ -4,6 +4,7 @@ import * as THREE from "three";
 import { Sun } from "./Sun";
 import { Planet } from "./Planet";
 import { Starfield } from "./Starfield";
+import { EnhancedStarfield } from "./EnhancedStarfield";
 import { planets } from "../../lib/planetData";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 
@@ -78,8 +79,13 @@ export function SolarSystemBackground() {
         {/* Very minimal ambient lighting */}
         <ambientLight intensity={0.02} />
         
-        {/* Starfield background */}
-        <Starfield />
+        {/* Enhanced starfield background with many more stars */}
+        <EnhancedStarfield 
+          count={15000}
+          depth={2500}
+          minRadius={400}
+          enableAnimation={true}
+        />
         
         {/* Sun at the center */}
         <Sun />

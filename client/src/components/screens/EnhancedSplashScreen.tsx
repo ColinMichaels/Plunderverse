@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
+import { EffectComposer, Bloom, DepthOfField, Vignette } from "@react-three/postprocessing";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -19,6 +19,7 @@ import { gameApi } from "../../services/gameApi";
 import { restoreGameState } from "../../utils/saveGame";
 import { AUDIO_CONFIG } from "../../lib/audioConfig";
 import { SolarSystemBackground } from "../space/SolarSystemBackground";
+import { SplashSolarSystem } from "../space/SplashSolarSystem";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
   User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target,
@@ -28,6 +29,7 @@ import {
 export function EnhancedSplashScreen() {
   const [showHelp, setShowHelp] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [useFullSystem] = useState(true); // Enable full system for better preloading
   const [showTrailer, setShowTrailer] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showVideos, setShowVideos] = useState(false);
@@ -402,8 +404,13 @@ export function EnhancedSplashScreen() {
           style={{ background: '#000' }}
         >
           <Suspense fallback={null}>
-            <SolarSystemBackground />
-            {/* Post-processing effects for sun glow */}
+            {/* Use full solar system for better preloading if enabled */}
+            {useFullSystem ? (
+              <SplashSolarSystem useFullComponents={true} />
+            ) : (
+              <SolarSystemBackground />
+            )}
+            {/* Post-processing effects for sun glow and depth */}
             <EffectComposer>
               <Bloom
                 intensity={2.5}
@@ -413,13 +420,23 @@ export function EnhancedSplashScreen() {
                 levels={8}
                 mipmapBlur={true}
               />
+              <DepthOfField
+                focusDistance={0.01}
+                focalLength={0.02}
+                bokehScale={4}
+                height={480}
+              />
+              <Vignette
+                offset={0.3}
+                darkness={0.4}
+              />
             </EffectComposer>
           </Suspense>
         </Canvas>
       </div>
       
-      {/* Glassmorphism Overlay Container */}
-      <div className="absolute inset-0 z-10 bg-black/30 backdrop-blur-sm" />
+      {/* Very light overlay for depth - reduced blur to show more background */}
+      <div className="absolute inset-0 z-10 bg-black/20" />
       
       {/* Compact Player Stats Widget - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
@@ -429,7 +446,7 @@ export function EnhancedSplashScreen() {
           onMouseLeave={() => setIsStatsExpanded(false)}
         >
           {/* Minimized View - Always visible */}
-          <div className={`bg-black/40 backdrop-blur-md border border-cyan-400/20 rounded-lg px-3 py-2 
+          <div className={`bg-black/50 backdrop-blur-sm border border-cyan-400/20 rounded-lg px-3 py-2 
                           transition-all duration-300 ${isStatsExpanded ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
             <div className="flex items-center gap-3">
               <div className="bg-cyan-400/10 p-1.5 rounded-full">
@@ -465,7 +482,7 @@ export function EnhancedSplashScreen() {
           </div>
 
           {/* Expanded View - Shown on hover */}
-          <div className={`absolute top-0 right-0 bg-black/60 backdrop-blur-lg border border-cyan-400/30 
+          <div className={`absolute top-0 right-0 bg-black/70 backdrop-blur-sm border border-cyan-400/30 
                           rounded-lg p-3 min-w-[280px] transition-all duration-300 transform origin-top-right
                           ${isStatsExpanded ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'}`}>
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-cyan-400/20">
@@ -556,7 +573,7 @@ export function EnhancedSplashScreen() {
         </div>
       )}
 
-      <div className="relative z-20 text-center max-w-6xl px-8 bg-black/40 backdrop-blur-md rounded-2xl p-12 border border-white/10">
+      <div className="relative z-20 text-center max-w-6xl px-8 bg-black/50 backdrop-blur-sm rounded-2xl p-12 border border-white/10">
         {/* Main Title */}
         <div className="mb-4">
           <div className="relative inline-block mb-4">
