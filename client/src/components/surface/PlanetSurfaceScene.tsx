@@ -10,7 +10,6 @@ import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, ResourceData } from "../../lib/planetData";
 import { SurfaceMovementController } from "./SurfaceMovementController";
 import { FlashlightSystem } from "./FlashlightSystem";
-import { SurfaceStatsPanel } from "./SurfaceStatsPanel";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import { MiningLaser } from "./MiningLaser";
 import { ResourceNode } from "./EnhancedResourceNode";
@@ -1444,8 +1443,6 @@ export function PlanetSurfaceScene() {
       {/* Screen effects overlay for mining feedback */}
       <ScreenEffects />
 
-      {/* Unified collapsible stats panel */}
-      <SurfaceStatsPanel />
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />

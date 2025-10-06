@@ -4,6 +4,7 @@ import { useLandedState } from '@/lib/stores/surface/useLandedState';
 import { useHUDContext } from '@/lib/stores/ui/useHUDContext';
 import { useFlashlight } from '@/lib/stores/surface/useFlashlight';
 import { useMining } from '@/lib/stores/economy/useMining';
+import { useInventoryDisplayData } from '@/domain/economy/selectors';
 import { useAutopilot } from '@/lib/stores/navigation/useAutopilot';
 import { useShipStatus } from '@/lib/stores/ship/useShipStatus';
 import { useSolarSystem } from '@/lib/stores/space/useSolarSystem';
@@ -23,13 +24,22 @@ export function BottomControlSidebar() {
 
   const { isLanded, landedPlanet, setIsTakingOff, isTakingOff } = useLandedState();
   const { isDocked, dockedStationName, currentContext } = useHUDContext();
-  const { isActive: isMining, stopMining } = useMining();
+  const { 
+    isActive: isMining, 
+    targetResource, 
+    clicksCompleted, 
+    clicksRequired, 
+    drillPower,
+    extractorLevel,
+    stopMining 
+  } = useMining();
   const { isOn: flashlightOn, batteryLevel, toggle: toggleFlashlight, getBatteryStatus } = useFlashlight();
+  const inventoryData = useInventoryDisplayData();
   const { isActive: isAutopilotActive, deactivate: deactivateAutopilot } = useAutopilot();
   const { isWarpMode, isThrusting, hull, shield } = useShipStatus();
   const { selectedPlanet } = useSolarSystem();
   const { credits } = useCreditsStore();
-  const { equipment } = useEquipment();
+  const { equipment, getConditionStatus, getPerformanceMultiplier } = useEquipment();
   const player = usePlayer();
   const { isSaving, lastSaveTime } = useAutoSave();
   const { status: cloudSyncStatus, lastSyncedAt } = useCloudSync();
@@ -40,6 +50,15 @@ export function BottomControlSidebar() {
   
   // Get total enemy kills
   const totalKills = player.enemyKills?.totalKills || 0;
+  
+  // Calculate mining progress
+  const miningProgress = clicksRequired > 0 ? Math.round((clicksCompleted / clicksRequired) * 100) : 0;
+  
+  // Get equipment status
+  const drillStatus = getConditionStatus("drill-mk1");
+  const extractorStatus = getConditionStatus("extractor-basic");
+  const drillPerformance = getPerformanceMultiplier("drill-mk1");
+  const extractorPerformance = getPerformanceMultiplier("extractor-basic");
 
   // Save collapse state
   const handleToggleCollapse = () => {
@@ -112,6 +131,23 @@ export function BottomControlSidebar() {
     if (value >= 40) return 'text-yellow-400';
     if (value >= 20) return 'text-orange-400';
     return 'text-red-400';
+  };
+  
+  const getEquipmentColor = (status: string) => {
+    switch (status) {
+      case 'excellent':
+      case 'good':
+        return 'text-green-400';
+      case 'fair':
+        return 'text-yellow-400';
+      case 'poor':
+        return 'text-orange-400';
+      case 'critical':
+      case 'broken':
+        return 'text-red-400';
+      default:
+        return 'text-gray-400';
+    }
   };
 
   return (
@@ -188,7 +224,7 @@ export function BottomControlSidebar() {
               exit={{ opacity: 0 }}
               className="flex items-center justify-between h-full px-4"
             >
-              {/* Left: Location + Credits */}
+              {/* Left: Location + Credits + Mining (when on surface) */}
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2 text-orange-400">
                   <MapPin size={16} />
@@ -198,6 +234,16 @@ export function BottomControlSidebar() {
                   <Coins size={14} />
                   <span className="text-sm font-mono">{credits}c</span>
                 </div>
+                {isLanded && (
+                  <div className={`flex items-center space-x-1 ${isMining ? 'text-orange-400' : 'text-gray-500'}`}>
+                    <span className="text-sm">⛏️</span>
+                    {isMining ? (
+                      <span className="text-sm font-mono">{miningProgress}%</span>
+                    ) : (
+                      <span className="text-sm">Ready</span>
+                    )}
+                  </div>
+                )}
               </div>
               
               {/* Center: Ship Status Bars (mini) */}
@@ -432,6 +478,60 @@ export function BottomControlSidebar() {
                           </p>
                         </div>
                       </button>
+
+                      {/* Mining Status Display */}
+                      <div className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                        isMining 
+                          ? 'bg-orange-500/20 border-orange-400/50' 
+                          : 'bg-gray-900/50 border-gray-600/30'
+                      }`}>
+                        <div className="text-3xl">⛏️</div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className={`text-xs uppercase font-semibold ${isMining ? 'text-orange-400' : 'text-gray-400'}`}>
+                              Mining {isMining ? 'Active' : 'Inactive'}
+                            </p>
+                            {isMining && (
+                              <span className="text-xs font-mono text-cyan-400">{miningProgress}%</span>
+                            )}
+                          </div>
+                          {isMining ? (
+                            <>
+                              <p className="text-xs text-cyan-300 mb-1">{targetResource?.type}</p>
+                              <div className="w-full h-1.5 bg-gray-700 rounded-full overflow-hidden">
+                                <div 
+                                  className="h-full bg-gradient-to-r from-orange-500 to-orange-400 transition-all duration-300"
+                                  style={{ width: `${miningProgress}%` }}
+                                />
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-xs text-gray-500">Ready to mine</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Mining Equipment Status */}
+                      {isMining && (
+                        <div className="flex items-center space-x-2 px-3 py-2 bg-gray-900/50 rounded-lg border border-gray-600/30">
+                          <div className="flex flex-col space-y-1 text-xs">
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400">Drill:</span>
+                              <span className={`font-mono ${getEquipmentColor(drillStatus)}`}>
+                                {Math.round(drillPerformance * 100)}%
+                              </span>
+                              {drillStatus === 'broken' && <span className="text-red-400">⚠️</span>}
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-gray-400">Extractor:</span>
+                              <span className={`font-mono ${getEquipmentColor(extractorStatus)}`}>
+                                {Math.round(extractorPerformance * 100)}%
+                              </span>
+                              {extractorStatus === 'broken' && <span className="text-red-400">⚠️</span>}
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Takeoff Button */}
                       <button
