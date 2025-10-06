@@ -10,6 +10,7 @@ import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { PatrolEncounter } from "./components/space/PatrolEncounter";
 import { MobileGame } from "./components/mobile/MobileGame";
+import { MobileGameFix } from "./components/mobile/MobileGameFix";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { useAudio } from "./lib/stores/ui/useAudio";
 import { useGame } from "./lib/stores/ui/useGame";
@@ -39,8 +40,35 @@ function GameContent() {
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
   const { isLanded } = useLandedState();
-  const { platformType, updatePlatform } = usePlatform();
+  const { platformType, updatePlatform, viewport } = usePlatform();
   const { toggleVisibility: toggleDebugPanel } = useDebugTools();
+  
+  // FORCE MOBILE DETECTION FOR SMALL VIEWPORTS
+  // Check viewport width directly as a fallback
+  const [forceMobile, setForceMobile] = useState(false);
+  useEffect(() => {
+    const checkViewport = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const shouldBeMobile = width < 768 || (width <= 414 && height >= 600);
+      console.error(`🚨 [APP-FORCE-CHECK] Viewport: ${width}x${height}, Should be mobile: ${shouldBeMobile}`);
+      
+      if (shouldBeMobile && platformType !== 'mobile') {
+        console.error('🚨 [APP-FORCE-CHECK] FORCING MOBILE MODE!');
+        setForceMobile(true);
+      } else {
+        setForceMobile(shouldBeMobile);
+      }
+    };
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+    return () => window.removeEventListener('resize', checkViewport);
+  }, [platformType]);
+  
+  // Use forced mobile if needed
+  const effectivePlatformType = forceMobile ? 'mobile' : platformType;
+  console.error(`🚨 [APP] Effective platform type: ${effectivePlatformType} (forced: ${forceMobile}, detected: ${platformType})`);
+  
   
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
@@ -60,11 +88,27 @@ function GameContent() {
   // Initialize platform detection on mount and handle window resize
   useEffect(() => {
     updatePlatform();
-    console.log('[APP] Platform detected:', platformType);
+    console.error(`🚨 [APP] Platform detected: ${platformType}`);
+    console.error(`🚨 [APP] Viewport: ${window.innerWidth}x${window.innerHeight}px`);
+    console.error(`🚨 [APP] User Agent: ${navigator.userAgent}`);
+    console.error(`🚨 [APP] Touch Support: ${('ontouchstart' in window) ? 'YES' : 'NO'}`);
+    
+    // Get platform state
+    const platformState = usePlatform.getState();
+    console.error('🚨 [APP] Full Platform State:', {
+      platformType: platformState.platformType,
+      isMobile: platformState.isMobile,
+      isTablet: platformState.isTablet,
+      isDesktop: platformState.isDesktop,
+      isTouch: platformState.isTouch,
+      viewport: platformState.viewport,
+      orientation: platformState.orientation
+    });
     
     // Handle orientation changes on mobile
     const handleOrientationChange = () => {
       updatePlatform();
+      console.error('🚨 [APP] Orientation changed, updating platform');
     };
     
     window.addEventListener('orientationchange', handleOrientationChange);
@@ -407,11 +451,12 @@ function GameContent() {
         }}
       >
         {/* Route to mobile experience for mobile devices */}
-        {platformType === 'mobile' ? (
+        {console.error(`🚨 [APP-RENDER] About to check platform type. effectivePlatformType = '${effectivePlatformType}' (forced=${forceMobile}, detected=${platformType})`)}
+        {effectivePlatformType === 'mobile' ? (
           // Mobile Experience
           <>
-            {console.log('[APP] Rendering MobileGame component for mobile platform')}
-            <MobileGame />
+            {console.error('🚨🚨🚨 [APP-RENDER] MOBILE BRANCH TAKEN! Rendering MobileGameFix component! 🚨🚨🚨')}
+            <MobileGameFix />
           </>
         ) : (
           // Desktop Experience

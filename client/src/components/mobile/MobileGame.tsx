@@ -22,8 +22,13 @@ type MobileViewState = 'status' | 'station' | 'minigame';
  * Syncs with desktop game state through Zustand stores
  */
 export const MobileGame: React.FC = () => {
-  // Immediate visual test element to confirm rendering
+  // Debug logging to verify component is being called (v2.0 - cleaned)
+  console.log('[MobileGame] Component function called - v2.0 (Test screens removed)');
+  
+  // Component state and hooks
   const [debugVisible, setDebugVisible] = useState(true);
+  const [viewState, setViewState] = useState<MobileViewState>('status');
+  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
   
   const { phase, start } = useGame();
   const { isLanded, landedPlanet } = useLandedState();
@@ -36,8 +41,6 @@ export const MobileGame: React.FC = () => {
   const missions = usePlunderverseMissions();
   const { selectedPlanet, cameraPosition } = useSolarSystem();
   const heatSystem = useHeatSystem();
-  const [refreshInterval, setRefreshInterval] = useState<NodeJS.Timer | null>(null);
-  const [viewState, setViewState] = useState<MobileViewState>('status');
   
   // Debug logging for mobile rendering
   useEffect(() => {
