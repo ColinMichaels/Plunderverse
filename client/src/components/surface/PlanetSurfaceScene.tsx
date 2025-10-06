@@ -1,6 +1,7 @@
 import { useRef, useMemo, useState, useEffect } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { KeyboardControls, useTexture } from "@react-three/drei";
+import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
 import { EffectComposer, Bloom } from "@react-three/postprocessing";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useMining } from "../../lib/stores/economy/useMining";
@@ -1407,26 +1408,28 @@ export function PlanetSurfaceScene() {
   return (
     <div className="fixed inset-0 z-20">
       <KeyboardControls map={surfaceControls}>
-        <Canvas camera={{ position: [0, 1.8, 5], fov: 75 }}>
-          <SurfaceLighting />
-          <FlashlightSystem />
-          <SurfaceSky planetName={landedPlanet} />
-          <SurfaceTerrain planetName={landedPlanet} />
-          <SurfaceScatter 
-            planetName={landedPlanet} 
-            planetColor={planets.find(p => p.name === landedPlanet)?.color}
-          />
-          <ResourceNodes planetName={landedPlanet} />
-          <SurfaceMovementController />
-          <AtmosphericEffects 
-            planetName={landedPlanet}
-            flashlightOn={isFlashlightOn}
-          />
-          <DebugCollisionBoxes />
-          {/* Camera shake effect for mining feedback */}
-          <CameraShake />
-          <PostProcessingEffects />
-        </Canvas>
+        <WebGLCheckWrapper fallbackMessage="WebGL is required to render the planet surface environment.">
+          <Canvas camera={{ position: [0, 1.8, 5], fov: 75 }}>
+            <SurfaceLighting />
+            <FlashlightSystem />
+            <SurfaceSky planetName={landedPlanet} />
+            <SurfaceTerrain planetName={landedPlanet} />
+            <SurfaceScatter 
+              planetName={landedPlanet} 
+              planetColor={planets.find(p => p.name === landedPlanet)?.color}
+            />
+            <ResourceNodes planetName={landedPlanet} />
+            <SurfaceMovementController />
+            <AtmosphericEffects 
+              planetName={landedPlanet}
+              flashlightOn={isFlashlightOn}
+            />
+            <DebugCollisionBoxes />
+            {/* Camera shake effect for mining feedback */}
+            <CameraShake />
+            <PostProcessingEffects />
+          </Canvas>
+        </WebGLCheckWrapper>
       </KeyboardControls>
       
       {/* Screen effects overlay for mining feedback */}

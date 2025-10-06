@@ -5,6 +5,7 @@ import { SolarSystem } from "./components/space/SolarSystem";
 import { GameUI } from "./components/ui/GameUI";
 import { EnhancedSplashScreen } from "./components/screens/EnhancedSplashScreen";
 import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
+import { WebGLCheckWrapper } from "./components/shared/WebGLCheckWrapper";
 import { TakeoffControls } from "./components/surface/TakeoffControls";
 import { UILayoutProvider } from "./components/ui/UILayoutManager";
 import { PatrolEncounter } from "./components/space/PatrolEncounter";
@@ -374,25 +375,27 @@ function GameContent() {
                 {phase === "playing" && !isLanded && (
                   // Space scene - only rendered when not landed
                   <TouchPropulsionControls>
-                    <Canvas
-                      shadows
-                      camera={{
-                        position: [0, 10, 50],
-                        fov: 90,
-                        near: 0.1,
-                        far: 10000,
-                      }}
-                      gl={{
-                        antialias: true,
-                        powerPreference: "high-performance",
-                      }}
-                    >
-                      <color attach="background" args={["#000000"]} />
+                    <WebGLCheckWrapper fallbackMessage="WebGL is required to render the space environment.">
+                      <Canvas
+                        shadows
+                        camera={{
+                          position: [0, 10, 50],
+                          fov: 90,
+                          near: 0.1,
+                          far: 10000,
+                        }}
+                        gl={{
+                          antialias: true,
+                          powerPreference: "high-performance",
+                        }}
+                      >
+                        <color attach="background" args={["#000000"]} />
 
-                      <Suspense fallback={null}>
-                        <SolarSystem />
-                      </Suspense>
-                    </Canvas>
+                        <Suspense fallback={null}>
+                          <SolarSystem />
+                        </Suspense>
+                      </Canvas>
+                    </WebGLCheckWrapper>
                   </TouchPropulsionControls>
                 )}
                 

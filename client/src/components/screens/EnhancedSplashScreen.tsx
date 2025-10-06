@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, Suspense } from "react";
 import { Canvas } from "@react-three/fiber";
 import { EffectComposer, Bloom, DepthOfField, Vignette } from "@react-three/postprocessing";
+import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { usePlayer } from "../../lib/stores/player/usePlayer";
@@ -413,17 +414,18 @@ export function EnhancedSplashScreen() {
       {/* 3D Solar System Background - Only render when not transitioning */}
       {showCanvas && (
         <div className="absolute inset-0 z-0">
-          <Canvas
-            camera={{ position: [30, 10, 30], fov: 75 }}
-            style={{ background: '#000' }}
-            gl={{
-              antialias: true,
-              powerPreference: "high-performance",
-              preserveDrawingBuffer: false,
-              failIfMajorPerformanceCaveat: false
-            }}
-          >
-            <Suspense fallback={null}>
+          <WebGLCheckWrapper fallbackMessage="WebGL is required for the 3D background. You can still access the game menu." showNavigation={false}>
+            <Canvas
+              camera={{ position: [30, 10, 30], fov: 75 }}
+              style={{ background: '#000' }}
+              gl={{
+                antialias: true,
+                powerPreference: "high-performance",
+                preserveDrawingBuffer: false,
+                failIfMajorPerformanceCaveat: false
+              }}
+            >
+              <Suspense fallback={null}>
               {/* Use full solar system for better preloading if enabled */}
               {useFullSystem ? (
                 <SplashSolarSystem useFullComponents={true} />
@@ -453,6 +455,7 @@ export function EnhancedSplashScreen() {
               </EffectComposer>
             </Suspense>
           </Canvas>
+          </WebGLCheckWrapper>
         </div>
       )}
       
