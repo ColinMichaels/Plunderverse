@@ -8,6 +8,8 @@ import { useShooting } from '../../lib/stores/combat/useShooting';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+import { useWeaponSystems } from '../../lib/stores/combat/useWeaponSystems';
+import { Target, Crosshair } from 'lucide-react';
 
 export function PrimaryControlsHUD() {
   const { 
@@ -32,6 +34,13 @@ export function PrimaryControlsHUD() {
   const { getEquipment } = useEquipment();
   const { cameraPosition } = useSolarSystem();
   const { wantedLevel, patrolEncounter } = useHeatSystem();
+  const { 
+    isLocking, 
+    currentTarget, 
+    torpedoCooldown, 
+    missileCooldown,
+    weaponStats 
+  } = useWeaponSystems();
   
   // Calculate distance to autopilot target if active
   const distanceToTarget = autopilotTarget && cameraPosition
@@ -268,6 +277,57 @@ export function PrimaryControlsHUD() {
               </span>
             </div>
             
+            {/* Weapon Lock Indicator - Centered and Prominent */}
+            {isLocking && currentTarget && (
+              <div className="flex flex-col items-center gap-2 mb-2">
+                <div className="relative w-24 h-24">
+                  {/* Lock Progress Circle */}
+                  <svg className="w-24 h-24 -rotate-90">
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="44"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      className="text-gray-600"
+                    />
+                    <circle
+                      cx="48"
+                      cy="48"
+                      r="44"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                      strokeDasharray={`${2 * Math.PI * 44}`}
+                      strokeDashoffset={`${2 * Math.PI * 44 * (1 - currentTarget.lockProgress)}`}
+                      className={currentTarget.lockProgress >= 1 ? 'text-green-400' : 'text-yellow-400'}
+                      style={{ transition: 'stroke-dashoffset 0.1s linear' }}
+                    />
+                  </svg>
+                  
+                  {/* Crosshair Icon */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Crosshair 
+                      className={currentTarget.lockProgress >= 1 ? 'text-green-400' : 'text-yellow-400'} 
+                      size={32} 
+                    />
+                  </div>
+                </div>
+                
+                {/* Lock Status Text */}
+                <div className="text-xs font-mono">
+                  {currentTarget.lockProgress >= 1 ? (
+                    <span className="text-green-400 font-bold">🎯 LOCK ACQUIRED - FIRE!</span>
+                  ) : (
+                    <span className="text-yellow-400">
+                      Locking... {Math.round(currentTarget.lockProgress * 100)}%
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+            
             {/* Combat Stats */}
             <div className="flex items-center gap-4 text-xs">
               {/* Shield/Hull Status */}
@@ -292,13 +352,21 @@ export function PrimaryControlsHUD() {
               </div>
             </div>
             
-            {/* Target Lock Indicator */}
-            {patrolEncounter && (
-              <div className="flex items-center gap-2 bg-red-900/30 rounded px-2 py-1">
-                <span className="text-xs text-red-400">🎯 Target Locked</span>
-                <span className="text-xs text-red-300">Patrol Ship</span>
+            {/* Weapon Reload Timers */}
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400">Torpedo:</span>
+                <span className={torpedoCooldown > 0 ? 'text-red-400' : 'text-green-400'}>
+                  {torpedoCooldown > 0 ? `${Math.ceil(torpedoCooldown)}s` : 'Ready'}
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-1">
+                <span className="text-gray-400">Missile:</span>
+                <span className={missileCooldown > 0 ? 'text-red-400' : 'text-green-400'}>
+                  {missileCooldown > 0 ? `${Math.ceil(missileCooldown)}s` : 'Ready'}
+                </span>
+              </div>
+            </div>
             
             {/* Damage Indicator */}
             {recentDamage && (
@@ -311,7 +379,11 @@ export function PrimaryControlsHUD() {
             
             {/* Combat Controls */}
             <div className="flex items-center gap-3 text-xs text-gray-500">
-              <span className="text-red-400">Space - Fire</span>
+              <span className="text-red-400">Space - Laser</span>
+              <span>•</span>
+              <span className="text-cyan-400">T - Torpedo</span>
+              <span>•</span>
+              <span className="text-yellow-400">M - Missile</span>
               <span>•</span>
               <span>W - Evade</span>
               <span>•</span>
