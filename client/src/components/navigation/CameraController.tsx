@@ -31,6 +31,7 @@ import {useSettings} from "@/lib/stores/ui/useSettings";
 import {planets} from "@/lib/planetData";
 import {bindInputHandlers, useInput} from "@/stores/useInput";
 import {Controls} from "@/lib/controls";
+import {useWeaponSystems} from "@/lib/stores/combat/useWeaponSystems";
 
 export function CameraController() {
   const { camera } = useThree();
@@ -51,6 +52,8 @@ export function CameraController() {
   const lastCenterPressRef = useRef(0);
   const lastForwardPressRef = useRef(0);
   const forwardDoubleClickRef = useRef(false);
+  const lastTorpedoPressRef = useRef(0);
+  const lastMissilePressRef = useRef(0);
 
   
   // Dynamic FOV state for smooth camera adjustments
@@ -190,6 +193,19 @@ export function CameraController() {
 
   // Landed state - prevent movement when landed on surface
   const { isLanded, isTakingOff, getTakeoffOrbitPosition } = useLandedState();
+  
+  // Weapon systems for torpedo and missile
+  const { 
+    startLocking, 
+    updateLocking, 
+    cancelLocking, 
+    fireTorpedo, 
+    fireMissile, 
+    updateCooldowns,
+    updateHomingProjectiles,
+    isLocking,
+    currentTarget
+  } = useWeaponSystems();
 
   // Proximity camera state for manual planet approach
   const [isProximityCameraActive, setProximityCameraActive] = useState(false);
@@ -582,6 +598,56 @@ export function CameraController() {
       } catch (error) {
         console.error("Error firing laser:", error);
       }
+    }
+    
+    // Torpedo lock-on and fire (T key)
+    if (controls && controls.torpedo) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastTorpedoPressRef.current > 0.5) {
+        lastTorpedoPressRef.current = currentTime;
+        
+        const cameraDirection = cachedDirectionsRef.current.forward.clone();
+        
+        if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
+          // Fire torpedo if locked
+          fireTorpedo(camera.position.clone(), cameraDirection);
+        } else {
+          // Start locking
+          startLocking(camera.position.clone(), cameraDirection);
+        }
+      }
+    } else if (isLocking && !controls.torpedo) {
+      // Release key cancels lock
+      cancelLocking();
+    }
+    
+    // Missile lock-on and fire (M key)
+    if (controls && controls.missile) {
+      const currentTime = state.clock.elapsedTime;
+      if (currentTime - lastMissilePressRef.current > 0.5) {
+        lastMissilePressRef.current = currentTime;
+        
+        const cameraDirection = cachedDirectionsRef.current.forward.clone();
+        
+        if (isLocking && currentTarget && currentTarget.lockProgress >= 1) {
+          // Fire missile if locked
+          fireMissile(camera.position.clone(), cameraDirection);
+        } else {
+          // Start locking
+          startLocking(camera.position.clone(), cameraDirection);
+        }
+      }
+    } else if (isLocking && !controls.missile) {
+      // Release key cancels lock
+      cancelLocking();
+    }
+    
+    // Update weapon systems
+    updateCooldowns(delta);
+    updateHomingProjectiles(delta);
+    if (isLocking) {
+      const cameraDirection = cachedDirectionsRef.current.forward.clone();
+      updateLocking(delta, camera.position.clone(), cameraDirection);
     }
 
     // Mouse and mobile look controls with damping for smoother rotation

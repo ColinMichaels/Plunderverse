@@ -12,6 +12,8 @@ export enum Controls {
   center = "center",
   flashlight = "flashlight",
   charge = "charge",
+  torpedo = "torpedo",
+  missile = "missile",
 }
 
 export const DEFAULT_KEYBINDS: Record<string, string[]> = {
@@ -28,4 +30,6 @@ export const DEFAULT_KEYBINDS: Record<string, string[]> = {
   center: ["KeyC"],
   flashlight: ["KeyF"],
   charge: ["KeyR"],
+  torpedo: ["KeyT"],
+  missile: ["KeyM"],
 };
