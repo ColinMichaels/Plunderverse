@@ -28,6 +28,7 @@ import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
 import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import { useAuthStore } from "./lib/stores/auth/useAuthStore";
 import { cloudSyncManager } from "./services/CloudSyncManager";
+import { CloudSyncManager } from "./services/CloudSyncWebSocket"; // NEW: WebSocket sync
 import { Toaster } from "./components/ui/sonner";
 import "./testSaveSystem"; // Import save system test module
 import "./utils/testSaveFixed"; // Import fixed save test
@@ -188,10 +189,14 @@ function GameContent() {
         
         cloudSyncInitializingRef.current = true;
         
-        cloudSyncManager.initialize()
+        // Initialize both old cloud sync and new WebSocket sync
+        Promise.all([
+          cloudSyncManager.initialize(),
+          CloudSyncManager.getInstance().initialize()
+        ])
           .then(() => {
             cloudSyncInitializedRef.current = true;
-            console.log('[CLOUD-SYNC] Initialized successfully after login');
+            console.log('[CLOUD-SYNC] Both sync managers initialized successfully after login');
           })
           .catch((error) => {
             console.error('[CLOUD-SYNC] Initialization failed:', error);
@@ -223,9 +228,13 @@ function GameContent() {
         cloudSyncInitializingRef.current = true;
         
         try {
-          await cloudSyncManager.initialize();
+          // Initialize both old cloud sync and new WebSocket sync
+          await Promise.all([
+            cloudSyncManager.initialize(),
+            CloudSyncManager.getInstance().initialize()
+          ]);
           cloudSyncInitializedRef.current = true;
-          console.log('[CLOUD-SYNC] Initialized successfully on mount');
+          console.log('[CLOUD-SYNC] Both sync managers initialized successfully on mount');
         } catch (error) {
           console.error('[CLOUD-SYNC] Initialization failed:', error);
         } finally {

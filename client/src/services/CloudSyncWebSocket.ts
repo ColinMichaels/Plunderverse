@@ -82,7 +82,7 @@ export class CloudSyncManager {
     const host = window.location.hostname;
     const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
     
-    const wsUrl = `${protocol}//${host}:${port}/ws?deviceId=${this.deviceId}`;
+    const wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}`;
     
     console.log('[CloudSyncManager] Connecting to:', wsUrl);
     
@@ -203,38 +203,28 @@ export class CloudSyncManager {
       });
     }
     
-    // Update fuel if present
+    // Update fuel if present (fuel system not yet implemented)
     if (data.fuel !== undefined) {
-      import('../domain/resources/fuel.store').then(({ useFuelStore }) => {
-        useFuelStore.getState().setFuel(data.fuel);
-        console.log(`[CloudSyncManager] Fuel updated to ${data.fuel}`);
-      });
+      console.log(`[CloudSyncManager] Fuel update received: ${data.fuel} (fuel store not yet implemented)`);
+      // TODO: Add fuel store when implemented
     }
     
-    // Update inventory if present
+    // Update inventory if present (inventory system not yet implemented)
     if (data.inventory) {
-      import('../domain/inventory/inventory.store').then(({ useInventoryStore }) => {
-        useInventoryStore.getState().loadInventory(data.inventory);
-        console.log('[CloudSyncManager] Inventory updated');
-      });
+      console.log(`[CloudSyncManager] Inventory update received (inventory store not yet implemented)`);
+      // TODO: Add inventory store when implemented
     }
     
-    // Update location if present
+    // Update location if present (player store not yet implemented)
     if (data.location) {
-      import('../domain/player/player.store').then(({ usePlayerStore }) => {
-        usePlayerStore.getState().setLocation(data.location);
-        console.log(`[CloudSyncManager] Location updated to ${data.location}`);
-      });
+      console.log(`[CloudSyncManager] Location update received: ${data.location} (player store not yet implemented)`);
+      // TODO: Add player store when implemented
     }
     
-    // Update ship stats if present
+    // Update ship stats if present (ship store not yet implemented)
     if (data.shipHull !== undefined || data.shipShield !== undefined) {
-      import('../domain/combat/ship.store').then(({ useShipStore }) => {
-        const state = useShipStore.getState();
-        if (data.shipHull !== undefined) state.setHull(data.shipHull);
-        if (data.shipShield !== undefined) state.setShield(data.shipShield);
-        console.log('[CloudSyncManager] Ship stats updated');
-      });
+      console.log('[CloudSyncManager] Ship stats update received (ship store not yet implemented)');
+      // TODO: Add ship store when implemented
     }
   }
   

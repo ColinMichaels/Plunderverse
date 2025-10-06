@@ -252,10 +252,9 @@ export class TransactionClient {
     
     // Get current balances from stores
     const creditsStore = await import('../domain/economy/credits.store');
-    const fuelStore = await import('../domain/resources/fuel.store');
     
     const currentCredits = creditsStore.useCreditsStore.getState().amount;
-    const currentFuel = fuelStore.useFuelStore.getState().fuel;
+    const currentFuel = 100; // TODO: Add fuel store when implemented
     
     // Simple validation
     if (request.type === 'debit') {
@@ -269,14 +268,16 @@ export class TransactionClient {
     
     // Apply changes locally
     if (request.type === 'debit') {
-      creditsStore.useCreditsStore.getState().spend(request.amount);
+      creditsStore.useCreditsStore.getState().spendCredits(request.amount);
       if (request.resourceCosts?.fuel) {
-        fuelStore.useFuelStore.getState().consume(request.resourceCosts.fuel);
+        // TODO: Deduct fuel when fuel store is implemented
+        console.log(`[TransactionClient] Would deduct ${request.resourceCosts.fuel} fuel (not yet implemented)`);
       }
     } else {
-      creditsStore.useCreditsStore.getState().earn(request.amount);
+      creditsStore.useCreditsStore.getState().earnCredits(request.amount);
       if (request.resourceCosts?.fuel) {
-        fuelStore.useFuelStore.getState().refuel(request.resourceCosts.fuel);
+        // TODO: Add fuel when fuel store is implemented
+        console.log(`[TransactionClient] Would add ${request.resourceCosts.fuel} fuel (not yet implemented)`);
       }
     }
     
@@ -285,7 +286,7 @@ export class TransactionClient {
       transactionId: `local_${Date.now()}`,
       newBalances: {
         credits: creditsStore.useCreditsStore.getState().amount,
-        fuel: fuelStore.useFuelStore.getState().fuel,
+        fuel: currentFuel, // Use the mock value for now
         oxygen: 100,
         shipHull: 100,
         shipShield: 100

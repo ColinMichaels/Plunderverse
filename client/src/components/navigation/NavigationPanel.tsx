@@ -7,6 +7,7 @@ import { useEquipment } from '../../lib/stores/ship/useEquipment';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useAudio } from '../../lib/stores/ui/useAudio';
 import { useCreditsStore } from '../../domain/economy/credits.store';
+import { TransactionClient } from '../../services/TransactionClient';
 import { planets } from '../../lib/planetData';
 import * as THREE from 'three';
 import {
@@ -252,32 +253,33 @@ export const NavigationPanel: React.FC = () => {
     const costs = calculateFastTravelCosts(selectedDestination);
     setIsTraveling(true);
     
-    let creditsDeducted = false;
-    let fuelDeducted = false;
+    let transactionSuccessful = false;
     let originalFuelDurability = fuelTank?.currentDurability || 0;
 
     try {
-      // Deduct credits
-      creditsDeducted = spendCredits(costs.totalCredits);
-      if (!creditsDeducted) {
-        throw new Error('Failed to deduct credits - insufficient funds');
+      // Use TransactionClient for server-authoritative transaction
+      const transactionClient = TransactionClient.getInstance();
+      const result = await transactionClient.fastTravel(
+        selectedDestination,
+        costs.totalCredits,
+        costs.fuelCost
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Transaction failed');
       }
-      console.log(`[FAST-TRAVEL] Deducted ${costs.totalCredits} credits`);
+      
+      transactionSuccessful = true;
+      console.log(`[FAST-TRAVEL] Transaction successful: ${result.transactionId}`);
+      console.log(`[FAST-TRAVEL] New balances - Credits: ${result.newBalances?.credits}, Fuel: ${result.newBalances?.fuel}`);
 
-      // Deduct fuel
-      if (!fuelTank) {
-        throw new Error('Fuel equipment missing');
+      // Update local fuel durability to match server state
+      if (result.newBalances?.fuel !== undefined && fuelTank) {
+        const newFuelDurability = (result.newBalances.fuel / 100) * fuelTank.maxDurability;
+        updateEquipment(fuelTank.id, {
+          currentDurability: newFuelDurability
+        });
       }
-      
-      const fuelToDeduct = (costs.fuelCost / 100) * fuelTank.maxDurability;
-      const newFuelDurability = Math.max(0, fuelTank.currentDurability - fuelToDeduct);
-      
-      updateEquipment(fuelTank.id, {
-        currentDurability: newFuelDurability
-      });
-      
-      fuelDeducted = true;
-      console.log(`[FAST-TRAVEL] Consumed ${costs.fuelCost}% fuel`);
 
       // Teleport to planet orbit
       const orbitDistance = planet.size * 3;
@@ -299,19 +301,7 @@ export const NavigationPanel: React.FC = () => {
     } catch (error) {
       console.error('[FAST-TRAVEL] Failed:', error);
       
-      // Rollback
-      if (creditsDeducted) {
-        addCredits(costs.totalCredits);
-        console.log(`[FAST-TRAVEL-ROLLBACK] Refunded ${costs.totalCredits} credits`);
-      }
-      
-      if (fuelDeducted && fuelTank) {
-        updateEquipment(fuelTank.id, {
-          currentDurability: originalFuelDurability
-        });
-        console.log(`[FAST-TRAVEL-ROLLBACK] Restored fuel`);
-      }
-      
+      // No manual rollback needed - server handles atomic transactions
       setIsTraveling(false);
       alert(`Fast travel failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
