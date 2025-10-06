@@ -32,6 +32,7 @@ import {planets} from "@/lib/planetData";
 import {bindInputHandlers, useInput} from "@/stores/useInput";
 import {Controls} from "@/lib/controls";
 import {useWeaponSystems} from "@/lib/stores/combat/useWeaponSystems";
+import {useFocusState} from "@/lib/stores/ui/useFocusState";
 
 export function CameraController() {
   const { camera } = useThree();
@@ -54,6 +55,9 @@ export function CameraController() {
   const forwardDoubleClickRef = useRef(false);
   const lastTorpedoPressRef = useRef(0);
   const lastMissilePressRef = useRef(0);
+  
+  // Focus state management - use global focus state store
+  const { hasFocus, setFocus } = useFocusState();
 
   
   // Dynamic FOV state for smooth camera adjustments
@@ -271,6 +275,55 @@ export function CameraController() {
     }
   };
 
+  // Focus management - track window focus/blur events
+  useEffect(() => {
+    const handleFocus = () => {
+      console.log("[FOCUS] Game window gained focus");
+      setFocus(true);
+    };
+    
+    const handleBlur = () => {
+      console.log("[FOCUS] Game window lost focus - disabling controls");
+      setFocus(false);
+      // Reset velocity when losing focus to prevent stuck movement
+      velocityRef.current.set(0, 0, 0);
+    };
+    
+    // Listen for both window and document focus events for better coverage
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        handleBlur();
+      } else {
+        handleFocus();
+      }
+    });
+    
+    // Also handle canvas click to regain focus
+    const canvas = document.querySelector('canvas');
+    if (canvas) {
+      const handleCanvasClick = () => {
+        if (!hasFocus) {
+          console.log("[FOCUS] Canvas clicked - regaining focus");
+          setFocus(true);
+        }
+      };
+      canvas.addEventListener('click', handleCanvasClick);
+      
+      return () => {
+        window.removeEventListener('focus', handleFocus);
+        window.removeEventListener('blur', handleBlur);
+        canvas.removeEventListener('click', handleCanvasClick);
+      };
+    }
+    
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [setFocus, hasFocus]);
+
   // Check for pending takeoff on mount and when takeoffPlanetName changes
   useEffect(() => {
     const checkForTakeoff = () => {
@@ -338,16 +391,34 @@ export function CameraController() {
     // Skip heavy processing on low performance
     const skipHeavyProcessing = isLowPerfRef.current && (frameCount % 2 === 0);
     
-    const controls = get();
+    // Only process controls if the game has focus
+    // When not focused, provide all control keys with false values to avoid TypeScript errors
+    const controls = hasFocus ? get() : {
+      forward: false,
+      backward: false,
+      left: false,
+      right: false,
+      up: false,
+      down: false,
+      shoot: false,
+      land: false,
+      info: false,
+      menu: false,
+      center: false,
+      flashlight: false,
+      charge: false,
+      torpedo: false,
+      missile: false,
+    };
     const velocity = velocityRef.current;
     const acceleration = accelerationRef.current;
 
     // Rocket propulsion physics constants
-    const baseThrustPower = 20; // Increased for faster movement and combat
-    const baseMaxVelocity = 50; // Increased terminal velocity
+    const baseThrustPower = 100; // Much more responsive for combat
+    const baseMaxVelocity = 200; // Much higher max velocity for quick maneuvers
     const dragCoefficient = 0.995; // Reduced friction for stickier momentum
-    const mobileThrustPower = 50; // Increased for faster mobile movement
-    const rotationalDamping = 0.96; // Increased responsiveness for combat targeting
+    const mobileThrustPower = 100; // Increased for faster mobile movement
+    const rotationalDamping = 0.92; // Snappier turning for better combat targeting
 
     // Warp mode constants
     const warpThrustMultiplier = upgrades.warpCapability ? 4 : 2; // Enhanced thrust in warp
@@ -657,10 +728,10 @@ export function CameraController() {
     // Only apply look controls if not landing
     if (!isLanding) {
       // Combine mouse and mobile rotation inputs
-      const mouseX = mouse.x * sensitivity * 2; // Doubled for better combat tracking
-      const mouseY = mouse.y * sensitivity * 2 * (invertY ? -1 : 1); // Doubled for better combat tracking
-      const mobileX = mobileRotationRef.current.x * 0.5; // Increased for faster combat aiming
-      const mobileY = mobileRotationRef.current.y * 0.5 * (invertY ? -1 : 1); // Increased for faster combat aiming
+      const mouseX = mouse.x * sensitivity * 5.0; // Much more responsive for combat
+      const mouseY = mouse.y * sensitivity * 5.0 * (invertY ? -1 : 1); // Much more responsive for combat
+      const mobileX = mobileRotationRef.current.x * 1.0; // Increased mobile rotation sensitivity
+      const mobileY = mobileRotationRef.current.y * 1.0 * (invertY ? -1 : 1); // Increased mobile rotation sensitivity
 
       const targetRotationY = camera.rotation.y - (mouseX + mobileX);
       const targetRotationX = THREE.MathUtils.clamp(

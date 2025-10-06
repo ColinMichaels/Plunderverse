@@ -37,6 +37,7 @@ import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { planets } from "../../lib/planetData";
 import { BottomControlSidebar } from "./BottomControlSidebar";
+import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -107,6 +108,10 @@ export function GameUI() {
 
   return (
     <>
+      {/* Focus State Indicators */}
+      <FocusIndicator />
+      <FocusStatusIndicator />
+      
       {/* Mission HUD - horizontal display at top of screen */}
       <MissionHUD />
       
