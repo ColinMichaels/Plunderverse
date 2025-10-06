@@ -237,6 +237,37 @@ export function EnhancedSplashScreen() {
     return () => stopAmbientMusic();
   }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
 
+  // Function to fade out music smoothly
+  const fadeOutMusic = async () => {
+    const player = useMusicPlayer.getState();
+    const currentTrack = player.getCurrentTrack();
+    
+    if (currentTrack?.audio && player.isPlaying) {
+      console.log('[EnhancedSplashScreen] Starting music fade-out...');
+      
+      const fadeOutDuration = 1500; // 1.5 seconds for smooth fade
+      const fadeOutSteps = 30; // 30 steps for smooth fade
+      const stepDuration = fadeOutDuration / fadeOutSteps;
+      const currentVolume = player.volume;
+      const volumeStep = currentVolume / fadeOutSteps;
+      
+      // Gradually reduce volume
+      for (let i = 0; i < fadeOutSteps; i++) {
+        const newVolume = currentVolume - (volumeStep * (i + 1));
+        player.setVolume(Math.max(0, newVolume));
+        await new Promise(resolve => setTimeout(resolve, stepDuration));
+      }
+      
+      // Pause and cleanup after fade completes
+      player.pause();
+      player.cleanup();
+      console.log('[EnhancedSplashScreen] Music fade-out complete');
+      
+      // Reset volume for next time music plays
+      player.setVolume(currentVolume);
+    }
+  };
+
   const handleBeginJourney = async () => {
     if (isAuthenticated || isGuest) {
       hasStartedGameRef.current = true;
@@ -246,6 +277,9 @@ export function EnhancedSplashScreen() {
         clearTimeout(autoPlayTimerRef.current);
         autoPlayTimerRef.current = null;
       }
+
+      // Fade out music smoothly before transition
+      await fadeOutMusic();
 
       // Hide canvas before transition to prevent WebGL context conflicts
       setShowCanvas(false);
@@ -357,6 +391,9 @@ export function EnhancedSplashScreen() {
     }
     
     useAuthStore.getState().playAsGuest();
+    
+    // Fade out music smoothly before transition
+    await fadeOutMusic();
     
     // Hide canvas before transition to prevent WebGL context conflicts
     setShowCanvas(false);
