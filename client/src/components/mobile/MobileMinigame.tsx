@@ -8,6 +8,8 @@ import { Button } from '../ui/button';
 import { ArrowLeft, RotateCw } from 'lucide-react';
 import { MobileSyncIndicator } from '../ui/SyncStatusIndicator';
 import { useMiniGameSync } from '../../hooks/useMiniGameSync';
+import { OfflineIndicator } from './OfflineIndicator';
+import MiniGameSyncService from '../../services/MiniGameSyncService';
 
 // Import Phaser scenes
 import { BootScene } from './minigame/BootScene.js';
@@ -58,6 +60,16 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
     return () => {
       window.removeEventListener('resize', handleOrientationChange);
       window.removeEventListener('orientationchange', handleOrientationChange);
+    };
+  }, []);
+
+  // Activate sync service when component mounts
+  useEffect(() => {
+    const syncService = MiniGameSyncService.getInstance();
+    syncService.setMinigameActive(true);
+    
+    return () => {
+      syncService.setMinigameActive(false);
     };
   }, []);
 
@@ -203,6 +215,9 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
             userSelect: 'none'
           }}
         />
+        
+        {/* Offline indicator - shows connection status */}
+        <OfflineIndicator compact={true} />
         
         {/* Sync indicator */}
         <MobileSyncIndicator />

@@ -7,6 +7,7 @@ import { useCrewManagement } from '../lib/stores/ship/useCrewManagement';
 import { usePlunderverseMissions } from '../lib/stores/economy/usePlunderverseMissions';
 import { useShipStatus } from '../lib/stores/ship/useShipStatus';
 import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
+import OfflineStorageService, { OfflineGameState, SyncQueueItem } from './OfflineStorageService';
 
 // Sync message types
 export type SyncMessageType = 
@@ -78,15 +79,20 @@ class MiniGameSyncService {
   private batchDelay: number = 100; // Batch updates for 100ms
   private syncListeners: Map<string, Function[]> = new Map();
   private isMinigameActive: boolean = false;
+  private offlineStorage: OfflineStorageService;
+  private autoSaveInterval: NodeJS.Timeout | null = null;
   
   // Store unsubscribe functions
   private unsubscribers: (() => void)[] = [];
 
   private constructor() {
     this.clientId = this.generateClientId();
+    this.offlineStorage = OfflineStorageService.getInstance();
     this.initializeWebSocket();
     this.setupStoreSubscriptions();
     this.startHeartbeat();
+    this.startAutoSave();
+    this.loadOfflineState();
   }
 
   public static getInstance(): MiniGameSyncService {
@@ -171,7 +177,10 @@ class MiniGameSyncService {
   private scheduleReconnect(): void {
     if (this.reconnectAttempts >= this.maxReconnectAttempts) {
       console.error('[MiniGameSync] Max reconnection attempts reached');
-      toast.error('Sync connection lost. Please refresh the page.');
+      toast.warning('Offline mode active. Progress will be synced when connection is restored.');
+      
+      // Save state to offline storage
+      this.saveOfflineState();
       return;
     }
 
@@ -355,7 +364,7 @@ class MiniGameSyncService {
     }
   }
 
-  private queueUpdate(payload: SyncPayload): void {
+  private async queueUpdate(payload: SyncPayload): Promise<void> {
     const queuedUpdate: QueuedUpdate = {
       id: `${Date.now()}-${Math.random()}`,
       payload,
@@ -370,6 +379,18 @@ class MiniGameSyncService {
     if (this.offlineQueue.length > 100) {
       this.offlineQueue = this.offlineQueue.slice(-100);
     }
+
+    // Also persist to IndexedDB for recovery after app restart
+    const syncType = payload.type === 'state_delta' || payload.type === 'state_update' || 
+                     payload.type === 'state_request' || payload.type === 'state_ack' ? 
+                     payload.type : 'state_update';
+    
+    await this.offlineStorage.queueSyncItem({
+      type: syncType as any,
+      timestamp: payload.timestamp,
+      data: payload.data,
+      retries: 0
+    });
   }
 
   private sendQueuedUpdates(): void {
@@ -591,23 +612,6 @@ class MiniGameSyncService {
     this.offlineQueue = [];
   }
 
-  public destroy(): void {
-    this.stopHeartbeat();
-    
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
-
-    this.unsubscribers.forEach(unsub => unsub());
-    this.unsubscribers = [];
-
-    if (this.batchTimeout) {
-      clearTimeout(this.batchTimeout);
-    }
-
-    this.syncListeners.clear();
-  }
 
   // Mini-game specific sync methods
   public syncCrewTask(crewMemberId: string, task: any, progress: number): void {
@@ -650,6 +654,166 @@ class MiniGameSyncService {
 
   public syncMissionProgress(missionId: string, progress: any): void {
     this.queueStateChange('missions', `progress_${missionId}`, null, progress);
+  }
+
+  // Offline storage methods
+  private async saveOfflineState(): Promise<void> {
+    try {
+      const playerState = usePlayer.getState();
+      const state: OfflineGameState = {
+        timestamp: Date.now(),
+        version: this.currentVersion,
+        player: {
+          level: playerState.level,
+          experience: playerState.experience,
+          reputation: playerState.reputation, // This is already the correct object type
+          notoriety: playerState.notoriety,
+          heat: playerState.heat,
+          rank: playerState.rankTitle // Use rankTitle (string) instead of rank (number)
+        },
+        economy: {
+          credits: useCreditsStore.getState().credits,
+          inventory: useInventoryStore.getState().items
+        },
+        missions: {
+          active: usePlunderverseMissions.getState().activeMissions,
+          completed: Array.from(usePlunderverseMissions.getState().completedMissionIds),
+          progress: {}
+        },
+        crew: {
+          members: useCrewManagement.getState().activeCrew,
+          tasks: {}
+        },
+        miniGame: {
+          position: { x: 0, y: 0 },
+          currentStation: 'main',
+          npcInteractions: {},
+          smugglingMissions: [],
+          unlockedAreas: []
+        }
+      };
+
+      await this.offlineStorage.saveGameState(state);
+      console.log('[MiniGameSync] Game state saved to offline storage');
+    } catch (error) {
+      console.error('[MiniGameSync] Failed to save offline state:', error);
+    }
+  }
+
+  private async loadOfflineState(): Promise<void> {
+    try {
+      const state = await this.offlineStorage.loadGameState();
+      
+      if (!state) {
+        console.log('[MiniGameSync] No offline state found');
+        return;
+      }
+
+      console.log('[MiniGameSync] Loading offline state from', new Date(state.timestamp).toLocaleString());
+
+      // Apply offline state to stores
+      const playerStore = usePlayer.getState();
+      usePlayer.setState({
+        level: state.player.level,
+        experience: state.player.experience,
+        reputation: state.player.reputation, // This is already the correct object type
+        notoriety: state.player.notoriety,
+        heat: state.player.heat,
+        rankTitle: state.player.rank // rank in saved state is actually rankTitle (string)
+      });
+
+      useCreditsStore.setState({ credits: state.economy.credits });
+      useInventoryStore.setState({ items: state.economy.inventory });
+      
+      usePlunderverseMissions.setState({
+        activeMissions: state.missions.active,
+        completedMissionIds: new Set(state.missions.completed)
+      });
+
+      useCrewManagement.setState({ activeCrew: state.crew.members });
+
+      this.currentVersion = state.version;
+      
+      toast.info('Loaded offline game state');
+    } catch (error) {
+      console.error('[MiniGameSync] Failed to load offline state:', error);
+    }
+  }
+
+  private startAutoSave(): void {
+    // Auto-save every 30 seconds
+    this.autoSaveInterval = setInterval(() => {
+      if (this.isMinigameActive) {
+        this.saveOfflineState();
+      }
+    }, 30000);
+  }
+
+  private stopAutoSave(): void {
+    if (this.autoSaveInterval) {
+      clearInterval(this.autoSaveInterval);
+      this.autoSaveInterval = null;
+    }
+  }
+
+
+  // Check if offline mode
+  public isOffline(): boolean {
+    return this.syncStatus === 'offline' || !navigator.onLine;
+  }
+
+  // Get offline storage status
+  public getOfflineStatus(): {
+    online: boolean;
+    syncing: boolean;
+    lastSync: number;
+    queueSize: number;
+  } {
+    const storageStatus = this.offlineStorage.getSyncStatus();
+    
+    return {
+      online: !this.isOffline(),
+      syncing: this.syncStatus === 'syncing',
+      lastSync: storageStatus.lastSync,
+      queueSize: this.offlineQueue.length
+    };
+  }
+
+  // Force offline sync
+  public async forceOfflineSync(): Promise<void> {
+    if (!this.isOffline()) {
+      this.forceSync();
+      return;
+    }
+
+    // Save current state
+    await this.saveOfflineState();
+    
+    // Try to trigger background sync
+    await this.offlineStorage.triggerBackgroundSync();
+  }
+
+  // Override destroy to clean up auto-save
+  public destroy(): void {
+    this.stopHeartbeat();
+    this.stopAutoSave();
+    
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+
+    this.unsubscribers.forEach(unsub => unsub());
+    this.unsubscribers = [];
+
+    if (this.batchTimeout) {
+      clearTimeout(this.batchTimeout);
+    }
+
+    this.syncListeners.clear();
+    
+    // Save final state before destroying
+    this.saveOfflineState();
   }
 }
 

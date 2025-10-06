@@ -5,9 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <link rel="manifest" href="/manifest.json" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Register service worker for offline support
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', async () => {
+          try {
+            const registration = await navigator.serviceWorker.register('/sw.js');
+            console.log('Service Worker registered:', registration);
+            
+            // Request persistent storage
+            if ('storage' in navigator && 'persist' in navigator.storage) {
+              const isPersisted = await navigator.storage.persist();
+              console.log('Storage persistent:', isPersisted);
+            }
+          } catch (error) {
+            console.error('Service Worker registration failed:', error);
+          }
+        });
+      }
+    </script>
   </body>
 </html>
