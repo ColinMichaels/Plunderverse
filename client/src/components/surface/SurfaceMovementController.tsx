@@ -35,6 +35,17 @@ export function SurfaceMovementController() {
   const pitchRef = useRef(0); // Pitch (up/down)
   const velocityRef = useRef(new THREE.Vector3());
   const { sensitivity } = useSettings();
+  
+  // Target values for smooth interpolation (initialize to current values)
+  const targetRotationRef = useRef(0); // Target yaw for smooth rotation
+  const targetPitchRef = useRef(0); // Target pitch for smooth rotation
+  const smoothingFactor = 0.12; // Lower = smoother but less responsive (0.12 = smooth cinematic feel)
+  
+  // Initialize target values to match current values on mount
+  useEffect(() => {
+    targetRotationRef.current = rotationRef.current;
+    targetPitchRef.current = pitchRef.current;
+  }, []);
 
   // Collision system
   const { checkCollision } = useSurfaceCollision();
@@ -90,18 +101,18 @@ export function SurfaceMovementController() {
     // Mouse movement handler for first-person camera
     const handleMouseMove = (event: MouseEvent) => {
       if (document.pointerLockElement === canvas) {
-        // Use higher sensitivity multiplier for surface (10x base sensitivity)
-        const mouseSensitivity = sensitivity * 10;
+        // Reduced sensitivity for better control (3.5x instead of 10x)
+        const mouseSensitivity = sensitivity * 3.5;
         
-        // Update yaw (left/right) - inverted for natural feel
-        rotationRef.current -= event.movementX * mouseSensitivity;
+        // Update target yaw (left/right) - inverted for natural feel
+        targetRotationRef.current -= event.movementX * mouseSensitivity;
         
-        // Update pitch (up/down) with clamping to prevent over-rotation
-        pitchRef.current -= event.movementY * mouseSensitivity;
+        // Update target pitch (up/down) with clamping to prevent over-rotation
+        targetPitchRef.current -= event.movementY * mouseSensitivity;
         
-        // Clamp pitch to prevent looking too far up or down (roughly -85 to +85 degrees)
+        // Clamp target pitch to prevent looking too far up or down (roughly -85 to +85 degrees)
         const maxPitch = Math.PI / 2.1;
-        pitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, pitchRef.current));
+        targetPitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, targetPitchRef.current));
       }
     };
 
@@ -142,7 +153,7 @@ export function SurfaceMovementController() {
     const shake = cameraShakeRef.current;
 
     const moveSpeed = 6; // Rover movement speed
-    const turnSpeed = 0.9; // Turning speed
+    const turnSpeed = 0.55; // Reduced turning speed for smoother control (was 0.9)
     const maxVelocity = 15; // Cap velocity to prevent runaway acceleration
     const playerCollisionRadius = 2.5; // Collision detection radius
 
@@ -174,14 +185,20 @@ export function SurfaceMovementController() {
       velocity.add(right.multiplyScalar(moveSpeed));
     }
 
-    // Rotation controls - apply directly to ref
+    // Rotation controls - update target rotation for smooth interpolation
     if (controls.turnLeft) {
-      rotationRef.current += turnSpeed * delta;
+      targetRotationRef.current += turnSpeed * delta;
     }
 
     if (controls.turnRight) {
-      rotationRef.current -= turnSpeed * delta;
+      targetRotationRef.current -= turnSpeed * delta;
     }
+    
+    // Smooth interpolation for camera rotation (lerp)
+    // Apply easing to both mouse and keyboard rotation
+    const lerpFactor = 1 - Math.pow(1 - smoothingFactor, delta * 60); // Frame-rate independent smoothing
+    rotationRef.current += (targetRotationRef.current - rotationRef.current) * lerpFactor;
+    pitchRef.current += (targetPitchRef.current - pitchRef.current) * lerpFactor;
 
     // Flashlight control - toggle with debounce
     const currentTime = performance.now();
