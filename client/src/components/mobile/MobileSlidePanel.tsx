@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { triggerHaptic } from '../../utils/hapticFeedback';
 
 interface MobileSlidePanelProps {
   isOpen: boolean;
@@ -30,17 +31,6 @@ export const MobileSlidePanel: React.FC<MobileSlidePanelProps> = ({
 }) => {
   const [isDragging, setIsDragging] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
-  
-  // Haptic feedback on open/close (if available)
-  const triggerHaptic = () => {
-    try {
-      if ('vibrate' in navigator && typeof navigator.vibrate === 'function') {
-        navigator.vibrate(10);
-      }
-    } catch (error) {
-      // Vibration not supported or failed, silently ignore
-    }
-  };
 
   // Handle drag end to determine if panel should close
   const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {

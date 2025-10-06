@@ -567,17 +567,17 @@ export class MainGameScene extends Phaser.Scene {
       }
     });
     
-    // Add light circle around player
+    // Add light circle around player using multiple concentric circles for gradient effect
     if (this.player) {
-      const gradient = this.lightingLayer.createRadialGradient(
-        this.player.x, this.player.y, 0,
-        this.player.x, this.player.y, 200
-      );
-      gradient.addColorStop(0, 'rgba(255, 255, 255, 0.8)');
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      const lightRadius = 200;
+      const steps = 10;
       
-      this.lightingLayer.fillStyle(gradient as any);
-      this.lightingLayer.fillCircle(this.player.x, this.player.y, 200);
+      for (let i = steps; i > 0; i--) {
+        const radius = (lightRadius / steps) * i;
+        const alpha = 0.8 * (1 - (i / steps));
+        this.lightingLayer.fillStyle(0xffffff, alpha);
+        this.lightingLayer.fillCircle(this.player.x, this.player.y, radius);
+      }
     }
   }
 
