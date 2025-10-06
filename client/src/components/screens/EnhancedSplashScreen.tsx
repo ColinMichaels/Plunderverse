@@ -24,7 +24,7 @@ import { SplashSolarSystem } from "../space/SplashSolarSystem";
 import { 
   Play, Image, Video, LogIn, UserPlus, Gamepad2, Star, 
   User, Coins, Trophy, MapPin, Shield, Sparkles, Award, Target,
-  ChevronDown, ChevronUp, Github, AlertCircle, Camera
+  ChevronDown, ChevronUp, Github, AlertCircle, Camera, X
 } from 'lucide-react';
 
 export function EnhancedSplashScreen() {
@@ -44,6 +44,7 @@ export function EnhancedSplashScreen() {
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
   const [showCanvas, setShowCanvas] = useState(true); // Control Canvas visibility
   const [cameraMode, setCameraMode] = useState<'simple' | 'cinematic'>('cinematic'); // Camera mode toggle
+  const [showDevelopmentNotice, setShowDevelopmentNotice] = useState(true); // Control dev notice visibility
   
   const { isAuthenticated, isGuest, user } = useAuthStore();
   const { start } = useGame();
@@ -152,27 +153,27 @@ export function EnhancedSplashScreen() {
   const slideContent = [
     {
       type: "feature",
-      text: "🏴‍☠️ Live as a Space Outlaw in 2149",
+      text: "Live as a Space Outlaw in 2149",
       subtext: "Navigate the bankrupt solar system's criminal underworld",
     },
     {
       type: "feature",
-      text: "⚖️ Choose Your Path: Hero or Villain",
+      text: "Choose Your Path: Hero or Villain",
       subtext: "Every decision shapes your reputation and destiny",
     },
     {
       type: "feature",
-      text: "👥 Recruit Your Crew",
+      text: "Recruit Your Crew",
       subtext: "Hire pilots, mechanics, and gunners with unique skills",
     },
     {
       type: "feature",
-      text: "🎯 Dynamic Mission System",
+      text: "Dynamic Mission System",
       subtext: "Smuggle contraband, mine resources, or hunt bounties",
     },
     {
       type: "reason",
-      text: "🔥 Heat & Notoriety System",
+      text: "Heat & Notoriety System",
       subtext: "Stay under the radar or become the most wanted",
     }
   ];
@@ -849,61 +850,64 @@ export function EnhancedSplashScreen() {
       )}
 
       {/* Development Disclaimer */}
-      <div className="absolute bottom-4 left-4 z-30 max-w-md">
-        <div className="bg-black/60 backdrop-blur-sm border border-amber-400/30 rounded-lg p-3">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-            <div className="space-y-2">
-              <h4 className="text-amber-400 text-sm font-semibold flex items-center gap-2">
-                Development Build
-              </h4>
-              <div className="text-xs text-slate-300 space-y-1">
-                <p>⚠️ This game is still in active development and not ready for full release.</p>
-                <p>🐛 Expect tons of bugs, glitches, and unfinished features.</p>
-                <p>👥 We're actively looking for developers to help build this game!</p>
-                <p className="pt-1">
-                  <span>Join the development on </span>
-                  <a 
-                    href="https://github.com/plunderverse/game"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 
-                               underline underline-offset-2 transition-colors"
+      {showDevelopmentNotice && (
+        <div className="absolute bottom-4 left-4 z-30 max-w-md">
+          <div className="bg-black/60 backdrop-blur-sm border border-amber-400/30 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
+              <div className="space-y-2 flex-1">
+                <h4 className="text-amber-400 text-sm font-semibold flex items-center justify-between">
+                  <span>Development Build</span>
+                  <button
+                    onClick={() => setShowDevelopmentNotice(false)}
+                    className="ml-2 p-1 rounded hover:bg-amber-400/20 transition-colors"
+                    aria-label="Close development notice"
                   >
-                    <Github className="w-3 h-3" />
-                    <span>GitHub</span>
-                  </a>
-                </p>
+                    <X className="w-4 h-4 text-amber-400" />
+                  </button>
+                </h4>
+                <div className="text-xs text-slate-300 space-y-1">
+                  <p>This game is still in active development and not ready for full release.</p>
+                  <p>Expect tons of bugs, glitches, and unfinished features.</p>
+                  <p>We're actively looking for developers to help build this game!</p>
+                  <p className="pt-1">
+                    <span>Join the development on </span>
+                    <a 
+                      href="https://github.com/plunderverse/game"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 
+                                 underline underline-offset-2 transition-colors"
+                    >
+                      <Github className="w-3 h-3" />
+                      <span>GitHub</span>
+                    </a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Camera Mode Toggle - Middle Bottom */}
-      <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-30">
+      {/* Bottom Right Controls - Music Player and Camera Toggle */}
+      <div className="absolute bottom-4 right-4 z-30 flex items-end gap-3">
+        {/* Camera Mode Toggle */}
         <button
           onClick={() => setCameraMode(cameraMode === 'cinematic' ? 'simple' : 'cinematic')}
-          className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-4 py-2
+          className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-3 py-2
                      hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group"
           title={`Switch to ${cameraMode === 'cinematic' ? 'Simple' : 'Cinematic'} camera`}
         >
           <div className="flex items-center gap-2">
             <Camera className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
             <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
-              {cameraMode === 'cinematic' ? 'Cinematic Camera' : 'Simple Camera'}
+              {cameraMode === 'cinematic' ? 'Cinematic' : 'Simple'}
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            {cameraMode === 'cinematic' 
-              ? 'Epic flybys & dramatic shots' 
-              : 'Simple Earth orbit'}
-          </p>
         </button>
-      </div>
-
-      {/* Music Player */}
-      <div className="absolute bottom-4 right-4">
+        
+        {/* Music Player */}
         <MusicPlayer />
       </div>
       
