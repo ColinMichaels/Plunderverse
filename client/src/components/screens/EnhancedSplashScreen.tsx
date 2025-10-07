@@ -46,8 +46,11 @@ export function EnhancedSplashScreen() {
   const [showCanvas, setShowCanvas] = useState(true); // Control Canvas visibility
   const [cameraMode, setCameraMode] = useState<'simple' | 'cinematic'>('cinematic'); // Camera mode toggle
   const [showDevelopmentNotice, setShowDevelopmentNotice] = useState(true); // Control dev notice visibility
+  const [showAccountMenu, setShowAccountMenu] = useState(false); // User account dropdown menu
+  const [showCinematicMenu, setShowCinematicMenu] = useState(false); // Cinematic sequence dropdown
+  const [selectedSequence, setSelectedSequence] = useState(0); // Selected cinematic sequence index
   
-  const { isAuthenticated, isGuest, user } = useAuthStore();
+  const { isAuthenticated, isGuest, user, logout } = useAuthStore();
   const { start } = useGame();
   const { setSelectedPlanet } = useSolarSystem();
   const { setLanded } = useLandedState();
@@ -55,6 +58,20 @@ export function EnhancedSplashScreen() {
   
   // Track if user started the game
   const hasStartedGameRef = useRef(false);
+  
+  // Cinematic sequence options
+  const cinematicSequences = [
+    { name: 'Mars Flyby', description: 'Epic Mars flyby' },
+    { name: 'Jupiter Orbital Cruise', description: 'Cruise around Jupiter' },
+    { name: 'Saturn Dramatic Approach', description: 'Dramatic approach to Saturn' },
+    { name: 'System Overview', description: 'Overview of inner solar system' },
+    { name: 'Sun Skim', description: 'Close sun skim' },
+    { name: 'Venus to Earth', description: 'Venus to Earth transition' },
+    { name: 'Neptune Flyby', description: 'Neptune distant view' },
+    { name: 'Mercury Fast Pass', description: 'Mercury fast pass' },
+    { name: 'Earth Orbital Cruise', description: 'Earth orbital cruise' },
+    { name: 'System Pullback', description: 'Cinematic system pullback' }
+  ];
   
   // Get player stats from stores
   const { 
@@ -419,7 +436,11 @@ export function EnhancedSplashScreen() {
               <Suspense fallback={null}>
               {/* Use full solar system for better preloading if enabled */}
               {useFullSystem ? (
-                <SplashSolarSystem useFullComponents={true} cameraMode={cameraMode} />
+                <SplashSolarSystem 
+                  useFullComponents={true} 
+                  cameraMode={cameraMode} 
+                  selectedSequenceIndex={selectedSequence}
+                />
               ) : (
                 <SolarSystemBackground />
               )}
@@ -847,6 +868,72 @@ export function EnhancedSplashScreen() {
         </div>
       )}
 
+      {/* User Account Menu - Top Right */}
+      {(isAuthenticated || isGuest) && (
+        <div className="absolute top-4 right-4 z-30">
+          <div className="relative">
+            {/* Account Button */}
+            <button
+              onClick={() => setShowAccountMenu(!showAccountMenu)}
+              className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-4 py-2
+                         hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group flex items-center gap-2"
+              title="Account menu"
+            >
+              <User className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
+              <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
+                {isGuest ? 'Guest' : user?.username || 'Captain'}
+              </span>
+              <ChevronDown className={`w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-transform duration-200 ${showAccountMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            {/* Dropdown Menu */}
+            {showAccountMenu && (
+              <div className="absolute top-full right-0 mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
+                              rounded-lg shadow-xl overflow-hidden">
+                {/* User Info Header */}
+                <div className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-400/5">
+                  <p className="text-xs text-cyan-400/70 uppercase tracking-wide mb-1">
+                    {isGuest ? 'Guest Mode' : 'Signed In As'}
+                  </p>
+                  <p className="text-sm font-medium text-cyan-300">
+                    {isGuest ? 'Playing as Guest' : user?.email || 'Unknown'}
+                  </p>
+                </div>
+
+                {/* Menu Options */}
+                <div className="py-1">
+                  {!isGuest && (
+                    <button
+                      onClick={async () => {
+                        setShowAccountMenu(false);
+                        await logout();
+                        setShowAuthScreen(true);
+                      }}
+                      className="w-full px-4 py-2 text-left text-sm text-cyan-300 hover:bg-cyan-400/10 
+                                 hover:text-cyan-200 transition-colors flex items-center gap-2"
+                    >
+                      <User className="w-4 h-4" />
+                      Switch Account
+                    </button>
+                  )}
+                  <button
+                    onClick={async () => {
+                      setShowAccountMenu(false);
+                      await logout();
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-400/10 
+                               hover:text-red-300 transition-colors flex items-center gap-2"
+                  >
+                    <LogIn className="w-4 h-4 rotate-180" />
+                    {isGuest ? 'Exit Guest Mode' : 'Logout'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Development Disclaimer */}
       {showDevelopmentNotice && (
         <div className="absolute bottom-4 left-4 z-30 max-w-md">
@@ -888,8 +975,67 @@ export function EnhancedSplashScreen() {
         </div>
       )}
 
-      {/* Bottom Right Controls - Music Player and Camera Toggle */}
+      {/* Bottom Right Controls - Music Player and Camera Controls */}
       <div className="absolute bottom-4 right-4 z-30 flex items-end gap-3">
+        {/* Cinematic Sequence Selector - Only show when in cinematic mode */}
+        {cameraMode === 'cinematic' && (
+          <div className="relative">
+            {/* Sequence Selector Button */}
+            <button
+              onClick={() => setShowCinematicMenu(!showCinematicMenu)}
+              className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-3 py-2
+                         hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group"
+              title="Select cinematic sequence"
+            >
+              <div className="flex items-center gap-2">
+                <Video className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
+                <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
+                  Scene {selectedSequence + 1}
+                </span>
+                <ChevronUp className={`w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-transform duration-200 ${showCinematicMenu ? 'rotate-180' : ''}`} />
+              </div>
+            </button>
+
+            {/* Dropdown Menu - Opens upward */}
+            {showCinematicMenu && (
+              <div className="absolute bottom-full right-0 mb-2 w-64 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
+                              rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto">
+                {/* Menu Header */}
+                <div className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-400/5 sticky top-0">
+                  <p className="text-xs text-cyan-400/70 uppercase tracking-wide">
+                    Cinematic Sequences
+                  </p>
+                </div>
+
+                {/* Sequence Options */}
+                <div className="py-1">
+                  {cinematicSequences.map((sequence, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setSelectedSequence(index);
+                        setShowCinematicMenu(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-start gap-3
+                                 ${selectedSequence === index 
+                                   ? 'bg-cyan-400/20 text-cyan-200 border-l-2 border-cyan-400' 
+                                   : 'text-cyan-300 hover:bg-cyan-400/10 hover:text-cyan-200'}`}
+                    >
+                      <span className="text-xs text-cyan-400/70 font-mono mt-0.5 min-w-[1.5rem]">
+                        {index + 1}.
+                      </span>
+                      <div className="flex-1">
+                        <p className="font-medium">{sequence.name}</p>
+                        <p className="text-xs text-cyan-400/60 mt-0.5">{sequence.description}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
         {/* Camera Mode Toggle */}
         <button
           onClick={() => setCameraMode(cameraMode === 'cinematic' ? 'simple' : 'cinematic')}

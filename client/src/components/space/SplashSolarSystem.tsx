@@ -78,8 +78,8 @@ function SimpleOrbitCamera() {
 }
 
 // Advanced cinematic camera with multiple shot types
-function AdvancedCinematicCamera() {
-  const [currentSequenceIndex, setCurrentSequenceIndex] = useState(0);
+function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequenceIndex?: number }) {
+  const [currentSequenceIndex, setCurrentSequenceIndex] = useState(initialSequenceIndex);
   const sequenceProgressRef = useRef(0);
   const sequenceStartTimeRef = useRef<number | null>(null);
   const cameraPathRef = useRef<THREE.Vector3[]>([]);
@@ -90,6 +90,15 @@ function AdvancedCinematicCamera() {
   const lastLookAtRef = useRef(new THREE.Vector3());
 
   const transitionDurationMultiplier = 2.5;
+
+  // Update sequence when user selects a different one
+  useEffect(() => {
+    if (initialSequenceIndex !== currentSequenceIndex) {
+      setCurrentSequenceIndex(initialSequenceIndex);
+      sequenceStartTimeRef.current = null; // Reset to start new sequence immediately
+      console.log(`[AdvancedCinematicCamera] Switching to sequence ${initialSequenceIndex}`);
+    }
+  }, [initialSequenceIndex]);
 
   // Define cinematic sequences
   const cinematicSequences: CameraSequence[] = useMemo(
@@ -540,22 +549,26 @@ function AdvancedCinematicCamera() {
 // Main cinematic camera controller with mode switching
 function CinematicCamera({
   mode = "cinematic",
+  selectedSequenceIndex = 0,
 }: {
   mode?: "simple" | "cinematic";
+  selectedSequenceIndex?: number;
 }) {
   if (mode === "simple") {
     return <SimpleOrbitCamera />;
   }
-  return <AdvancedCinematicCamera />;
+  return <AdvancedCinematicCamera initialSequenceIndex={selectedSequenceIndex} />;
 }
 
 // Full solar system optimized for splash screen with preloading
 export function SplashSolarSystem({
   useFullComponents = false,
   cameraMode = "cinematic",
+  selectedSequenceIndex = 0,
 }: {
   useFullComponents?: boolean;
   cameraMode?: "simple" | "cinematic";
+  selectedSequenceIndex?: number;
 }) {
   const systemRef = useRef<THREE.Group>(null);
   const { time, setTime, initializeUniverseTime, updateUniverseTime } =
@@ -612,7 +625,7 @@ export function SplashSolarSystem({
       </group>
 
       {/* Cinematic camera controller with mode selection */}
-      <CinematicCamera mode={cameraMode} />
+      <CinematicCamera mode={cameraMode} selectedSequenceIndex={selectedSequenceIndex} />
     </>
   );
 }

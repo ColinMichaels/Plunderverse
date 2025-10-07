@@ -7,6 +7,7 @@ import { useEquipment } from "../stores/ship/useEquipment";
 import { useSurvival } from "../stores/economy/useSurvival";
 import { useCrewManagement } from "../stores/ship/useCrewManagement";
 import { useObjectiveTriggers } from "../stores/economy/useObjectiveTriggers";
+import { useGame, GamePhase } from "../stores/ui/useGame";
 import { ContentRegistry } from "./contentRegistry";
 import { toast } from "sonner";
 import { missionControlTest } from "../tests/missionControlTest";
@@ -33,6 +34,7 @@ export class GameFacade {
   private economicPressureInterval: NodeJS.Timeout | null = null;
   private maintenanceInterval: NodeJS.Timeout | null = null;
   private survivalInterval: NodeJS.Timeout | null = null;
+  private isPaused: boolean = true; // Start paused (game starts on splash screen)
 
   // Story progression tracking
   private storyProgress: Map<string, any> = new Map();
@@ -223,10 +225,43 @@ export class GameFacade {
 
       // Start economic pressure systems
       this.startEconomicPressure();
+      
+      // Subscribe to game phase changes for auto pause/resume
+      this.subscribeToGamePhase();
     } catch (error) {
       console.error("[GameFacade] Failed to initialize:", error instanceof Error ? error.message : String(error));
       // Don't throw - allow the app to continue with default values
       this.initialized = false;
+    }
+  }
+
+  /**
+   * Subscribe to game phase changes to automatically pause/resume economic systems
+   */
+  private subscribeToGamePhase(): void {
+    // Subscribe to game phase changes
+    useGame.subscribe(
+      (state) => state.phase,
+      (phase: GamePhase) => {
+        console.log(`[GameFacade] Game phase changed to: ${phase}`);
+        
+        if (phase === 'playing') {
+          // Resume economic systems when actively playing
+          this.resumeEconomicSystems();
+        } else {
+          // Pause when on splash, ready, or ended screens
+          this.pauseEconomicSystems();
+        }
+      }
+    );
+    
+    // Also check current phase on startup
+    const currentPhase = useGame.getState().phase;
+    console.log(`[GameFacade] Initial game phase: ${currentPhase}`);
+    if (currentPhase === 'playing') {
+      this.resumeEconomicSystems();
+    } else {
+      this.pauseEconomicSystems();
     }
   }
 
@@ -247,6 +282,12 @@ export class GameFacade {
     console.log(`[GameFacade] Daily costs will now be deducted every ${paymentIntervalMinutes} minute(s) instead of every minute`);
     
     this.economicPressureInterval = setInterval(async () => {
+      // Skip if paused (on splash screen or not playing)
+      if (this.isPaused) {
+        console.log(`[GameFacade] Skipping daily costs - game is paused`);
+        return;
+      }
+      
       console.log(`[GameFacade] Processing daily costs deduction (interval: ${paymentIntervalMinutes} minutes)`);
       await this.applyDailyCosts();
       await this.applyHeatDecay();
@@ -264,11 +305,20 @@ export class GameFacade {
 
     // Maintenance degradation timer (every 5 minutes = more realistic)
     this.maintenanceInterval = setInterval(async () => {
+      // Skip if paused
+      if (this.isPaused) {
+        return;
+      }
       await this.applyMaintenanceDegradation();
     }, 5 * 60000);
 
     // Survival consumption timer (every 30 seconds for oxygen, adjusted for other resources)
     this.survivalInterval = setInterval(() => {
+      // Skip if paused
+      if (this.isPaused) {
+        return;
+      }
+      
       const survival = useSurvival.getState();
       survival.consumeResources(0.5); // Consume for 30 seconds worth
 
@@ -302,6 +352,41 @@ export class GameFacade {
     }
 
     console.log("[GameFacade] Economic pressure systems stopped");
+  }
+
+  /**
+   * Pause economic pressure systems (stop deducting credits/resources)
+   * Called when player is on splash screen or not actively playing
+   */
+  pauseEconomicSystems(): void {
+    if (this.isPaused) {
+      console.log("[GameFacade] Economic systems already paused");
+      return;
+    }
+    
+    this.isPaused = true;
+    console.log("[GameFacade] ⏸️  Economic systems PAUSED - credits and resources will not be deducted");
+  }
+
+  /**
+   * Resume economic pressure systems (resume deductions)
+   * Called when player starts actively playing
+   */
+  resumeEconomicSystems(): void {
+    if (!this.isPaused) {
+      console.log("[GameFacade] Economic systems already running");
+      return;
+    }
+    
+    this.isPaused = false;
+    console.log("[GameFacade] ▶️  Economic systems RESUMED - normal deductions will occur");
+  }
+
+  /**
+   * Check if economic systems are currently paused
+   */
+  isEconomicSystemsPaused(): boolean {
+    return this.isPaused;
   }
 
   /**
