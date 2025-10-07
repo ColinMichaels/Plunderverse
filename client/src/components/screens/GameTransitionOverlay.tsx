@@ -1,5 +1,5 @@
-import { motion, AnimatePresence } from 'framer-motion';
-import { Loader2, Rocket, MapPin, Shield, Fuel } from 'lucide-react';
+import { motion, AnimatePresence } from "framer-motion";
+import { Loader2, Rocket, MapPin, Shield, Fuel } from "lucide-react";
 
 interface GameTransitionOverlayProps {
   isVisible: boolean;
@@ -8,11 +8,11 @@ interface GameTransitionOverlayProps {
   progress?: number;
 }
 
-export function GameTransitionOverlay({ 
-  isVisible, 
-  status, 
-  subtitle, 
-  progress 
+export function GameTransitionOverlay({
+  isVisible,
+  status,
+  subtitle,
+  progress,
 }: GameTransitionOverlayProps) {
   return (
     <AnimatePresence>
@@ -28,19 +28,20 @@ export function GameTransitionOverlay({
           <div className="absolute inset-0 overflow-hidden">
             <div className="stars-bg absolute inset-0" />
             <motion.div
-              animate={{ 
+              initial={{ scale: 1, opacity: 0.3 }}
+              animate={{
                 scale: [1, 1.2, 1],
-                opacity: [0.3, 0.6, 0.3] 
+                opacity: [0.3, 0.6, 0.3],
               }}
-              transition={{ 
+              transition={{
                 duration: 3,
                 repeat: Infinity,
-                ease: "easeInOut"
+                ease: "easeInOut",
               }}
               className="absolute inset-0 bg-gradient-radial from-cyan-900/20 via-transparent to-transparent"
             />
           </div>
-          
+
           {/* Main content */}
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
@@ -52,10 +53,10 @@ export function GameTransitionOverlay({
             <div className="mb-8 relative">
               <motion.div
                 animate={{ rotate: 360 }}
-                transition={{ 
+                transition={{
                   duration: 2,
                   repeat: Infinity,
-                  ease: "linear"
+                  ease: "linear",
                 }}
                 className="w-24 h-24 mx-auto border-4 border-cyan-500/30 border-t-cyan-500 rounded-full"
               />
@@ -63,9 +64,9 @@ export function GameTransitionOverlay({
                 <Rocket className="w-10 h-10 text-orange-400" />
               </div>
             </div>
-            
+
             {/* Status text */}
-            <motion.h2 
+            <motion.h2
               key={status}
               initial={{ y: 20, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
@@ -73,7 +74,7 @@ export function GameTransitionOverlay({
             >
               {status}
             </motion.h2>
-            
+
             {subtitle && (
               <motion.p
                 initial={{ y: 10, opacity: 0 }}
@@ -84,7 +85,7 @@ export function GameTransitionOverlay({
                 {subtitle}
               </motion.p>
             )}
-            
+
             {/* Progress bar */}
             {progress !== undefined && (
               <motion.div
@@ -101,7 +102,7 @@ export function GameTransitionOverlay({
                 />
               </motion.div>
             )}
-            
+
             {/* Loading tips */}
             <motion.div
               initial={{ opacity: 0 }}
