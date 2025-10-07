@@ -1,0 +1,734 @@
+{
+  "$schema": "./minerals.schema.json",
+  "version": "1.0.0",
+  "minerals": {
+    "Iron Ore": {
+      "id": "iron_ore",
+      "name": "Iron Ore",
+      "rarity": "common",
+      "baseValue": 15,
+      "description": "Abundant metallic ore from exposed core",
+      "baseComplexity": 2,
+      "visual": {
+        "color": "#8C7853",
+        "emissiveColor": "#A58F6B",
+        "geometry": "box",
+        "rimColor": "#B5A48F",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.05,
+        "soundProfile": "metal"
+      }
+    },
+    "Platinum": {
+      "id": "platinum",
+      "name": "Platinum",
+      "rarity": "uncommon",
+      "baseValue": 85,
+      "description": "Precious metal deposits",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#E5E4E2",
+        "emissiveColor": "#F5F5F5",
+        "geometry": "box",
+        "rimColor": "#FFFFFF",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.08,
+        "soundProfile": "metal"
+      }
+    },
+    "Solar Crystals": {
+      "id": "solar_crystals",
+      "name": "Solar Crystals",
+      "rarity": "rare",
+      "baseValue": 200,
+      "description": "Heat-forged crystalline formations",
+      "baseComplexity": 6,
+      "visual": {
+        "color": "#FFA500",
+        "emissiveColor": "#FFD700",
+        "geometry": "dodecahedron",
+        "rimColor": "#FFFF00",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#FFA500",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.1,
+        "soundProfile": "crystal"
+      }
+    },
+    "Sulfur Compounds": {
+      "id": "sulfur_compounds",
+      "name": "Sulfur Compounds",
+      "rarity": "common",
+      "baseValue": 25,
+      "description": "Volcanic sulfur deposits",
+      "baseComplexity": 2,
+      "visual": {
+        "color": "#FFFF00",
+        "emissiveColor": "#FFFF66",
+        "geometry": "octahedron",
+        "rimColor": "#FFFF99",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.04,
+        "soundProfile": "rock"
+      }
+    },
+    "Carbon Fiber": {
+      "id": "carbon_fiber",
+      "name": "Carbon Fiber",
+      "rarity": "uncommon",
+      "baseValue": 75,
+      "description": "High-pressure carbon formations",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#2C2C2C",
+        "emissiveColor": "#4A4A4A",
+        "geometry": "box",
+        "rimColor": "#6E6E6E",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.07,
+        "soundProfile": "rock"
+      }
+    },
+    "Atmospheric Gas": {
+      "id": "atmospheric_gas",
+      "name": "Atmospheric Gas",
+      "rarity": "rare",
+      "baseValue": 150,
+      "description": "Rare atmospheric components",
+      "baseComplexity": 7,
+      "visual": {
+        "color": "#00CED1",
+        "emissiveColor": "#40E0D0",
+        "geometry": "sphere",
+        "rimColor": "#7FFFD4",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#00CED1",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.1,
+        "soundProfile": "gas"
+      }
+    },
+    "Water": {
+      "id": "water",
+      "name": "Water",
+      "rarity": "common",
+      "baseValue": 10,
+      "description": "Essential for life support systems",
+      "baseComplexity": 1,
+      "visual": {
+        "color": "#1E90FF",
+        "emissiveColor": "#4169E1",
+        "geometry": "cylinder",
+        "rimColor": "#6495ED",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.03,
+        "soundProfile": "liquid"
+      }
+    },
+    "Biomass": {
+      "id": "biomass",
+      "name": "Biomass",
+      "rarity": "uncommon",
+      "baseValue": 45,
+      "description": "Organic compounds and materials",
+      "baseComplexity": 3,
+      "visual": {
+        "color": "#228B22",
+        "emissiveColor": "#32CD32",
+        "geometry": "octahedron",
+        "rimColor": "#90EE90",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.06,
+        "soundProfile": "organic"
+      }
+    },
+    "Rare Earth Elements": {
+      "id": "rare_earth_elements",
+      "name": "Rare Earth Elements",
+      "rarity": "rare",
+      "baseValue": 180,
+      "description": "Advanced technology components",
+      "baseComplexity": 5,
+      "visual": {
+        "color": "#8B5CF6",
+        "emissiveColor": "#A78BFA",
+        "geometry": "dodecahedron",
+        "rimColor": "#C4B5FD",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#8B5CF6",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.1,
+        "soundProfile": "metal"
+      }
+    },
+    "Iron Oxide": {
+      "id": "iron_oxide",
+      "name": "Iron Oxide",
+      "rarity": "common",
+      "baseValue": 20,
+      "description": "The source of Mars' red color",
+      "baseComplexity": 2,
+      "visual": {
+        "color": "#CD5C5C",
+        "emissiveColor": "#E57373",
+        "geometry": "box",
+        "rimColor": "#EF9A9A",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.05,
+        "soundProfile": "rock"
+      }
+    },
+    "Ice Water": {
+      "id": "ice_water",
+      "name": "Ice Water",
+      "rarity": "uncommon",
+      "baseValue": 40,
+      "description": "Frozen water at polar caps",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#B0E0E6",
+        "emissiveColor": "#ADD8E6",
+        "geometry": "cylinder",
+        "rimColor": "#E0FFFF",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.06,
+        "soundProfile": "ice"
+      }
+    },
+    "Methane Gas": {
+      "id": "methane_gas",
+      "name": "Methane Gas",
+      "rarity": "rare",
+      "baseValue": 120,
+      "description": "Potential fuel source",
+      "baseComplexity": 6,
+      "visual": {
+        "color": "#98FB98",
+        "emissiveColor": "#90EE90",
+        "geometry": "sphere",
+        "rimColor": "#ADFF2F",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#98FB98",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.09,
+        "soundProfile": "gas"
+      }
+    },
+    "Helium-3": {
+      "id": "helium_3",
+      "name": "Helium-3",
+      "rarity": "uncommon",
+      "baseValue": 95,
+      "description": "Fusion reactor fuel",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#FFE4B5",
+        "emissiveColor": "#FFEFD5",
+        "geometry": "sphere",
+        "rimColor": "#FFF8DC",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.07,
+        "soundProfile": "gas"
+      }
+    },
+    "Hydrogen": {
+      "id": "hydrogen",
+      "name": "Hydrogen",
+      "rarity": "common",
+      "baseValue": 30,
+      "description": "Abundant atmospheric gas",
+      "baseComplexity": 1,
+      "visual": {
+        "color": "#E6E6FA",
+        "emissiveColor": "#F0E68C",
+        "geometry": "sphere",
+        "rimColor": "#FFFACD",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.04,
+        "soundProfile": "gas"
+      }
+    },
+    "Metallic Hydrogen": {
+      "id": "metallic_hydrogen",
+      "name": "Metallic Hydrogen",
+      "rarity": "legendary",
+      "baseValue": 500,
+      "description": "Exotic high-pressure material",
+      "baseComplexity": 10,
+      "visual": {
+        "color": "#FFD700",
+        "emissiveColor": "#FFA500",
+        "geometry": "dodecahedron",
+        "rimColor": "#FFFF00",
+        "rimIntensity": 1.5,
+        "pulseSpeed": 3.0,
+        "pulseIntensity": 0.7,
+        "floatAmount": 1.0
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "legendary_glow",
+        "color": "#FFD700",
+        "count": 30,
+        "size": 0.5,
+        "opacity": 0.6,
+        "speed": 0.03
+      },
+      "mining": {
+        "yieldMultiplier": 0.4,
+        "degradationRate": 0.15,
+        "soundProfile": "exotic"
+      }
+    },
+    "Ring Particles": {
+      "id": "ring_particles",
+      "name": "Ring Particles",
+      "rarity": "common",
+      "baseValue": 35,
+      "description": "Ice and rock fragments from rings",
+      "baseComplexity": 2,
+      "visual": {
+        "color": "#D3D3D3",
+        "emissiveColor": "#DCDCDC",
+        "geometry": "octahedron",
+        "rimColor": "#F5F5F5",
+        "rimIntensity": 0.2,
+        "pulseSpeed": 0.5,
+        "pulseIntensity": 0.1
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "common_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 1.0,
+        "degradationRate": 0.05,
+        "soundProfile": "ice"
+      }
+    },
+    "Titan Methane": {
+      "id": "titan_methane",
+      "name": "Titan Methane",
+      "rarity": "rare",
+      "baseValue": 160,
+      "description": "Liquid hydrocarbon from moon Titan",
+      "baseComplexity": 7,
+      "visual": {
+        "color": "#FFA07A",
+        "emissiveColor": "#FF8C69",
+        "geometry": "sphere",
+        "rimColor": "#FFB6C1",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#FFA07A",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.1,
+        "soundProfile": "liquid"
+      }
+    },
+    "Exotic Ice": {
+      "id": "exotic_ice",
+      "name": "Exotic Ice",
+      "rarity": "legendary",
+      "baseValue": 450,
+      "description": "Crystalline water ice formations",
+      "baseComplexity": 9,
+      "visual": {
+        "color": "#00FFFF",
+        "emissiveColor": "#00CED1",
+        "geometry": "dodecahedron",
+        "rimColor": "#AFEEEE",
+        "rimIntensity": 1.5,
+        "pulseSpeed": 3.0,
+        "pulseIntensity": 0.7,
+        "floatAmount": 1.0
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "legendary_glow",
+        "color": "#00FFFF",
+        "count": 30,
+        "size": 0.5,
+        "opacity": 0.6,
+        "speed": 0.03
+      },
+      "mining": {
+        "yieldMultiplier": 0.4,
+        "degradationRate": 0.12,
+        "soundProfile": "crystal"
+      }
+    },
+    "Methane Ice": {
+      "id": "methane_ice",
+      "name": "Methane Ice",
+      "rarity": "uncommon",
+      "baseValue": 65,
+      "description": "Frozen atmospheric methane",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#B0C4DE",
+        "emissiveColor": "#ADD8E6",
+        "geometry": "cylinder",
+        "rimColor": "#E0FFFF",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.07,
+        "soundProfile": "ice"
+      }
+    },
+    "Ammonia Crystals": {
+      "id": "ammonia_crystals",
+      "name": "Ammonia Crystals",
+      "rarity": "rare",
+      "baseValue": 140,
+      "description": "Crystallized ammonia compounds",
+      "baseComplexity": 6,
+      "visual": {
+        "color": "#E6E6FA",
+        "emissiveColor": "#D8BFD8",
+        "geometry": "dodecahedron",
+        "rimColor": "#DDA0DD",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#E6E6FA",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.1,
+        "soundProfile": "crystal"
+      }
+    },
+    "Diamond Rain": {
+      "id": "diamond_rain",
+      "name": "Diamond Rain",
+      "rarity": "legendary",
+      "baseValue": 600,
+      "description": "Pressure-formed diamond precipitation",
+      "baseComplexity": 12,
+      "visual": {
+        "color": "#B9F2FF",
+        "emissiveColor": "#87CEEB",
+        "geometry": "dodecahedron",
+        "rimColor": "#E0FFFF",
+        "rimIntensity": 1.5,
+        "pulseSpeed": 3.0,
+        "pulseIntensity": 0.7,
+        "floatAmount": 1.0
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "legendary_glow",
+        "color": "#B9F2FF",
+        "count": 30,
+        "size": 0.5,
+        "opacity": 0.6,
+        "speed": 0.03
+      },
+      "mining": {
+        "yieldMultiplier": 0.4,
+        "degradationRate": 0.15,
+        "soundProfile": "crystal"
+      }
+    },
+    "Storm Energy": {
+      "id": "storm_energy",
+      "name": "Storm Energy",
+      "rarity": "rare",
+      "baseValue": 175,
+      "description": "Harness powerful atmospheric storms",
+      "baseComplexity": 7,
+      "visual": {
+        "color": "#9370DB",
+        "emissiveColor": "#BA55D3",
+        "geometry": "sphere",
+        "rimColor": "#DA70D6",
+        "rimIntensity": 1.0,
+        "pulseSpeed": 2.0,
+        "pulseIntensity": 0.5,
+        "floatAmount": 0.5
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "rare_glow",
+        "color": "#9370DB",
+        "count": 20,
+        "size": 0.4,
+        "opacity": 0.5,
+        "speed": 0.02
+      },
+      "mining": {
+        "yieldMultiplier": 0.6,
+        "degradationRate": 0.11,
+        "soundProfile": "energy"
+      }
+    },
+    "Tritium": {
+      "id": "tritium",
+      "name": "Tritium",
+      "rarity": "uncommon",
+      "baseValue": 90,
+      "description": "Heavy hydrogen isotope",
+      "baseComplexity": 4,
+      "visual": {
+        "color": "#7FFFD4",
+        "emissiveColor": "#40E0D0",
+        "geometry": "sphere",
+        "rimColor": "#AFEEEE",
+        "rimIntensity": 0.5,
+        "pulseSpeed": 1.0,
+        "pulseIntensity": 0.3
+      },
+      "particles": {
+        "enabled": false,
+        "preset": "uncommon_glow"
+      },
+      "mining": {
+        "yieldMultiplier": 0.8,
+        "degradationRate": 0.08,
+        "soundProfile": "gas"
+      }
+    },
+    "Dark Matter Traces": {
+      "id": "dark_matter_traces",
+      "name": "Dark Matter Traces",
+      "rarity": "legendary",
+      "baseValue": 800,
+      "description": "Exotic particles from deep space",
+      "baseComplexity": 15,
+      "visual": {
+        "color": "#4B0082",
+        "emissiveColor": "#8A2BE2",
+        "geometry": "dodecahedron",
+        "rimColor": "#9370DB",
+        "rimIntensity": 1.5,
+        "pulseSpeed": 3.0,
+        "pulseIntensity": 0.7,
+        "floatAmount": 1.0
+      },
+      "particles": {
+        "enabled": true,
+        "preset": "legendary_glow",
+        "color": "#4B0082",
+        "count": 30,
+        "size": 0.5,
+        "opacity": 0.6,
+        "speed": 0.03
+      },
+      "mining": {
+        "yieldMultiplier": 0.4,
+        "degradationRate": 0.2,
+        "soundProfile": "exotic"
+      }
+    }
+  },
+  "rarityDefaults": {
+    "common": {
+      "emissiveIntensity": 0.05,
+      "rimIntensity": 0.2,
+      "pulseSpeed": 0.5,
+      "pulseIntensity": 0.1,
+      "lightIntensity": 0,
+      "lightDistance": 0,
+      "floatAmount": 0
+    },
+    "uncommon": {
+      "emissiveIntensity": 0.3,
+      "rimIntensity": 0.5,
+      "pulseSpeed": 1.0,
+      "pulseIntensity": 0.3,
+      "lightIntensity": 0,
+      "lightDistance": 0,
+      "floatAmount": 0.2
+    },
+    "rare": {
+      "emissiveIntensity": 0.6,
+      "rimIntensity": 1.0,
+      "pulseSpeed": 2.0,
+      "pulseIntensity": 0.5,
+      "lightIntensity": 0.5,
+      "lightDistance": 10,
+      "floatAmount": 0.5
+    },
+    "legendary": {
+      "emissiveIntensity": 1.0,
+      "rimIntensity": 1.5,
+      "pulseSpeed": 3.0,
+      "pulseIntensity": 0.7,
+      "lightIntensity": 1.0,
+      "lightDistance": 15,
+      "floatAmount": 1.0
+    }
+  }
+}

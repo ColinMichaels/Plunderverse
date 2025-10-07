@@ -508,6 +508,7 @@ export function ResourceNode({
         color={glowConfig.color}
         rarity={resource.rarity}
         isActive={!lodDistance && progress < 0.5}
+        mineralName={resource.type}
       />
       
       {/* Mining particle effects */}
