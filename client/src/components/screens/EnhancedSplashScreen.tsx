@@ -84,6 +84,8 @@ export function EnhancedSplashScreen() {
   // Track if user started the game
   const hasStartedGameRef = useRef(false);
 
+  const gameVersion = "v0.8";
+
   // Cinematic sequence options
   const cinematicSequences = [
     { name: "Mars Flyby", description: "Epic Mars flyby" },
@@ -509,7 +511,7 @@ export function EnhancedSplashScreen() {
       )}
 
       {/* Very light overlay for depth - minimal opacity to show more background */}
-      <div className="absolute inset-0 z-10 bg-black/10" />
+      <div className="absolute inset-0 z-10" />
 
       {/* Compact Player Stats Widget - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
@@ -517,6 +519,7 @@ export function EnhancedSplashScreen() {
           className="absolute top-6 right-6 z-30 transition-all duration-300 ease-in-out"
           onMouseEnter={() => setIsStatsExpanded(true)}
           onMouseLeave={() => setIsStatsExpanded(false)}
+          onClick={() => setIsStatsExpanded(true)}
         >
           {/* Minimized View - Always visible */}
           <div
@@ -573,6 +576,61 @@ export function EnhancedSplashScreen() {
                           ${isStatsExpanded ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
           >
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-cyan-400/20">
+              {/* User Account Menu - Top Right */}
+              {(isAuthenticated || isGuest) && (
+                <div className="relative">
+                  {/* Dropdown Menu */}
+
+                  <div
+                    className="absolute top-full right-0 mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
+                                    rounded-lg shadow-xl overflow-hidden"
+                  >
+                    {/* User Info Header */}
+                    <div className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-400/5">
+                      <p className="text-xs text-cyan-400/70 uppercase tracking-wide mb-1">
+                        {isGuest ? "Guest Mode" : "Signed In As"}
+                      </p>
+                      <p className="text-sm font-medium text-cyan-300">
+                        {isGuest
+                          ? "Playing as Guest"
+                          : user?.email || "Unknown"}
+                      </p>
+                    </div>
+
+                    {/* Menu Options */}
+                    <div className="py-1">
+                      {!isGuest && (
+                        <button
+                          onClick={async () => {
+                            setShowAccountMenu(false);
+                            await logout();
+                            setShowAuthScreen(true);
+                          }}
+                          className="w-full px-4 py-2 text-left text-sm text-cyan-300 hover:bg-cyan-400/10 
+                                       hover:text-cyan-200 transition-colors flex items-center gap-2"
+                        >
+                          <User className="w-4 h-4" />
+                          Switch Account
+                        </button>
+                      )}
+                      <button
+                        onClick={async () => {
+                          setShowAccountMenu(false);
+                          await logout();
+                        }}
+                        className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-400/10 
+                                     hover:text-red-300 transition-colors flex items-center gap-2"
+                      >
+                        <LogIn className="w-4 h-4 rotate-180" />
+                        {isGuest ? "Exit Guest Mode" : "Logout"}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* User Stats  panel*/}
+
               <div className="bg-cyan-400/10 p-1.5 rounded-full">
                 <User className="w-5 h-5 text-cyan-400" />
               </div>
@@ -736,7 +794,7 @@ export function EnhancedSplashScreen() {
             </div>
             {/* Additional BETA warning text */}
             <div
-              className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 
+              className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 w-full max-w-xs 
                             bg-orange-900/80 px-4 py-1 rounded-full border border-orange-500/50"
             >
               <span className="text-orange-300 text-xs md:text-sm font-semibold uppercase tracking-wide">
@@ -848,7 +906,8 @@ export function EnhancedSplashScreen() {
 
         {/* Version */}
         <p className="text-slate-500 text-sm">
-          Plunderverse Alpha v0.8 - A Firefly-Inspired Space Outlaw Adventure
+          Plunderverse Alpha {gameVersion} - A Firefly-Inspired Space Outlaw
+          Adventure
         </p>
         <p className="text-slate-600 text-xs mt-2">
           {isAuthenticated
@@ -983,76 +1042,6 @@ export function EnhancedSplashScreen() {
             >
               Ready to Break the Law
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* User Account Menu - Top Right */}
-      {(isAuthenticated || isGuest) && (
-        <div className="absolute top-4 right-4 z-30">
-          <div className="relative">
-            {/* Account Button */}
-            <button
-              onClick={() => setShowAccountMenu(!showAccountMenu)}
-              className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-4 py-2
-                         hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group flex items-center gap-2"
-              title="Account menu"
-            >
-              <User className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
-              <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
-                {isGuest ? "Guest" : user?.username || "Captain"}
-              </span>
-              <ChevronDown
-                className={`w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-transform duration-200 ${showAccountMenu ? "rotate-180" : ""}`}
-              />
-            </button>
-
-            {/* Dropdown Menu */}
-            {showAccountMenu && (
-              <div
-                className="absolute top-full right-0 mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
-                              rounded-lg shadow-xl overflow-hidden"
-              >
-                {/* User Info Header */}
-                <div className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-400/5">
-                  <p className="text-xs text-cyan-400/70 uppercase tracking-wide mb-1">
-                    {isGuest ? "Guest Mode" : "Signed In As"}
-                  </p>
-                  <p className="text-sm font-medium text-cyan-300">
-                    {isGuest ? "Playing as Guest" : user?.email || "Unknown"}
-                  </p>
-                </div>
-
-                {/* Menu Options */}
-                <div className="py-1">
-                  {!isGuest && (
-                    <button
-                      onClick={async () => {
-                        setShowAccountMenu(false);
-                        await logout();
-                        setShowAuthScreen(true);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm text-cyan-300 hover:bg-cyan-400/10 
-                                 hover:text-cyan-200 transition-colors flex items-center gap-2"
-                    >
-                      <User className="w-4 h-4" />
-                      Switch Account
-                    </button>
-                  )}
-                  <button
-                    onClick={async () => {
-                      setShowAccountMenu(false);
-                      await logout();
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-red-400/10 
-                               hover:text-red-300 transition-colors flex items-center gap-2"
-                  >
-                    <LogIn className="w-4 h-4 rotate-180" />
-                    {isGuest ? "Exit Guest Mode" : "Logout"}
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

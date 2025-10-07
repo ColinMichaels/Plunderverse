@@ -96,6 +96,7 @@ export function ResourceParticleAura({
   }, [particleCount]);
 
   // Simpler particle texture (smaller resolution for better performance)
+
   const particleTexture = useMemo(() => {
     if (!shouldShow) return null;
     

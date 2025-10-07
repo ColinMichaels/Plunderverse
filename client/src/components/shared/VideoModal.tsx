@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import React, { useEffect } from "react";
+import { X } from "lucide-react";
 
 interface VideoModalProps {
   isOpen: boolean;
@@ -8,67 +8,72 @@ interface VideoModalProps {
   title?: string;
 }
 
-export function VideoModal({ isOpen, onClose, videoUrl, title }: VideoModalProps) {
+export function VideoModal({
+  isOpen,
+  onClose,
+  videoUrl,
+  title,
+}: VideoModalProps) {
   // Handle escape key
   useEffect(() => {
     if (!isOpen) return;
-    
+
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
+      if (e.key === "Escape") {
         onClose();
       }
     };
-    
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, [isOpen, onClose]);
-  
+
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
-    
+
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
-  
+
   if (!isOpen) return null;
-  
+
   // Convert regular YouTube URL to embed URL if needed with autoplay
   const getEmbedUrl = (url: string) => {
-    let embedUrl = '';
-    
+    let embedUrl = "";
+
     // Handle different YouTube URL formats
-    if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('v=')[1]?.split('&')[0];
+    if (url.includes("youtube.com/watch?v=")) {
+      const videoId = url.split("v=")[1]?.split("&")[0];
       embedUrl = `https://www.youtube.com/embed/${videoId}`;
-    } else if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    } else if (url.includes("youtu.be/")) {
+      const videoId = url.split("youtu.be/")[1]?.split("?")[0];
       embedUrl = `https://www.youtube.com/embed/${videoId}`;
     } else {
       // Assume it's already an embed URL
       embedUrl = url;
     }
-    
+
     // Add autoplay parameter (and mute to ensure autoplay works in all browsers)
-    const separator = embedUrl.includes('?') ? '&' : '?';
-    return `${embedUrl}${separator}autoplay=1&mute=1`;
+    const separator = embedUrl.includes("?") ? "&" : "?";
+    return `${embedUrl}${separator}autoplay=1&mute=0`;
   };
-  
+
   return (
-    <div 
+    <div
       className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-300"
       onClick={onClose}
     >
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/95 backdrop-blur-lg" />
-      
+
       {/* Full Screen Video Container */}
-      <div 
+      <div
         className="relative w-full h-full flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
@@ -89,13 +94,15 @@ export function VideoModal({ isOpen, onClose, videoUrl, title }: VideoModalProps
             </button>
           </div>
         </div>
-        
+
         {/* Full Screen Video */}
         <div className="relative w-full h-full flex items-center justify-center">
-          <div className="relative w-full h-full max-w-[177.77vh] max-h-[56.25vw]"> {/* Maintain 16:9 aspect ratio */}
+          <div className="relative w-full h-full max-w-[177.77vh] max-h-[56.25vw]">
+            {" "}
+            {/* Maintain 16:9 aspect ratio */}
             <iframe
               src={getEmbedUrl(videoUrl)}
-              title={title || 'Video'}
+              title={title || "Video"}
               className="absolute top-0 left-0 w-full h-full"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
@@ -103,7 +110,7 @@ export function VideoModal({ isOpen, onClose, videoUrl, title }: VideoModalProps
             />
           </div>
         </div>
-        
+
         {/* Bottom Gradient for Better Visual */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
       </div>
