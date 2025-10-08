@@ -25,7 +25,6 @@ import { CombatDebugPanel } from "./components/debug/CombatDebugPanel";
 import { ResourceManager } from "./lib/utils/ResourceManager";
 import { memoryProfiler } from "./lib/utils/MemoryProfiler";
 import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
-import { useDebugTools } from "./lib/stores/debug/useDebugTools";
 import { useAuthStore } from "./lib/stores/auth/useAuthStore";
 import { cloudSyncManager } from "./services/CloudSyncManager";
 import { CloudSyncManager } from "./services/CloudSyncWebSocket"; // NEW: WebSocket sync

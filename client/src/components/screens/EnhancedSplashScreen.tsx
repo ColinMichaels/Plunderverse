@@ -783,8 +783,8 @@ export function EnhancedSplashScreen() {
               className="absolute -bottom-10 left-1/2 transform -translate-x-1/2 w-full max-w-xs 
                             bg-orange-900/80 px-4 py-1 rounded-full border border-orange-500/50"
             >
-              <span className="text-orange-300 text-xs md:text-sm font-semibold uppercase tracking-wide">
-                Early Access • Game in Development
+              <span className="text-orange-300 text-xs md:text-base font-semibold uppercase tracking-wide">
+                Early Access
               </span>
             </div>
           </div>
