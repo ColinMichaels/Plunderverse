@@ -3,6 +3,7 @@ import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderv
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useCreditsStore } from '../../../domain/economy/credits.store';
 import { FactionId } from '../../../lib/plunderverse/types';
+import MiniGameSyncService from '../../../services/MiniGameSyncService';
 
 export interface DialogueNode {
   id: string;
@@ -13,7 +14,8 @@ export interface DialogueNode {
   next?: string;
   action?: DialogueAction;
   conditions?: DialogueCondition[];
-  emotion?: 'happy' | 'angry' | 'neutral' | 'worried' | 'excited' | 'suspicious';
+  outcomes?: DialogueOutcome[];
+  emotion?: 'happy' | 'angry' | 'neutral' | 'worried' | 'excited' | 'suspicious' | 'nervous';
 }
 
 export interface DialogueChoice {
@@ -73,6 +75,7 @@ export class NPCDialogueSystem {
   private scene: Phaser.Scene;
   private npcs: Map<string, NPCData>;
   private activeDialogue: DialogueNode | null = null;
+  private activeNPCId: string | null = null;  // Track which NPC is currently in dialogue
   private dialogueCallback?: (text: string, choices?: DialogueChoice[]) => void;
   private playerKnowledge: Set<string> = new Set();
   
@@ -618,6 +621,7 @@ export class NPCDialogueSystem {
       return;
     }
 
+    this.activeNPCId = npcId;  // Track active NPC
     this.dialogueCallback = callback;
     const startNode = npc.currentNode || 'greeting';
     this.showDialogueNode(npc, startNode);
@@ -647,8 +651,13 @@ export class NPCDialogueSystem {
     }
     
     // Apply any outcomes
-    if (node.outcomes) {
+    if (node.outcomes && node.outcomes.length > 0) {
       node.outcomes.forEach(outcome => this.applyOutcome(outcome));
+      
+      // Sync node-level outcomes with main game
+      const syncService = MiniGameSyncService.getInstance();
+      syncService.syncDialogueOutcome(npc.id, node.outcomes);
+      console.log(`[NPCDialogueSystem] Synced node outcomes for NPC: ${npc.id}, outcomes:`, node.outcomes);
     }
     
     // Show the dialogue
@@ -699,21 +708,23 @@ export class NPCDialogueSystem {
       case 'reputation':
         if (!condition.faction || condition.value === undefined) return false;
         const rep = player.reputation[condition.faction];
+        const repValue = condition.value as number;
         switch (condition.operator) {
-          case 'gte': return rep >= condition.value;
-          case 'lte': return rep <= condition.value;
-          case 'eq': return rep === condition.value;
+          case 'gte': return rep >= repValue;
+          case 'lte': return rep <= repValue;
+          case 'eq': return rep === repValue;
           default: return false;
         }
         
       case 'credits':
         if (condition.value === undefined) return false;
         const amount = credits.credits;
+        const creditValue = condition.value as number;
         switch (condition.operator) {
-          case 'gte': return amount >= condition.value;
-          case 'lte': return amount <= condition.value;
-          case 'eq': return amount === condition.value;
-          default: return amount >= condition.value;
+          case 'gte': return amount >= creditValue;
+          case 'lte': return amount <= creditValue;
+          case 'eq': return amount === creditValue;
+          default: return amount >= creditValue;
         }
         
       case 'knowledge':
@@ -723,11 +734,12 @@ export class NPCDialogueSystem {
       case 'heat':
         if (condition.value === undefined) return false;
         const heat = player.heat;
+        const heatValue = condition.value as number;
         switch (condition.operator) {
-          case 'gte': return heat >= condition.value;
-          case 'lte': return heat <= condition.value;
-          case 'eq': return heat === condition.value;
-          default: return heat <= condition.value;
+          case 'gte': return heat >= heatValue;
+          case 'lte': return heat <= heatValue;
+          case 'eq': return heat === heatValue;
+          default: return heat <= heatValue;
         }
         
       default:
@@ -748,7 +760,7 @@ export class NPCDialogueSystem {
         
       case 'credits':
         if (outcome.value) {
-          credits.addCredits(outcome.value as number);
+          credits.earnCredits(outcome.value as number);
         }
         break;
         
@@ -806,24 +818,32 @@ export class NPCDialogueSystem {
 
   public selectChoice(choiceId: string): void {
     if (!this.activeDialogue || !this.activeDialogue.choices) return;
+    if (!this.activeNPCId) {
+      console.error('[NPCDialogueSystem] No active NPC - dialogue state corrupted');
+      return;
+    }
     
     const choice = this.activeDialogue.choices.find(c => c.id === choiceId);
     if (!choice) return;
     
-    // Apply choice outcomes
-    if (choice.outcomes) {
-      choice.outcomes.forEach(outcome => this.applyOutcome(outcome));
+    // Get the current NPC using the tracked ID
+    const currentNPC = this.npcs.get(this.activeNPCId);
+    if (!currentNPC) {
+      console.error(`[NPCDialogueSystem] Active NPC ${this.activeNPCId} not found`);
+      return;
     }
     
-    // Find the NPC for this dialogue
-    let currentNPC: NPCData | undefined;
-    this.npcs.forEach(npc => {
-      if (npc.dialogueTree.has(this.activeDialogue!.id)) {
-        currentNPC = npc;
-      }
-    });
+    // Apply choice outcomes
+    if (choice.outcomes && choice.outcomes.length > 0) {
+      choice.outcomes.forEach(outcome => this.applyOutcome(outcome));
+      
+      // Sync choice outcomes with main game
+      const syncService = MiniGameSyncService.getInstance();
+      syncService.syncDialogueOutcome(currentNPC.id, choice.outcomes);
+      console.log(`[NPCDialogueSystem] Synced choice outcomes for NPC: ${currentNPC.id}, outcomes:`, choice.outcomes);
+    }
     
-    if (currentNPC && choice.next) {
+    if (choice.next) {
       // Update NPC's current node
       currentNPC.currentNode = choice.next;
       // Show next dialogue node
