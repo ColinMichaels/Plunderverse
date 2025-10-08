@@ -10,14 +10,11 @@ import { NavigationSidebar } from "../navigation/NavigationSidebar";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
-// New HUD Components
-import { ShipCoreStatus } from "./ShipCoreStatus";
-import { PrimaryControlsHUD } from "./PrimaryControlsHUD";
+
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
 import { MissionHUD } from "./MissionHUD";
 import { CrewBonusDisplay } from "./CrewBonusDisplay";
-import { EconomicFeedback } from "../economy/EconomicFeedback";
 // Save and Menu Components
 import { MainMenu } from "./MainMenu";
 import { SaveGamePanel } from "./SaveGamePanel";
@@ -37,7 +34,6 @@ import { useDockingDetection } from "../../hooks/useDockingDetection";
 import { useAutoSave } from "../../hooks/useAutoSave";
 import { planets } from "../../lib/planetData";
 import { BottomControlSidebar } from "./BottomControlSidebar";
-import { FocusIndicator, FocusStatusIndicator } from "./FocusIndicator";
 import { PauseOverlay } from "./PauseOverlay";
 import { PauseMenu } from "./PauseMenu";
 import { PlanetInfo } from "../shared/PlanetInfo";
@@ -121,10 +117,6 @@ export function GameUI() {
       {/* Pause Overlay - Shows when game loses focus (but not when pause menu is open) */}
       <PauseOverlay />
 
-      {/* Focus State Indicators */}
-      <FocusIndicator />
-      <FocusStatusIndicator />
-
       {/* Mission HUD - horizontal display at top of screen */}
       <MissionHUD />
 
@@ -138,19 +130,9 @@ export function GameUI() {
       <NavigationSidebar />
 
       {/* New Contextual HUD System */}
-      {/* Top Left - Ship Core Status */}
-      {uiZoneVisibility.topLeft && <ShipCoreStatus />}
 
       {/* Top Left - Objective Tracker (below ship status) */}
       {uiZoneVisibility.topLeft && <ObjectiveTracker />}
-
-      {/* Top Left - Economic Feedback (only on surface/docked, hidden in space since BottomControlSidebar shows credits) */}
-      {uiZoneVisibility.topLeft &&
-        (currentContext === "planet-surface" || isDocked) && (
-          <div className="fixed top-64 left-4 z-40 w-80">
-            <EconomicFeedback />
-          </div>
-        )}
 
       {/* Landing Transition */}
       <LandingTransition />

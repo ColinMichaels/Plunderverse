@@ -37,9 +37,7 @@ import {
   Star,
   User,
   Coins,
-  Trophy,
   MapPin,
-  Shield,
   Sparkles,
   Award,
   Target,
@@ -110,7 +108,6 @@ export function EnhancedSplashScreen() {
     rankTitle,
     reputation,
     planetsVisited,
-    totalMiningOperations,
     totalJumps,
   } = usePlayer();
   const { credits } = useCredits();

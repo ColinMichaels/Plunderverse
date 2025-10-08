@@ -88,19 +88,6 @@ export function PauseMenu() {
     return () => window.removeEventListener("keydown", handleKeyPress);
   }, [editingKeybind, keybinds, updateKeybind]);
 
-  // Freeze/unfreeze game systems when paused
-  useEffect(() => {
-    if (isPaused) {
-      // Store current game time scale if Three.js is being used
-      if (window.THREE?.Clock) {
-        // This would need to be integrated with your Three.js setup
-        console.log("[PAUSE-MENU] Game paused");
-      }
-    } else {
-      console.log("[PAUSE-MENU] Game resumed");
-    }
-  }, [isPaused]);
-
   const handleResume = () => {
     setIsOpen(false);
     setPaused(false);
@@ -115,23 +102,19 @@ export function PauseMenu() {
     useEnemies.getState().clearEnemies();
     useShooting.setState({ projectiles: [] });
 
-    // Reset ship position (handled by SplashScreen)
-    const cameraPosition = useSolarSystem.getState().
-    useSolarSystem.getState().setCameraPosition(new Vector3(0, 10, 50));
-
     // Reset to splash screen
     showSplash();
 
     // Close pause menu
     setIsOpen(false);
-    setPaused(false);
+    setPaused(true);
     setActivePanel("main");
 
     console.log("[PAUSE-MENU] Returned to home screen");
   };
 
   const handleExitGame = () => {
-     handleReturnToHome
+    handleReturnToHome;
   };
 
   const handleKeybindClick = (action: string) => {
