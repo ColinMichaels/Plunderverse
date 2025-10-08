@@ -185,9 +185,8 @@ export class GameFacade {
       // Make trigger system globally accessible for debugging
       (window as any).objectiveTriggers = triggerSystem;
 
-      // Generate Act 1 story missions on initialization
-      console.log("[GameFacade] 📖 Generating Act 1 story missions...");
-      await this.generateStoryMissions();
+      // Story missions are generated through regular mission generation
+      console.log("[GameFacade] 📖 Story missions included in regular generation...");
 
       // Make facade accessible globally for debugging
       (window as any).gameFacade = this;
@@ -195,7 +194,6 @@ export class GameFacade {
       // Add debug console commands
       (window as any).advanceToAct = (actNumber: number) => {
         this.currentAct = actNumber;
-        this.generateStoryMissions();
         console.log(`[GameFacade] Advanced to Act ${actNumber}`);
         toast.info("Story Progression", {
           description: `Advanced to Act ${actNumber}`,
@@ -707,8 +705,8 @@ export class GameFacade {
     this.progressionMetrics.creditsEarnedTotal +=
       mission.rewards.base?.credits || 0;
 
-    // Check for story mission completion
-    if (mission.type === "story") {
+    // Check for story mission completion (story missions have branching choices)
+    if (mission.choices && mission.choices.length > 0) {
       this.completedStoryMissions.add(missionId);
       await this.checkActProgression();
     }
@@ -1171,7 +1169,6 @@ export class GameFacade {
     // Act progression based on rank
     if (player.rank >= 3 && this.currentAct === 1) {
       this.currentAct = 2;
-      await this.generateStoryMissions();
       console.log("[GameFacade] 📖 Progressed to Act 2!");
       toast.success("Act 2 Unlocked: The Outlaw", {
         description:
@@ -1179,7 +1176,6 @@ export class GameFacade {
       });
     } else if (player.rank >= 6 && this.currentAct === 2) {
       this.currentAct = 3;
-      await this.generateStoryMissions();
       console.log("[GameFacade] 📖 Progressed to Act 3!");
       toast.success("Act 3 Unlocked: The Captain", {
         description:
@@ -1187,7 +1183,6 @@ export class GameFacade {
       });
     } else if (player.rank >= 9 && this.currentAct === 3) {
       this.currentAct = 4;
-      await this.generateStoryMissions();
       console.log("[GameFacade] 📖 Progressed to Act 4!");
       toast.success("Act 4 Unlocked: The Legend", {
         description: "Your name will echo through history. Choose your destiny.",
