@@ -4,6 +4,7 @@ import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderv
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useCreditsStore } from '../../../domain/economy/credits.store';
 import { useInventoryStore } from '../../../domain/economy/inventory.store';
+import MiniGameSyncService from '../../../services/MiniGameSyncService';
 import { toast } from 'sonner';
 
 export interface NPCMission {
@@ -587,6 +588,11 @@ export class NPCMissionSystem {
     // Sync with main game if needed
     this.syncWithMainGame(mission);
     
+    // Notify sync service
+    const syncService = MiniGameSyncService.getInstance();
+    syncService.syncMissionProgress(mission.id, { accepted: true, progress: 0 });
+    console.log(`[NPCMissionSystem] Mission accepted and synced: ${mission.title}`);
+    
     toast.success(`Mission accepted: ${mission.title}`);
     return true;
   }
@@ -612,7 +618,7 @@ export class NPCMissionSystem {
       rewards: {
         base: {
           credits: mission.rewards.credits || 0,
-          reputation: mission.rewards.reputation || {}
+          reputation: (mission.rewards.reputation || {}) as Record<string, number>
         }
       },
       active: mission.isActive,
@@ -647,6 +653,14 @@ export class NPCMissionSystem {
     
     // Update overall mission progress
     this.updateMissionProgress(missionId);
+    
+    // Sync progress with main game
+    const syncService = MiniGameSyncService.getInstance();
+    syncService.syncMissionProgress(missionId, {
+      objectiveId,
+      completed: objective?.isCompleted || false,
+      progress: mission.progress
+    });
   }
 
   private completeObjective(missionId: string, objectiveId: string): void {
@@ -702,6 +716,11 @@ export class NPCMissionSystem {
     const missions = usePlunderverseMissions.getState();
     missions.completeMission(`mobile_${missionId}`);
     
+    // Notify sync service
+    const syncService = MiniGameSyncService.getInstance();
+    syncService.syncMissionProgress(missionId, { completed: true, rewards: mission.rewards });
+    console.log(`[NPCMissionSystem] Mission completed and synced: ${mission.title}`);
+    
     toast.success(`Mission complete: ${mission.title}!`);
   }
 
@@ -731,7 +750,7 @@ export class NPCMissionSystem {
     
     // Apply credits
     if (rewards.credits) {
-      credits.addCredits(rewards.credits);
+      credits.earnCredits(rewards.credits);
     }
     
     // Apply reputation
@@ -747,11 +766,11 @@ export class NPCMissionSystem {
       }
     }
     
-    // Apply items
-    if (rewards.items) {
-      rewards.items.forEach(item => {
-        inventory.addItem(item.id, item.quantity);
-      });
+    // Apply items (Note: inventory only supports resources, not arbitrary items)
+    // Items from mission rewards should be handled through the main game sync
+    if (rewards.items && rewards.items.length > 0) {
+      console.log('[NPCMissionSystem] Mission rewards include items:', rewards.items);
+      // Items will be applied through the main game mission completion
     }
     
     // Apply experience
