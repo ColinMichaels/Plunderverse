@@ -252,6 +252,13 @@ export const AUDIO_CONFIG: AudioConfig = {
       priority: MusicPriority.AMBIENT,
       environment: EnvironmentType.SPACE,
     },
+    {
+      filename: "Plunderverse-experiment-3.mp3",
+      name: "Plunderverse-experiment-3",
+      categories: ["atmospheric", "ambient", "space"],
+      priority: MusicPriority.AMBIENT,
+      environment: EnvironmentType.SPACE,
+    },
   ],
   globalVolume: 1.0,
   crossfadeDuration: 2000,
