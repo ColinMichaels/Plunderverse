@@ -12,9 +12,9 @@ import { OfflineIndicator } from './OfflineIndicator';
 import MiniGameSyncService from '../../services/MiniGameSyncService';
 
 // Import Phaser scenes
-import { BootScene } from './minigame/BootScene.js';
-import { MainGameScene } from './minigame/MainGameScene.js';
-import { UIOverlayScene } from './minigame/UIOverlayScene.js';
+import { BootScene } from './minigame/BootScene';
+import { MainGameScene } from './minigame/MainGameScene';
+import { UIOverlayScene } from './minigame/UIOverlayScene';
 
 interface MobileMinigameProps {
   onBack: () => void;
