@@ -582,7 +582,7 @@ export function EnhancedSplashScreen() {
                   {/* Dropdown Menu */}
 
                   <div
-                    className="absolute top-full right-0 mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
+                    className="mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
                                     rounded-lg shadow-xl overflow-hidden"
                   >
                     {/* User Info Header */}
@@ -599,20 +599,6 @@ export function EnhancedSplashScreen() {
 
                     {/* Menu Options */}
                     <div className="py-1">
-                      {!isGuest && (
-                        <button
-                          onClick={async () => {
-                            setShowAccountMenu(false);
-                            await logout();
-                            setShowAuthScreen(true);
-                          }}
-                          className="w-full px-4 py-2 text-left text-sm text-cyan-300 hover:bg-cyan-400/10 
-                                       hover:text-cyan-200 transition-colors flex items-center gap-2"
-                        >
-                          <User className="w-4 h-4" />
-                          Switch Account
-                        </button>
-                      )}
                       <button
                         onClick={async () => {
                           setShowAccountMenu(false);
@@ -804,7 +790,7 @@ export function EnhancedSplashScreen() {
           </div>
           <h2 className="text-2xl md:text-3xl font-light text-orange-300 tracking-wide italic mt-12">
             {isAuthenticated && !isGuest
-              ? `Welcome back, ${user?.username || "Captain"}. Your crew awaits your command.`
+              ? `Welcome back, ${user?.username || "Captain"}.`
               : "The Solar System is Bankrupt. Survival Means Breaking the Law."}
           </h2>
         </div>
@@ -906,8 +892,7 @@ export function EnhancedSplashScreen() {
 
         {/* Version */}
         <p className="text-slate-500 text-sm">
-          Plunderverse Alpha {gameVersion} - A Firefly-Inspired Space Outlaw
-          Adventure
+          Plunderverse Alpha {gameVersion} - Space Outlaw Adventure
         </p>
         <p className="text-slate-600 text-xs mt-2">
           {isAuthenticated

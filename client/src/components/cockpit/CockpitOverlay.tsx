@@ -8,12 +8,12 @@ export function CockpitOverlay() {
   const { selectedPlanet } = useSolarSystem();
   const { enemies } = useEnemies();
   const { isInCombat } = useHUDContext();
-  
+
   // Only show overlay when:
   // 1. A planet is selected/targeted
   // 2. In active combat (enemies nearby or actively fighting)
   const shouldShowOverlay = selectedPlanet || isInCombat || enemies.length > 0;
-  
+
   // If conditions aren't met, don't render the overlay
   if (!shouldShowOverlay) {
     return null;
@@ -21,14 +21,6 @@ export function CockpitOverlay() {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-30">
-      {/* Cockpit frame - top and bottom bars */}
-      <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-gray-900/80 to-transparent border-b border-gray-600/50" />
-      <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-900/80 to-transparent border-t border-gray-600/50" />
-
-      {/* Side panels */}
-      <div className="absolute top-0 bottom-0 left-0 w-24 bg-gradient-to-r from-gray-900/80 to-transparent border-r border-gray-600/50" />
-      <div className="absolute top-0 bottom-0 right-0 w-24 bg-gradient-to-l from-gray-900/80 to-transparent border-l border-gray-600/50" />
-
       {/* Central crosshair - smaller and fade when thrusting */}
       <div
         className={`absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ${

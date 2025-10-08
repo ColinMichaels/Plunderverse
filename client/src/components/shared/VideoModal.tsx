@@ -50,10 +50,10 @@ export function VideoModal({
     // Handle different YouTube URL formats
     if (url.includes("youtube.com/watch?v=")) {
       const videoId = url.split("v=")[1]?.split("&")[0];
-      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      embedUrl = `https://www.youtube.com/embed/${videoId}&rel=0`;
     } else if (url.includes("youtu.be/")) {
       const videoId = url.split("youtu.be/")[1]?.split("?")[0];
-      embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      embedUrl = `https://www.youtube.com/embed/${videoId}&rel=0`;
     } else {
       // Assume it's already an embed URL
       embedUrl = url;

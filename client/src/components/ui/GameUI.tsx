@@ -46,7 +46,7 @@ import { TargetLockNotification } from "../combat/TargetLockNotification";
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
   const [showSavePanel, setShowSavePanel] = useState(false);
-  
+
   const { isGuest } = useAuthStore();
   const { manualSave } = useAutoSave();
   const { phase } = useGame();
@@ -63,12 +63,12 @@ export function GameUI() {
   } = useLandingWarning();
   const { activate: activateAutopilot } = useAutopilot();
   const { currentContext, uiZoneVisibility, isDocked } = useHUDContext();
-  
+
   // Keyboard shortcut for save panel (F5 or Ctrl+S)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // F5 for quick save
-      if (e.key === 'F5') {
+      if (e.key === "F5") {
         e.preventDefault();
         if (!isGuest) {
           manualSave();
@@ -77,14 +77,14 @@ export function GameUI() {
         }
       }
       // Ctrl+S for save panel
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
         e.preventDefault();
         setShowSavePanel(true);
       }
     };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isGuest, manualSave]);
 
   // Autopilot activation function
@@ -114,23 +114,23 @@ export function GameUI() {
     <>
       {/* Autopilot Indicator */}
       <AutopilotIndicator />
-      
+
       {/* Pause Menu - Player-controlled pause with ESC key */}
       <PauseMenu />
-      
+
       {/* Pause Overlay - Shows when game loses focus (but not when pause menu is open) */}
       <PauseOverlay />
-      
+
       {/* Focus State Indicators */}
       <FocusIndicator />
       <FocusStatusIndicator />
-      
+
       {/* Mission HUD - horizontal display at top of screen */}
       <MissionHUD />
-      
+
       {/* Cockpit Overlay - contextual background frame (only when planet selected or in combat) */}
       <CockpitOverlay />
-      
+
       {/* Target Lock Notifications - shows when weapons are locking */}
       <TargetLockNotification />
 
@@ -140,18 +140,17 @@ export function GameUI() {
       {/* New Contextual HUD System */}
       {/* Top Left - Ship Core Status */}
       {uiZoneVisibility.topLeft && <ShipCoreStatus />}
-      
+
       {/* Top Left - Objective Tracker (below ship status) */}
       {uiZoneVisibility.topLeft && <ObjectiveTracker />}
-      
+
       {/* Top Left - Economic Feedback (only on surface/docked, hidden in space since BottomControlSidebar shows credits) */}
-      {uiZoneVisibility.topLeft && (currentContext === 'planet-surface' || isDocked) && (
-        <div className="fixed top-64 left-4 z-40 w-80">
-          <EconomicFeedback />
-        </div>
-      )}
-
-
+      {uiZoneVisibility.topLeft &&
+        (currentContext === "planet-surface" || isDocked) && (
+          <div className="fixed top-64 left-4 z-40 w-80">
+            <EconomicFeedback />
+          </div>
+        )}
 
       {/* Landing Transition */}
       <LandingTransition />
@@ -185,7 +184,7 @@ export function GameUI() {
       <MobileHUD />
 
       {/* Music Player in bottom right corner */}
-      <div className="fixed top-4 left-28 z-30">
+      <div className="fixed top-20 left-2 z-30">
         <MusicPlayer />
       </div>
 
@@ -198,34 +197,35 @@ export function GameUI() {
           />
         </div>
       )}
-      
+
       {/* Main Menu - ESC key opens it */}
       <MainMenu />
-      
+
       {/* Save Game Panel - Ctrl+S or F5 */}
-      <SaveGamePanel 
-        isOpen={showSavePanel}
-        onClose={() => setShowSavePanel(false)}
-        onSaveComplete={() => {
-          setShowSavePanel(false);
-        }}
-      />
-      
-      {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
-      <AutoSaveIndicator />
-      
+      <div className="fixed top-24 right-10 z-50">
+        <SaveGamePanel
+          isOpen={showSavePanel}
+          onClose={() => setShowSavePanel(false)}
+          onSaveComplete={() => {
+            setShowSavePanel(false);
+          }}
+        />
+
+        {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
+        <AutoSaveIndicator />
+      </div>
+
       {/* Crew Bonus Display - Shows active crew bonuses */}
       <CrewBonusDisplay />
-      
+
       {/* Hint Modal - Shows tutorial hints */}
       <HintModal />
-      
+
       {/* Bottom Control Sidebar - Shows location, flashlight, and takeoff controls */}
       <BottomControlSidebar />
-      
-      {/* Death Screen - Shows when player ship is destroyed */}
-      {phase === 'ended' && <DeathScreen />}
 
+      {/* Death Screen - Shows when player ship is destroyed */}
+      {phase === "ended" && <DeathScreen />}
     </>
   );
 }

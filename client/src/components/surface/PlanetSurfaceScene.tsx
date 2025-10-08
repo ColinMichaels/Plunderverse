@@ -59,24 +59,31 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
 
   // Load surface texture based on planet
   const texturePath = getTextureForPlanet(planetName);
-  
+
   // Load the texture
   const surfaceTexture = useTexture(texturePath);
-  
+
   // Register texture with ResourceManager and log when loaded
   useEffect(() => {
     if (surfaceTexture) {
       const textureId = `surface-texture-${planetName}`;
-      console.log(`[ResourceManager] Registering surface texture for ${planetName}: ${texturePath}`);
-      resourceManager.registerTexture(textureId, surfaceTexture, ['planet-surface', planetName]);
-      
+      console.log(
+        `[ResourceManager] Registering surface texture for ${planetName}: ${texturePath}`,
+      );
+      resourceManager.registerTexture(textureId, surfaceTexture, [
+        "planet-surface",
+        planetName,
+      ]);
+
       return () => {
-        console.log(`[ResourceManager] Disposing surface texture for ${planetName}`);
+        console.log(
+          `[ResourceManager] Disposing surface texture for ${planetName}`,
+        );
         resourceManager.disposeResource(textureId);
       };
     }
   }, [surfaceTexture, planetName, texturePath]);
-  
+
   // Use the loaded texture
   const finalTexture = surfaceTexture;
 
@@ -94,7 +101,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
       // Fallback to simple geometry while loading
       const geometry = new THREE.PlaneGeometry(400, 400, 50, 50);
       const vertices = geometry.attributes.position.array as Float32Array;
-      
+
       for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
         const z = vertices[i + 1];
@@ -103,23 +110,32 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
           Math.sin(x * 0.05) * Math.cos(z * 0.05) * 0.5;
         vertices[i + 2] = height;
       }
-      
+
       geometry.computeVertexNormals();
       return geometry;
     }
 
     // Create geometry from terrain data
     const geometry = new THREE.BufferGeometry();
-    
+
     // Set attributes from terrain data
-    geometry.setAttribute('position', new THREE.BufferAttribute(currentTerrainData.vertices, 3));
-    geometry.setAttribute('normal', new THREE.BufferAttribute(currentTerrainData.normals, 3));
-    geometry.setAttribute('uv', new THREE.BufferAttribute(currentTerrainData.uvs, 2));
+    geometry.setAttribute(
+      "position",
+      new THREE.BufferAttribute(currentTerrainData.vertices, 3),
+    );
+    geometry.setAttribute(
+      "normal",
+      new THREE.BufferAttribute(currentTerrainData.normals, 3),
+    );
+    geometry.setAttribute(
+      "uv",
+      new THREE.BufferAttribute(currentTerrainData.uvs, 2),
+    );
     geometry.setIndex(new THREE.BufferAttribute(currentTerrainData.indices, 1));
-    
+
     geometry.computeBoundingSphere();
     geometry.computeBoundingBox();
-    
+
     return geometry;
   }, [currentTerrainData]);
 
@@ -127,11 +143,18 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
   useEffect(() => {
     if (terrainGeometry) {
       const geometryId = `terrain-geometry-${planetName}`;
-      console.log(`[ResourceManager] Registering terrain geometry for ${planetName}`);
-      resourceManager.registerGeometry(geometryId, terrainGeometry, ['planet-surface', planetName]);
-      
+      console.log(
+        `[ResourceManager] Registering terrain geometry for ${planetName}`,
+      );
+      resourceManager.registerGeometry(geometryId, terrainGeometry, [
+        "planet-surface",
+        planetName,
+      ]);
+
       return () => {
-        console.log(`[ResourceManager] Disposing terrain geometry for ${planetName}`);
+        console.log(
+          `[ResourceManager] Disposing terrain geometry for ${planetName}`,
+        );
         // Check if resource still exists before disposing (might already be disposed)
         if (resourceManager.hasResource(geometryId)) {
           resourceManager.disposeResource(geometryId);
@@ -145,12 +168,17 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
     if (finalTexture && currentTerrainData) {
       finalTexture.wrapS = THREE.RepeatWrapping;
       finalTexture.wrapT = THREE.RepeatWrapping;
-      
+
       // Adjust texture repeat based on planet type for better visual quality
-      const textureScale = planetName === "Moon" || planetName === "Mercury" ? 12 : 
-                          planetName === "Mars" ? 10 : 
-                          planetName === "Earth" ? 8 : 6;
-      
+      const textureScale =
+        planetName === "Moon" || planetName === "Mercury"
+          ? 12
+          : planetName === "Mars"
+            ? 10
+            : planetName === "Earth"
+              ? 8
+              : 6;
+
       finalTexture.repeat.set(textureScale, textureScale);
       finalTexture.anisotropy = 16;
     }
@@ -172,13 +200,19 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
         <meshStandardMaterial
           map={finalTexture}
           color={surfaceColor}
-          roughness={planetName === "Moon" || planetName === "Mercury" ? 0.95 : 
-                     planetName === "Mars" ? 0.9 : 
-                     planetName === "Venus" ? 0.7 : 0.8}
-          metalness={planetName === "Mercury" ? 0.1 : 0.0}
+          roughness={
+            planetName === "Moon" || planetName === "Mercury"
+              ? 0.95
+              : planetName === "Mars"
+                ? 0.9
+                : planetName === "Venus"
+                  ? 0.7
+                  : 0.8
+          }
+          metalness={planetName === "Mercury" ? 0.2 : 0.05}
         />
       </mesh>
-      
+
       {/* Add detail mesh for close-up viewing with higher resolution texture */}
       {currentTerrainData && (
         <mesh
@@ -191,7 +225,7 @@ function SurfaceTerrain({ planetName }: { planetName: string }) {
             map={finalTexture}
             color={surfaceColor}
             roughness={0.95}
-            metalness={0.0}
+            metalness={0.05}
             transparent={true}
             opacity={0.3}
             alphaTest={0.1}
@@ -208,7 +242,6 @@ function terrainHeightAt(x: number, z: number): number {
   const terrainStore = useTerrain.getState();
   return terrainStore.getHeightAt(x, z);
 }
-
 
 function SurfaceSky({ planetName }: { planetName: string }) {
   const { time } = useSolarSystem();
@@ -242,36 +275,54 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   // Register planet textures with ResourceManager
   useEffect(() => {
     const textures = [
-      { name: 'earth', texture: earthTexture },
-      { name: 'mars', texture: marsTexture },
-      { name: 'venus', texture: venusTexture },
-      { name: 'mercury', texture: mercuryTexture },
-      { name: 'jupiter', texture: jupiterTexture },
-      { name: 'saturn', texture: saturnTexture },
-      { name: 'uranus', texture: uranusTexture },
-      { name: 'neptune', texture: neptuneTexture },
-      { name: 'moon', texture: moonTexture }
+      { name: "earth", texture: earthTexture },
+      { name: "mars", texture: marsTexture },
+      { name: "venus", texture: venusTexture },
+      { name: "mercury", texture: mercuryTexture },
+      { name: "jupiter", texture: jupiterTexture },
+      { name: "saturn", texture: saturnTexture },
+      { name: "uranus", texture: uranusTexture },
+      { name: "neptune", texture: neptuneTexture },
+      { name: "moon", texture: moonTexture },
     ];
 
     textures.forEach(({ name, texture }) => {
       if (texture) {
         const textureId = `sky-planet-texture-${name}-${planetName}`;
-        console.log(`[ResourceManager] Registering sky planet texture: ${name} for ${planetName}`);
-        resourceManager.registerTexture(textureId, texture, ['planet-surface', 'sky-textures', planetName]);
+        console.log(
+          `[ResourceManager] Registering sky planet texture: ${name} for ${planetName}`,
+        );
+        resourceManager.registerTexture(textureId, texture, [
+          "planet-surface",
+          "sky-textures",
+          planetName,
+        ]);
       }
     });
 
     return () => {
       textures.forEach(({ name }) => {
         const textureId = `sky-planet-texture-${name}-${planetName}`;
-        console.log(`[ResourceManager] Disposing sky planet texture: ${name} for ${planetName}`);
+        console.log(
+          `[ResourceManager] Disposing sky planet texture: ${name} for ${planetName}`,
+        );
         if (resourceManager.hasResource(textureId)) {
           resourceManager.disposeResource(textureId);
         }
       });
     };
-  }, [earthTexture, marsTexture, venusTexture, mercuryTexture, jupiterTexture, 
-      saturnTexture, uranusTexture, neptuneTexture, moonTexture, planetName]);
+  }, [
+    earthTexture,
+    marsTexture,
+    venusTexture,
+    mercuryTexture,
+    jupiterTexture,
+    saturnTexture,
+    uranusTexture,
+    neptuneTexture,
+    moonTexture,
+    planetName,
+  ]);
 
   // Get planet texture by name
   const getPlanetTexture = (planetName: string) => {
@@ -495,11 +546,19 @@ function SurfaceSky({ planetName }: { planetName: string }) {
   useEffect(() => {
     if (gradientTexture) {
       const textureId = `gradient-texture-${planetName}`;
-      console.log(`[ResourceManager] Registering gradient texture for ${planetName}`);
-      resourceManager.registerTexture(textureId, gradientTexture, ['planet-surface', 'gradient-textures', planetName]);
-      
+      console.log(
+        `[ResourceManager] Registering gradient texture for ${planetName}`,
+      );
+      resourceManager.registerTexture(textureId, gradientTexture, [
+        "planet-surface",
+        "gradient-textures",
+        planetName,
+      ]);
+
       return () => {
-        console.log(`[ResourceManager] Disposing gradient texture for ${planetName}`);
+        console.log(
+          `[ResourceManager] Disposing gradient texture for ${planetName}`,
+        );
         if (resourceManager.hasResource(textureId)) {
           resourceManager.disposeResource(textureId);
         }
@@ -675,7 +734,7 @@ function SurfaceLighting() {
     // Calculate sun angle based on planet's rotation speed
     // For retrograde rotation (negative speed), sun moves in opposite direction
     const sunAngle = (planet.rotationSpeed * universeTime) % (2 * Math.PI);
-    
+
     // Calculate sun position: rises in the east (positive X), sets in the west (negative X)
     const sunDistance = 400; // Distance from origin for sun
     const sunX = Math.cos(sunAngle) * sunDistance;
@@ -685,7 +744,9 @@ function SurfaceLighting() {
     const sunLightPosition = new THREE.Vector3(sunX, sunY, sunZ);
 
     // Calculate sun elevation (how high in the sky)
-    const sunElevation = Math.asin(Math.max(-1, Math.min(1, sunY / sunDistance)));
+    const sunElevation = Math.asin(
+      Math.max(-1, Math.min(1, sunY / sunDistance)),
+    );
 
     // Calculate intensity and color based on sun elevation
     let sunIntensity = 0;
@@ -701,7 +762,7 @@ function SurfaceLighting() {
         Math.sin(angle) * planet.distance,
       );
     };
-    
+
     const currentPlanetPosition = calculatePlanetPosition(planet, universeTime);
     const earthDistance = 75;
     const distanceFromSun = currentPlanetPosition.length();
@@ -771,9 +832,11 @@ function SurfaceLighting() {
   }, [planet, getUniverseTime]);
 
   // Get final lighting data (manual override or automatic)
-  const lightingData = surfaceLighting.getCurrentLightingData(automaticLightingData);
+  const lightingData = surfaceLighting.getCurrentLightingData(
+    automaticLightingData,
+  );
   const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
-  
+
   // Store sun position and intensity for lens flare
   currentSunPosition = sunPosition.clone();
   currentSunIntensity = sunIntensity;
@@ -793,24 +856,32 @@ function SurfaceLighting() {
       typeof automaticLightingData.sunElevation === "number" &&
       typeof ambientIntensity === "number"
     ) {
-      const elevationDegrees = surfaceLighting.manualOverride 
+      const elevationDegrees = surfaceLighting.manualOverride
         ? surfaceLighting.sunElevation.toFixed(1)
         : ((automaticLightingData.sunElevation * 180) / Math.PI).toFixed(1);
       const timeOfDay = surfaceLighting.manualOverride
         ? surfaceLighting.currentTimeOfDay
         : automaticLightingData.timeOfDay;
-      const angleDegrees = automaticLightingData.sunAngle 
+      const angleDegrees = automaticLightingData.sunAngle
         ? ((automaticLightingData.sunAngle * 180) / Math.PI).toFixed(1)
         : "0";
       console.log(
         `[LIGHTING-${planet.name}] ${timeOfDay} - Sun: ${sunIntensity.toFixed(2)}, Ambient: ${ambientIntensity.toFixed(2)}, Elevation: ${elevationDegrees}°, Angle: ${angleDegrees}°${surfaceLighting.manualOverride ? " (MANUAL)" : ""}`,
       );
     }
-  }, [planet?.name, sunIntensity, ambientIntensity, automaticLightingData, surfaceLighting.manualOverride, surfaceLighting.sunElevation, surfaceLighting.currentTimeOfDay]);
+  }, [
+    planet?.name,
+    sunIntensity,
+    ambientIntensity,
+    automaticLightingData,
+    surfaceLighting.manualOverride,
+    surfaceLighting.sunElevation,
+    surfaceLighting.currentTimeOfDay,
+  ]);
 
   // Calculate sky colors based on time of day
-  const sunElevation = surfaceLighting.manualOverride 
-    ? (surfaceLighting.sunElevation * Math.PI / 180)
+  const sunElevation = surfaceLighting.manualOverride
+    ? (surfaceLighting.sunElevation * Math.PI) / 180
     : (automaticLightingData.sunElevation ?? 0);
   const skyColor =
     sunElevation < -0.3
@@ -945,7 +1016,6 @@ function MiningFragments({
   );
 }
 
-
 function ResourceNodes({ planetName }: { planetName: string }) {
   const planet = planets.find((p) => p.name === planetName);
   const {
@@ -1069,7 +1139,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
                 `[MINING-DEBUG] Earned ${result.details.creditsEarned} credits from mining`,
               );
             }
-            
+
             // Node destruction is now handled in the mining store after successful transaction
             console.log(
               `[MINING-DEBUG] Mining successful - node destruction handled by mining store`,
@@ -1147,10 +1217,7 @@ function ResourceNodes({ planetName }: { planetName: string }) {
                 color={getResourceColor(node.resource.rarity)}
                 position={node.position}
               />
-              <MiningLaser
-                targetPosition={node.position}
-                nodeId={node.id}
-              />
+              <MiningLaser targetPosition={node.position} nodeId={node.id} />
             </group>
           );
         })}
@@ -1159,12 +1226,9 @@ function ResourceNodes({ planetName }: { planetName: string }) {
 }
 
 function HelmetOverlay({ planetName }: { planetName: string }) {
-  const player = usePlayer.getState();
-  const planet = planets.find((p) => p.name === planetName);
   const needsHelmet = planetName !== "Earth"; // More robust check
   const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(null);
   const { isMuted } = useAudio(); // Respect global audio settings
-  const { isOn, batteryLevel, getBatteryStatus, isCharging } = useFlashlight(); // Flashlight status
 
   // Initialize and manage helmet breathing audio
   useEffect(() => {
@@ -1200,21 +1264,6 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
 
   return (
     <div className="absolute inset-0 pointer-events-none">
-      {/* Helmet frame */}
-      <div className="absolute inset-0">
-        {/* Top curved frame */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-96 h-24 bg-gradient-to-b from-gray-800/80 to-transparent rounded-b-full" />
-
-        {/* Bottom curved frame */}
-        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-96 h-16 bg-gradient-to-t from-gray-800/80 to-transparent rounded-t-full" />
-
-        {/* Left side frame */}
-        <div className="absolute left-0 top-1/2 transform -translate-y-1/2 w-16 h-64 bg-gradient-to-r from-gray-800/80 to-transparent rounded-r-full" />
-
-        {/* Right side frame */}
-        <div className="absolute right-0 top-1/2 transform -translate-y-1/2 w-16 h-64 bg-gradient-to-l from-gray-800/80 to-transparent rounded-l-full" />
-      </div>
-
       {/* Atmosphere warning */}
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-900/70 border border-red-400 rounded px-3 py-1 text-red-400 text-sm">
         ⚠️ HOSTILE ATMOSPHERE - EVA SUIT ACTIVE
@@ -1231,14 +1280,10 @@ function SurfaceControls({ planetName }: { planetName: string }) {
     clicksCompleted,
     clicksRequired,
   } = useMining();
-  const {
-    isOn,
-    batteryLevel,
-    toggle: toggleFlashlight,
-  } = useFlashlight();
+  const { isOn, batteryLevel, toggle: toggleFlashlight } = useFlashlight();
 
   return (
-    <div className="absolute bottom-4 left-1/2 bg-gray-900/50 border border-cyan-400 rounded-lg p-4 max-w-lg flex flex-col">
+    <div className="absolute bottom-4 left-1/2 bg-gray-900/50 border border-cyan-400 rounded-lg p-4 max-w-lg flex flex-col hidden">
       {/* Movement controls */}
       <div className="mb-4">
         {/* Flashlight control */}
@@ -1314,23 +1359,23 @@ function PostProcessingEffects() {
   const { enableBloom, graphicsQuality } = useSettings();
   const [sunVisible, setSunVisible] = useState(true);
   const [bloomIntensity, setBloomIntensity] = useState(1.5);
-  
+
   useEffect(() => {
     console.log("[Bloom] Sun glow effect loaded for planet surface");
   }, []);
-  
+
   // Update sun visibility and bloom intensity every frame
   useFrame(() => {
     if (currentSunPosition) {
       // Check if sun is above horizon (y > 0 means above horizon in our coordinate system)
       const isVisible = currentSunPosition.y > 0 && currentSunIntensity > 0.1;
       setSunVisible(isVisible);
-      
+
       // Dynamic bloom intensity based on sun elevation and intensity
       // Higher intensity when sun is visible and bright
       if (isVisible) {
         const sunElevation = Math.max(0, currentSunPosition.y / 200); // Normalize elevation
-        const dynamicIntensity = 1.0 + (sunElevation * currentSunIntensity * 2.0);
+        const dynamicIntensity = 1.0 + sunElevation * currentSunIntensity * 2.0;
         setBloomIntensity(Math.min(3.5, dynamicIntensity)); // Cap at 3.5
       } else {
         // Lower bloom for night/twilight ambient lighting
@@ -1338,21 +1383,21 @@ function PostProcessingEffects() {
       }
     }
   });
-  
+
   // Render effects based on graphics quality settings
   // Only render EffectComposer when bloom is enabled and not on low quality
-  if (!enableBloom || graphicsQuality === 'low') {
+  if (!enableBloom || graphicsQuality === "low") {
     return null;
   }
-  
+
   return (
     <EffectComposer>
-      <Bloom 
+      <Bloom
         intensity={bloomIntensity}
         luminanceThreshold={sunVisible ? 0.4 : 0.7}
         luminanceSmoothing={0.9}
         radius={sunVisible ? 0.95 : 0.6}
-        levels={graphicsQuality === 'high' ? 8 : 6}
+        levels={graphicsQuality === "high" ? 8 : 6}
         mipmapBlur={true}
       />
     </EffectComposer>
@@ -1369,23 +1414,31 @@ export function PlanetSurfaceScene() {
 
   // Cleanup all planet surface resources when component unmounts or planet changes
   useEffect(() => {
-    console.log(`[ResourceManager] PlanetSurfaceScene mounted for planet: ${landedPlanet}`);
-    
+    console.log(
+      `[ResourceManager] PlanetSurfaceScene mounted for planet: ${landedPlanet}`,
+    );
+
     return () => {
-      console.log(`[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources and stores`);
-      
+      console.log(
+        `[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources and stores`,
+      );
+
       // Clean up surface-related stores
       useWind.getState().cleanup();
       console.log("[PlanetSurfaceScene] Wind store cleanup complete");
-      
+
       // Dispose all resources tagged with 'planet-surface'
-      const disposedCount = resourceManager.disposeByTag('planet-surface');
-      console.log(`[ResourceManager] Disposed ${disposedCount} planet-surface resources`);
-      
+      const disposedCount = resourceManager.disposeByTag("planet-surface");
+      console.log(
+        `[ResourceManager] Disposed ${disposedCount} planet-surface resources`,
+      );
+
       // Also dispose resources specific to this planet
       if (landedPlanet) {
         const planetDisposedCount = resourceManager.disposeByTag(landedPlanet);
-        console.log(`[ResourceManager] Disposed ${planetDisposedCount} resources specific to ${landedPlanet}`);
+        console.log(
+          `[ResourceManager] Disposed ${planetDisposedCount} resources specific to ${landedPlanet}`,
+        );
       }
     };
   }, [landedPlanet]);
@@ -1413,13 +1466,13 @@ export function PlanetSurfaceScene() {
             <FlashlightSystem />
             <SurfaceSky planetName={landedPlanet} />
             <SurfaceTerrain planetName={landedPlanet} />
-            <SurfaceScatter 
-              planetName={landedPlanet} 
-              planetColor={planets.find(p => p.name === landedPlanet)?.color}
+            <SurfaceScatter
+              planetName={landedPlanet}
+              planetColor={planets.find((p) => p.name === landedPlanet)?.color}
             />
             <ResourceNodes planetName={landedPlanet} />
             <SurfaceMovementController />
-            <AtmosphericEffects 
+            <AtmosphericEffects
               planetName={landedPlanet}
               flashlightOn={isFlashlightOn}
             />
@@ -1430,22 +1483,15 @@ export function PlanetSurfaceScene() {
           </Canvas>
         </WebGLCheckWrapper>
       </KeyboardControls>
-      
+
       {/* Screen effects overlay for mining feedback */}
       <ScreenEffects />
-
 
       {/* Helmet overlay for non-breathable atmospheres */}
       <HelmetOverlay planetName={landedPlanet} />
 
-      {/* Surface controls and mining interface */}
-      <SurfaceControls planetName={landedPlanet} />
-      
       {/* Atmospheric sounds */}
-      <AtmosphericSounds 
-        planetName={landedPlanet} 
-        stormActive={false}
-      />
+      <AtmosphericSounds planetName={landedPlanet} stormActive={false} />
     </div>
   );
 }
