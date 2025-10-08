@@ -5,7 +5,7 @@ import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
 import { usePlunderverseEconomy } from '../../lib/stores/economy/usePlunderverseEconomy';
 import { GameFacade } from '../../lib/plunderverse/gameFacade';
 import { usePlayer } from '../../lib/stores/player/usePlayer';
-import { calculateFinalPrice } from '../../lib/stores/economy/enhancedMarketData';
+import { calculateFinalPrice, MARKET_ITEMS } from '../../lib/stores/economy/enhancedMarketData';
 
 interface DailyCostBreakdown {
   crew: number;
@@ -30,11 +30,11 @@ export const EconomicFeedback: React.FC = () => {
     
     // Base costs from tuning
     let baseCosts = {
-      crew: 25,
-      lifeSupport: 15,
-      docking: 10,
-      insurance: 10,
-      supplies: 10
+      crew: 10,
+      lifeSupport: 1,
+      docking: 1,
+      insurance: 1,
+      supplies: 1
     };
     
     // Scale costs based on player rank (early/mid/late game)
@@ -177,7 +177,7 @@ export const MissionProfitEstimator: React.FC<{
   // Calculate costs during mission
   const operatingCosts = useMemo(() => {
     const rank = player.rank;
-    let dailyCost = 60; // Base minimum
+    let dailyCost = 10; // Base minimum
     
     if (rank >= 4 && rank <= 6) {
       dailyCost = 125;
@@ -228,9 +228,13 @@ export const TradeProfitIndicator: React.FC<{
   const profitInfo = useMemo(() => {
     if (!targetPlanet) return null;
     
+    // Find the actual market item
+    const marketItem = MARKET_ITEMS.find(item => item.id === itemId);
+    if (!marketItem) return null;
+    
     // Calculate sell price at target
     const sellPrice = calculateFinalPrice(
-      { id: itemId, basePrice: buyPrice },
+      marketItem,
       targetPlanet,
       'independents',
       1.0,
