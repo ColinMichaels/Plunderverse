@@ -20,7 +20,7 @@ export class SyncIntegration {
     // Listen for game events and sync them
     this.scene.events.on('dialogue_outcome', this.handleDialogueOutcome, this);
     this.scene.events.on('smuggling_complete', this.handleSmugglingComplete, this);
-    this.scene.events.on('crew_task_complete', this.handleCrewTaskComplete, this);
+    this.scene.events.on('crewTaskCompleted', this.handleCrewTaskComplete, this);
     this.scene.events.on('mission_progress', this.handleMissionProgress, this);
     this.scene.events.on('credits_earned', this.handleCreditsEarned, this);
     this.scene.events.on('reputation_changed', this.handleReputationChange, this);
@@ -129,7 +129,7 @@ export class SyncIntegration {
   public destroy(): void {
     this.scene.events.off('dialogue_outcome', this.handleDialogueOutcome, this);
     this.scene.events.off('smuggling_complete', this.handleSmugglingComplete, this);
-    this.scene.events.off('crew_task_complete', this.handleCrewTaskComplete, this);
+    this.scene.events.off('crewTaskCompleted', this.handleCrewTaskComplete, this);
     this.scene.events.off('mission_progress', this.handleMissionProgress, this);
     this.scene.events.off('credits_earned', this.handleCreditsEarned, this);
     this.scene.events.off('reputation_changed', this.handleReputationChange, this);

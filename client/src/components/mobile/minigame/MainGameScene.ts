@@ -66,6 +66,9 @@ export class MainGameScene extends Phaser.Scene {
   // Sync service
   private syncService: MiniGameSyncService;
   private syncIntegration!: SyncIntegration;
+  
+  // Cached player data from registry (updated in real-time)
+  private cachedPlayerData: any = null;
 
   constructor() {
     super({ key: 'MainGameScene' });
@@ -79,12 +82,34 @@ export class MainGameScene extends Phaser.Scene {
     this.syncService.setMinigameActive(true);
     this.syncIntegration = new SyncIntegration(this);
     
+    // Seed initial player data from registry
+    this.cachedPlayerData = this.registry.get('playerData');
+    console.log('[MainGameScene] Initial playerData cached:', this.cachedPlayerData);
+    
     // Set world bounds for large station
     this.physics.world.setBounds(0, 0, 3200, 2400);
     
     // Initialize dialogue and mission systems
     this.dialogueSystem = new NPCDialogueSystem(this);
     this.missionSystem = new NPCMissionSystem(this);
+    
+    // Emit initial playerData to systems now that they're initialized
+    if (this.cachedPlayerData) {
+      console.log('[MainGameScene] Emitting initial playerData to systems');
+      this.events.emit('playerDataUpdated', this.cachedPlayerData);
+    }
+    
+    // Listen for runtime registry updates from React/Zustand
+    this.registry.events.on('changedata-playerData', (parent: any, value: any) => {
+      console.log('[MainGameScene] Registry updated with new playerData:', value);
+      
+      // Cache updated player data for real-time access by game systems
+      this.cachedPlayerData = value;
+      
+      // Notify systems that rely on player data (dialogue, missions, etc.)
+      // This ensures NPCs, missions, and other systems use fresh data from desktop/React
+      this.events.emit('playerDataUpdated', value);
+    });
     
     // Initialize smuggling and crew systems
     this.smugglingSystem = new SmugglingSystem(this);
