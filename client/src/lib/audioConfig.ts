@@ -243,7 +243,7 @@ export const AUDIO_CONFIG: AudioConfig = {
       name: "Plunderverse Aura",
       categories: ["atmospheric", "ambient"],
       priority: MusicPriority.AMBIENT,
-      environment: EnvironmentType.NEBULA,
+      environment: EnvironmentType.SPACE,
     },
     {
       filename: "Plunderverse_Aura2.mp3",
@@ -277,20 +277,20 @@ export const AUDIO_CONFIG: AudioConfig = {
   globalVolume: 1.0,
   crossfadeDuration: 2000,
   fadeDurations: new Map([
-    [MusicPriority.AMBIENT, 3000],
+    [MusicPriority.AMBIENT, 6000],
     [MusicPriority.THEME, 2000],
     [MusicPriority.GAME_EVENT, 1000],
     [MusicPriority.CRITICAL, 500],
   ]),
   ambientDelayRange: {
-    min: 30 * 1000, // 30 seconds
-    max: 1 * 60 * 1000, // 1 minute
+    min: 1 * 60 * 1000, // 1 minute
+    max: 10 * 60 * 1000, // 10 mins
   },
   minecraftMusicSettings: {
     // Context-specific delay ranges (in milliseconds)
     delayRanges: {
-      space: { min: 10 * 1000, max: 1 * 60 * 1000 }, // 10 secs - 1 minutes in space
-      planet: { min: 30 * 1000, max: 5 * 60 * 1000 }, // 5-15 minutes on planet
+      space: { min: 1 * 60 * 1000, max: 1 * 60 * 1000 }, // 10 secs - 1 minutes in space
+      planet: { min: 1 * 60 * 1000, max: 5 * 60 * 1000 }, // 5-15 minutes on planet
       mining: { min: 2 * 60 * 1000, max: 8 * 60 * 1000 }, // 2-8 minutes while mining
       combat: { min: 0, max: 1000 }, // Instant (0-1 sec) for combat
       exploration: { min: 1 * 60 * 1000, max: 6 * 60 * 1000 }, // 4-12 minutes exploring
