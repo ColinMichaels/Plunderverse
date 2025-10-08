@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useAudio } from "./useAudio";
 import { useLandedState } from "../surface/useLandedState";
-import { AUDIO_CONFIG, AudioCategory } from "../../audioConfig";
+import { AUDIO_CONFIG, AudioCategory, MusicContext } from "../../audioConfig";
 
 // Priority levels for music
 export enum MusicPriority {
@@ -44,6 +44,7 @@ interface MusicPlayerState {
   ambientTimerActive: boolean;
   minAmbientDelay: number; // 5 minutes
   maxAmbientDelay: number; // 15 minutes
+  currentMusicContext: MusicContext; // Current game context for music selection
 
   // Actions
   loadTracks: () => Promise<void>;
@@ -70,16 +71,33 @@ interface MusicPlayerState {
   returnToUserMusic: () => void;
   
   // Ambient system
-  startAmbientTimer: () => void;
+  startAmbientTimer: (context?: MusicContext) => void;
   stopAmbientTimer: () => void;
   playRandomAmbient: () => void;
+  
+  // Location change handlers
+  resetTimerOnLocationChange: (newContext: MusicContext) => void;
+  setMusicContext: (context: MusicContext) => void;
 }
 
 // Random delay between tracks (2-10 minutes in milliseconds)
 const getRandomDelay = () => Math.random() * (600000 - 120000) + 120000;
 
-// Minecraft-style random delay (5-15 minutes)
-const getRandomAmbientDelay = () => Math.random() * (15 * 60 * 1000 - 5 * 60 * 1000) + 5 * 60 * 1000;
+// Minecraft-style random delay - context-aware based on game state
+const getRandomAmbientDelay = (context: MusicContext = "exploration"): number => {
+  const settings = AUDIO_CONFIG.minecraftMusicSettings;
+  const range = settings.delayRanges[context];
+  
+  if (!range) {
+    console.warn(`[MusicPlayer] Unknown context: ${context}, using exploration defaults`);
+    const explorationRange = settings.delayRanges.exploration;
+    return Math.random() * (explorationRange.max - explorationRange.min) + explorationRange.min;
+  }
+  
+  const delay = Math.random() * (range.max - range.min) + range.min;
+  console.log(`[MusicPlayer] Random delay for ${context}: ${Math.round(delay / 60000)} minutes`);
+  return delay;
+};
 
 export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   tracks: [],
@@ -105,6 +123,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   ambientTimerActive: false,
   minAmbientDelay: 5 * 60 * 1000, // 5 minutes
   maxAmbientDelay: 15 * 60 * 1000, // 15 minutes
+  currentMusicContext: "exploration", // Default context
 
   loadTracks: async () => {
     if (get().isLoaded || get().isLoading) return;
@@ -561,22 +580,42 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   
   // Event handlers for game triggers
   triggerCombatMusic: () => {
-    console.log("[MusicPlayer] Combat music triggered");
+    console.log("[MusicPlayer] Combat music triggered (instant action music)");
     const { tracks } = get();
+    const settings = AUDIO_CONFIG.minecraftMusicSettings;
     
-    // Find combat music tracks (you can filter based on categories or names)
+    // Set context to combat
+    set({ currentMusicContext: "combat" });
+    
+    // Check trigger probability for enemy spawn
+    const shouldTrigger = Math.random() < settings.triggerChance.onEnemySpawn;
+    
+    if (!shouldTrigger) {
+      console.log(`[MusicPlayer] Combat trigger check failed (${Math.round(settings.triggerChance.onEnemySpawn * 100)}% chance)`);
+      return;
+    }
+    
+    // Find combat music tracks using action context
+    const actionCategories = settings.contexts.action;
     const combatTracks = tracks.filter(track => 
-      track.categories.includes("space" as AudioCategory) && 
-      track.name.toLowerCase().includes("combat") || 
-      track.name.toLowerCase().includes("battle")
+      track.categories.some(cat => actionCategories.includes(cat as AudioCategory))
     );
     
     if (combatTracks.length > 0) {
       const randomTrack = combatTracks[Math.floor(Math.random() * combatTracks.length)];
       const trackIndex = tracks.findIndex(t => t.id === randomTrack.id);
       if (trackIndex !== -1) {
+        console.log(`[MusicPlayer] Playing combat track: ${randomTrack.name}`);
         get().crossfadeToTrack(trackIndex, MusicPriority.GAME_EVENT);
         get().stopAmbientTimer();
+        
+        // Auto-start combat timer if configured (instant triggers)
+        if (settings.autoStart.onCombatStart) {
+          setTimeout(() => {
+            const delay = getRandomAmbientDelay("combat"); // Very short delay (0-1 sec)
+            console.log(`[MusicPlayer] Combat music will loop in ${delay}ms`);
+          }, 100);
+        }
       }
     }
   },
@@ -679,8 +718,8 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   },
   
   // Ambient system
-  startAmbientTimer: () => {
-    const { ambientTimerActive, ambientTimer } = get();
+  startAmbientTimer: (context?: MusicContext) => {
+    const { ambientTimerActive, ambientTimer, currentMusicContext } = get();
     
     if (ambientTimerActive) return;
     
@@ -689,8 +728,11 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       clearTimeout(ambientTimer);
     }
     
+    // Use provided context or current context
+    const musicContext = context || currentMusicContext;
+    
     const scheduleNext = () => {
-      const delay = getRandomAmbientDelay();
+      const delay = getRandomAmbientDelay(musicContext);
       const timer = setTimeout(() => {
         get().playRandomAmbient();
         scheduleNext(); // Schedule the next one
@@ -702,7 +744,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
         nextPlayTime: Date.now() + delay
       });
       
-      console.log(`[MusicPlayer] Next ambient music in ${Math.round(delay / 60000)} minutes`);
+      console.log(`[MusicPlayer] Next ambient music in ${Math.round(delay / 60000)} minutes (context: ${musicContext})`);
     };
     
     scheduleNext();
@@ -743,6 +785,40 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
         console.log(`[MusicPlayer] Playing random ambient: ${randomTrack.name}`);
       }
     }
+  },
+  
+  // Location change handlers
+  resetTimerOnLocationChange: (newContext: MusicContext) => {
+    const settings = AUDIO_CONFIG.minecraftMusicSettings;
+    
+    console.log(`[MusicPlayer] Location changed to: ${newContext}`);
+    
+    // Update current context
+    set({ currentMusicContext: newContext });
+    
+    // Check trigger probability
+    const shouldTrigger = Math.random() < settings.triggerChance.onLocationChange;
+    
+    if (!shouldTrigger) {
+      console.log(`[MusicPlayer] Random check failed (${Math.round(settings.triggerChance.onLocationChange * 100)}% chance), no timer restart`);
+      return;
+    }
+    
+    // Check auto-start settings
+    const shouldAutoStart = 
+      (newContext === "planet" && settings.autoStart.onPlanetEntry) ||
+      (newContext === "space" && settings.autoStart.onSpaceEntry);
+    
+    if (shouldAutoStart) {
+      console.log(`[MusicPlayer] Auto-starting timer for ${newContext} context`);
+      get().stopAmbientTimer();
+      get().startAmbientTimer(newContext);
+    }
+  },
+  
+  setMusicContext: (context: MusicContext) => {
+    console.log(`[MusicPlayer] Music context set to: ${context}`);
+    set({ currentMusicContext: context });
   }
 }));
 

@@ -40,6 +40,36 @@ export enum EnvironmentType {
   NEBULA = "nebula",
 }
 
+// Music context types for Minecraft-style scheduling
+export type MusicContext = "space" | "planet" | "mining" | "combat" | "exploration";
+
+// Minecraft-style music settings interface
+export interface MinecraftMusicSettings {
+  delayRanges: {
+    space: { min: number; max: number };
+    planet: { min: number; max: number };
+    mining: { min: number; max: number };
+    combat: { min: number; max: number };
+    exploration: { min: number; max: number };
+  };
+  contexts: {
+    action: AudioCategory[];
+    ambient: AudioCategory[];
+    exploration: AudioCategory[];
+  };
+  triggerChance: {
+    onLocationChange: number;
+    onMining: number;
+    onEnemySpawn: number;
+  };
+  autoStart: {
+    onPlanetEntry: boolean;
+    onSpaceEntry: boolean;
+    onMiningStart: boolean;
+    onCombatStart: boolean;
+  };
+}
+
 export interface SoundEffectConfig {
   path: string;
   volume: number;
@@ -86,6 +116,7 @@ export interface AudioConfig {
     min: number; // Minimum delay in ms
     max: number; // Maximum delay in ms
   };
+  minecraftMusicSettings: MinecraftMusicSettings;
 }
 
 export const AUDIO_CONFIG: AudioConfig = {
@@ -230,5 +261,34 @@ export const AUDIO_CONFIG: AudioConfig = {
   ambientDelayRange: {
     min: 5 * 60 * 1000, // 5 minutes
     max: 15 * 60 * 1000, // 15 minutes
+  },
+  minecraftMusicSettings: {
+    // Context-specific delay ranges (in milliseconds)
+    delayRanges: {
+      space: { min: 3 * 60 * 1000, max: 10 * 60 * 1000 },      // 3-10 minutes in space
+      planet: { min: 5 * 60 * 1000, max: 15 * 60 * 1000 },     // 5-15 minutes on planet
+      mining: { min: 2 * 60 * 1000, max: 8 * 60 * 1000 },      // 2-8 minutes while mining
+      combat: { min: 0, max: 1000 },                            // Instant (0-1 sec) for combat
+      exploration: { min: 4 * 60 * 1000, max: 12 * 60 * 1000 }, // 4-12 minutes exploring
+    },
+    // Music categories for different contexts
+    contexts: {
+      action: ["combat"],                              // Action music for combat
+      ambient: ["ambient", "atmospheric"],             // Ambient background music
+      exploration: ["space", "surface", "ambient"],    // Exploration music
+    },
+    // Trigger probabilities (0-1 scale)
+    triggerChance: {
+      onLocationChange: 0.6,  // 60% chance to trigger on location change
+      onMining: 0.4,          // 40% chance to trigger when mining starts
+      onEnemySpawn: 1.0,      // 100% chance when enemy engages
+    },
+    // Auto-start settings for different events
+    autoStart: {
+      onPlanetEntry: true,    // Auto-start timer when entering planet
+      onSpaceEntry: true,     // Auto-start timer when entering space
+      onMiningStart: false,   // Only start if no music playing
+      onCombatStart: true,    // Always start combat music immediately
+    },
   },
 };

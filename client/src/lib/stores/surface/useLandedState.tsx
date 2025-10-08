@@ -4,6 +4,7 @@ import { memoryProfiler } from "../../utils/MemoryProfiler";
 import { useSolarSystem } from "../space/useSolarSystem";
 import { planets } from "../../planetData";
 import * as THREE from "three";
+import { useMusicPlayer } from "../ui/useMusicPlayer";
 
 interface LandedState {
   isLanded: boolean;
@@ -63,6 +64,15 @@ export const useLandedState = create<LandedState>((set, get) => ({
     } catch (error) {
       console.error('[OBJECTIVE-TRIGGER] Error reporting landing:', error);
     }
+    
+    // Trigger Minecraft-style music scheduling for planet entry
+    try {
+      const musicPlayer = useMusicPlayer.getState();
+      musicPlayer.resetTimerOnLocationChange('planet');
+      console.log(`[MUSIC] Triggered planet entry music schedule for ${planetName}`);
+    } catch (error) {
+      console.error('[MUSIC] Error triggering planet music:', error);
+    }
   },
   
   setNotLanded: () => {
@@ -94,6 +104,15 @@ export const useLandedState = create<LandedState>((set, get) => ({
         memoryProfiler.logCurrentStatus(`After takeoff from ${planetName}`);
         memoryProfiler.logSceneTransition(`${planetName}-surface`, 'space');
       }, 100);
+    }
+    
+    // Trigger Minecraft-style music scheduling for space entry
+    try {
+      const musicPlayer = useMusicPlayer.getState();
+      musicPlayer.resetTimerOnLocationChange('space');
+      console.log(`[MUSIC] Triggered space entry music schedule after takeoff`);
+    } catch (error) {
+      console.error('[MUSIC] Error triggering space music:', error);
     }
   },
   
