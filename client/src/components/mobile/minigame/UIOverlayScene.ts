@@ -676,7 +676,7 @@ export class UIOverlayScene extends Phaser.Scene {
     });
     
     mainScene.events.on('roomDiscovered', (roomName: string) => {
-      this.showNotification(`New Area Discovered: ${roomName}`, '#00ffff');
+      this.showNotification(`New Area Discovered: ${roomName}`, 0x00ffff);
     });
   }
   
@@ -709,14 +709,14 @@ export class UIOverlayScene extends Phaser.Scene {
         
         if (isExplored) {
           // Draw explored room
-          this.miniMapGraphics.fillStyle(isCurrent ? 0xffaa00 : 0x334455, isCurrent ? 0.6 : 0.4);
-          this.miniMapGraphics.fillRect(roomX, roomY, roomWidth, roomHeight);
-          this.miniMapGraphics.lineStyle(1, isCurrent ? 0xffaa00 : 0x556677, 0.8);
-          this.miniMapGraphics.strokeRect(roomX, roomY, roomWidth, roomHeight);
+          this.miniMapGraphics?.fillStyle(isCurrent ? 0xffaa00 : 0x334455, isCurrent ? 0.6 : 0.4);
+          this.miniMapGraphics?.fillRect(roomX, roomY, roomWidth, roomHeight);
+          this.miniMapGraphics?.lineStyle(1, isCurrent ? 0xffaa00 : 0x556677, 0.8);
+          this.miniMapGraphics?.strokeRect(roomX, roomY, roomWidth, roomHeight);
         } else {
           // Draw unexplored room (darker)
-          this.miniMapGraphics.fillStyle(0x111111, 0.2);
-          this.miniMapGraphics.fillRect(roomX, roomY, roomWidth, roomHeight);
+          this.miniMapGraphics?.fillStyle(0x111111, 0.2);
+          this.miniMapGraphics?.fillRect(roomX, roomY, roomWidth, roomHeight);
         }
       });
     }
@@ -783,16 +783,16 @@ export class UIOverlayScene extends Phaser.Scene {
   private handleTerminalOption(index: number): void {
     switch (index) {
       case 0:
-        this.showNotification('📋 Mission Board: No new missions available', '#ffaa00');
+        this.showNotification('📋 Mission Board: No new missions available', 0xffaa00);
         break;
       case 1:
-        this.showNotification('🛒 Trading: Feature coming soon!', '#00ff00');
+        this.showNotification('🛒 Trading: Feature coming soon!', 0x00ff00);
         break;
       case 2:
-        this.showNotification('⚙️ Upgrades: Visit the main station', '#00aaff');
+        this.showNotification('⚙️ Upgrades: Visit the main station', 0x00aaff);
         break;
       case 3:
-        this.showNotification('💾 Game Saved!', '#00ff00');
+        this.showNotification('💾 Game Saved!', 0x00ff00);
         // Here you would emit an event to save the game
         this.events.emit('saveGame');
         break;
@@ -805,7 +805,7 @@ export class UIOverlayScene extends Phaser.Scene {
   private addCredits(amount: number): void {
     this.currentCredits += amount;
     this.updateCreditsDisplay();
-    this.showNotification(`+${amount} Credits!`, '#ffaa00');
+    this.showNotification(`+${amount} Credits!`, 0xffaa00);
     
     // Emit event to update React state
     this.events.emit('creditsUpdated', this.currentCredits);
@@ -814,7 +814,7 @@ export class UIOverlayScene extends Phaser.Scene {
   private addHealth(amount: number): void {
     this.currentHealth = Math.min(this.currentHealth + amount, this.maxHealth);
     this.updateHealthBar();
-    this.showNotification(`+${amount} Health!`, '#00ff00');
+    this.showNotification(`+${amount} Health!`, 0x00ff00);
   }
   
   private createSmugglingHUD(): void {
@@ -894,7 +894,7 @@ export class UIOverlayScene extends Phaser.Scene {
     this.detectionMeter.fillRect(62, 19, 96 * detectionPercent, 8);
     
     // Update timer if mission active
-    if (status.mission) {
+    if (status.mission && this.smugglingTimer) {
       this.smugglingTimer.setVisible(true);
       const timeElapsed = Date.now() - status.mission.startTime;
       const timeRemaining = Math.max(0, status.mission.timeLimit * 1000 - timeElapsed);
@@ -909,7 +909,7 @@ export class UIOverlayScene extends Phaser.Scene {
       } else {
         this.smugglingTimer.setColor('#ffffff');
       }
-    } else {
+    } else if (this.smugglingTimer) {
       this.smugglingTimer.setVisible(false);
     }
   }
