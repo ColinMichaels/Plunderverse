@@ -116,6 +116,7 @@ export function PauseMenu() {
     useShooting.setState({ projectiles: [] });
 
     // Reset ship position (handled by SplashScreen)
+    const cameraPosition = useSolarSystem.getState().
     useSolarSystem.getState().setCameraPosition(new Vector3(0, 10, 50));
 
     // Reset to splash screen
