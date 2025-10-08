@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { AlertTriangle, Shield, Skull, Users } from 'lucide-react';
-import { usePlayer } from '../lib/stores/player/usePlayer';
-import { useLandedState } from '../lib/stores/surface/useLandedState';
-import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
+import React, {useEffect, useState} from 'react';
+import {AlertTriangle, Shield, Skull} from 'lucide-react';
+import {useLandedState, usePlayer, useSolarSystem} from '@/lib/stores';
 
 const ReputationWarning: React.FC = () => {
   const player = usePlayer();

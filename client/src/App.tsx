@@ -1,34 +1,31 @@
-import { Canvas } from "@react-three/fiber";
-import { Suspense, useEffect, useState, useRef } from "react";
-import { KeyboardControls } from "@react-three/drei";
-import { SolarSystem } from "./components/space/SolarSystem";
-import { GameUI } from "./components/ui/GameUI";
-import { EnhancedSplashScreen } from "./components/screens/EnhancedSplashScreen";
-import { PlanetSurfaceScene } from "./components/surface/PlanetSurfaceScene";
-import { WebGLCheckWrapper } from "./components/shared/WebGLCheckWrapper";
-import { TakeoffControls } from "./components/surface/TakeoffControls";
-import { UILayoutProvider } from "./components/ui/UILayoutManager";
-import { PatrolEncounter } from "./components/space/PatrolEncounter";
-import { MobileGame } from "./components/mobile/MobileGame";
-import { AuthProvider } from "./components/auth/AuthProvider";
-import { useAudio } from "./lib/stores/ui/useAudio";
-import { useGame } from "./lib/stores/ui/useGame";
-import { useSettings } from "./lib/stores/ui/useSettings";
-import { useLandedState } from "./lib/stores/surface/useLandedState";
-import { usePlatform } from "./lib/stores/ui/usePlatform";
-import { TouchPropulsionControls } from "./components/mobile/TouchPropulsionControls";
-import { HintModal } from "./components/screens/HintModal";
-import { AUDIO_CONFIG } from "./lib/audioConfig";
+import {Canvas} from "@react-three/fiber";
+import {Suspense, useEffect, useRef, useState} from "react";
+import {KeyboardControls} from "@react-three/drei";
+import {SolarSystem} from "./components/space/SolarSystem";
+import {GameUI} from "./components/ui/GameUI";
+import {EnhancedSplashScreen} from "./components/screens/EnhancedSplashScreen";
+import {PlanetSurfaceScene} from "./components/surface/PlanetSurfaceScene";
+import {WebGLCheckWrapper} from "./components/shared/WebGLCheckWrapper";
+import {TakeoffControls} from "./components/surface/TakeoffControls";
+import {UILayoutProvider} from "./components/ui/UILayoutManager";
+import {PatrolEncounter} from "./components/space/PatrolEncounter";
+import {MobileGame} from "./components/mobile/MobileGame";
+import {AuthProvider} from "./components/auth/AuthProvider";
+import {useAudio, useGame, useLandedState, useSettings} from "@/lib/stores";
+import {usePlatform} from "./lib/stores/ui/usePlatform";
+import {TouchPropulsionControls} from "./components/mobile/TouchPropulsionControls";
+import {HintModal} from "./components/screens/HintModal";
+import {AUDIO_CONFIG} from "./lib/audioConfig";
 import contentRegistry from "./lib/plunderverse/contentRegistry";
-import { MissionDebugPanel } from "./components/debug/MissionDebugPanel";
-import { CombatDebugPanel } from "./components/debug/CombatDebugPanel";
-import { ResourceManager } from "./lib/utils/ResourceManager";
-import { memoryProfiler } from "./lib/utils/MemoryProfiler";
-import { testTerrainCacheManagement } from "./lib/tests/testTerrainCache";
-import { useAuthStore } from "./lib/stores/auth/useAuthStore";
-import { cloudSyncManager } from "./services/CloudSyncManager";
-import { CloudSyncManager } from "./services/CloudSyncWebSocket"; // NEW: WebSocket sync
-import { Toaster } from "./components/ui/sonner";
+import {MissionDebugPanel} from "./components/debug/MissionDebugPanel";
+import {CombatDebugPanel} from "./components/debug/CombatDebugPanel";
+import {ResourceManager} from "./lib/utils/ResourceManager";
+import {memoryProfiler} from "./lib/utils/MemoryProfiler";
+import {testTerrainCacheManagement} from "./lib/tests/testTerrainCache";
+import {useAuthStore} from "./lib/stores/auth/useAuthStore";
+import {cloudSyncManager} from "./services/CloudSyncManager";
+import {CloudSyncManager} from "./services/CloudSyncWebSocket"; // NEW: WebSocket sync
+import {Toaster} from "./components/ui/sonner";
 import "./testSaveSystem"; // Import save system test module
 import "./utils/testSaveFixed"; // Import fixed save test
 import "./runImprovementTests"; // Import improvement tests
@@ -40,7 +37,7 @@ function GameContent() {
   const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
   const { isLanded } = useLandedState();
-  const { platformType, updatePlatform, viewport } = usePlatform();
+    const {platformType, updatePlatform} = usePlatform();
 
   // FORCE MOBILE DETECTION FOR SMALL VIEWPORTS
   // Check viewport width directly as a fallback
@@ -74,10 +71,9 @@ function GameContent() {
 
   // Update the keyboard map only when keybinds actually change
   useEffect(() => {
-    const unsubscribe = useSettings.subscribe(() => {
-      keyboardMapRef.current = useSettings.getState().getKeyboardMap();
+      return useSettings.subscribe(() => {
+          keyboardMapRef.current = useSettings.getState().getKeyboardMap();
     });
-    return unsubscribe;
   }, []);
 
   // Initialize platform detection on mount and handle window resize
