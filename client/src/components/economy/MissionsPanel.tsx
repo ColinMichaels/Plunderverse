@@ -142,7 +142,6 @@ export function MissionsPanel() {
         const playerRep = player.reputation[faction as FactionId];
         if (playerRep < required) {
           const diff = required - playerRep;
-          const level = gameFacade.getReputationLevel(faction as FactionId);
           return {
             available: false,
             reason: `Requires ${required} reputation with ${faction} (need ${diff} more)`,
@@ -237,7 +236,8 @@ export function MissionsPanel() {
   };
 
   const renderMissionCard = (mission: Mission, isActive: boolean = false) => {
-    const isStoryMission = mission.type === "story";
+    // Story missions are identified by having branching choices
+    const isStoryMission = mission.choices && mission.choices.length > 0;
     const legalityColor = isStoryMission
       ? "border-2 border-purple-500 shadow-lg shadow-purple-500/20 bg-gradient-to-br from-purple-900/30 to-pink-900/30"
       : getLegalityColor(mission);
@@ -609,67 +609,9 @@ export function MissionsPanel() {
                 </h3>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="flex items-center space-x-2">
-                    <span>🏪 Price Modifier:</span>
-                    <span
-                      className={`font-mono ${
-                        gameFacade.getFactionPriceModifier(
-                          gameFacade.getCurrentFaction(),
-                        ) < 1
-                          ? "text-green-400"
-                          : gameFacade.getFactionPriceModifier(
-                                gameFacade.getCurrentFaction(),
-                              ) > 1
-                            ? "text-red-400"
-                            : "text-gray-400"
-                      }`}
-                    >
-                      {(
-                        gameFacade.getFactionPriceModifier(
-                          gameFacade.getCurrentFaction(),
-                        ) * 100
-                      ).toFixed(0)}
-                      %
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>🎁 Reward Bonus:</span>
-                    <span
-                      className={`font-mono ${
-                        gameFacade.getFactionRewardModifier(
-                          gameFacade.getCurrentFaction(),
-                        ) > 1
-                          ? "text-green-400"
-                          : gameFacade.getFactionRewardModifier(
-                                gameFacade.getCurrentFaction(),
-                              ) < 1
-                            ? "text-red-400"
-                            : "text-gray-400"
-                      }`}
-                    >
-                      {(
-                        gameFacade.getFactionRewardModifier(
-                          gameFacade.getCurrentFaction(),
-                        ) * 100
-                      ).toFixed(0)}
-                      %
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span>🔥 Heat Decay:</span>
-                    <span
-                      className={`font-mono ${
-                        gameFacade.getFactionHeatModifier("corporations") > 1
-                          ? "text-green-400"
-                          : gameFacade.getFactionHeatModifier("corporations") <
-                              1
-                            ? "text-red-400"
-                            : "text-gray-400"
-                      }`}
-                    >
-                      {(
-                        gameFacade.getFactionHeatModifier("corporations") * 100
-                      ).toFixed(0)}
-                      %
+                    <span>📍 Location:</span>
+                    <span className="font-mono text-cyan-400">
+                      {gameFacade.getCurrentFaction()}
                     </span>
                   </div>
                   <div className="flex items-center space-x-2">
