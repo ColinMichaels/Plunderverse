@@ -4,6 +4,7 @@ export type AudioCategory =
   | "atmospheric"
   | "combat"
   | "event"
+  | "theme"
   | "ambient";
 
 // Music priority levels
@@ -41,7 +42,12 @@ export enum EnvironmentType {
 }
 
 // Music context types for Minecraft-style scheduling
-export type MusicContext = "space" | "planet" | "mining" | "combat" | "exploration";
+export type MusicContext =
+  | "space"
+  | "planet"
+  | "mining"
+  | "combat"
+  | "exploration";
 
 // Minecraft-style music settings interface
 export interface MinecraftMusicSettings {
@@ -186,11 +192,8 @@ export const AUDIO_CONFIG: AudioConfig = {
     {
       filename: "PlunderverseTheme.mp3",
       name: "Plunderverse Theme",
-      categories: ["space", "event"],
-      priority: MusicPriority.CRITICAL,
-      eventType: MusicEventType.VICTORY,
-      isJingle: true,
-      duration: 10,
+      categories: ["theme", "event"],
+      priority: MusicPriority.THEME,
     },
     {
       filename: "ES_Ame - Shinji Wakasa.mp3",
@@ -245,9 +248,9 @@ export const AUDIO_CONFIG: AudioConfig = {
     {
       filename: "Plunderverse_Aura2.mp3",
       name: "Plunderverse Aura 2",
-      categories: ["atmospheric", "ambient"],
+      categories: ["atmospheric", "ambient", "space"],
       priority: MusicPriority.AMBIENT,
-      environment: EnvironmentType.ASTEROID_FIELD,
+      environment: EnvironmentType.SPACE,
     },
   ],
   globalVolume: 1.0,
@@ -259,36 +262,36 @@ export const AUDIO_CONFIG: AudioConfig = {
     [MusicPriority.CRITICAL, 500],
   ]),
   ambientDelayRange: {
-    min: 5 * 60 * 1000, // 5 minutes
-    max: 15 * 60 * 1000, // 15 minutes
+    min: 30 * 1000, // 30 seconds
+    max: 1 * 60 * 1000, // 1 minute
   },
   minecraftMusicSettings: {
     // Context-specific delay ranges (in milliseconds)
     delayRanges: {
-      space: { min: 3 * 60 * 1000, max: 10 * 60 * 1000 },      // 3-10 minutes in space
-      planet: { min: 5 * 60 * 1000, max: 15 * 60 * 1000 },     // 5-15 minutes on planet
-      mining: { min: 2 * 60 * 1000, max: 8 * 60 * 1000 },      // 2-8 minutes while mining
-      combat: { min: 0, max: 1000 },                            // Instant (0-1 sec) for combat
-      exploration: { min: 4 * 60 * 1000, max: 12 * 60 * 1000 }, // 4-12 minutes exploring
+      space: { min: 10 * 1000, max: 1 * 60 * 1000 }, // 10 secs - 1 minutes in space
+      planet: { min: 30 * 1000, max: 5 * 60 * 1000 }, // 5-15 minutes on planet
+      mining: { min: 2 * 60 * 1000, max: 8 * 60 * 1000 }, // 2-8 minutes while mining
+      combat: { min: 0, max: 1000 }, // Instant (0-1 sec) for combat
+      exploration: { min: 1 * 60 * 1000, max: 6 * 60 * 1000 }, // 4-12 minutes exploring
     },
     // Music categories for different contexts
     contexts: {
-      action: ["combat"],                              // Action music for combat
-      ambient: ["ambient", "atmospheric"],             // Ambient background music
-      exploration: ["space", "surface", "ambient"],    // Exploration music
+      action: ["combat"], // Action music for combat
+      ambient: ["ambient", "atmospheric"], // Ambient background music
+      exploration: ["space", "surface", "ambient"], // Exploration music
     },
     // Trigger probabilities (0-1 scale)
     triggerChance: {
-      onLocationChange: 0.6,  // 60% chance to trigger on location change
-      onMining: 0.4,          // 40% chance to trigger when mining starts
-      onEnemySpawn: 1.0,      // 100% chance when enemy engages
+      onLocationChange: 0.6, // 60% chance to trigger on location change
+      onMining: 0.4, // 40% chance to trigger when mining starts
+      onEnemySpawn: 1.0, // 100% chance when enemy engages
     },
     // Auto-start settings for different events
     autoStart: {
-      onPlanetEntry: true,    // Auto-start timer when entering planet
-      onSpaceEntry: true,     // Auto-start timer when entering space
-      onMiningStart: false,   // Only start if no music playing
-      onCombatStart: true,    // Always start combat music immediately
+      onPlanetEntry: true, // Auto-start timer when entering planet
+      onSpaceEntry: true, // Auto-start timer when entering space
+      onMiningStart: false, // Only start if no music playing
+      onCombatStart: true, // Always start combat music immediately
     },
   },
 };

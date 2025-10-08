@@ -62,7 +62,7 @@ export function SettingsContent({
           step={0.0001}
           value={[sensitivity]}
           onValueChange={([value]) => setSensitivity(value)}
-          className="w-full"
+          className="w-full h-4 bg-gray-700 rounded-full"
         />
         <p className="text-xs text-gray-400">
           Adjust how quickly the camera responds to mouse movement
@@ -79,11 +79,7 @@ export function SettingsContent({
             Reverse vertical mouse look direction
           </p>
         </div>
-        <Switch
-          id="invert-y"
-          checked={invertY}
-          onCheckedChange={setInvertY}
-        />
+        <Switch id="invert-y" checked={invertY} onCheckedChange={setInvertY} />
       </div>
 
       {/* Mining Effects Section */}
@@ -91,11 +87,15 @@ export function SettingsContent({
         <h3 className="text-cyan-300 font-semibold text-sm uppercase pb-1">
           ⛏️ Mining Effects
         </h3>
-        
+
         {/* Effects Intensity */}
         <div className="space-y-2">
-          <Label htmlFor="mining-intensity" className="text-cyan-300 font-semibold">
-            Mining Effects Intensity: {Math.round((miningEffectsIntensity ?? 1) * 100)}%
+          <Label
+            htmlFor="mining-intensity"
+            className="text-cyan-300 font-semibold"
+          >
+            Mining Effects Intensity:{" "}
+            {Math.round((miningEffectsIntensity ?? 1) * 100)}%
           </Label>
           <Slider
             id="mining-intensity"
@@ -110,11 +110,14 @@ export function SettingsContent({
             Adjust the overall intensity of mining feedback effects
           </p>
         </div>
-        
+
         {/* Screen Shake */}
         <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
           <div className="space-y-0.5">
-            <Label htmlFor="screen-shake" className="text-cyan-300 font-semibold">
+            <Label
+              htmlFor="screen-shake"
+              className="text-cyan-300 font-semibold"
+            >
               Screen Shake
             </Label>
             <p className="text-xs text-gray-400">
@@ -127,11 +130,14 @@ export function SettingsContent({
             onCheckedChange={setEnableScreenShake}
           />
         </div>
-        
+
         {/* Visual Effects */}
         <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
           <div className="space-y-0.5">
-            <Label htmlFor="visual-effects" className="text-cyan-300 font-semibold">
+            <Label
+              htmlFor="visual-effects"
+              className="text-cyan-300 font-semibold"
+            >
               Visual Effects
             </Label>
             <p className="text-xs text-gray-400">
