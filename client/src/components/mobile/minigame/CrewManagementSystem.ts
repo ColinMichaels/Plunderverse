@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { useCrewManagement } from '../../../lib/stores/ship/useCrewManagement';
 import { useShipStatus } from '../../../lib/stores/ship/useShipStatus';
 import { useCreditsStore } from '../../../domain/economy/credits.store';
+import MiniGameSyncService from '../../../services/MiniGameSyncService';
 import { toast } from 'sonner';
 
 export interface CrewMember {
@@ -389,7 +390,7 @@ export class CrewManagementSystem {
     
     // Deduct hiring cost
     if (!free) {
-      creditsStore.removeCredits(hiringCost);
+      creditsStore.spendCredits(hiringCost);
     }
     
     // Add to roster
@@ -410,15 +411,9 @@ export class CrewManagementSystem {
     
     // Sync with main game crew system
     const mainCrewStore = useCrewManagement.getState();
-    mainCrewStore.addCrewMember({
-      id: crew.id,
-      name: crew.name,
-      role: crew.role as any,
-      skill: crew.level * 20,
-      loyalty: crew.loyalty,
-      morale: crew.morale,
-      hired: true
-    });
+    const hireResult = mainCrewStore.hireCrew(crew.id);
+    console.log(`[CrewManagementSystem] Synced crew hire to main store:`, hireResult);
+    console.log(`[CrewManagementSystem] Crew changes will auto-sync via MiniGameSyncService store subscription`);
     
     return true;
   }
@@ -437,7 +432,7 @@ export class CrewManagementSystem {
     
     // Pay severance (1 month salary)
     const creditsStore = useCreditsStore.getState();
-    creditsStore.removeCredits(crew.salary);
+    creditsStore.spendCredits(crew.salary);
     
     // Remove from roster
     this.crewRoster.delete(crew.id);
@@ -456,7 +451,9 @@ export class CrewManagementSystem {
     
     // Sync with main game
     const mainCrewStore = useCrewManagement.getState();
-    mainCrewStore.removeCrewMember(crew.id);
+    const fireResult = mainCrewStore.fireCrew(crew.id);
+    console.log(`[CrewManagementSystem] Synced crew fire to main store:`, fireResult);
+    console.log(`[CrewManagementSystem] Crew changes will auto-sync via MiniGameSyncService store subscription`);
     
     return true;
   }
@@ -605,7 +602,7 @@ export class CrewManagementSystem {
     // Credits
     if (rewards.credits) {
       const creditsStore = useCreditsStore.getState();
-      creditsStore.addCredits(rewards.credits);
+      creditsStore.earnCredits(rewards.credits);
     }
     
     // Experience
@@ -898,7 +895,7 @@ export class CrewManagementSystem {
     });
     
     if (creditsStore.credits >= totalSalary) {
-      creditsStore.removeCredits(totalSalary);
+      creditsStore.spendCredits(totalSalary);
       
       // Increase loyalty for paid crew
       this.crewRoster.forEach(crew => {

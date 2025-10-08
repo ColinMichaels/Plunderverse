@@ -5,10 +5,11 @@ import { usePlayer } from '../../lib/stores/player/usePlayer';
 import { useCredits } from '../../lib/stores/economy/useCredits';
 import { useInventory } from '../../lib/stores/economy/useInventory';
 import { Button } from '../ui/button';
-import { ArrowLeft, RotateCw } from 'lucide-react';
+import { ArrowLeft, RotateCw, Users } from 'lucide-react';
 import { MobileSyncIndicator } from '../ui/SyncStatusIndicator';
 import { useMiniGameSync } from '../../hooks/useMiniGameSync';
 import { OfflineIndicator } from './OfflineIndicator';
+import { CrewPanel } from './CrewPanel';
 import MiniGameSyncService from '../../services/MiniGameSyncService';
 
 // Import Phaser scenes
@@ -29,6 +30,7 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
   const gameRef = useRef<HTMLDivElement>(null);
   const phaserGameRef = useRef<Phaser.Game | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showCrewPanel, setShowCrewPanel] = useState(false);
   const [orientation, setOrientation] = useState<'portrait' | 'landscape'>(
     window.innerHeight > window.innerWidth ? 'portrait' : 'landscape'
   );
@@ -190,6 +192,15 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
         </Button>
         
         <div className="flex items-center gap-4">
+          <Button
+            onClick={() => setShowCrewPanel(true)}
+            size="sm"
+            className="bg-cyan-400/20 hover:bg-cyan-400/40 text-cyan-400"
+            title="Crew Management"
+          >
+            <Users className="w-4 h-4" />
+          </Button>
+          
           <div className="text-right">
             <p className="text-xs text-gray-400">Credits</p>
             <p className="text-sm font-mono text-cyan-400">{credits.toLocaleString()}</p>
@@ -242,6 +253,11 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
           Touch and drag to move • Tap to interact • Pinch to zoom
         </p>
       </div>
+
+      {/* Crew Management Panel */}
+      {showCrewPanel && (
+        <CrewPanel onClose={() => setShowCrewPanel(false)} />
+      )}
     </div>
   );
 };
