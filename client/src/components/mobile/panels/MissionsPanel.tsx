@@ -16,7 +16,8 @@ import {
   ChevronRight,
   Flag,
   TrendingUp,
-  Award
+  Award,
+  Gauge
 } from 'lucide-react';
 import { usePlunderverseMissions } from '../../../lib/stores/economy/usePlunderverseMissions';
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
@@ -271,81 +272,70 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-orange-600/30 px-3 py-2">
+      <header className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-orange-600/30 p-2">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-base font-bold text-white">Mission Board</h2>
+          <h1 className="text-base font-bold text-white flex items-center gap-1.5">
+            <Target className="w-5 h-5 text-orange-400" />
+            Mission Board
+          </h1>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Active</p>
-            <p className="text-base font-mono text-orange-400">
+            <p className="text-[10px] text-gray-400">Active</p>
+            <p className="text-sm font-mono text-orange-400">
               {activeMissionsData.length}/5
             </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-3 gap-1.5 mt-1">
-          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
-            <p className="text-[10px] text-gray-400">Complete</p>
-            <p className="text-xs font-bold text-green-400">{completedMissionsData.length}</p>
+        {/* Stats Bar with Tabs */}
+        <div className="flex items-center justify-between bg-slate-700/50 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <CheckCircle className="w-3.5 h-3.5 text-green-400" />
+              <span className="text-green-400 font-semibold">{completedMissionsData.length}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Gauge className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-cyan-400 font-semibold">
+                {completedMissionsData.length > 0 
+                  ? Math.round((completedMissionsData.length / (completedMissionsData.length + missions.failedMissionIds.size)) * 100)
+                  : 0}%
+              </span>
+            </div>
           </div>
-          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
-            <p className="text-[10px] text-gray-400">Success</p>
-            <p className="text-xs font-bold text-cyan-400">
-              {completedMissionsData.length > 0 
-                ? Math.round((completedMissionsData.length / (completedMissionsData.length + missions.failedMissionIds.size)) * 100)
-                : 0}%
-            </p>
-          </div>
-          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
-            <p className="text-[10px] text-gray-400">Total</p>
-            <p className="text-xs font-bold text-yellow-400">
-              {completedMissionsData.length + missions.failedMissionIds.size}
-            </p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                setActiveTab('active');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors
+                        ${activeTab === 'active' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('available');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors
+                        ${activeTab === 'available' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              Available
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('completed');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors
+                        ${activeTab === 'completed' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              Done
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Tab Selector */}
-      <div className="bg-slate-900/50 px-3 py-1.5">
-        <div className="grid grid-cols-3 gap-2">
-          <button
-            onClick={() => {
-              setActiveTab('active');
-              triggerHaptic();
-            }}
-            className={`py-2 px-3 rounded-lg font-semibold transition-all text-sm
-                     ${activeTab === 'active'
-                       ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white'
-                       : 'bg-slate-700 text-gray-400'}`}
-          >
-            Active ({activeMissionsData.length})
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('available');
-              triggerHaptic();
-            }}
-            className={`py-2 px-3 rounded-lg font-semibold transition-all text-sm
-                     ${activeTab === 'available'
-                       ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
-                       : 'bg-slate-700 text-gray-400'}`}
-          >
-            Available ({availableMissionsData.length})
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab('completed');
-              triggerHaptic();
-            }}
-            className={`py-2 px-3 rounded-lg font-semibold transition-all text-sm
-                     ${activeTab === 'completed'
-                       ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
-                       : 'bg-slate-700 text-gray-400'}`}
-          >
-            Done ({completedMissionsData.length})
-          </button>
-        </div>
-      </div>
+      </header>
 
       {/* Mission List */}
       <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
