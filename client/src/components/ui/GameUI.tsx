@@ -10,6 +10,7 @@ import { NavigationSidebar } from "../navigation/NavigationSidebar";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
+import { ParrotControls } from "../ParrotControls";
 
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
@@ -28,6 +29,7 @@ import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
+import { useParrot } from "../../lib/stores/useParrot";
 import { AutopilotIndicator } from "../navigation/AutopilotIndicator";
 // Other Hooks
 import { useDockingDetection } from "../../hooks/useDockingDetection";
@@ -46,9 +48,15 @@ export function GameUI() {
   const { isGuest } = useAuthStore();
   const { manualSave } = useAutoSave();
   const { phase } = useGame();
+  const { initialize: initializeParrot } = useParrot();
 
   // Initialize docking detection
   useDockingDetection();
+  
+  // Initialize Parrot on mount
+  useEffect(() => {
+    initializeParrot();
+  }, [initializeParrot]);
   const { selectedPlanet, time } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
@@ -169,6 +177,9 @@ export function GameUI() {
       <div className="fixed top-20 left-2 z-30">
         <MusicPlayer />
       </div>
+
+      {/* Parrot AI Controls */}
+      <ParrotControls />
 
       {/* Crew Recruitment Interface - Modal overlay */}
       {showCrewRecruitment && (
