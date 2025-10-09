@@ -18,6 +18,7 @@ export class ParrotSpeechService {
   };
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private isMuted: boolean = false;
+  private selectedVoiceName: string | null = null;
 
   constructor() {
     this.synth = window.speechSynthesis;
@@ -36,6 +37,12 @@ export class ParrotSpeechService {
   private getPreferredVoice(): SpeechSynthesisVoice | null {
     const voices = this.synth.getVoices();
     
+    // Use selected voice if set
+    if (this.selectedVoiceName) {
+      const selected = voices.find(v => v.name === this.selectedVoiceName);
+      if (selected) return selected;
+    }
+    
     const preferredVoices = [
       'Google UK English Male',
       'Google US English',
@@ -51,6 +58,15 @@ export class ParrotSpeechService {
 
     const englishVoice = voices.find(v => v.lang.startsWith('en'));
     return englishVoice || voices[0] || null;
+  }
+
+  setVoice(voiceName: string | null) {
+    this.selectedVoiceName = voiceName;
+    console.log('[ParrotSpeech] Voice changed to:', voiceName || 'default');
+  }
+
+  getAvailableVoices(): SpeechSynthesisVoice[] {
+    return this.synth.getVoices();
   }
 
   speak(text: string, onComplete?: () => void) {
@@ -124,10 +140,6 @@ export class ParrotSpeechService {
 
   getSettings(): ParrotVoiceSettings {
     return { ...this.settings };
-  }
-
-  getAvailableVoices(): SpeechSynthesisVoice[] {
-    return this.synth.getVoices();
   }
 
   ensureVoicesLoaded(callback: () => void) {

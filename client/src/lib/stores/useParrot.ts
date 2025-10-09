@@ -9,17 +9,30 @@ interface ParrotSettings {
   rate: number;
   pitch: number;
   isVisible: boolean;
+  showText: boolean; // Show text display instead of/alongside voice
+  selectedVoice: string | null; // Selected voice name
+}
+
+export interface ParrotMessage {
+  id: string;
+  text: string;
+  type: 'info' | 'warning' | 'critical' | 'random';
+  timestamp: number;
 }
 
 interface ParrotState {
   settings: ParrotSettings;
   isInitialized: boolean;
+  messages: ParrotMessage[]; // Message queue for text display
   
   initialize: () => void;
   setMode: (mode: ParrotMode) => void;
   setMuted: (muted: boolean) => void;
   setVolume: (volume: number) => void;
   setVisible: (visible: boolean) => void;
+  setShowText: (showText: boolean) => void;
+  setVoice: (voiceName: string | null) => void;
+  clearMessages: () => void;
   
   speak: (text: string) => void;
   comment: (message: string, type?: 'info' | 'warning' | 'critical' | 'random') => void;
@@ -39,8 +52,11 @@ export const useParrot = create<ParrotState>((set, get) => ({
     rate: 1.1,
     pitch: 1.2,
     isVisible: true,
+    showText: false,
+    selectedVoice: null,
   },
   isInitialized: false,
+  messages: [],
 
   initialize: () => {
     parrotSpeechService.ensureVoicesLoaded(() => {
@@ -84,14 +100,63 @@ export const useParrot = create<ParrotState>((set, get) => ({
     }));
   },
 
+  setShowText: (showText) => {
+    set((state) => ({
+      settings: { ...state.settings, showText },
+    }));
+  },
+
+  setVoice: (voiceName) => {
+    set((state) => ({
+      settings: { ...state.settings, selectedVoice: voiceName },
+    }));
+    parrotSpeechService.setVoice(voiceName);
+  },
+
+  clearMessages: () => {
+    set({ messages: [] });
+  },
+
   speak: (text) => {
-    if (!get().settings.isMuted) {
+    const state = get();
+    
+    // Add to message queue if text display is enabled
+    if (state.settings.showText) {
+      const message: ParrotMessage = {
+        id: `msg-${Date.now()}-${Math.random()}`,
+        text,
+        type: 'info',
+        timestamp: Date.now(),
+      };
+      set((state) => ({
+        messages: [...state.messages, message].slice(-10), // Keep last 10 messages
+      }));
+    }
+    
+    // Speak if not muted
+    if (!state.settings.isMuted) {
       parrotSpeechService.speak(text);
     }
   },
 
   comment: (message, type = 'info') => {
-    if (!get().settings.isMuted) {
+    const state = get();
+    
+    // Add to message queue if text display is enabled
+    if (state.settings.showText) {
+      const msg: ParrotMessage = {
+        id: `msg-${Date.now()}-${Math.random()}`,
+        text: message,
+        type,
+        timestamp: Date.now(),
+      };
+      set((state) => ({
+        messages: [...state.messages, msg].slice(-10), // Keep last 10 messages
+      }));
+    }
+    
+    // Speak if not muted
+    if (!state.settings.isMuted) {
       parrotPersonality.comment(message, type);
     }
   },
