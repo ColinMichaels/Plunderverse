@@ -453,7 +453,7 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
         <div className="flex items-center justify-between mb-1">
           <h1 className="text-base font-bold text-white flex items-center gap-1.5">
             <Settings className="w-5 h-5 text-orange-400" />
-            Ship Upgrades
+            Upgrades
           </h1>
           {onClose && (
             <button
@@ -465,47 +465,51 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
           )}
         </div>
 
-        {/* Stats summary */}
-        <div className="grid grid-cols-3 gap-1.5 bg-slate-700/50 rounded-lg p-1.5">
-          <div className="text-center">
-            <p className="text-[10px] text-gray-400">Combat</p>
-            <p className="text-xs font-bold text-orange-400">{shipStats.combatRating}</p>
+        {/* Stats Bar with View Toggle */}
+        <div className="flex items-center justify-between bg-slate-700/50 rounded-lg px-2 py-1">
+          <div className="flex items-center gap-2 text-xs">
+            <div className="flex items-center gap-1">
+              <Shield className="w-3.5 h-3.5 text-orange-400" />
+              <span className="text-orange-400">{shipStats.combatRating}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Package className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="text-cyan-400">{shipStats.cargoCapacity}t</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Rocket className="w-3.5 h-3.5 text-purple-400" />
+              <span className="text-purple-400">{shipStats.speed}%</span>
+            </div>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] text-gray-400">Cargo</p>
-            <p className="text-xs font-bold text-cyan-400">{shipStats.cargoCapacity}t</p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => {
+                setViewMode('shop');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors
+                        ${viewMode === 'shop' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              Shop
+            </button>
+            <button
+              onClick={() => {
+                setViewMode('inventory');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors
+                        ${viewMode === 'inventory' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              Owned
+            </button>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] text-gray-400">Speed</p>
-            <p className="text-xs font-bold text-purple-400">{shipStats.speed}%</p>
-          </div>
-        </div>
-
-        {/* View toggle */}
-        <div className="flex gap-1.5 mt-1.5">
-          <button
-            onClick={() => setViewMode('shop')}
-            className={`flex-1 py-1 rounded text-xs font-semibold transition-colors
-                      ${viewMode === 'shop' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-300'}`}
-          >
-            <ShoppingCart className="w-3.5 h-3.5 inline mr-1" />
-            Shop
-          </button>
-          <button
-            onClick={() => setViewMode('inventory')}
-            className={`flex-1 py-1 rounded text-xs font-semibold transition-colors
-                      ${viewMode === 'inventory' ? 'bg-orange-600 text-white' : 'bg-slate-700 text-gray-300'}`}
-          >
-            <Package className="w-3.5 h-3.5 inline mr-1" />
-            Inventory
-          </button>
         </div>
       </header>
 
       {/* Category tabs (shop view only) */}
       {viewMode === 'shop' && (
-        <div className="bg-slate-900 border-b border-slate-700 px-2 py-1.5">
-          <div className="flex gap-1.5 overflow-x-auto hide-scrollbar">
+        <div className="bg-slate-900 border-b border-slate-700 px-2 py-1">
+          <div className="flex gap-1 overflow-x-auto hide-scrollbar">
             {categories.map(cat => (
               <button
                 key={cat.id}
@@ -513,13 +517,10 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
                   triggerHaptic();
                   setSelectedCategory(cat.id);
                 }}
-                className={`flex items-center gap-1 px-2 py-1 rounded-full whitespace-nowrap text-[10px] font-semibold transition-colors
-                          ${selectedCategory === cat.id 
-                            ? 'bg-orange-600 text-white' 
-                            : 'bg-slate-700 text-gray-300'}`}
+                className={`px-2 py-0.5 rounded whitespace-nowrap text-[10px] font-semibold transition-colors
+                          ${selectedCategory === cat.id ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
               >
-                {cat.icon}
-                <span>{cat.label}</span>
+                {cat.label}
               </button>
             ))}
           </div>

@@ -170,29 +170,64 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-cyan-600/30 px-3 py-2">
+      <header className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-cyan-600/30 p-2">
         <div className="flex items-center justify-between mb-1">
-          <h2 className="text-base font-bold text-white">Market Overview</h2>
-          <button
-            onClick={() => setShowInfo(!showInfo)}
-            className="p-1.5 rounded-lg bg-slate-700/50 text-cyan-400"
-          >
-            <Info className="w-3.5 h-3.5" />
-          </button>
-        </div>
-        
-        <div className="flex items-center justify-between text-[10px]">
-          <span className="text-gray-400">Station: {station}</span>
-          <span className="text-orange-400">Faction: {faction}</span>
-        </div>
-        
-        {heatSystem.wantedLevel > 0 && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-red-400">
-            <AlertTriangle className="w-3 h-3" />
-            <span>Prices +{Math.round((heatSystem.applyPriceModifiers(1) - 1) * 100)}% due to heat</span>
+          <h1 className="text-base font-bold text-white flex items-center gap-1.5">
+            <Package className="w-5 h-5 text-cyan-400" />
+            Market
+          </h1>
+          <div className="flex items-center gap-2">
+            {heatSystem.wantedLevel > 0 && (
+              <div className="flex items-center gap-1 text-[10px] text-red-400">
+                <AlertTriangle className="w-3 h-3" />
+                <span>+{Math.round((heatSystem.applyPriceModifiers(1) - 1) * 100)}%</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowInfo(!showInfo)}
+              className="p-1 rounded bg-slate-700/50 text-cyan-400"
+              title="Price indicators"
+            >
+              <Info className="w-3.5 h-3.5" />
+            </button>
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* Stats Bar with Category Tabs */}
+        <div className="bg-slate-700/50 rounded-lg px-2 py-1 mb-1">
+          <div className="flex gap-1 overflow-x-auto scrollbar-hide">
+            <button
+              onClick={() => {
+                setSelectedCategory('all');
+                triggerHaptic();
+              }}
+              className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors whitespace-nowrap
+                        ${selectedCategory === 'all' ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+            >
+              All
+            </button>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.id}
+                onClick={() => {
+                  setSelectedCategory(cat.id);
+                  triggerHaptic();
+                }}
+                className={`px-2 py-0.5 rounded text-[10px] font-semibold transition-colors whitespace-nowrap flex items-center gap-0.5
+                          ${selectedCategory === cat.id ? 'bg-orange-600 text-white' : 'bg-slate-600 text-gray-300'}`}
+              >
+                <span className="text-xs">{cat.icon}</span>
+                {cat.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between text-[10px]">
+          <span className="text-gray-400">{station}</span>
+          <span className="text-orange-400">{faction}</span>
+        </div>
+      </header>
       
       {/* Info Panel */}
       {showInfo && (
@@ -200,7 +235,7 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}
-          className="bg-slate-800/50 border-b border-slate-700 px-4 py-3 text-xs space-y-2"
+          className="bg-slate-800/50 border-b border-slate-700 px-4 py-2 text-xs space-y-1.5"
         >
           <div className="flex items-center gap-2">
             <TrendingUp className="w-3 h-3 text-red-400" />
@@ -220,34 +255,6 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
           </div>
         </motion.div>
       )}
-      
-      {/* Category Tabs */}
-      <div className="bg-slate-900/50 px-2 py-1.5">
-        <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide">
-          <button
-            onClick={() => setSelectedCategory('all')}
-            className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap
-                     ${selectedCategory === 'all' 
-                       ? 'bg-cyan-600 text-white' 
-                       : 'bg-slate-700 text-gray-400'}`}
-          >
-            All Items
-          </button>
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat.id}
-              onClick={() => setSelectedCategory(cat.id)}
-              className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap flex items-center gap-1
-                       ${selectedCategory === cat.id 
-                         ? 'bg-gradient-to-r ' + cat.color + ' text-white' 
-                         : 'bg-slate-700 text-gray-400'}`}
-            >
-              <span>{cat.icon}</span>
-              {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
       
       {/* Items List */}
       <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
