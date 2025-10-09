@@ -420,7 +420,7 @@ export const MobileGame: React.FC = () => {
         />
         <ParrotControls />
         <ParrotTextDisplay />
-        <div className="fixed top-2 left-2 z-30">
+        <div className="fixed bottom-20 left-2 z-30">
           <MusicPlayer />
         </div>
       </>
@@ -435,7 +435,7 @@ export const MobileGame: React.FC = () => {
       />
       <ParrotControls />
       <ParrotTextDisplay />
-      <div className="fixed top-2 left-2 z-30">
+      <div className="fixed bottom-20 left-2 z-30">
         <MusicPlayer />
       </div>
     </>
