@@ -9,27 +9,7 @@ import { useShipStatus } from '../lib/stores/ship/useShipStatus';
 import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
 import OfflineStorageService, { OfflineGameState, SyncQueueItem } from './OfflineStorageService';
 import { TransactionClient } from './TransactionClient';
-import { CloudSyncManager } from './CloudSyncWebSocket';
-
-// Sync message types
-export type SyncMessageType = 
-  | 'state_update'
-  | 'state_delta'
-  | 'state_request'
-  | 'state_ack'
-  | 'state_conflict'
-  | 'heartbeat'
-  | 'sync_complete';
-
-// Sync payload structure
-export interface SyncPayload {
-  type: SyncMessageType;
-  timestamp: number;
-  version: number;
-  clientId?: string;
-  data: any;
-  checksum?: string;
-}
+import { CloudSyncManager, SyncPayload, SyncMessageType } from './CloudSyncWebSocket';
 
 // State change event
 export interface StateChangeEvent {
@@ -66,16 +46,12 @@ export interface QueuedUpdate {
 
 class MiniGameSyncService {
   private static instance: MiniGameSyncService;
-  private ws: WebSocket | null = null;
+  private cloudSync: CloudSyncManager;
   private syncStatus: SyncStatus = 'offline';
   private offlineQueue: QueuedUpdate[] = [];
   private pendingAcks: Map<string, QueuedUpdate> = new Map();
   private currentVersion: number = 0;
   private clientId: string;
-  private reconnectAttempts: number = 0;
-  private maxReconnectAttempts: number = 5;
-  private reconnectDelay: number = 1000;
-  private heartbeatInterval: NodeJS.Timeout | null = null;
   private batchTimeout: NodeJS.Timeout | null = null;
   private batchedUpdates: StateDelta[] = [];
   private batchDelay: number = 100; // Batch updates for 100ms
@@ -83,6 +59,7 @@ class MiniGameSyncService {
   private isMinigameActive: boolean = false;
   private offlineStorage: OfflineStorageService;
   private autoSaveInterval: NodeJS.Timeout | null = null;
+  private messageHandler: ((data: any) => void) | null = null;
   
   // Store unsubscribe functions
   private unsubscribers: (() => void)[] = [];
@@ -90,11 +67,12 @@ class MiniGameSyncService {
   private constructor() {
     this.clientId = this.generateClientId();
     this.offlineStorage = OfflineStorageService.getInstance();
-    // Don't initialize WebSocket until mini-game is active
-    // this.initializeWebSocket();
+    this.cloudSync = CloudSyncManager.getInstance();
+    
+    // Setup message handler for CloudSync
+    this.messageHandler = this.handleCloudSyncMessage.bind(this);
+    
     this.setupStoreSubscriptions();
-    // Don't start heartbeat until mini-game is active
-    // this.startHeartbeat();
     this.startAutoSave();
     this.loadOfflineState();
   }
@@ -110,127 +88,76 @@ class MiniGameSyncService {
     return `mini-game-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
-  private initializeWebSocket(): void {
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-      const host = window.location.hostname;
-      const port = window.location.port || '5000';
-      
-      this.ws = new WebSocket(`${protocol}//${host}:${port}/ws/sync`);
-      
-      this.ws.onopen = this.handleWebSocketOpen.bind(this);
-      this.ws.onmessage = this.handleWebSocketMessage.bind(this);
-      this.ws.onerror = this.handleWebSocketError.bind(this);
-      this.ws.onclose = this.handleWebSocketClose.bind(this);
-    } catch (error) {
-      console.error('[MiniGameSync] Failed to initialize WebSocket:', error);
-      this.setSyncStatus('offline');
-      this.scheduleReconnect();
+  /**
+   * Handle incoming messages from CloudSyncManager
+   */
+  private handleCloudSyncMessage(payload: SyncPayload): void {
+    // Only process messages when mini-game is active
+    if (!this.isMinigameActive) return;
+    
+    console.log(`[MiniGameSync] Received ${payload.type} via CloudSync`);
+    
+    switch (payload.type) {
+      case 'state_update':
+        this.handleStateUpdate(payload);
+        break;
+      case 'state_delta':
+        this.handleStateDelta(payload);
+        break;
+      case 'state_ack':
+        this.handleAcknowledgment(payload);
+        break;
+      case 'state_conflict':
+        this.handleConflict(payload);
+        break;
+      case 'sync_complete':
+        this.setSyncStatus('synced');
+        break;
+      case 'heartbeat':
+        // Heartbeat received, connection is alive
+        break;
     }
   }
 
-  private handleWebSocketOpen(): void {
-    console.log('[MiniGameSync] WebSocket connected');
-    this.setSyncStatus('connected');
-    this.reconnectAttempts = 0;
-    this.sendQueuedUpdates();
+  private messageHandlerRegistered: boolean = false;
+
+  /**
+   * Initialize mini-game sync - register with CloudSyncManager
+   */
+  private initializeSync(): void {
+    if (!this.messageHandler) return;
+    
+    console.log('[MiniGameSync] Initializing WebSocket connection via CloudSyncManager...');
+    
+    // Register message handler with CloudSync (only if not already registered)
+    if (!this.messageHandlerRegistered) {
+      this.cloudSync.addMessageHandler(this.messageHandler);
+      this.messageHandlerRegistered = true;
+    }
+    
+    // Update status based on CloudSync state
+    if (this.cloudSync.isConnected()) {
+      this.setSyncStatus('connected');
+    } else {
+      this.setSyncStatus('offline');
+    }
+    
+    // Request full state sync - CloudSyncManager will queue if not connected
     this.requestFullStateSync();
   }
 
-  private handleWebSocketMessage(event: MessageEvent): void {
-    try {
-      const payload: SyncPayload = JSON.parse(event.data);
-      
-      switch (payload.type) {
-        case 'state_update':
-          this.handleStateUpdate(payload);
-          break;
-        case 'state_delta':
-          this.handleStateDelta(payload);
-          break;
-        case 'state_ack':
-          this.handleAcknowledgment(payload);
-          break;
-        case 'state_conflict':
-          this.handleConflict(payload);
-          break;
-        case 'sync_complete':
-          this.setSyncStatus('synced');
-          break;
-        case 'heartbeat':
-          // Heartbeat received, connection is alive
-          break;
-      }
-    } catch (error) {
-      console.error('[MiniGameSync] Failed to parse WebSocket message:', error);
-    }
-  }
-
-  private handleWebSocketError(error: Event): void {
-    console.log('[MiniGameSync] WebSocket error:', error);
-    this.setSyncStatus('error');
-  }
-
-  private handleWebSocketClose(): void {
-    console.log('[MiniGameSync] WebSocket disconnected');
+  /**
+   * Cleanup mini-game sync - unregister from CloudSyncManager
+   */
+  private cleanupSync(): void {
+    if (!this.messageHandler || !this.messageHandlerRegistered) return;
+    
+    console.log('[MiniGameSync] Cleaning up WebSocket connection...');
+    
+    // Unregister message handler from CloudSync
+    this.cloudSync.removeMessageHandler(this.messageHandler);
+    this.messageHandlerRegistered = false;
     this.setSyncStatus('offline');
-    this.ws = null;
-    this.scheduleReconnect();
-  }
-
-  private scheduleReconnect(): void {
-    // Only reconnect if minigame is actually active
-    if (!this.isMinigameActive) {
-      console.log('[MiniGameSync] Skipping reconnect - minigame not active');
-      this.setSyncStatus('offline');
-      this.reconnectAttempts = 0; // Reset attempts
-      return;
-    }
-    
-    if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.log('[MiniGameSync] Max reconnection attempts reached - continuing in offline mode');
-      // Don't show toast - mini-game works fine offline
-      // toast.warning('Offline mode active. Progress will be synced when connection is restored.');
-      
-      // Save state to offline storage
-      this.saveOfflineState();
-      return;
-    }
-
-    this.reconnectAttempts++;
-    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000);
-    
-    console.log(`[MiniGameSync] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
-    
-    setTimeout(() => {
-      // Double-check minigame is still active before reconnecting
-      if (this.isMinigameActive && this.syncStatus === 'offline') {
-        this.initializeWebSocket();
-      }
-    }, delay);
-  }
-
-  private startHeartbeat(): void {
-    this.stopHeartbeat();
-    
-    this.heartbeatInterval = setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        this.sendMessage({
-          type: 'heartbeat',
-          timestamp: Date.now(),
-          version: this.currentVersion,
-          clientId: this.clientId,
-          data: {}
-        });
-      }
-    }, 30000); // Send heartbeat every 30 seconds
-  }
-
-  private stopHeartbeat(): void {
-    if (this.heartbeatInterval) {
-      clearInterval(this.heartbeatInterval);
-      this.heartbeatInterval = null;
-    }
   }
 
   private setSyncStatus(status: SyncStatus): void {
@@ -369,12 +296,19 @@ class MiniGameSyncService {
   }
 
   private sendMessage(payload: SyncPayload): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(payload));
-      this.setSyncStatus('syncing');
-    } else {
-      // Queue for later
-      this.queueUpdate(payload);
+    // Always use CloudSyncManager's send - it handles queuing internally
+    try {
+      this.cloudSync.sendMessage(payload);
+      
+      // Update status based on connection state
+      if (this.cloudSync.isConnected()) {
+        this.setSyncStatus('syncing');
+      } else {
+        this.setSyncStatus('offline');
+      }
+    } catch (error) {
+      console.error('[MiniGameSync] Failed to send message:', error);
+      this.setSyncStatus('error');
     }
   }
 
@@ -588,27 +522,13 @@ class MiniGameSyncService {
     this.isMinigameActive = active;
     
     if (active) {
-      // Initialize WebSocket and heartbeat when mini-game becomes active
-      if (!this.ws || this.ws.readyState === WebSocket.CLOSED) {
-        console.log('[MiniGameSync] Initializing WebSocket connection...');
-        this.initializeWebSocket();
-        this.startHeartbeat();
-      }
-      this.requestFullStateSync();
+      // Initialize sync with CloudSyncManager (this also requests full state sync)
+      this.initializeSync();
     } else {
       // Send any pending updates when mini-game becomes inactive
       this.sendBatchedUpdates();
-      // Stop heartbeat to save resources
-      this.stopHeartbeat();
-      // Close WebSocket connection to prevent auto-reconnection
-      if (this.ws) {
-        console.log('[MiniGameSync] Closing WebSocket connection...');
-        this.ws.close();
-        this.ws = null;
-      }
-      // Reset reconnection attempts and status when deactivating
-      this.reconnectAttempts = 0;
-      this.setSyncStatus('offline');
+      // Cleanup sync connection
+      this.cleanupSync();
       // Save final state before deactivating
       this.saveOfflineState();
     }
@@ -831,13 +751,10 @@ class MiniGameSyncService {
 
   // Override destroy to clean up auto-save
   public destroy(): void {
-    this.stopHeartbeat();
     this.stopAutoSave();
     
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
-    }
+    // Cleanup sync connection
+    this.cleanupSync();
 
     this.unsubscribers.forEach(unsub => unsub());
     this.unsubscribers = [];

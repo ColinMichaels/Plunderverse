@@ -167,13 +167,13 @@ export class CloudSyncManager {
     }
     
     // Notify all handlers
-    for (const handler of this.messageHandlers) {
+    this.messageHandlers.forEach(handler => {
       try {
         handler(payload);
       } catch (error) {
         console.error('[CloudSyncManager] Handler error:', error);
       }
-    }
+    });
     
     // Handle specific message types
     switch (payload.type) {

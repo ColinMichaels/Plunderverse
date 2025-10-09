@@ -8,7 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### 2025-10-09: Critical Mobile Login Bug Fix + Panel UI Standardization
+### 2025-10-09: Unified Sync Architecture - Consolidated WebSocket Connections
+- **Sync Consolidation**: Removed duplicate WebSocket in MiniGameSyncService, unified with CloudSyncManager
+  - **Issue**: Mini-game created separate WebSocket connection causing duplicate connections and sync errors
+  - **Solution**: Refactored MiniGameSyncService to use CloudSyncManager's existing WebSocket via message handlers
+  - **Impact**: Single WebSocket for all sync (desktop + mobile mini-game), eliminates connection errors
+  - **Architecture**: MiniGameSyncService registers/unregisters message handlers with CloudSyncManager when mini-game activates/deactivates
+  - **Queuing**: All messages route through CloudSyncManager's queue system for reliable delivery
+
+### 2025-10-09: Critical Mobile Login Bug Fix + Panel UI Standardization  
 - **Critical Bug Fix**: Fixed AuthProvider to show login screen when user is not authenticated
   - **Issue**: AuthProvider was rendering game even for unauthenticated users, causing stuck loading screen
   - **Fix**: Added check to show AuthScreen when `!isAuthenticated && !isGuest`
