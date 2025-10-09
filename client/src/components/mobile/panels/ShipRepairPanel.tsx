@@ -4,6 +4,7 @@ import { useShipStatus } from '../../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../../lib/stores/ship/useEquipment';
 import { useCredits } from '../../../lib/stores/economy/useCredits';
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
+import { useCrewManagement } from '../../../lib/stores/ship/useCrewManagement';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
@@ -23,7 +24,9 @@ import {
   Activity,
   Gauge,
   Sparkles,
-  WrenchIcon
+  WrenchIcon,
+  Users,
+  Zap as Lightning
 } from 'lucide-react';
 
 interface SystemInfo {
@@ -53,12 +56,14 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [repairAllCost, setRepairAllCost] = useState(0);
   const [viewMode, setViewMode] = useState<'list' | 'schematic'>('list');
+  const [showCrewAssignment, setShowCrewAssignment] = useState<string | null>(null);
   
   const ship = useShipStatus();
   const equipment = useEquipment();
   const { credits, spendCredits } = useCredits();
   const player = usePlayer();
   const { config } = useMobileLayout();
+  const crewManagement = useCrewManagement();
 
   // Get equipment health data
   const hullEquipment = equipment.getEquipment('hull-primary');
@@ -168,6 +173,58 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
     }
   ];
 
+  // Crew assignment helper functions
+  const getAssignedCrew = (systemId: string) => {
+    return crewManagement.activeCrew.find(crew => 
+      crew.currentTask?.id === `repair-${systemId}` && !crew.currentTask.completed
+    );
+  };
+
+  const calculateRepairEfficiency = (mechanicSkill: number) => {
+    // Higher mechanic skill reduces repair time
+    // 0 skill = base time, 100 skill = 50% time reduction
+    const reduction = mechanicSkill / 200; // 0 to 0.5
+    return 1 - reduction; // Returns 1.0 to 0.5 multiplier
+  };
+
+  const handleAssignCrew = (systemId: string, crewId: string) => {
+    const system = systems.find(s => s.id === systemId);
+    const crew = crewManagement.activeCrew.find(c => c.id === crewId);
+    
+    if (!system || !crew) return;
+
+    // Calculate repair time based on crew's mechanic skill
+    // Convert repairTime from seconds to minutes
+    const baseTimeMinutes = system.repairTime / 60;
+    const mechanicSkill = crew.skills.mechanic;
+    const efficiencyMultiplier = calculateRepairEfficiency(mechanicSkill);
+    const adjustedTimeMinutes = Math.max(0.01, baseTimeMinutes * efficiencyMultiplier);
+
+    const result = crewManagement.assignTask(
+      crewId,
+      `repair-${systemId}`,
+      `Repair ${system.name}`,
+      adjustedTimeMinutes,
+      'mechanic'
+    );
+
+    if (result.success) {
+      const displayTime = adjustedTimeMinutes < 1 ? `${Math.round(adjustedTimeMinutes * 60)}s` : `${adjustedTimeMinutes.toFixed(1)}m`;
+      toast.success(`${crew.name} assigned to ${system.name}`, {
+        description: `Estimated completion: ${displayTime} (${Math.round((1 - efficiencyMultiplier) * 100)}% faster)`
+      });
+      setShowCrewAssignment(null);
+    } else {
+      toast.error(result.message);
+    }
+  };
+
+  const getAvailableMechanics = () => {
+    return crewManagement.activeCrew.filter(crew => 
+      !crew.currentTask || crew.currentTask.completed
+    ).sort((a, b) => b.skills.mechanic - a.skills.mechanic);
+  };
+
   // Calculate total repair cost - include all equipment durabilities
   useEffect(() => {
     const totalCost = systems.reduce((sum, system) => sum + system.repairCost, 0);
@@ -220,6 +277,31 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
 
     return () => clearInterval(timer);
   }, [repairJobs.length]);
+
+  // Watch for completed crew repair tasks and apply repairs
+  useEffect(() => {
+    const activeTasks = crewManagement.getActiveTasks();
+    
+    crewManagement.activeCrew.forEach(crew => {
+      if (crew.currentTask && crew.currentTask.completed && crew.currentTask.id.startsWith('repair-')) {
+        // Extract system ID from task ID (e.g., "repair-hull" -> "hull")
+        const systemId = crew.currentTask.id.replace('repair-', '');
+        
+        // Apply repair based on system type
+        if (systemId === 'hull') {
+          ship.repairHull(100 - ship.hull);
+        } else if (systemId === 'shields') {
+          ship.rechargeShield(100 - ship.shield);
+        } else if (systemId === 'engine' && engineEquipment) {
+          equipment.repairEquipment('engine-main');
+        } else if (systemId === 'weapons' && drillEquipment) {
+          equipment.repairEquipment('drill-mk1');
+        } else if (systemId === 'navigation' && scannerEquipment) {
+          equipment.repairEquipment('scanner-mk1');
+        }
+      }
+    });
+  }, [crewManagement.activeCrew, ship, equipment, engineEquipment, drillEquipment, scannerEquipment]);
 
 
   // Repair single system
@@ -435,6 +517,106 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
                     <span className="text-sm text-gray-500">Repair Time</span>
                     <span className="text-gray-400">{system.repairTime}s</span>
                   </div>
+
+                  {/* Crew Assignment Section */}
+                  {(() => {
+                    const assignedCrew = getAssignedCrew(system.id);
+                    const availableCrew = getAvailableMechanics();
+
+                    if (assignedCrew && assignedCrew.currentTask) {
+                      // Show assigned crew progress
+                      const duration = assignedCrew.currentTask.durationMinutes;
+                      const displayTime = duration < 1 ? `${Math.round(duration * 60)}s` : `${duration.toFixed(1)}m`;
+                      return (
+                        <div className="bg-cyan-900/30 border border-cyan-600/30 rounded-lg p-3 space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Users className="w-4 h-4 text-cyan-400" />
+                              <span className="text-sm text-cyan-400">{assignedCrew.name} working</span>
+                            </div>
+                            <span className="text-xs text-gray-400">
+                              {Math.round(assignedCrew.currentTask.progress)}%
+                            </span>
+                          </div>
+                          <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-gradient-to-r from-cyan-500 to-blue-600 transition-all"
+                              style={{ width: `${assignedCrew.currentTask.progress}%` }}
+                            />
+                          </div>
+                          <div className="flex justify-between text-xs text-gray-400">
+                            <span>Mechanic Skill: {assignedCrew.skills.mechanic}%</span>
+                            <span>Est: {displayTime}</span>
+                          </div>
+                        </div>
+                      );
+                    } else if (availableCrew.length > 0) {
+                      // Show quick-assign button
+                      return (
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-gray-500">Crew Assignment</span>
+                            <span className="text-xs text-cyan-400">{availableCrew.length} available</span>
+                          </div>
+                          
+                          {showCrewAssignment === system.id ? (
+                            <div className="space-y-2">
+                              <div className="text-xs text-gray-400 mb-2">Select mechanic:</div>
+                              {availableCrew.slice(0, 3).map(crew => {
+                                const baseTimeMinutes = system.repairTime / 60;
+                                const efficiency = calculateRepairEfficiency(crew.skills.mechanic);
+                                const adjustedTime = Math.max(0.01, baseTimeMinutes * efficiency);
+                                const displayTime = adjustedTime < 1 ? `${Math.round(adjustedTime * 60)}s` : `${adjustedTime.toFixed(1)}m`;
+                                return (
+                                  <button
+                                    key={crew.id}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleAssignCrew(system.id, crew.id);
+                                    }}
+                                    className="w-full bg-slate-700/50 hover:bg-slate-600/50 border border-slate-600 rounded-lg p-2 text-left transition-colors"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div>
+                                        <div className="text-sm text-white">{crew.name}</div>
+                                        <div className="text-xs text-gray-400">
+                                          Mechanic: {crew.skills.mechanic}% • Est: {displayTime}
+                                        </div>
+                                      </div>
+                                      <Lightning className="w-4 h-4 text-yellow-400" />
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setShowCrewAssignment(null);
+                                }}
+                                className="w-full text-xs text-gray-400 hover:text-gray-300 py-1"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setShowCrewAssignment(system.id);
+                              }}
+                              className="w-full bg-cyan-600/20 hover:bg-cyan-600/30 border border-cyan-600/50 text-cyan-400 py-2 rounded-lg
+                                       font-semibold active:scale-95 transition-all flex items-center justify-center gap-2"
+                            >
+                              <Users className="w-4 h-4" />
+                              Assign Crew (Free)
+                            </button>
+                          )}
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -446,7 +628,7 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
                              font-semibold active:scale-95 transition-transform
                              disabled:opacity-50 disabled:active:scale-100"
                   >
-                    Repair System ({system.repairCost}c)
+                    Instant Repair ({system.repairCost}c)
                   </button>
                 </>
               )}
