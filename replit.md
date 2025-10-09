@@ -6,6 +6,19 @@
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### 2025-10-09: Critical Mobile Login Bug Fix + Panel UI Standardization
+- **Critical Bug Fix**: Fixed AuthProvider to show login screen when user is not authenticated
+  - **Issue**: AuthProvider was rendering game even for unauthenticated users, causing stuck loading screen
+  - **Fix**: Added check to show AuthScreen when `!isAuthenticated && !isGuest`
+  - **Impact**: Mobile users can now log in on new browsers/devices (no longer stuck on loading screen)
+- **Mobile Panel UI**: Standardized all mobile panels to match ShipRepairPanel compact header template
+  - **Space Savings**: 30-40% reduction in header vertical space
+  - **Structure**: Header (`p-2`), stats bar with integrated tabs (`bg-slate-700/50 px-2 py-1`), compact tabs (`px-2 py-0.5 text-[10px]`)
+  - **Panels Updated**: MissionsPanel, MarketPanel, TradingPanel, TradeHistoryPanel, ShipUpgradePanel
+  - **Design**: Solid colors (`bg-orange-600` active, `bg-slate-600` inactive) replace gradients
+
 ## System Architecture
 The project employs a client-server architecture. The frontend utilizes React 18.3.1, Three.js (React Three Fiber 8.x), and Zustand 5.0 for state management. The backend is built with Express 4.x, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite 6.x and TypeScript 5.7, with styling managed by TailwindCSS 3.x and Radix UI components.
 
