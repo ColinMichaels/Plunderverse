@@ -348,7 +348,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
       </div>
 
       {/* Mission List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {activeTab === 'active' && (
           <div className="space-y-3">
             {activeMissionsData.length > 0 ? (

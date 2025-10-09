@@ -792,7 +792,7 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
       </header>
 
       {/* Main Content */}
-      <main ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <main ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'list' ? (
           <div className="space-y-4">
             {/* System Cards */}

@@ -720,7 +720,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
       </div>
       
       {/* Items List */}
-      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <div ref={containerRef} className="flex-1 min-h-0 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {activeTab === 'buy' ? (
           // Buy Tab - Show market items
           buyableItems.length === 0 ? (

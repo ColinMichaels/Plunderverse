@@ -527,7 +527,7 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
       )}
 
       {/* Main content */}
-      <main ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <main ref={containerRef} className="flex-1 min-h-0 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'shop' ? (
           <div className="space-y-3">
             {filteredUpgrades.map(upgrade => (
