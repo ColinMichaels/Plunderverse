@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
+import { useAutoScroll } from '../../hooks/useAutoScroll';
 import { Button } from '../ui/button';
 import { X, Users, Briefcase, Wrench, Shield, Heart, TrendingUp, TrendingDown, Activity, Zap, Clock, CheckCircle2, XCircle } from 'lucide-react';
 
@@ -56,6 +57,14 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
   const crew = useCrewManagement();
   const [selectedTab, setSelectedTab] = useState<'active' | 'available'>('active');
   const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when tab changes
+  useEffect(() => {
+    scrollToTop();
+  }, [selectedTab, scrollToTop]);
 
   const handleHire = (crewId: string) => {
     const result = crew.hireCrew(crewId);
@@ -140,7 +149,7 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div ref={containerRef} className="flex-1 overflow-y-auto p-4 space-y-3" style={{ WebkitOverflowScrolling: 'touch' }}>
           {selectedTab === 'active' ? (
             crew.activeCrew.length === 0 ? (
               <div className="text-center py-12">

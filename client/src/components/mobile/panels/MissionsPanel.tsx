@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target,
@@ -24,6 +24,7 @@ import { useCredits } from '../../../lib/stores/economy/useCredits';
 import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
 import { useLandedState } from '../../../lib/stores/surface/useLandedState';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
 
@@ -44,6 +45,14 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
   const { credits, earnCredits } = useCredits();
   const { selectedPlanet } = useSolarSystem();
   const { isLanded, landedPlanet } = useLandedState();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when tab changes
+  useEffect(() => {
+    scrollToTop();
+  }, [activeTab, scrollToTop]);
 
   // Get missions by status from store
   const activeMissionsData = missions.activeMissions;
@@ -339,7 +348,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
       </div>
 
       {/* Mission List */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {activeTab === 'active' && (
           <div className="space-y-3">
             {activeMissionsData.length > 0 ? (

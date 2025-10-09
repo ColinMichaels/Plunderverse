@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   History,
@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { useTradeHistory } from '../../../lib/stores/economy/useTradeHistory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { MARKET_ITEMS } from '../../../lib/stores/economy/marketData';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
@@ -36,6 +37,14 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
   
   const { config } = useMobileLayout();
   const tradeHistory = useTradeHistory();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when filters change
+  useEffect(() => {
+    scrollToTop();
+  }, [filterType, filterItem, filterStation, scrollToTop]);
   
   // Get filtered transactions
   const filteredTransactions = useMemo(() => {
@@ -288,7 +297,7 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
       </div>
       
       {/* Transactions List */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {filteredTransactions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             {tradeHistory.transactions.length === 0 

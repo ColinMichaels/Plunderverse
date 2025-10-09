@@ -6,6 +6,7 @@ import { useCredits } from '../../../lib/stores/economy/useCredits';
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useCrewManagement } from '../../../lib/stores/ship/useCrewManagement';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
 import { 
@@ -64,6 +65,14 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
   const player = usePlayer();
   const { config } = useMobileLayout();
   const crewManagement = useCrewManagement();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when view mode changes
+  useEffect(() => {
+    scrollToTop();
+  }, [viewMode, scrollToTop]);
 
   // Get equipment health data
   const hullEquipment = equipment.getEquipment('hull-primary');
@@ -783,7 +792,7 @@ export const ShipRepairPanel: React.FC<{ onClose?: () => void }> = ({ onClose })
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto p-4">
+      <main ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'list' ? (
           <div className="space-y-4">
             {/* System Cards */}

@@ -22,6 +22,7 @@ import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useLandedState } from '../../../lib/stores/surface/useLandedState';
 import { useTradeHistory } from '../../../lib/stores/economy/useTradeHistory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { 
   MARKET_ITEMS,
   MarketItem,
@@ -66,6 +67,14 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
   const player = usePlayer();
   const { landedPlanet } = useLandedState();
   const tradeHistory = useTradeHistory();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when tab changes
+  useEffect(() => {
+    scrollToTop();
+  }, [activeTab, scrollToTop]);
   
   // Generate market conditions with planet economy
   const marketConditions = useMemo(() => {
@@ -711,7 +720,7 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
       </div>
       
       {/* Items List */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {activeTab === 'buy' ? (
           // Buy Tab - Show market items
           buyableItems.length === 0 ? (

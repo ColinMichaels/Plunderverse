@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useShipStatus } from '../../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../../lib/stores/ship/useEquipment';
@@ -7,6 +7,7 @@ import { useCredits } from '../../../lib/stores/economy/useCredits';
 import { usePlayer } from '../../../lib/stores/player/usePlayer';
 import { useInventory } from '../../../lib/stores/economy/useInventory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { toast } from 'sonner';
 import { triggerHaptic } from '../../../utils/hapticFeedback';
 import { 
@@ -57,6 +58,14 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
   const player = usePlayer();
   const inventory = useInventory();
   const { config } = useMobileLayout();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when category or view mode changes
+  useEffect(() => {
+    scrollToTop();
+  }, [selectedCategory, viewMode, scrollToTop]);
 
   // Define upgrade tiers with colors
   const tierConfig = {
@@ -518,7 +527,7 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
       )}
 
       {/* Main content */}
-      <main className="flex-1 overflow-y-auto p-4">
+      <main ref={containerRef} className="flex-1 overflow-y-auto p-4" style={{ WebkitOverflowScrolling: 'touch' }}>
         {viewMode === 'shop' ? (
           <div className="space-y-3">
             {filteredUpgrades.map(upgrade => (

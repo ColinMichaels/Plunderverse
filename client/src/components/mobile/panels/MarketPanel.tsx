@@ -16,6 +16,7 @@ import { useHeatSystem } from '../../../lib/stores/player/useHeatSystem';
 import { useLandedState } from '../../../lib/stores/surface/useLandedState';
 import { useTradeHistory } from '../../../lib/stores/economy/useTradeHistory';
 import { useMobileLayout } from '../../../stores/useMobileLayout';
+import { useAutoScroll } from '../../../hooks/useAutoScroll';
 import { 
   MARKET_ITEMS, 
   MarketItem,
@@ -57,6 +58,14 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
   const heatSystem = useHeatSystem();
   const { landedPlanet } = useLandedState();
   const tradeHistory = useTradeHistory();
+  
+  // Auto-scroll for mobile lists
+  const { containerRef, scrollToTop } = useAutoScroll();
+
+  // Scroll to top when category changes
+  useEffect(() => {
+    scrollToTop();
+  }, [selectedCategory, scrollToTop]);
   
   // Generate market conditions for this station
   const marketConditions = useMemo(() => {
@@ -241,7 +250,7 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
       </div>
       
       {/* Items List */}
-      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-2">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-2" style={{ WebkitOverflowScrolling: 'touch' }}>
         {displayItems.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             No items available in this category
