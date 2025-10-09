@@ -52,7 +52,7 @@ export class MobileSplashScene extends Phaser.Scene {
       ease: 'Power2',
     });
 
-    this.createHolographicParrot(width / 2, height / 2 + 100);
+    this.createHolographicParrot(width - 80, height - 100);
 
     this.createStartButton();
 
@@ -93,32 +93,39 @@ export class MobileSplashScene extends Phaser.Scene {
   }
 
   private createHolographicParrot(x: number, y: number) {
-    this.parrotSprite = this.add.sprite(x, y, 'parrot');
+    const { height } = this.cameras.main;
+    
+    this.parrotSprite = this.add.sprite(x, height + 50, 'parrot');
     this.parrotSprite.setAlpha(0);
-    this.parrotSprite.setScale(0.15);
+    this.parrotSprite.setScale(0.1);
 
+    // Pop up animation - slide up from bottom
     this.tweens.add({
       targets: this.parrotSprite,
+      y: y,
       alpha: 0.9,
-      duration: 1500,
-      delay: 1200,
-      ease: 'Power2',
+      duration: 800,
+      delay: 1500,
+      ease: 'Back.easeOut',
     });
 
+    // Gentle floating animation
     this.tweens.add({
       targets: this.parrotSprite,
-      y: y - 10,
-      duration: 2000,
+      y: y - 8,
+      duration: 1800,
+      delay: 2300,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.easeInOut',
     });
 
+    // Holographic flicker effect
     this.tweens.add({
       targets: this.parrotSprite,
-      alpha: { from: 0.9, to: 0.5 },
-      duration: 800,
-      delay: 1200,
+      alpha: { from: 0.9, to: 0.6 },
+      duration: 700,
+      delay: 2300,
       repeat: -1,
       yoyo: true,
     });
