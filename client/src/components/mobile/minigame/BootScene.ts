@@ -211,6 +211,39 @@ export class BootScene extends Phaser.Scene {
     terminalGraphics.fillCircle(36, 40, 2);
     terminalGraphics.generateTexture('terminal', 48, 48);
     
+    // Create ship repair point sprite (damaged equipment panel)
+    const repairGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    // Base damaged panel
+    repairGraphics.fillStyle(0x331111, 1);
+    repairGraphics.fillRect(0, 0, 48, 48);
+    // Frame with damage
+    repairGraphics.lineStyle(2, 0xff6600, 1);
+    repairGraphics.strokeRect(2, 2, 44, 44);
+    // Broken screen
+    repairGraphics.fillStyle(0x110011, 1);
+    repairGraphics.fillRect(6, 6, 36, 28);
+    // Sparks/damage effect
+    repairGraphics.fillStyle(0xffaa00, 0.6);
+    repairGraphics.fillRect(6, 6, 36, 28);
+    // Warning stripes
+    for (let i = 0; i < 3; i++) {
+      repairGraphics.fillStyle(0xffaa00, 0.8);
+      repairGraphics.fillRect(8 + i * 12, 8, 10, 2);
+      repairGraphics.fillRect(8 + i * 12, 14, 10, 2);
+    }
+    // Alert lights (all red/orange for damaged)
+    repairGraphics.fillStyle(0xff0000, 1);
+    repairGraphics.fillCircle(12, 40, 2);
+    repairGraphics.fillStyle(0xff6600, 1);
+    repairGraphics.fillCircle(24, 40, 2);
+    repairGraphics.fillStyle(0xffaa00, 1);
+    repairGraphics.fillCircle(36, 40, 2);
+    // Repair icon (wrench symbol)
+    repairGraphics.fillStyle(0xffffff, 0.8);
+    repairGraphics.fillRect(16, 10, 16, 3);
+    repairGraphics.fillCircle(31, 11, 4);
+    repairGraphics.generateTexture('repair_point', 48, 48);
+    
     // Create glowing credit chip collectible
     const creditGraphics = this.make.graphics({ x: 0, y: 0 }, false);
     // Outer glow animation base

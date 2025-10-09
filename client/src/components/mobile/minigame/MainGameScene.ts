@@ -4,6 +4,7 @@ import { NPCDialogueSystem } from './NPCDialogueSystem';
 import { NPCMissionSystem } from './NPCMissionSystem';
 import { SmugglingSystem, SmugglingMission, ContrabandType } from './SmugglingSystem';
 import { CrewManagementSystem, CrewTask } from './CrewManagementSystem';
+import { RepairObjectiveSystem } from './RepairObjectiveSystem';
 import MiniGameSyncService from '../../../services/MiniGameSyncService';
 import { SyncIntegration } from './SyncIntegration';
 
@@ -35,6 +36,7 @@ export class MainGameScene extends Phaser.Scene {
   // Smuggling and Crew systems
   private smugglingSystem!: SmugglingSystem;
   private crewManagementSystem!: CrewManagementSystem;
+  private repairObjectiveSystem!: RepairObjectiveSystem;
   private securityPatrols!: Phaser.Physics.Arcade.Group;
   
   // Touch controls
@@ -114,6 +116,7 @@ export class MainGameScene extends Phaser.Scene {
     // Initialize smuggling and crew systems
     this.smugglingSystem = new SmugglingSystem(this);
     this.crewManagementSystem = new CrewManagementSystem(this);
+    this.repairObjectiveSystem = new RepairObjectiveSystem(this);
     
     // Initialize groups first
     this.roomFloors = this.add.group();
@@ -276,6 +279,9 @@ export class MainGameScene extends Phaser.Scene {
     
     // Create interactive terminals in specific rooms
     this.createTerminals();
+    
+    // Create ship repair objectives
+    this.repairObjectiveSystem.createRepairPoints(this.stationRooms, this.interactables);
   }
 
   private createRoomFloor(room: StationRoom, roomId: string): void {
@@ -1095,12 +1101,18 @@ export class MainGameScene extends Phaser.Scene {
         }
       });
       
-      // Check for terminal interaction
+      // Check for interactable interaction (terminals, repair points)
       if (!interacted) {
-        this.interactables.children.entries.forEach(terminal => {
-          const sprite = terminal as Phaser.Physics.Arcade.Sprite;
+        this.interactables.children.entries.forEach(interactable => {
+          const sprite = interactable as Phaser.Physics.Arcade.Sprite;
           if (Phaser.Geom.Rectangle.Contains(sprite.getBounds(), worldPoint.x, worldPoint.y)) {
-            this.interactWithTerminal(sprite);
+            const type = sprite.getData('type');
+            if (type === 'repair') {
+              const objectiveId = sprite.getData('objectiveId');
+              this.repairObjectiveSystem.interactWithRepairPoint(objectiveId);
+            } else {
+              this.interactWithTerminal(sprite);
+            }
             interacted = true;
           }
         });
@@ -1627,6 +1639,11 @@ export class MainGameScene extends Phaser.Scene {
     
     // Update animation based on movement
     this.isMoving = Math.abs(velocityX) > 0 || Math.abs(velocityY) > 0;
+    
+    // Cancel repair if player moves
+    if (this.isMoving && this.repairObjectiveSystem.getCurrentRepair()) {
+      this.repairObjectiveSystem.cancelRepair();
+    }
     
     if (this.isMoving) {
       // Walking animation (scale effect for now)
