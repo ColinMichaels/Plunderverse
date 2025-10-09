@@ -3,7 +3,6 @@ import Phaser from 'phaser';
 export class MobileSplashScene extends Phaser.Scene {
   private logo!: Phaser.GameObjects.Image;
   private parrotSprite!: Phaser.GameObjects.Sprite;
-  private titleText!: Phaser.GameObjects.Text;
   private subtitleText!: Phaser.GameObjects.Text;
   private startButton!: Phaser.GameObjects.Container;
   private glowEffect!: Phaser.FX.Glow;
@@ -34,23 +33,6 @@ export class MobileSplashScene extends Phaser.Scene {
       alpha: 1,
       duration: 1500,
       ease: 'Back.easeOut',
-    });
-
-    this.titleText = this.add.text(width / 2, height / 2, 'PLUNDERVERSE', {
-      fontSize: '48px',
-      color: '#ff6b35',
-      fontStyle: 'bold',
-      fontFamily: 'Inter, system-ui, sans-serif',
-    });
-    this.titleText.setOrigin(0.5);
-    this.titleText.setAlpha(0);
-
-    this.tweens.add({
-      targets: this.titleText,
-      alpha: 1,
-      duration: 1000,
-      delay: 500,
-      ease: 'Power2',
     });
 
     this.subtitleText = this.add.text(width / 2, height / 2 + 50, 'Mobile Commander Interface', {
