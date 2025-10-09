@@ -130,28 +130,28 @@ export const TradeHistoryPanel: React.FC<TradeHistoryPanelProps> = ({ onClose })
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-purple-600/30 px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <History className="w-5 h-5 text-purple-400" />
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-purple-600/30 px-3 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-white flex items-center gap-1.5">
+            <History className="w-4 h-4 text-purple-400" />
             Trade History
           </h2>
           <button
             onClick={handleClearHistory}
-            className="p-2 rounded-lg bg-slate-700/50 text-red-400 active:scale-95"
+            className="p-1.5 rounded-lg bg-slate-700/50 text-red-400 active:scale-95"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
         
         {/* Stats Toggle */}
         <button
           onClick={() => setShowStats(!showStats)}
-          className="w-full flex items-center justify-between text-xs text-gray-400 
+          className="w-full flex items-center justify-between text-[10px] text-gray-400 
                    hover:text-white transition-colors"
         >
           <span>Trading Statistics</span>
-          <ChevronDown className={`w-3 h-3 transition-transform ${showStats ? 'rotate-180' : ''}`} />
+          <ChevronDown className={`w-2.5 h-2.5 transition-transform ${showStats ? 'rotate-180' : ''}`} />
         </button>
       </div>
       

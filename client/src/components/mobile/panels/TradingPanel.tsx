@@ -604,16 +604,16 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
       )}
       
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-cyan-600/30 px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold text-white">Trading Terminal</h2>
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-cyan-600/30 px-3 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-white">Trading Terminal</h2>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Credits</p>
-            <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}c</p>
+            <p className="text-[10px] text-gray-400">Credits</p>
+            <p className="text-base font-mono text-cyan-400">{credits.toLocaleString()}c</p>
           </div>
         </div>
         
-        <div className="flex items-center justify-between text-xs mb-2">
+        <div className="flex items-center justify-between text-[10px] mb-1">
           <div className="flex items-center gap-3">
             <span className="text-gray-400">Station: {station}</span>
             <span className="text-orange-400">Faction: {faction}</span>
@@ -630,15 +630,15 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
         </div>
         
         {/* Planet Economy Info */}
-        <div className="bg-slate-800/50 rounded-lg px-3 py-2 mt-2">
-          <div className="text-xs text-cyan-400 mb-1">{marketConditions.economyType?.toUpperCase()} ECONOMY</div>
-          <div className="text-xs text-gray-400">{marketConditions.description}</div>
+        <div className="bg-slate-800/50 rounded-lg px-2 py-1 mt-1">
+          <div className="text-[10px] text-cyan-400 mb-0.5">{marketConditions.economyType?.toUpperCase()} ECONOMY</div>
+          <div className="text-[10px] text-gray-400">{marketConditions.description}</div>
         </div>
         
         {/* Trade Routes */}
         {marketConditions.tradeRoutes && marketConditions.tradeRoutes.length > 0 && (
-          <div className="mt-2 bg-green-900/20 border border-green-600/30 rounded-lg px-3 py-2">
-            <div className="text-xs font-semibold text-green-400 mb-1">🚀 Profitable Routes</div>
+          <div className="mt-1 bg-green-900/20 border border-green-600/30 rounded-lg px-2 py-1">
+            <div className="text-[10px] font-semibold text-green-400 mb-0.5">🚀 Profitable Routes</div>
             <div className="space-y-1">
               {marketConditions.tradeRoutes.slice(0, 3).map((route, index) => (
                 <div key={index} className="text-xs text-gray-300">
@@ -653,8 +653,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
       </div>
       
       {/* Tab Selector */}
-      <div className="bg-slate-900/50 px-4 py-2">
-        <div className="grid grid-cols-2 gap-2">
+      <div className="bg-slate-900/50 px-3 py-1.5">
+        <div className="grid grid-cols-2 gap-1.5">
           <button
             onClick={() => {
               setActiveTab('buy');
@@ -662,12 +662,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
               setQuantity(1);
               triggerHaptic();
             }}
-            className={`py-3 px-4 rounded-lg font-semibold transition-all
+            className={`py-1.5 px-2 rounded-lg font-semibold transition-all text-xs
                      ${activeTab === 'buy'
                        ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
                        : 'bg-slate-700 text-gray-400'}`}
           >
-            <ShoppingCart className="w-5 h-5 mx-auto mb-1" />
+            <ShoppingCart className="w-4 h-4 mx-auto mb-0.5" />
             Buy
           </button>
           <button
@@ -677,12 +677,12 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
               setQuantity(1);
               triggerHaptic();
             }}
-            className={`py-3 px-4 rounded-lg font-semibold transition-all
+            className={`py-1.5 px-2 rounded-lg font-semibold transition-all text-xs
                      ${activeTab === 'sell'
                        ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white'
                        : 'bg-slate-700 text-gray-400'}`}
           >
-            <DollarSign className="w-5 h-5 mx-auto mb-1" />
+            <DollarSign className="w-4 h-4 mx-auto mb-0.5" />
             Sell
           </button>
         </div>

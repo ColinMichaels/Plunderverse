@@ -170,18 +170,18 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-cyan-600/30 px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold text-white">Market Overview</h2>
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-cyan-600/30 px-3 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-white">Market Overview</h2>
           <button
             onClick={() => setShowInfo(!showInfo)}
-            className="p-2 rounded-lg bg-slate-700/50 text-cyan-400"
+            className="p-1.5 rounded-lg bg-slate-700/50 text-cyan-400"
           >
-            <Info className="w-4 h-4" />
+            <Info className="w-3.5 h-3.5" />
           </button>
         </div>
         
-        <div className="flex items-center justify-between text-xs">
+        <div className="flex items-center justify-between text-[10px]">
           <span className="text-gray-400">Station: {station}</span>
           <span className="text-orange-400">Faction: {faction}</span>
         </div>
@@ -222,11 +222,11 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
       )}
       
       {/* Category Tabs */}
-      <div className="bg-slate-900/50 px-2 py-2">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="bg-slate-900/50 px-2 py-1.5">
+        <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-hide">
           <button
             onClick={() => setSelectedCategory('all')}
-            className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap
+            className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap
                      ${selectedCategory === 'all' 
                        ? 'bg-cyan-600 text-white' 
                        : 'bg-slate-700 text-gray-400'}`}
@@ -237,7 +237,7 @@ export const MarketPanel: React.FC<MarketPanelProps> = ({
             <button
               key={cat.id}
               onClick={() => setSelectedCategory(cat.id)}
-              className={`px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap flex items-center gap-1
+              className={`px-2 py-1 rounded-lg text-[10px] font-semibold transition-all whitespace-nowrap flex items-center gap-1
                        ${selectedCategory === cat.id 
                          ? 'bg-gradient-to-r ' + cat.color + ' text-white' 
                          : 'bg-slate-700 text-gray-400'}`}

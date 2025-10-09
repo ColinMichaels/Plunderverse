@@ -110,17 +110,17 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
     <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 border border-cyan-400/50 rounded-lg w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-cyan-400/30 bg-gradient-to-r from-gray-900 to-gray-800">
-          <div className="flex items-center gap-2">
-            <Users className="text-cyan-400" size={24} />
-            <h2 className="text-xl font-bold text-cyan-400">Crew Management</h2>
+        <div className="flex items-center justify-between p-2 border-b border-cyan-400/30 bg-gradient-to-r from-gray-900 to-gray-800">
+          <div className="flex items-center gap-1.5">
+            <Users className="text-cyan-400" size={20} />
+            <h2 className="text-base font-bold text-cyan-400">Crew Management</h2>
           </div>
           <Button
             onClick={onClose}
-            className="bg-transparent hover:bg-cyan-400/20 text-cyan-400"
+            className="bg-transparent hover:bg-cyan-400/20 text-cyan-400 h-7 w-7 p-0"
             size="sm"
           >
-            <X size={20} />
+            <X size={16} />
           </Button>
         </div>
 
@@ -128,17 +128,17 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
         <div className="flex border-b border-cyan-400/30 bg-gray-800/30">
           <button
             onClick={() => setSelectedTab('active')}
-            className={`flex-1 p-3 font-medium transition-all ${
+            className={`flex-1 p-2 font-medium transition-all text-xs ${
               selectedTab === 'active'
                 ? 'bg-cyan-400/20 text-cyan-400 border-b-2 border-cyan-400'
                 : 'text-gray-400 hover:bg-cyan-400/10 hover:text-cyan-300'
             }`}
           >
-            Active Crew ({crew.activeCrew.length}/{crew.maxCrewSize})
+            Active ({crew.activeCrew.length}/{crew.maxCrewSize})
           </button>
           <button
             onClick={() => setSelectedTab('available')}
-            className={`flex-1 p-3 font-medium transition-all ${
+            className={`flex-1 p-2 font-medium transition-all text-xs ${
               selectedTab === 'available'
                 ? 'bg-cyan-400/20 text-cyan-400 border-b-2 border-cyan-400'
                 : 'text-gray-400 hover:bg-cyan-400/10 hover:text-cyan-300'

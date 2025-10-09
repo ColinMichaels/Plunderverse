@@ -271,34 +271,34 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
   return (
     <div className="flex flex-col h-full bg-black">
       {/* Header */}
-      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-orange-600/30 px-4 py-3">
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="text-lg font-bold text-white">Mission Board</h2>
+      <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b-2 border-orange-600/30 px-3 py-2">
+        <div className="flex items-center justify-between mb-1">
+          <h2 className="text-base font-bold text-white">Mission Board</h2>
           <div className="text-right">
-            <p className="text-xs text-gray-400">Active Missions</p>
-            <p className="text-lg font-mono text-orange-400">
+            <p className="text-xs text-gray-400">Active</p>
+            <p className="text-base font-mono text-orange-400">
               {activeMissionsData.length}/5
             </p>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-3 gap-2 mt-2">
-          <div className="bg-slate-800/50 rounded px-2 py-1">
-            <p className="text-xs text-gray-400">Completed</p>
-            <p className="text-sm font-bold text-green-400">{completedMissionsData.length}</p>
+        <div className="grid grid-cols-3 gap-1.5 mt-1">
+          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
+            <p className="text-[10px] text-gray-400">Complete</p>
+            <p className="text-xs font-bold text-green-400">{completedMissionsData.length}</p>
           </div>
-          <div className="bg-slate-800/50 rounded px-2 py-1">
-            <p className="text-xs text-gray-400">Success Rate</p>
-            <p className="text-sm font-bold text-cyan-400">
+          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
+            <p className="text-[10px] text-gray-400">Success</p>
+            <p className="text-xs font-bold text-cyan-400">
               {completedMissionsData.length > 0 
                 ? Math.round((completedMissionsData.length / (completedMissionsData.length + missions.failedMissionIds.size)) * 100)
                 : 0}%
             </p>
           </div>
-          <div className="bg-slate-800/50 rounded px-2 py-1">
-            <p className="text-xs text-gray-400">Total</p>
-            <p className="text-sm font-bold text-yellow-400">
+          <div className="bg-slate-800/50 rounded px-1.5 py-0.5">
+            <p className="text-[10px] text-gray-400">Total</p>
+            <p className="text-xs font-bold text-yellow-400">
               {completedMissionsData.length + missions.failedMissionIds.size}
             </p>
           </div>
@@ -306,7 +306,7 @@ export const MissionsPanel: React.FC<MissionsPanelProps> = ({ onClose }) => {
       </div>
 
       {/* Tab Selector */}
-      <div className="bg-slate-900/50 px-4 py-2">
+      <div className="bg-slate-900/50 px-3 py-1.5">
         <div className="grid grid-cols-3 gap-2">
           <button
             onClick={() => {
