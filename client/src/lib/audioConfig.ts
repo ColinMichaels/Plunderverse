@@ -143,7 +143,7 @@ export const AUDIO_CONFIG: AudioConfig = {
     },
     takeoff: {
       path: "/sounds/takeoff.mp3",
-      volume: 1.0,
+      volume: 0.5,
     },
     hit: {
       path: "/sounds/hit.mp3",
