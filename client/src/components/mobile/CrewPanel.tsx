@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
 import { Button } from '../ui/button';
-import { X, Users, Briefcase, Wrench, Shield, Heart, TrendingUp, TrendingDown, Activity, Zap } from 'lucide-react';
+import { X, Users, Briefcase, Wrench, Shield, Heart, TrendingUp, TrendingDown, Activity, Zap, Clock, CheckCircle2, XCircle } from 'lucide-react';
 
 interface CrewPanelProps {
   onClose: () => void;
@@ -9,9 +9,9 @@ interface CrewPanelProps {
 
 // Predefined tasks for crew assignment
 const AVAILABLE_TASKS = [
-  { id: 'repairs', name: 'Ship Repairs', icon: Wrench, skill: 'mechanic' as const, duration: '2h' },
-  { id: 'security', name: 'Security Patrol', icon: Shield, skill: 'gunner' as const, duration: '1h' },
-  { id: 'medical', name: 'Medical Bay', icon: Heart, skill: 'medic' as const, duration: '3h' },
+  { id: 'repairs', name: 'Ship Repairs', icon: Wrench, skill: 'mechanic' as const, duration: 2, displayDuration: '2m' },
+  { id: 'security', name: 'Security Patrol', icon: Shield, skill: 'gunner' as const, duration: 1, displayDuration: '1m' },
+  { id: 'medical', name: 'Medical Bay', icon: Heart, skill: 'medic' as const, duration: 3, displayDuration: '3m' },
 ];
 
 // Portrait emojis for crew members (could be expanded with actual sprites)
@@ -55,7 +55,6 @@ const getCrewEfficiency = (member: any) => {
 export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
   const crew = useCrewManagement();
   const [selectedTab, setSelectedTab] = useState<'active' | 'available'>('active');
-  const [assigningTask, setAssigningTask] = useState<{ crewId: string; taskId: string } | null>(null);
   const [expandedCrew, setExpandedCrew] = useState<string | null>(null);
 
   const handleHire = (crewId: string) => {
@@ -71,16 +70,31 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
   const handleAssignTask = (crewId: string, taskId: string) => {
     const task = AVAILABLE_TASKS.find(t => t.id === taskId);
     if (task) {
-      console.log(`[CrewPanel] Assigning ${task.name} to crew ${crewId}`);
-      // TODO: This would call crew.assignTask(crewId, taskId) when the store supports it
-      // For now, just log and show feedback
-      setAssigningTask({ crewId, taskId });
-      setTimeout(() => setAssigningTask(null), 2000);
+      const result = crew.assignTask(
+        crewId, 
+        taskId, 
+        task.name, 
+        task.duration, 
+        task.skill
+      );
+      console.log('[CrewPanel] Assign task result:', result);
     }
+  };
+
+  const handleCancelTask = (crewId: string) => {
+    crew.cancelTask(crewId);
   };
 
   const toggleExpanded = (crewId: string) => {
     setExpandedCrew(expandedCrew === crewId ? null : crewId);
+  };
+
+  const getTimeRemaining = (task: any) => {
+    const elapsed = (Date.now() - task.startedAt) / 1000 / 60;
+    const remaining = task.durationMinutes - elapsed;
+    if (remaining <= 0) return 'Completing...';
+    if (remaining < 1) return `${Math.ceil(remaining * 60)}s`;
+    return `${Math.ceil(remaining)}m`;
   };
 
   return (
@@ -250,36 +264,89 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
                           </div>
                         </div>
                         
-                        {/* Task Assignment */}
+                        {/* Active Task or Task Assignment */}
                         <div className="pt-3 border-t border-cyan-400/20">
-                          <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Assign Task</h4>
-                          <div className="grid grid-cols-3 gap-2">
-                            {AVAILABLE_TASKS.map((task) => {
-                              const TaskIcon = task.icon;
-                              const isAssigning = assigningTask?.crewId === member.id && assigningTask?.taskId === task.id;
-                              const skillValue = member.skills[task.skill];
+                          {member.currentTask ? (
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="text-xs font-semibold text-gray-400 uppercase">Current Task</h4>
+                                {!member.currentTask.completed && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleCancelTask(member.id);
+                                    }}
+                                    className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                                  >
+                                    <XCircle className="w-3 h-3" />
+                                    Cancel
+                                  </button>
+                                )}
+                              </div>
                               
-                              return (
-                                <button
-                                  key={task.id}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleAssignTask(member.id, task.id);
-                                  }}
-                                  className={`p-3 rounded-lg border transition-all ${
-                                    isAssigning
-                                      ? 'bg-green-500/30 border-green-500 text-green-400'
-                                      : 'bg-gray-700/50 border-gray-600 hover:bg-gray-600 text-gray-300 hover:border-cyan-400'
-                                  }`}
-                                  title={`${task.name} (${task.duration})\nSkill: ${skillValue}%`}
-                                >
-                                  <TaskIcon className="w-5 h-5 mx-auto mb-1" />
-                                  <div className="text-xs font-medium">{task.name.split(' ')[0]}</div>
-                                  <div className="text-xs text-gray-400 mt-1">{skillValue}%</div>
-                                </button>
-                              );
-                            })}
-                          </div>
+                              <div className="bg-gray-800/50 rounded-lg p-3">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-2">
+                                    {member.currentTask.completed ? (
+                                      <CheckCircle2 className="w-4 h-4 text-green-400" />
+                                    ) : (
+                                      <Clock className="w-4 h-4 text-cyan-400 animate-pulse" />
+                                    )}
+                                    <span className="text-sm font-medium text-white">{member.currentTask.name}</span>
+                                  </div>
+                                  <span className={`text-xs font-medium ${
+                                    member.currentTask.completed ? 'text-green-400' : 'text-cyan-400'
+                                  }`}>
+                                    {member.currentTask.completed ? 'Completed!' : getTimeRemaining(member.currentTask)}
+                                  </span>
+                                </div>
+                                
+                                {/* Progress Bar */}
+                                <div className="space-y-1">
+                                  <div className="flex justify-between text-xs">
+                                    <span className="text-gray-400">Progress</span>
+                                    <span className="text-white font-medium">{Math.round(member.currentTask.progress)}%</span>
+                                  </div>
+                                  <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full transition-all duration-300 ${
+                                        member.currentTask.completed 
+                                          ? 'bg-gradient-to-r from-green-500 to-emerald-600' 
+                                          : 'bg-gradient-to-r from-cyan-500 to-blue-600'
+                                      }`}
+                                      style={{ width: `${member.currentTask.progress}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            <div>
+                              <h4 className="text-xs font-semibold text-gray-400 uppercase mb-2">Assign Task</h4>
+                              <div className="grid grid-cols-3 gap-2">
+                                {AVAILABLE_TASKS.map((task) => {
+                                  const TaskIcon = task.icon;
+                                  const skillValue = member.skills[task.skill];
+                                  
+                                  return (
+                                    <button
+                                      key={task.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleAssignTask(member.id, task.id);
+                                      }}
+                                      className="p-3 rounded-lg border bg-gray-700/50 border-gray-600 hover:bg-gray-600 text-gray-300 hover:border-cyan-400 transition-all"
+                                      title={`${task.name} (${task.displayDuration})\nSkill: ${skillValue}%`}
+                                    >
+                                      <TaskIcon className="w-5 h-5 mx-auto mb-1" />
+                                      <div className="text-xs font-medium">{task.name.split(' ')[0]}</div>
+                                      <div className="text-xs text-gray-400 mt-1">{skillValue}%</div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}

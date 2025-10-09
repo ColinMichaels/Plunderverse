@@ -32,6 +32,7 @@ import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { useParrot } from "../../lib/stores/useParrot";
 import { useParrotEvents } from "../../hooks/useParrotEvents";
+import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
 import { AutopilotIndicator } from "../navigation/AutopilotIndicator";
 // Other Hooks
 import { useDockingDetection } from "../../hooks/useDockingDetection";
@@ -51,6 +52,7 @@ export function GameUI() {
   const { manualSave } = useAutoSave();
   const { phase } = useGame();
   const { initialize: initializeParrot } = useParrot();
+  const crewManagement = useCrewManagement();
 
   // Initialize docking detection
   useDockingDetection();
@@ -59,6 +61,15 @@ export function GameUI() {
   useEffect(() => {
     initializeParrot();
   }, [initializeParrot]);
+  
+  // Update crew task progress every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      crewManagement.updateTaskProgress();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [crewManagement]);
   
   // Enable Parrot event hooks
   useParrotEvents();

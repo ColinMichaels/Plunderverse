@@ -16,6 +16,22 @@ interface CrewSkills {
   hacker: number;
 }
 
+export interface CrewTask {
+  id: string;
+  name: string;
+  description: string;
+  requiredSkill: keyof CrewSkills;
+  durationMinutes: number;
+  startedAt: number;
+  progress: number; // 0-100
+  completed: boolean;
+  rewards?: {
+    credits?: number;
+    loyaltyBonus?: number;
+    experienceGain?: number;
+  };
+}
+
 interface PersonalQuest {
   id: string;
   title: string;
@@ -60,6 +76,7 @@ export interface CrewMember {
   daysInCrew?: number;
   lastPaidDay?: number;
   isActive?: boolean;
+  currentTask?: CrewTask;
 }
 
 interface CrewBonuses {
@@ -109,6 +126,13 @@ interface CrewManagementState {
   checkCompatibility: (newCrewId: string) => { compatible: boolean; warnings: string[] };
   getCrewForStation: (stationFaction: string) => CrewMember[];
   applyMissionOutcome: (success: boolean, moralAlignment?: 'good' | 'evil' | 'neutral') => void;
+  
+  // Task management
+  assignTask: (crewId: string, taskId: string, taskName: string, durationMinutes: number, requiredSkill: keyof CrewSkills) => { success: boolean; message: string };
+  updateTaskProgress: () => void;
+  completeTask: (crewId: string) => void;
+  cancelTask: (crewId: string) => void;
+  getActiveTasks: () => Array<{ crew: CrewMember; task: CrewTask }>;
 }
 
 // Loyalty thresholds
@@ -669,6 +693,155 @@ export const useCrewManagement = create<CrewManagementState>()(
             success ? 'Mission success' : 'Mission failure'
           );
         });
+      },
+      
+      // Task Management Actions
+      assignTask: (crewId: string, taskId: string, taskName: string, durationMinutes: number, requiredSkill: keyof CrewSkills) => {
+        const state = get();
+        const crew = state.activeCrew.find(c => c.id === crewId);
+        
+        if (!crew) {
+          return { success: false, message: 'Crew member not found' };
+        }
+        
+        if (crew.currentTask && !crew.currentTask.completed) {
+          return { success: false, message: `${crew.name} is already working on ${crew.currentTask.name}` };
+        }
+        
+        const newTask: CrewTask = {
+          id: taskId,
+          name: taskName,
+          description: `${crew.name} is working on ${taskName}`,
+          requiredSkill,
+          durationMinutes,
+          startedAt: Date.now(),
+          progress: 0,
+          completed: false,
+          rewards: {
+            loyaltyBonus: 2,
+            experienceGain: 10
+          }
+        };
+        
+        set(state => ({
+          activeCrew: state.activeCrew.map(c => 
+            c.id === crewId ? { ...c, currentTask: newTask } : c
+          ),
+          crewEvents: [...state.crewEvents, {
+            id: `event_${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'quest_progress' as const,
+            crewId,
+            details: `Started task: ${taskName}`
+          }]
+        }));
+        
+        console.log(`[CrewManagement] ${crew.name} assigned to ${taskName} (${durationMinutes}m)`);
+        return { success: true, message: `${crew.name} started working on ${taskName}` };
+      },
+      
+      updateTaskProgress: () => {
+        const state = get();
+        const now = Date.now();
+        
+        state.activeCrew.forEach(crew => {
+          if (crew.currentTask && !crew.currentTask.completed) {
+            const task = crew.currentTask;
+            const elapsed = (now - task.startedAt) / 1000 / 60; // minutes
+            const newProgress = Math.min(100, (elapsed / task.durationMinutes) * 100);
+            
+            // Update progress
+            set(state => ({
+              activeCrew: state.activeCrew.map(c => 
+                c.id === crew.id && c.currentTask
+                  ? { ...c, currentTask: { ...c.currentTask, progress: newProgress } }
+                  : c
+              )
+            }));
+            
+            // Auto-complete if done
+            if (newProgress >= 100 && !task.completed) {
+              get().completeTask(crew.id);
+            }
+          }
+        });
+      },
+      
+      completeTask: (crewId: string) => {
+        const state = get();
+        const crew = state.activeCrew.find(c => c.id === crewId);
+        
+        if (!crew || !crew.currentTask) {
+          return;
+        }
+        
+        const task = crew.currentTask;
+        
+        // Apply rewards
+        if (task.rewards?.loyaltyBonus) {
+          get().updateLoyalty(crewId, task.rewards.loyaltyBonus, `Completed task: ${task.name}`);
+        }
+        
+        // Mark task as completed
+        set(state => ({
+          activeCrew: state.activeCrew.map(c => 
+            c.id === crewId && c.currentTask
+              ? { ...c, currentTask: { ...c.currentTask, progress: 100, completed: true } }
+              : c
+          ),
+          crewEvents: [...state.crewEvents, {
+            id: `event_${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'quest_progress' as const,
+            crewId,
+            details: `Completed task: ${task.name}`
+          }]
+        }));
+        
+        // Clear task after a short delay
+        setTimeout(() => {
+          set(state => ({
+            activeCrew: state.activeCrew.map(c => 
+              c.id === crewId ? { ...c, currentTask: undefined } : c
+            )
+          }));
+        }, 3000);
+        
+        console.log(`[CrewManagement] ${crew.name} completed ${task.name}`);
+        toast.success(`${crew.name} completed ${task.name}!`);
+      },
+      
+      cancelTask: (crewId: string) => {
+        const state = get();
+        const crew = state.activeCrew.find(c => c.id === crewId);
+        
+        if (!crew || !crew.currentTask) {
+          return;
+        }
+        
+        const taskName = crew.currentTask.name;
+        
+        set(state => ({
+          activeCrew: state.activeCrew.map(c => 
+            c.id === crewId ? { ...c, currentTask: undefined } : c
+          ),
+          crewEvents: [...state.crewEvents, {
+            id: `event_${Date.now()}`,
+            timestamp: Date.now(),
+            type: 'quest_progress' as const,
+            crewId,
+            details: `Cancelled task: ${taskName}`
+          }]
+        }));
+        
+        console.log(`[CrewManagement] Cancelled ${taskName} for ${crew.name}`);
+      },
+      
+      getActiveTasks: () => {
+        const state = get();
+        return state.activeCrew
+          .filter(crew => crew.currentTask && !crew.currentTask.completed)
+          .map(crew => ({ crew, task: crew.currentTask! }));
       }
     }),
     {

@@ -16,6 +16,7 @@ import { useAuthStore } from '../../lib/stores/auth/useAuthStore';
 import { useCloudSync } from '../../services/CloudSyncManager';
 import { useParrot } from '../../lib/stores/useParrot';
 import { useParrotEvents } from '../../hooks/useParrotEvents';
+import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
 import { ParrotControls } from '../ParrotControls';
 import { ParrotTextDisplay } from '../ParrotTextDisplay';
 import { MusicPlayer } from '../screens/MusicPlayer';
@@ -47,6 +48,16 @@ export const MobileGame: React.FC = () => {
   const { isAuthenticated, isGuest, isAuthReady } = useAuthStore();
   const { status: cloudSyncStatus, isInitialized } = useCloudSync();
   const { initialize: initializeParrot } = useParrot();
+  const crewManagement = useCrewManagement();
+
+  // Update crew task progress every second
+  useEffect(() => {
+    const interval = setInterval(() => {
+      crewManagement.updateTaskProgress();
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [crewManagement]);
 
   // Wait for CloudSync to load save data before showing UI
   useEffect(() => {
