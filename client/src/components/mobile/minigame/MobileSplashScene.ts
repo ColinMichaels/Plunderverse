@@ -14,6 +14,7 @@ export class MobileSplashScene extends Phaser.Scene {
 
   preload() {
     this.load.image('logo', '/media/Plunderverse_logo.png');
+    this.load.image('parrot', '/media/holographic_parrot.png');
   }
 
   create() {
@@ -51,7 +52,7 @@ export class MobileSplashScene extends Phaser.Scene {
       ease: 'Power2',
     });
 
-    this.createHolographicParrot(width / 2 + 200, height / 2 + 120);
+    this.createHolographicParrot(width / 2, height / 2 + 100);
 
     this.createStartButton();
 
@@ -92,32 +93,13 @@ export class MobileSplashScene extends Phaser.Scene {
   }
 
   private createHolographicParrot(x: number, y: number) {
-    const parrotGraphics = this.add.graphics();
-
-    parrotGraphics.fillStyle(0x00ff88, 0.8);
-    parrotGraphics.fillCircle(0, 0, 30);
-    
-    parrotGraphics.fillStyle(0x00ff88, 0.6);
-    parrotGraphics.fillCircle(20, -10, 10);
-    
-    parrotGraphics.fillStyle(0xffd700, 0.7);
-    parrotGraphics.fillRect(-15, 20, 10, 30);
-    parrotGraphics.fillRect(5, 20, 10, 30);
-    
-    parrotGraphics.fillCircle(-20, 45, 10);
-    parrotGraphics.fillCircle(20, 45, 10);
-
-    const renderTexture = this.add.renderTexture(0, 0, 80, 100);
-    renderTexture.draw(parrotGraphics, 40, 40);
-    parrotGraphics.destroy();
-
-    this.parrotSprite = this.add.sprite(x, y, renderTexture.texture.key);
+    this.parrotSprite = this.add.sprite(x, y, 'parrot');
     this.parrotSprite.setAlpha(0);
-    this.parrotSprite.setScale(0.5);
+    this.parrotSprite.setScale(0.15);
 
     this.tweens.add({
       targets: this.parrotSprite,
-      alpha: 0.8,
+      alpha: 0.9,
       duration: 1500,
       delay: 1200,
       ease: 'Power2',
@@ -134,8 +116,8 @@ export class MobileSplashScene extends Phaser.Scene {
 
     this.tweens.add({
       targets: this.parrotSprite,
-      alpha: { from: 0.8, to: 0.3 },
-      duration: 500,
+      alpha: { from: 0.9, to: 0.5 },
+      duration: 800,
       delay: 1200,
       repeat: -1,
       yoyo: true,
