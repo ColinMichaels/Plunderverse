@@ -14,7 +14,6 @@ import MiniGameSyncService from '../../services/MiniGameSyncService';
 
 // Import Phaser scenes
 import { BootScene } from './minigame/BootScene';
-import { MobileSplashScene } from './minigame/MobileSplashScene';
 import { MainGameScene } from './minigame/MainGameScene';
 import { UIOverlayScene } from './minigame/UIOverlayScene';
 
@@ -113,7 +112,7 @@ export const MobileMinigame: React.FC<MobileMinigameProps> = ({ onBack }) => {
         target: 60,
         forceSetTimeOut: false
       },
-      scene: [BootScene, MobileSplashScene, MainGameScene, UIOverlayScene],
+      scene: [BootScene, MainGameScene, UIOverlayScene],
       callbacks: {
         preBoot: (game) => {
           // Pass game state to Phaser scenes through registry

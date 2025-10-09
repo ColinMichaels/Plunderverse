@@ -217,7 +217,7 @@ export class MobileSplashScene extends Phaser.Scene {
     });
   }
 
-  private startGame() {
+  protected startGame() {
     this.cameras.main.fadeOut(500, 0, 0, 0);
     
     this.cameras.main.once('camerafadeoutcomplete', () => {

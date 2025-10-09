@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import Phaser from 'phaser';
 import { StationDashboard } from './StationDashboard';
 import { MobileMinigame } from './MobileMinigame';
+import { MobileSplashScene } from './minigame/MobileSplashScene';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useGame } from '../../lib/stores/ui/useGame';
 import { usePlatform } from '../../lib/stores/ui/usePlatform';
@@ -33,6 +35,8 @@ export const MobileGame: React.FC = () => {
   // Component state and hooks - ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [viewState, setViewState] = useState<MobileViewState>('status');
   const [isLoadingSave, setIsLoadingSave] = useState(true);
+  const splashGameRef = useRef<HTMLDivElement>(null);
+  const phaserSplashRef = useRef<Phaser.Game | null>(null);
   
   const { phase, start } = useGame();
   const { isLanded, landedPlanet } = useLandedState();
@@ -124,34 +128,52 @@ export const MobileGame: React.FC = () => {
   // Get current mission (calculate before conditional returns)
   const activeMission = missions.activeMissions.find((m: Mission) => !m.completed && m.active);
 
-  // Mobile splash screen
+  // Initialize Phaser splash screen
+  useEffect(() => {
+    if (phase !== 'splash' || !splashGameRef.current || phaserSplashRef.current) return;
+
+    console.log('[MobileGame] Initializing Phaser splash screen...');
+    
+    // Create a custom splash scene that starts the game on click
+    class MainSplashScene extends MobileSplashScene {
+      startGame() {
+        // Instead of transitioning to MainGameScene, destroy Phaser and start React game
+        console.log('[MainSplashScene] Starting game...');
+        start();
+        if (phaserSplashRef.current) {
+          phaserSplashRef.current.destroy(true);
+          phaserSplashRef.current = null;
+        }
+      }
+    }
+
+    const config: Phaser.Types.Core.GameConfig = {
+      type: Phaser.AUTO,
+      parent: splashGameRef.current,
+      width: window.innerWidth,
+      height: window.innerHeight,
+      backgroundColor: '#000000',
+      scene: [MainSplashScene],
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      }
+    };
+
+    phaserSplashRef.current = new Phaser.Game(config);
+
+    return () => {
+      if (phaserSplashRef.current) {
+        phaserSplashRef.current.destroy(true);
+        phaserSplashRef.current = null;
+      }
+    };
+  }, [phase, start]);
+
+  // Mobile splash screen (Phaser-based)
   if (phase === 'splash') {
     return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-          <div className="text-center px-8">
-            <img 
-              src="/media/Plunderverse_logo.png" 
-              alt="Plunderverse" 
-              className="w-32 h-32 mx-auto mb-6 object-contain"
-            />
-            <h1 className="text-4xl font-bold text-orange-500 mb-4">
-              Plunderverse
-            </h1>
-            <p className="text-gray-400 mb-8">Mobile Commander Interface</p>
-            <button
-              onClick={() => start()}
-              className="px-8 py-4 bg-orange-600 text-white rounded-lg font-semibold
-                       active:bg-orange-700 transition-colors min-h-[44px]"
-              style={{ 
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-                userSelect: 'none'
-              }}
-            >
-              Launch Game
-            </button>
-          </div>
-        </div>
+      <div ref={splashGameRef} className="fixed inset-0 bg-black" />
     );
   }
 
