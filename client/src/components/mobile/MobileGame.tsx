@@ -14,6 +14,10 @@ import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
 import { useAuthStore } from '../../lib/stores/auth/useAuthStore';
 import { useCloudSync } from '../../services/CloudSyncManager';
+import { useParrot } from '../../lib/stores/useParrot';
+import { useParrotEvents } from '../../hooks/useParrotEvents';
+import { ParrotControls } from '../ParrotControls';
+import { MusicPlayer } from '../screens/MusicPlayer';
 import type { Mission, MissionObjective } from '../../lib/plunderverse/types';
 
 type MobileViewState = 'status' | 'station' | 'minigame';
@@ -41,6 +45,7 @@ export const MobileGame: React.FC = () => {
   const heatSystem = useHeatSystem();
   const { isAuthenticated, isGuest, isAuthReady } = useAuthStore();
   const { status: cloudSyncStatus, isInitialized } = useCloudSync();
+  const { initialize: initializeParrot } = useParrot();
 
   // Wait for CloudSync to load save data before showing UI
   useEffect(() => {
@@ -72,6 +77,9 @@ export const MobileGame: React.FC = () => {
 
   // Mobile platform initialization and state refresh
   useEffect(() => {
+    // Initialize Parrot on mobile
+    initializeParrot();
+    
     // Set up periodic state refresh to ensure sync with desktop
     const interval = setInterval(() => {
       // This triggers re-render to update displayed values
@@ -81,7 +89,10 @@ export const MobileGame: React.FC = () => {
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [initializeParrot]);
+
+  // Enable Parrot event hooks on mobile
+  useParrotEvents();
 
   // Update viewState based on landing status (moved before conditional returns)
   useEffect(() => {
@@ -402,16 +413,28 @@ export const MobileGame: React.FC = () => {
   // Handle mini-game navigation
   if (viewState === 'minigame') {
     return (
-      <MobileMinigame 
-        onBack={() => setViewState(isLanded ? 'station' : 'status')}
-      />
+      <>
+        <MobileMinigame 
+          onBack={() => setViewState(isLanded ? 'station' : 'status')}
+        />
+        <ParrotControls />
+        <div className="fixed top-2 left-2 z-30">
+          <MusicPlayer />
+        </div>
+      </>
     );
   }
 
   // Main mobile game interface when landed or in station view
   return (
-    <StationDashboard 
-      onOpenMinigame={() => setViewState('minigame')}
-    />
+    <>
+      <StationDashboard 
+        onOpenMinigame={() => setViewState('minigame')}
+      />
+      <ParrotControls />
+      <div className="fixed top-2 left-2 z-30">
+        <MusicPlayer />
+      </div>
+    </>
   );
 };

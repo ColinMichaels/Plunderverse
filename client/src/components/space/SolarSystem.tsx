@@ -13,6 +13,7 @@ import { planets } from "../../lib/planetData";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
 import { resourceManager } from "../../lib/utils/ResourceManager";
+import { HolographicParrot } from "../HolographicParrot";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);
@@ -72,6 +73,9 @@ export function SolarSystem() {
 
         {/* Camera controller */}
         <CameraController />
+
+        {/* Holographic Parrot AI Companion */}
+        <HolographicParrot position={[5, 3, 10]} />
 
         {/* Shooting system */}
         <ShootingSystem />

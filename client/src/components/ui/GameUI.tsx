@@ -30,6 +30,7 @@ import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { useParrot } from "../../lib/stores/useParrot";
+import { useParrotEvents } from "../../hooks/useParrotEvents";
 import { AutopilotIndicator } from "../navigation/AutopilotIndicator";
 // Other Hooks
 import { useDockingDetection } from "../../hooks/useDockingDetection";
@@ -57,6 +58,9 @@ export function GameUI() {
   useEffect(() => {
     initializeParrot();
   }, [initializeParrot]);
+  
+  // Enable Parrot event hooks
+  useParrotEvents();
   const { selectedPlanet, time } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
