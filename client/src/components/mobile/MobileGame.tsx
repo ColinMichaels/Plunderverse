@@ -17,6 +17,7 @@ import { useCloudSync } from '../../services/CloudSyncManager';
 import { useParrot } from '../../lib/stores/useParrot';
 import { useParrotEvents } from '../../hooks/useParrotEvents';
 import { ParrotControls } from '../ParrotControls';
+import { ParrotTextDisplay } from '../ParrotTextDisplay';
 import { MusicPlayer } from '../screens/MusicPlayer';
 import type { Mission, MissionObjective } from '../../lib/plunderverse/types';
 
@@ -418,6 +419,7 @@ export const MobileGame: React.FC = () => {
           onBack={() => setViewState(isLanded ? 'station' : 'status')}
         />
         <ParrotControls />
+        <ParrotTextDisplay />
         <div className="fixed top-2 left-2 z-30">
           <MusicPlayer />
         </div>
@@ -432,6 +434,7 @@ export const MobileGame: React.FC = () => {
         onOpenMinigame={() => setViewState('minigame')}
       />
       <ParrotControls />
+      <ParrotTextDisplay />
       <div className="fixed top-2 left-2 z-30">
         <MusicPlayer />
       </div>
