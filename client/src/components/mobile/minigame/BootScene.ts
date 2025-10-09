@@ -279,6 +279,68 @@ export class BootScene extends Phaser.Scene {
     healthGraphics.fillRect(6, 10, 12, 4);
     healthGraphics.generateTexture('health_pickup', 24, 24);
     
+    // Create repair tools collectible (wrench and screwdriver)
+    const repairToolsGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    // Glow
+    repairToolsGraphics.fillStyle(0x00aaff, 0.3);
+    repairToolsGraphics.fillCircle(12, 12, 12);
+    // Wrench body
+    repairToolsGraphics.fillStyle(0xcccccc, 1);
+    repairToolsGraphics.fillRect(6, 10, 12, 3);
+    repairToolsGraphics.fillCircle(17, 11, 3);
+    // Wrench head opening
+    repairToolsGraphics.fillStyle(0x666666, 1);
+    repairToolsGraphics.fillCircle(17, 11, 2);
+    // Screwdriver
+    repairToolsGraphics.fillStyle(0xff9900, 1);
+    repairToolsGraphics.fillRect(8, 14, 8, 2);
+    repairToolsGraphics.fillStyle(0xcccccc, 1);
+    repairToolsGraphics.fillRect(6, 15, 2, 1);
+    repairToolsGraphics.generateTexture('repair_tools', 24, 24);
+    
+    // Create spare parts collectible (gear/cog)
+    const sparePartsGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    // Glow
+    sparePartsGraphics.fillStyle(0xffaa00, 0.3);
+    sparePartsGraphics.fillCircle(12, 12, 12);
+    // Gear outer
+    sparePartsGraphics.fillStyle(0x999999, 1);
+    sparePartsGraphics.fillCircle(12, 12, 8);
+    // Gear teeth
+    for (let i = 0; i < 6; i++) {
+      const angle = (i * Math.PI * 2) / 6;
+      const x = 12 + Math.cos(angle) * 8;
+      const y = 12 + Math.sin(angle) * 8;
+      sparePartsGraphics.fillRect(x - 1, y - 1, 2, 3);
+    }
+    // Gear center hole
+    sparePartsGraphics.fillStyle(0x333333, 1);
+    sparePartsGraphics.fillCircle(12, 12, 4);
+    sparePartsGraphics.fillStyle(0x666666, 1);
+    sparePartsGraphics.fillCircle(12, 12, 2);
+    sparePartsGraphics.generateTexture('spare_parts', 24, 24);
+    
+    // Create fuel cell collectible (battery/energy cell)
+    const fuelCellGraphics = this.make.graphics({ x: 0, y: 0 }, false);
+    // Glow
+    fuelCellGraphics.fillStyle(0x00ff00, 0.3);
+    fuelCellGraphics.fillCircle(12, 12, 12);
+    // Battery body
+    fuelCellGraphics.fillStyle(0x006600, 1);
+    fuelCellGraphics.fillRoundedRect(6, 8, 12, 10, 2);
+    // Energy fill (bright green)
+    fuelCellGraphics.fillStyle(0x00ff00, 1);
+    fuelCellGraphics.fillRect(7, 9, 10, 7);
+    // Terminals
+    fuelCellGraphics.fillStyle(0xcccccc, 1);
+    fuelCellGraphics.fillRect(9, 6, 2, 2);
+    fuelCellGraphics.fillRect(13, 6, 2, 2);
+    // Lightning bolt symbol
+    fuelCellGraphics.fillStyle(0xffffff, 0.9);
+    fuelCellGraphics.fillTriangle(10, 10, 14, 13, 12, 13);
+    fuelCellGraphics.fillTriangle(14, 14, 10, 11, 12, 11);
+    fuelCellGraphics.generateTexture('fuel_cell', 24, 24);
+    
     // Create multiple particle textures for different effects
     const particleTypes = [
       { name: 'particle', color: 0xffffff, size: 4 }, // Keep default

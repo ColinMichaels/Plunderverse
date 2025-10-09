@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Target,
@@ -48,11 +48,34 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({ onClos
   const [activeCategory, setActiveCategory] = useState<ObjectiveCategory>('missions');
   const [selectedObjective, setSelectedObjective] = useState<UnifiedObjective | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [collectionObjectives, setCollectionObjectives] = useState<any[]>([]);
   
   const missions = usePlunderverseMissions();
   const crewManagement = useCrewManagement();
   const ship = useShipStatus();
   const equipment = useEquipment();
+  
+  // Load collection objectives from localStorage (synced by Phaser game)
+  useEffect(() => {
+    const loadCollections = () => {
+      const saved = localStorage.getItem('minigame_collection_progress');
+      if (saved) {
+        try {
+          const progress = JSON.parse(saved);
+          setCollectionObjectives(progress.objectives || []);
+        } catch (error) {
+          console.error('Failed to load collection objectives:', error);
+        }
+      }
+    };
+    
+    // Load initially
+    loadCollections();
+    
+    // Reload periodically to catch updates from Phaser game
+    const interval = setInterval(loadCollections, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Compile unified objectives from all sources
   const objectives = useMemo(() => {
@@ -115,21 +138,33 @@ export const MissionControlPanel: React.FC<MissionControlPanelProps> = ({ onClos
       }
     });
 
-    // 3. Mini-game Collection Objectives (placeholder - will be populated by Phaser game)
-    // These will be added when the Phaser mini-game objectives are implemented
-    // Example structure:
-    // unified.push({
-    //   id: 'collect-repair-tools',
-    //   category: 'collections',
-    //   title: 'Collect Repair Tools',
-    //   description: 'Find tools scattered around the station',
-    //   progress: 60,
-    //   isCompleted: false,
-    //   location: 'Engineering Bay'
-    // });
+    // 3. Mini-game Collection Objectives (populated from Phaser game via localStorage)
+    const collectionObjectiveTypes = [
+      { id: 'repair_tools', name: 'Repair Tools', icon: '🔧', description: 'Essential tools for ship maintenance and repairs' },
+      { id: 'spare_parts', name: 'Spare Parts', icon: '⚙️', description: 'Critical replacement components for ship systems' },
+      { id: 'fuel_cells', name: 'Fuel Cells', icon: '🔋', description: 'Energy cells to refuel ship systems' },
+      { id: 'medical_supplies', name: 'Medical Supplies', icon: '💊', description: 'Medical kits for crew health maintenance' }
+    ];
+
+    collectionObjectives.forEach(objective => {
+      const typeInfo = collectionObjectiveTypes.find(t => t.id === objective.id);
+      if (typeInfo && objective.requiredCount) {
+        const progress = Math.round((objective.currentCount / objective.requiredCount) * 100);
+        
+        unified.push({
+          id: `collect-${objective.id}`,
+          category: 'collections',
+          title: typeInfo.name,
+          description: `${typeInfo.icon} ${typeInfo.description} (${objective.currentCount}/${objective.requiredCount} collected)`,
+          progress: objective.isCompleted ? 100 : progress,
+          isCompleted: objective.isCompleted,
+          location: 'Station Interior'
+        });
+      }
+    });
 
     return unified;
-  }, [missions.activeMissions, crewManagement.activeCrew, ship.hull, ship.shield, equipment]);
+  }, [missions.activeMissions, crewManagement.activeCrew, ship.hull, ship.shield, equipment, collectionObjectives]);
 
   // Filter objectives by category
   const filteredObjectives = objectives.filter(obj => obj.category === activeCategory);

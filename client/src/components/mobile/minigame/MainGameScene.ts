@@ -5,6 +5,7 @@ import { NPCMissionSystem } from './NPCMissionSystem';
 import { SmugglingSystem, SmugglingMission, ContrabandType } from './SmugglingSystem';
 import { CrewManagementSystem, CrewTask } from './CrewManagementSystem';
 import { RepairObjectiveSystem } from './RepairObjectiveSystem';
+import { CollectionObjectiveSystem } from './CollectionObjectiveSystem';
 import MiniGameSyncService from '../../../services/MiniGameSyncService';
 import { SyncIntegration } from './SyncIntegration';
 
@@ -37,6 +38,7 @@ export class MainGameScene extends Phaser.Scene {
   private smugglingSystem!: SmugglingSystem;
   private crewManagementSystem!: CrewManagementSystem;
   private repairObjectiveSystem!: RepairObjectiveSystem;
+  private collectionObjectiveSystem!: CollectionObjectiveSystem;
   private securityPatrols!: Phaser.Physics.Arcade.Group;
   
   // Touch controls
@@ -117,6 +119,7 @@ export class MainGameScene extends Phaser.Scene {
     this.smugglingSystem = new SmugglingSystem(this);
     this.crewManagementSystem = new CrewManagementSystem(this);
     this.repairObjectiveSystem = new RepairObjectiveSystem(this);
+    this.collectionObjectiveSystem = new CollectionObjectiveSystem(this);
     
     // Initialize groups first
     this.roomFloors = this.add.group();
@@ -282,6 +285,20 @@ export class MainGameScene extends Phaser.Scene {
     
     // Create ship repair objectives
     this.repairObjectiveSystem.createRepairPoints(this.stationRooms, this.interactables);
+    
+    // Create collectible items for collection objectives
+    const collectibles = this.collectionObjectiveSystem.createCollectibles(this.stationRooms);
+    
+    // Setup collision detection for collecting items
+    if (this.player && collectibles) {
+      this.physics.add.overlap(this.player, collectibles, (player, collectible) => {
+        const sprite = collectible as Phaser.GameObjects.Sprite;
+        const itemId = sprite.getData('collectibleId');
+        if (itemId) {
+          this.collectionObjectiveSystem.collectItem(itemId);
+        }
+      });
+    }
   }
 
   private createRoomFloor(room: StationRoom, roomId: string): void {
@@ -1694,6 +1711,11 @@ export class MainGameScene extends Phaser.Scene {
         }
       }
     });
+    
+    // Update collectible item glow effects
+    if (this.collectionObjectiveSystem) {
+      this.collectionObjectiveSystem.updateGlowEffects(this.player.x, this.player.y);
+    }
     
     // Update smuggling system
     if (this.smugglingSystem) {
