@@ -159,6 +159,10 @@ export function CameraController() {
   const tempQuaternion = useRef(new THREE.Quaternion());
   const tempMatrix = useRef(new THREE.Matrix4());
 
+  // Track previous planet position for velocity calculation during orbit
+  const previousPlanetPositionRef = useRef<THREE.Vector3 | null>(null);
+  const trackedPlanetNameRef = useRef<string | null>(null);
+
   // ===== HELPER FUNCTIONS =====
   // Easing function for smooth acceleration curves
   const easeInOutQuad = (t: number): number => {
@@ -1164,30 +1168,61 @@ export function CameraController() {
             );
           }
         } else if (isOrbiting) {
-          // Orbital phase - smooth orbit around the moving planet center
-          const orbitSpeed = 0.15; // Much slower orbital rotation for graceful, cinematic viewing
+          // Orbital phase - locked orbit around the moving planet
+          const orbitSpeed = 0.15; // Orbital rotation speed
           const currentOrbitAngle =
             useAutopilot.getState().orbitAngle + orbitSpeed * delta;
 
           // Update orbit angle smoothly without frequent store updates
           useAutopilot.setState({ orbitAngle: currentOrbitAngle });
 
-          // Calculate smooth orbital position around current planet center
+          // Check if we're tracking a different planet (planet changed)
+          if (trackedPlanetNameRef.current !== selectedPlanet) {
+            console.log(`[ORBIT] Planet changed from ${trackedPlanetNameRef.current} to ${selectedPlanet}, resetting tracking`);
+            previousPlanetPositionRef.current = null;
+            trackedPlanetNameRef.current = selectedPlanet;
+          }
+
+          // Calculate planet velocity (movement since last frame)
+          // Only apply if we have a valid previous position for THIS planet
+          let planetVelocity = new THREE.Vector3();
+          if (previousPlanetPositionRef.current && trackedPlanetNameRef.current === selectedPlanet) {
+            planetVelocity = tempVec3_2.current
+              .copy(currentPlanetPosition)
+              .sub(previousPlanetPositionRef.current);
+          }
+          
+          // Store current position for next frame
+          if (!previousPlanetPositionRef.current) {
+            previousPlanetPositionRef.current = new THREE.Vector3();
+          }
+          previousPlanetPositionRef.current.copy(currentPlanetPosition);
+
+          // Calculate orbital offset (rotation around planet)
           const orbitX = Math.cos(currentOrbitAngle) * orbitRadius;
           const orbitZ = Math.sin(currentOrbitAngle) * orbitRadius;
+          const orbitOffset = new THREE.Vector3(orbitX, 0, orbitZ);
+
+          // Target position = planet position + orbit offset
           const targetOrbitPosition = tempVec3_1.current
             .copy(currentPlanetPosition)
-            .add(new THREE.Vector3(orbitX, 0, orbitZ));
+            .add(orbitOffset);
 
-          // Smooth orbital movement using gentle interpolation
+          // Apply planet velocity directly to camera (move with planet)
+          // Only if we have a valid velocity for the current planet
+          if (previousPlanetPositionRef.current && trackedPlanetNameRef.current === selectedPlanet) {
+            camera.position.add(planetVelocity);
+          }
+
+          // Then smoothly adjust to maintain orbital distance
           const currentPosition = camera.position.clone();
-          const smoothFactor = delta * 2.0; // Gentle movement factor
+          const smoothFactor = delta * 3.0; // Faster adjustment for tighter orbit
           const newPosition = currentPosition.lerp(
             targetOrbitPosition,
             smoothFactor,
           );
 
-          // Apply the smooth position directly to camera
+          // Apply the smooth position to camera
           camera.position.copy(newPosition);
 
           // Only update quaternion slerp on certain frames
@@ -1207,6 +1242,11 @@ export function CameraController() {
             // Very smooth camera rotation for cinematic feel
             camera.quaternion.slerp(targetQuaternion, delta * 1.2);
           }
+        } else if (!isOrbiting && previousPlanetPositionRef.current) {
+          // Reset tracking when exiting orbit
+          console.log('[ORBIT] Exiting orbit, resetting planet tracking');
+          previousPlanetPositionRef.current = null;
+          trackedPlanetNameRef.current = null;
         }
 
         // Mark as thrusting during autopilot and consume fuel
@@ -1238,6 +1278,9 @@ export function CameraController() {
         const travelIntensity = distanceToTarget > landingDistance ? 1.0 : 0.5; // Higher intensity during approach
         applyShipDegradation("autopilot", travelIntensity, delta);
       }
+    } else {
+      // Reset planet position tracking when autopilot is not active
+      previousPlanetPositionRef.current = null;
     }
 
     // Proximity-based camera behavior - THROTTLED (check every N frames)
