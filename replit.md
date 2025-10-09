@@ -6,6 +6,23 @@
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### 2025-10-09: Parrot AI Companion Integration (Desktop + Mobile)
+- **ParrotSpeechService**: Web Speech Synthesis API with voice modulation (rate, pitch, volume), squawk functionality, preferred voice selection
+- **ParrotPersonality**: Pirate-themed AI with repeat-and-confirm pattern, intentional misunderstandings, memory system (50 phrases), serious/chatty modes
+- **useParrot Store**: Zustand state management with speak(), comment(), repeatCommand(), squawk(), praise(), scold() methods
+- **ParrotControls UI**: Icon-only controls (mute, mode toggle, visibility) following design guidelines, mobile-optimized positioning
+- **HolographicParrot**: Three.js 3D holographic parrot with iridescent green/gold materials, flicker effects, floating animation
+- **useParrotEvents Hook**: Event-driven speech system tracking fuel %, hull, shields, heat, missions with primitive value dependencies
+- **Mobile Integration**: ParrotControls + MusicPlayer + MobileSplashScene (Phaser animated logo) added to mobile UI
+- **Desktop Integration**: Parrot initialized in GameUI, 3D holographic companion in SolarSystem scene alongside CameraController
+
+### Environment Notes
+- **WebGL Detection**: App includes comprehensive WebGL fallback system (WebGLCheckWrapper, webglDetection.ts)
+- **Replit Webview**: Occasional WebGL detection issues in Replit's embedded webview - app works correctly when opened in external browser
+- **Testing**: For best results, test in external browser via the "Open in new tab" option
+
 ### UI Design Guidelines
 - **Action Buttons**: Use icon-only design with hover-over tooltips for better space efficiency
 - **Button Style**: `bg-gray-900/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white w-10 h-10 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all backdrop-blur-sm flex items-center justify-center`
