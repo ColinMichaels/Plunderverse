@@ -26,6 +26,7 @@ export class SyncIntegration {
     this.scene.events.on('reputation_changed', this.handleReputationChange, this);
     this.scene.events.on('heat_changed', this.handleHeatChange, this);
     this.scene.events.on('item_acquired', this.handleItemAcquired, this);
+    this.scene.events.on('allObjectivesComplete', this.handleVictoryComplete, this);
   }
 
   private handleDialogueOutcome(data: {
@@ -109,6 +110,51 @@ export class SyncIntegration {
     console.log('[SyncIntegration] Item acquired:', data);
   }
 
+  private handleVictoryComplete(): void {
+    console.log('[SyncIntegration] Mini-game objectives completed! Syncing rewards...');
+    
+    // Calculate rewards based on completion
+    const rewards = {
+      credits: 500, // Base reward for completing all objectives
+      shipRepairs: {
+        hull: 25,    // 25% hull repair
+        shields: 25, // 25% shield repair
+        fuel: 50     // 50% fuel restore
+      },
+      items: [
+        { id: 'repair_kit', quantity: 2 },
+        { id: 'fuel_canister', quantity: 3 }
+      ]
+    };
+    
+    // Apply rewards locally first
+    this.applyVictoryRewards(rewards);
+    
+    // Sync victory and rewards to main game
+    this.syncService.syncVictoryRewards(rewards);
+  }
+
+  private applyVictoryRewards(rewards: any): void {
+    const { useShipStatus } = require('@/lib/stores/ship/useShipStatus');
+    const { useCreditsStore } = require('@/domain/economy/credits.store');
+    
+    // Apply credits
+    useCreditsStore.getState().earnCredits(rewards.credits);
+    console.log(`[SyncIntegration] Awarded ${rewards.credits} credits`);
+    
+    // Apply ship repairs using the proper methods
+    const shipStatus = useShipStatus.getState();
+    shipStatus.rechargeShield(rewards.shipRepairs.shields);
+    shipStatus.repairHull(rewards.shipRepairs.hull);
+    console.log('[SyncIntegration] Applied ship repairs:', rewards.shipRepairs);
+    
+    // Note: Items would need proper ResourceData objects to add to inventory
+    // For now, just log the items (this would need full integration with resource system)
+    if (rewards.items && rewards.items.length > 0) {
+      console.log('[SyncIntegration] Victory items awarded (inventory integration needed):', rewards.items);
+    }
+  }
+
   /**
    * Manually trigger a full sync
    */
@@ -135,5 +181,6 @@ export class SyncIntegration {
     this.scene.events.off('reputation_changed', this.handleReputationChange, this);
     this.scene.events.off('heat_changed', this.handleHeatChange, this);
     this.scene.events.off('item_acquired', this.handleItemAcquired, this);
+    this.scene.events.off('allObjectivesComplete', this.handleVictoryComplete, this);
   }
 }

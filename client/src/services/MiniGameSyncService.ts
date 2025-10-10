@@ -367,17 +367,44 @@ class MiniGameSyncService {
   private handleStateUpdate(payload: SyncPayload): void {
     const { data } = payload;
     
-    if (data.source === 'mini-game') {
-      // Ignore our own updates
+    if (data.source === 'mini-game' && payload.clientId === this.clientId) {
+      // Ignore our own updates (but allow other mini-game instances)
       return;
     }
 
-    // Apply updates to stores
-    if (data.stores) {
+    // Handle specific update types
+    if (data.type === 'victory_rewards' && data.rewards) {
+      console.log('[MiniGameSync] Received victory rewards from another client');
+      this.applyVictoryRewards(data.rewards);
+    }
+    // Apply general store updates
+    else if (data.stores) {
       this.applyStateUpdates(data.stores);
     }
 
     this.currentVersion = payload.version;
+  }
+  
+  private applyVictoryRewards(rewards: any): void {
+    // Apply credits
+    useCreditsStore.getState().earnCredits(rewards.credits);
+    console.log(`[MiniGameSync] Received ${rewards.credits} credits from victory`);
+    
+    // Apply ship repairs using the proper methods
+    const shipStatus = useShipStatus.getState();
+    shipStatus.rechargeShield(rewards.shipRepairs.shields);
+    shipStatus.repairHull(rewards.shipRepairs.hull);
+    console.log('[MiniGameSync] Applied ship repairs:', rewards.shipRepairs);
+    
+    // Note: Fuel is managed by equipment system, not ship status
+    // Items would need proper ResourceData objects to add to inventory
+    // For now, just log the items (this would need proper implementation)
+    if (rewards.items && rewards.items.length > 0) {
+      console.log('[MiniGameSync] Victory items received (inventory integration needed):', rewards.items);
+    }
+    
+    // Notify listeners
+    this.notifyListeners('victoryComplete', rewards);
   }
 
   private handleStateDelta(payload: SyncPayload): void {
@@ -610,6 +637,36 @@ class MiniGameSyncService {
 
   public syncMissionProgress(missionId: string, progress: any): void {
     this.queueStateChange('missions', `progress_${missionId}`, null, progress);
+  }
+
+  public syncVictoryRewards(rewards: {
+    credits: number;
+    shipRepairs: {
+      hull: number;
+      shields: number;
+      fuel: number;
+    };
+    items: Array<{ id: string; quantity: number }>;
+  }): void {
+    console.log('[MiniGameSync] Syncing victory rewards to other clients:', rewards);
+    
+    const payload: SyncPayload = {
+      type: 'state_update',
+      timestamp: Date.now(),
+      version: ++this.currentVersion,
+      clientId: this.clientId,
+      data: {
+        type: 'victory_rewards',
+        rewards,
+        source: 'mini-game'
+      }
+    };
+
+    this.sendMessage(payload);
+    
+    // Note: Local rewards are already applied by SyncIntegration before calling this
+    // No need to notify listeners here - they're notified by the local application
+    // Remote clients will be notified when they receive and apply the rewards
   }
 
   // Offline storage methods
