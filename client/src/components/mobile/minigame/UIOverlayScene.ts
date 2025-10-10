@@ -1225,33 +1225,73 @@ export class UIOverlayScene extends Phaser.Scene {
   }
   
   private createObjectivesPanel(): void {
-    const width = 300;
-    const height = 350;
-    const x = 20;
-    const y = 280;
+    const width = 280;
+    const height = 320;
+    const x = -280; // Start off-screen to the left
+    const y = 100;
     
     this.objectivesPanel = this.add.container(x, y);
     
     // Background
     const bg = this.add.graphics();
-    bg.fillStyle(0x000000, 0.85);
+    bg.fillStyle(0x000000, 0.9);
     bg.fillRoundedRect(0, 0, width, height, 8);
-    bg.lineStyle(3, 0x00ffff, 0.9);
+    bg.lineStyle(2, 0x00ffff, 0.8);
     bg.strokeRoundedRect(0, 0, width, height, 8);
     
     // Title
-    const title = this.add.text(width / 2, 15, '📋 OBJECTIVES', {
-      fontSize: '18px',
+    const title = this.add.text(width / 2, 12, '📋 OBJECTIVES', {
+      fontSize: '16px',
       color: '#00ffff',
       fontFamily: 'Arial',
       fontStyle: 'bold'
     }).setOrigin(0.5, 0);
     
-    this.objectivesPanel.add([bg, title]);
-    this.objectivesPanel.setDepth(85);
+    // Close button
+    const closeBtn = this.add.text(width - 15, 12, '×', {
+      fontSize: '24px',
+      color: '#ff6666',
+      fontFamily: 'Arial'
+    }).setOrigin(0.5, 0)
+      .setInteractive()
+      .on('pointerdown', () => this.toggleObjectivesPanel());
+    
+    this.objectivesPanel.add([bg, title, closeBtn]);
+    this.objectivesPanel.setDepth(90);
+    
+    // Create toggle button (always visible)
+    const toggleBtn = this.add.container(10, 100);
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0x00ffff, 0.8);
+    btnBg.fillRoundedRect(0, 0, 35, 35, 5);
+    const btnIcon = this.add.text(17.5, 17.5, '📋', {
+      fontSize: '18px'
+    }).setOrigin(0.5);
+    
+    toggleBtn.add([btnBg, btnIcon]);
+    toggleBtn.setDepth(89);
+    toggleBtn.setInteractive(new Phaser.Geom.Rectangle(0, 0, 35, 35), Phaser.Geom.Rectangle.Contains);
+    toggleBtn.on('pointerdown', () => this.toggleObjectivesPanel());
+    
+    this.objectivesPanel.setData('isOpen', false);
+    this.objectivesPanel.setData('toggleBtn', toggleBtn);
     
     // Initial update
     this.updateObjectivesPanel();
+  }
+  
+  private toggleObjectivesPanel(): void {
+    const isOpen = this.objectivesPanel.getData('isOpen');
+    const targetX = isOpen ? -280 : 10;
+    
+    this.tweens.add({
+      targets: this.objectivesPanel,
+      x: targetX,
+      duration: 300,
+      ease: 'Power2'
+    });
+    
+    this.objectivesPanel.setData('isOpen', !isOpen);
   }
   
   private updateObjectivesPanel(): void {
