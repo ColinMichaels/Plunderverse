@@ -8,6 +8,7 @@ import { RepairObjectiveSystem } from './RepairObjectiveSystem';
 import { CollectionObjectiveSystem } from './CollectionObjectiveSystem';
 import MiniGameSyncService from '../../../services/MiniGameSyncService';
 import { SyncIntegration } from './SyncIntegration';
+import { DoorProgressionSystem } from './DoorProgressionSystem';
 
 /**
  * MainGameScene - Enhanced station exploration with multiple rooms and areas
@@ -39,6 +40,7 @@ export class MainGameScene extends Phaser.Scene {
   private crewManagementSystem!: CrewManagementSystem;
   private repairObjectiveSystem!: RepairObjectiveSystem;
   private collectionObjectiveSystem!: CollectionObjectiveSystem;
+  private doorProgressionSystem!: DoorProgressionSystem;
   private securityPatrols!: Phaser.Physics.Arcade.Group;
   
   // Touch controls
@@ -120,6 +122,7 @@ export class MainGameScene extends Phaser.Scene {
     this.crewManagementSystem = new CrewManagementSystem(this);
     this.repairObjectiveSystem = new RepairObjectiveSystem(this);
     this.collectionObjectiveSystem = new CollectionObjectiveSystem(this);
+    this.doorProgressionSystem = new DoorProgressionSystem(this);
     
     // Initialize groups first
     this.roomFloors = this.add.group();
@@ -506,6 +509,16 @@ export class MainGameScene extends Phaser.Scene {
           door.setData('roomFrom', roomId);
           door.setData('roomTo', connectedId);
           
+          // Create door ID and register with progression system
+          const doorId = `door_${roomId}_${connectedId}`;
+          door.setData('doorId', doorId);
+          
+          // Add door to the physics group for collision detection
+          this.doors.add(door);
+          
+          // Register with progression system
+          this.doorProgressionSystem.registerDoor(doorId, doorX, doorY, door);
+          
           // Add door glow animation
           this.tweens.add({
             targets: door,
@@ -518,6 +531,9 @@ export class MainGameScene extends Phaser.Scene {
         }
       });
     });
+    
+    // Load saved door progress
+    this.doorProgressionSystem.loadDoorProgress();
   }
 
   private doorExists(x: number, y: number): boolean {
@@ -1454,14 +1470,39 @@ export class MainGameScene extends Phaser.Scene {
       this.events.emit('locationReached', roomId);
     });
     
+    // Check if all objectives are complete (both collection and repair)
+    this.events.on('allCollectionObjectivesComplete', () => this.checkAllObjectivesComplete());
+    this.events.on('allRepairObjectivesComplete', () => this.checkAllObjectivesComplete());
+    
     // Clean up on scene shutdown
     this.events.once('shutdown', () => {
       this.events.off('dialogueChoiceSelected');
       this.events.off('dialogueEnded');
       this.events.off('startNPCMission');
       this.events.off('openShop');
+      this.events.off('allCollectionObjectivesComplete');
+      this.events.off('allRepairObjectivesComplete');
       this.missionSystem.destroy();
     });
+  }
+  
+  private checkAllObjectivesComplete(): void {
+    const allCollectionComplete = this.collectionObjectiveSystem.getAllObjectives().every(
+      obj => obj.isCompleted
+    );
+    const allRepairComplete = this.repairObjectiveSystem.getAllObjectives().every(
+      obj => obj.isCompleted
+    );
+    
+    if (allCollectionComplete && allRepairComplete) {
+      console.log('[MainGameScene] ALL OBJECTIVES COMPLETE! 🎉');
+      this.events.emit('allObjectivesComplete');
+      
+      toast.success('🎉 Mission Complete!', {
+        description: 'All objectives completed! Final door unlocked!',
+        duration: 5000
+      });
+    }
   }
   
   private createQuestMarker(npc: Phaser.Physics.Arcade.Sprite): void {
@@ -1651,8 +1692,42 @@ export class MainGameScene extends Phaser.Scene {
       this.pathfindingTarget = undefined;
     }
     
-    // Apply velocity to player
-    this.player.setVelocity(velocityX, velocityY);
+    // Check for locked door collisions before applying velocity
+    const futureX = this.player.x + (velocityX * delta / 1000);
+    const futureY = this.player.y + (velocityY * delta / 1000);
+    
+    let blockedByLockedDoor = false;
+    this.doors.children.entries.forEach(door => {
+      const doorRect = door as Phaser.GameObjects.Rectangle;
+      const doorId = doorRect.getData('doorId');
+      
+      if (this.doorProgressionSystem.isDoorLocked(doorId)) {
+        // Check if player would collide with this locked door
+        const doorBounds = doorRect.getBounds();
+        const playerBounds = new Phaser.Geom.Rectangle(
+          futureX - 20, futureY - 20, 40, 40
+        );
+        
+        if (Phaser.Geom.Intersects.RectangleToRectangle(doorBounds, playerBounds)) {
+          blockedByLockedDoor = true;
+          
+          // Show locked message
+          if (this.time.now % 1000 < 100) {
+            toast.warning('🔒 Door Locked', {
+              description: 'Complete objectives to unlock',
+              duration: 1000
+            });
+          }
+        }
+      }
+    });
+    
+    // Apply velocity to player (unless blocked by locked door)
+    if (!blockedByLockedDoor) {
+      this.player.setVelocity(velocityX, velocityY);
+    } else {
+      this.player.setVelocity(0, 0);
+    }
     
     // Update animation based on movement
     this.isMoving = Math.abs(velocityX) > 0 || Math.abs(velocityY) > 0;

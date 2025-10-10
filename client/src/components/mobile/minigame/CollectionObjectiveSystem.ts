@@ -300,6 +300,9 @@ export class CollectionObjectiveSystem {
   private onObjectiveComplete(objective: CollectionObjective): void {
     console.log(`[CollectionObjectiveSystem] Objective completed: ${objective.name}`);
     
+    // Check if all collection objectives are complete
+    this.checkAllObjectivesComplete();
+    
     // Show completion notification
     toast.success(`✅ ${objective.name} Complete!`, {
       description: objective.description,
@@ -392,6 +395,23 @@ export class CollectionObjectiveSystem {
     } catch (error) {
       console.error('[CollectionObjectiveSystem] Failed to load progress:', error);
     }
+  }
+  
+  private checkAllObjectivesComplete(): void {
+    // Check if all collection objectives are complete
+    const allCollectionComplete = Array.from(this.collectionObjectives.values()).every(
+      obj => obj.isCompleted
+    );
+    
+    if (allCollectionComplete) {
+      console.log('[CollectionObjectiveSystem] All collection objectives complete!');
+      // The MainGameScene should listen to this and check repair objectives too
+      this.scene.events.emit('allCollectionObjectivesComplete');
+    }
+  }
+  
+  getAllObjectives(): CollectionObjective[] {
+    return Array.from(this.collectionObjectives.values());
   }
   
   destroy(): void {

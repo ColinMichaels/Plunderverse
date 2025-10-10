@@ -290,6 +290,9 @@ export class RepairObjectiveSystem {
     this.scene.events.emit('repairObjectiveCompleted', objective);
     this.scene.events.emit('showHint', `✅ ${objective.name} repaired successfully!`);
     
+    // Check if all repair objectives are complete
+    this.checkAllObjectivesComplete();
+    
     toast.success(`${objective.icon} ${objective.name} Repaired!`, {
       description: 'Ship system restored to full functionality'
     });
@@ -299,6 +302,19 @@ export class RepairObjectiveSystem {
     
     // Sync with desktop/React stores
     this.syncRepairCompletion(objectiveId);
+  }
+  
+  private checkAllObjectivesComplete(): void {
+    // Check if all repair objectives are complete
+    const allRepairComplete = Array.from(this.repairObjectives.values()).every(
+      obj => obj.isCompleted
+    );
+    
+    if (allRepairComplete) {
+      console.log('[RepairObjectiveSystem] All repair objectives complete!');
+      // The MainGameScene should listen to this and check collection objectives too
+      this.scene.events.emit('allRepairObjectivesComplete');
+    }
   }
   
   private syncRepairCompletion(objectiveId: string): void {
