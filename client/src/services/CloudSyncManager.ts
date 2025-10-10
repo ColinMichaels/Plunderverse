@@ -196,7 +196,8 @@ export const useCloudSync = create<CloudSyncState>((set, get) => ({
           console.log('[CloudSync] Server save loaded successfully');
         } catch (error) {
           console.error('[CloudSync] Failed to load server save:', error);
-          get().setError((error as Error).message);
+          const errorMessage = error instanceof Error ? error.message : 'Type error';
+          get().setError(errorMessage);
           set({ isInitialized: true });
           return;
         }
