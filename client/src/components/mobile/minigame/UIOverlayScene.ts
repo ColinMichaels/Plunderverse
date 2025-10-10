@@ -176,7 +176,9 @@ export class UIOverlayScene extends Phaser.Scene {
       this.showNotification(`🚪 Door Unlocked: ${doorName}`, 0x00ff00);
       this.updateObjectivesPanel();
       // Trigger mini-map update to reflect unlocked door
-      mainScene.events.emit('updateMiniMap', mainScene.getMapData ? mainScene.getMapData() : {});
+      if ((mainScene as any).updateMiniMap) {
+        (mainScene as any).updateMiniMap();
+      }
     });
     
     // Listen for registry updates (from React)
