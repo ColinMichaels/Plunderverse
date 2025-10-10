@@ -1474,6 +1474,11 @@ export class MainGameScene extends Phaser.Scene {
     this.events.on('allCollectionObjectivesComplete', () => this.checkAllObjectivesComplete());
     this.events.on('allRepairObjectivesComplete', () => this.checkAllObjectivesComplete());
     
+    // Update mini-map when doors are unlocked
+    this.events.on('doorUnlocked', () => {
+      this.updateMiniMap();
+    });
+    
     // Clean up on scene shutdown
     this.events.once('shutdown', () => {
       this.events.off('dialogueChoiceSelected');
@@ -1497,10 +1502,9 @@ export class MainGameScene extends Phaser.Scene {
     if (allCollectionComplete && allRepairComplete) {
       console.log('[MainGameScene] ALL OBJECTIVES COMPLETE! 🎉');
       this.events.emit('allObjectivesComplete');
-      
-      toast.success('🎉 Mission Complete!', {
-        description: 'All objectives completed! Final door unlocked!',
-        duration: 5000
+      this.events.emit('showNotification', {
+        message: '🎉 Mission Complete! All objectives completed!',
+        color: 0x00ff00
       });
     }
   }
@@ -1711,11 +1715,11 @@ export class MainGameScene extends Phaser.Scene {
         if (Phaser.Geom.Intersects.RectangleToRectangle(doorBounds, playerBounds)) {
           blockedByLockedDoor = true;
           
-          // Show locked message
+          // Show locked message (throttled)
           if (this.time.now % 1000 < 100) {
-            toast.warning('🔒 Door Locked', {
-              description: 'Complete objectives to unlock',
-              duration: 1000
+            this.events.emit('showNotification', {
+              message: '🔒 Door Locked - Complete objectives to unlock',
+              color: 0xffaa00
             });
           }
         }

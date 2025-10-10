@@ -175,10 +175,7 @@ export class UIOverlayScene extends Phaser.Scene {
       const doorName = data.doorId.replace('door_', '').replace(/_/g, ' ');
       this.showNotification(`🚪 Door Unlocked: ${doorName}`, 0x00ff00);
       this.updateObjectivesPanel();
-      // Trigger mini-map update to reflect unlocked door
-      if ((mainScene as any).updateMiniMap) {
-        (mainScene as any).updateMiniMap();
-      }
+      // Mini-map updates automatically via MainGameScene's doorUnlocked listener
     });
     
     // Listen for registry updates (from React)
@@ -702,6 +699,10 @@ export class UIOverlayScene extends Phaser.Scene {
     
     mainScene.events.on('roomDiscovered', (roomName: string) => {
       this.showNotification(`New Area Discovered: ${roomName}`, 0x00ffff);
+    });
+    
+    mainScene.events.on('showNotification', (data: { message: string, color: number }) => {
+      this.showNotification(data.message, data.color);
     });
   }
   
