@@ -450,14 +450,15 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    console.log('[BootScene] Boot complete, starting mobile splash...');
+    console.log('[BootScene] Boot complete, starting main game...');
     
     // Add a brief fade transition
     this.cameras.main.fadeOut(500);
     
     this.time.delayedCall(500, () => {
-      // Start the splash scene first, it will transition to main game
-      this.scene.start('MobileSplashScene');
+      // Start main game scene and UI overlay
+      this.scene.start('MainGameScene');
+      this.scene.launch('UIOverlayScene');
     });
   }
 }
