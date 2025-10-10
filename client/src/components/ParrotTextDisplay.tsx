@@ -47,11 +47,29 @@ export function ParrotTextDisplay() {
         {visibleMessages.map((message) => (
           <div
             key={message.id}
-            className={`backdrop-blur-sm border rounded-lg p-3 flex items-start gap-2 animate-in slide-in-from-bottom-2 ${getMessageColor(message.type)}`}
+            className={`backdrop-blur-sm border rounded-lg p-3 flex items-start gap-3 animate-in slide-in-from-bottom-2 ${getMessageColor(message.type)}`}
           >
-            <div className="flex-1 text-sm font-medium">
-              {message.text}
+            {/* Parrot Avatar */}
+            <div className="flex-shrink-0 relative">
+              <img 
+                src="/media/holographic_parrot.png" 
+                alt="Parrot"
+                className="w-12 h-12 object-contain animate-pulse"
+              />
+              <div className="absolute inset-0 bg-cyan-400/20 rounded-full blur-md animate-pulse"></div>
             </div>
+            
+            {/* Message Content */}
+            <div className="flex-1 flex flex-col gap-1">
+              <div className="text-xs font-semibold text-cyan-300 uppercase tracking-wide">
+                Parrot
+              </div>
+              <div className="text-sm font-medium">
+                {message.text}
+              </div>
+            </div>
+            
+            {/* Close Button */}
             <button
               onClick={() => {
                 setVisibleMessages([]);
