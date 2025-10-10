@@ -42,6 +42,11 @@ export class UIOverlayScene extends Phaser.Scene {
   private crewRosterDisplay: Phaser.GameObjects.Container[] = [];
   private taskProgressBars: Map<string, Phaser.GameObjects.Graphics> = new Map();
   
+  // Objectives Panel
+  private objectivesPanel!: Phaser.GameObjects.Container;
+  private objectiveTexts: Phaser.GameObjects.Text[] = [];
+  private objectiveIcons: Phaser.GameObjects.Text[] = [];
+  
   private currentHealth: number = 100;
   private maxHealth: number = 100;
   private currentCredits: number = 0;
@@ -74,6 +79,7 @@ export class UIOverlayScene extends Phaser.Scene {
     // Create smuggling and crew UI
     this.createSmugglingHUD();
     this.createCrewPanel();
+    this.createObjectivesPanel();
     
     // Listen for game events from MainGameScene
     const mainScene = this.scene.get('MainGameScene');
@@ -154,6 +160,23 @@ export class UIOverlayScene extends Phaser.Scene {
     
     mainScene.events.on('crewTaskCompleted', (data: any) => {
       this.onCrewTaskCompleted(data);
+    });
+    
+    // Objectives events
+    mainScene.events.on('collectionItemCollected', (data: any) => {
+      this.updateObjectivesPanel();
+    });
+    
+    mainScene.events.on('repairObjectiveCompleted', (data: any) => {
+      this.updateObjectivesPanel();
+    });
+    
+    mainScene.events.on('doorUnlocked', (data: any) => {
+      const doorName = data.doorId.replace('door_', '').replace(/_/g, ' ');
+      this.showNotification(`🚪 Door Unlocked: ${doorName}`, 0x00ff00);
+      this.updateObjectivesPanel();
+      // Trigger mini-map update to reflect unlocked door
+      mainScene.events.emit('updateMiniMap', mainScene.getMapData ? mainScene.getMapData() : {});
     });
     
     // Listen for registry updates (from React)
@@ -721,6 +744,24 @@ export class UIOverlayScene extends Phaser.Scene {
       });
     }
     
+    // Draw doors with locked/unlocked indicators
+    const mainScene = this.scene.get('MainGameScene') as any;
+    if (mainScene.doorProgressionSystem) {
+      const doorStatus = mainScene.doorProgressionSystem.getAllDoorStatus();
+      doorStatus.forEach((door: any) => {
+        const doorConfig = mainScene.doorProgressionSystem.doors?.get(door.doorId);
+        if (doorConfig && doorConfig.x > 0 && doorConfig.y > 0) {
+          const doorX = this.mapX + (doorConfig.x * scale) + 10;
+          const doorY = this.mapY + (doorConfig.y * scale) + 10;
+          
+          // Draw door as small square with color based on lock status
+          const doorColor = door.isLocked ? 0xff0000 : 0x00ff00;
+          this.miniMapGraphics?.fillStyle(doorColor, 0.8);
+          this.miniMapGraphics?.fillRect(doorX - 2, doorY - 2, 4, 4);
+        }
+      });
+    }
+    
     // Draw player position
     if (mapData.playerPos) {
       const playerX = this.mapX + (mapData.playerPos.x * scale) + 10;
@@ -1179,5 +1220,120 @@ export class UIOverlayScene extends Phaser.Scene {
     if (progressBar) {
       progressBar.clear();
     }
+  }
+  
+  private createObjectivesPanel(): void {
+    const width = 300;
+    const height = 350;
+    const x = 20;
+    const y = 280;
+    
+    this.objectivesPanel = this.add.container(x, y);
+    
+    // Background
+    const bg = this.add.graphics();
+    bg.fillStyle(0x000000, 0.85);
+    bg.fillRoundedRect(0, 0, width, height, 8);
+    bg.lineStyle(3, 0x00ffff, 0.9);
+    bg.strokeRoundedRect(0, 0, width, height, 8);
+    
+    // Title
+    const title = this.add.text(width / 2, 15, '📋 OBJECTIVES', {
+      fontSize: '18px',
+      color: '#00ffff',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    }).setOrigin(0.5, 0);
+    
+    this.objectivesPanel.add([bg, title]);
+    this.objectivesPanel.setDepth(85);
+    
+    // Initial update
+    this.updateObjectivesPanel();
+  }
+  
+  private updateObjectivesPanel(): void {
+    // Clear existing texts
+    this.objectiveTexts.forEach(text => text.destroy());
+    this.objectiveIcons.forEach(icon => icon.destroy());
+    this.objectiveTexts = [];
+    this.objectiveIcons = [];
+    
+    const mainScene = this.scene.get('MainGameScene') as any;
+    if (!mainScene.collectionObjectiveSystem || !mainScene.repairObjectiveSystem) {
+      return;
+    }
+    
+    const collectionObjectives = mainScene.collectionObjectiveSystem.getAllObjectives();
+    const repairObjectives = mainScene.repairObjectiveSystem.getAllObjectives();
+    
+    let yOffset = 45;
+    const lineHeight = 35;
+    
+    // Collection objectives header
+    const collectionHeader = this.add.text(15, yOffset, 'Collection:', {
+      fontSize: '14px',
+      color: '#ffaa00',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    });
+    this.objectivesPanel.add(collectionHeader);
+    this.objectiveTexts.push(collectionHeader);
+    yOffset += 20;
+    
+    // Display collection objectives
+    collectionObjectives.forEach((obj: any) => {
+      const icon = this.add.text(20, yOffset, obj.icon, {
+        fontSize: '16px'
+      });
+      
+      const status = obj.isCompleted ? '✓' : `${obj.currentCount}/${obj.requiredCount}`;
+      const color = obj.isCompleted ? '#00ff00' : '#ffffff';
+      
+      const text = this.add.text(45, yOffset, `${obj.name}: ${status}`, {
+        fontSize: '12px',
+        color: color,
+        fontFamily: 'Arial'
+      });
+      
+      this.objectivesPanel.add([icon, text]);
+      this.objectiveIcons.push(icon);
+      this.objectiveTexts.push(text);
+      yOffset += lineHeight;
+    });
+    
+    yOffset += 10;
+    
+    // Repair objectives header
+    const repairHeader = this.add.text(15, yOffset, 'Repairs:', {
+      fontSize: '14px',
+      color: '#ffaa00',
+      fontFamily: 'Arial',
+      fontStyle: 'bold'
+    });
+    this.objectivesPanel.add(repairHeader);
+    this.objectiveTexts.push(repairHeader);
+    yOffset += 20;
+    
+    // Display repair objectives
+    repairObjectives.forEach((obj: any) => {
+      const icon = this.add.text(20, yOffset, obj.icon, {
+        fontSize: '16px'
+      });
+      
+      const status = obj.isCompleted ? '✓ Repaired' : `${obj.progress}%`;
+      const color = obj.isCompleted ? '#00ff00' : '#ffffff';
+      
+      const text = this.add.text(45, yOffset, `${obj.name}: ${status}`, {
+        fontSize: '12px',
+        color: color,
+        fontFamily: 'Arial'
+      });
+      
+      this.objectivesPanel.add([icon, text]);
+      this.objectiveIcons.push(icon);
+      this.objectiveTexts.push(text);
+      yOffset += lineHeight;
+    });
   }
 }
