@@ -20,6 +20,7 @@ interface SolarSystemState {
   shipPosition: THREE.Vector3;
   shipRotation: THREE.Euler;
   shipVelocity: THREE.Vector3;
+  hasRestoredState: boolean; // Flag to indicate if saved state was restored
   
   // Actions
   initializeUniverseTime: () => void;
@@ -33,6 +34,7 @@ interface SolarSystemState {
   setShipPosition: (position: THREE.Vector3) => void;
   setShipRotation: (rotation: THREE.Euler) => void;
   setShipVelocity: (velocity: THREE.Vector3) => void;
+  setHasRestoredState: (restored: boolean) => void;
   cleanup: () => void; // Clean up store state but preserve universe time
 }
 
@@ -53,6 +55,7 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   shipPosition: new THREE.Vector3(0, 10, 50),
   shipRotation: new THREE.Euler(0, 0, 0),
   shipVelocity: new THREE.Vector3(0, 0, 0),
+  hasRestoredState: false,
   
   // Initialize universe time on first game start
   initializeUniverseTime: () => {
@@ -104,6 +107,7 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   setShipPosition: (position) => set({ shipPosition: position.clone() }),
   setShipRotation: (rotation) => set({ shipRotation: rotation.clone() }),
   setShipVelocity: (velocity) => set({ shipVelocity: velocity.clone() }),
+  setHasRestoredState: (restored) => set({ hasRestoredState: restored }),
   
   cleanup: () => {
     console.log("[useSolarSystem] Cleanup: Preserving universe time, resetting scene state");
@@ -124,6 +128,7 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
       shipPosition: new THREE.Vector3(0, 10, 50),
       shipRotation: new THREE.Euler(0, 0, 0),
       shipVelocity: new THREE.Vector3(0, 0, 0),
+      hasRestoredState: false,
     });
   }
 }));

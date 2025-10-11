@@ -40,7 +40,7 @@ export function CameraController() {
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
-  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, setShipPosition, setShipRotation, setShipVelocity } =
+  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, setShipPosition, setShipRotation, setShipVelocity, hasRestoredState, setHasRestoredState } =
     useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
@@ -1400,6 +1400,31 @@ export function CameraController() {
     updatePerformanceMetrics(frameDuration);
   });
 
+  // Restore saved camera position, rotation, and velocity when hasRestoredState becomes true
+  useEffect(() => {
+    if (hasRestoredState) {
+      const solarState = useSolarSystem.getState();
+      
+      // Restore camera position
+      camera.position.copy(solarState.shipPosition);
+      
+      // Restore camera rotation
+      camera.rotation.copy(solarState.shipRotation);
+      
+      // Restore velocity
+      velocityRef.current.copy(solarState.shipVelocity);
+      
+      console.log('[CameraController] Restored saved camera state:', {
+        position: solarState.shipPosition,
+        rotation: solarState.shipRotation,
+        velocity: solarState.shipVelocity,
+      });
+      
+      // Reset the flag after restoring
+      setHasRestoredState(false);
+    }
+  }, [hasRestoredState, camera, setHasRestoredState]); // Run when hasRestoredState changes
+  
   // Bind input handlers to InputBus (mobile support)
   useEffect(() => {
     bindInputHandlers({

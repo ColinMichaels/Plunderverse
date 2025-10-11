@@ -442,6 +442,9 @@ export function restoreGameState(gameState: GameStateData | any): void {
       const vel = stores.solarSystem.shipVelocity;
       solarState.setShipVelocity(new THREE.Vector3(vel.x, vel.y, vel.z));
     }
+    
+    // Mark that we've restored saved state
+    solarState.setHasRestoredState(true);
   }
   
   // Restore landed state
