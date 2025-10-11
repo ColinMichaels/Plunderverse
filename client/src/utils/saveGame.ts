@@ -1,6 +1,7 @@
 // Save Game State Serialization Helper
 // Collects and restores state from all Zustand stores
 
+import * as THREE from 'three';
 import { usePlayer } from '../lib/stores/player/usePlayer';
 import { useShipStatus } from '../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../lib/stores/ship/useEquipment';
@@ -15,6 +16,7 @@ import { useCrypto } from '../lib/stores/economy/useCrypto';
 import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
 import { useDestroyedNodes } from '../lib/stores/surface/useDestroyedNodes';
 import { useHeatSystem } from '../lib/stores/player/useHeatSystem';
+import { useLandedState } from '../lib/stores/surface/useLandedState';
 import { useRewards } from '../lib/stores/ui/useRewards';
 import { useSettings } from '../lib/stores/ui/useSettings';
 import { useGame } from '../lib/stores/ui/useGame';
@@ -55,6 +57,7 @@ export function collectGameState(): GameStateData {
   const heat = useHeatSystem.getState();
   const rewards = useRewards.getState();
   const settings = useSettings.getState();
+  const landedState = useLandedState.getState();
   
   const playTime = calculatePlayTime();
   const location = getCurrentLocation();
@@ -186,6 +189,26 @@ export function collectGameState(): GameStateData {
         universeStartTime: solarSystem.universeStartTime,
         timeScale: solarSystem.timeScale,
         selectedPlanet: solarSystem.selectedPlanet,
+        shipPosition: {
+          x: solarSystem.shipPosition.x,
+          y: solarSystem.shipPosition.y,
+          z: solarSystem.shipPosition.z,
+        },
+        shipRotation: {
+          x: solarSystem.shipRotation.x,
+          y: solarSystem.shipRotation.y,
+          z: solarSystem.shipRotation.z,
+        },
+        shipVelocity: {
+          x: solarSystem.shipVelocity.x,
+          y: solarSystem.shipVelocity.y,
+          z: solarSystem.shipVelocity.z,
+        },
+      },
+      
+      // Scene state (landed vs space)
+      landedState: {
+        isLanded: landedState.isLanded,
       },
       
       destroyedNodes: {
@@ -404,6 +427,28 @@ export function restoreGameState(gameState: GameStateData | any): void {
     }
     if (stores.solarSystem.selectedPlanet !== undefined) {
       solarState.setSelectedPlanet(stores.solarSystem.selectedPlanet);
+    }
+    
+    // Restore ship position, rotation, and velocity
+    if (stores.solarSystem.shipPosition) {
+      const pos = stores.solarSystem.shipPosition;
+      solarState.setShipPosition(new THREE.Vector3(pos.x, pos.y, pos.z));
+    }
+    if (stores.solarSystem.shipRotation) {
+      const rot = stores.solarSystem.shipRotation;
+      solarState.setShipRotation(new THREE.Euler(rot.x, rot.y, rot.z));
+    }
+    if (stores.solarSystem.shipVelocity) {
+      const vel = stores.solarSystem.shipVelocity;
+      solarState.setShipVelocity(new THREE.Vector3(vel.x, vel.y, vel.z));
+    }
+  }
+  
+  // Restore landed state
+  if (stores.landedState) {
+    const landedState = useLandedState.getState();
+    if (stores.landedState.isLanded !== undefined) {
+      landedState.isLanded = stores.landedState.isLanded;
     }
   }
   
