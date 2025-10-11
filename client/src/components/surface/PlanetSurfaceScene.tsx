@@ -9,7 +9,10 @@ import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, ResourceData } from "../../lib/planetData";
-import { SurfaceMovementController, MiningBeamState } from "./SurfaceMovementController";
+import {
+  SurfaceMovementController,
+  MiningBeamState,
+} from "./SurfaceMovementController";
 import { FlashlightSystem } from "./FlashlightSystem";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import { MiningLaser } from "./MiningLaser";
@@ -369,7 +372,10 @@ function SurfaceSky({ planetName }: { planetName: string }) {
     const sunDistance = currentPosition.length();
     const sunDirection = currentPosition.clone().negate().normalize();
     // Sun at fixed distance on sky dome
-    const sunSkyPosition = sunDirection.clone().multiplyScalar(450);
+    // the sun position is calculated based on the current planet's position
+    // and the sun's position relative to the solar system origin and time of day
+
+    const sunSkyPosition = sunDirection.clone().multiplyScalar(350);
     const sunApparentSize = Math.min(40, Math.max(8, 15 * (30 / sunDistance)));
 
     visibleObjects.push({
@@ -1355,11 +1361,12 @@ function PostProcessingEffects() {
 }
 
 export function PlanetSurfaceScene() {
-  const { isLanded, landedPlanet, isTakingOff, completeTakeoff } = useLandedState();
+  const { isLanded, landedPlanet, isTakingOff, completeTakeoff } =
+    useLandedState();
   const { isOn: isFlashlightOn } = useFlashlight();
   const { playTakeoff } = useAudio();
   const resourceManager = ResourceManager.getInstance();
-  
+
   // Mining beam state for spacebar mining visual feedback
   const [miningBeamState, setMiningBeamState] = useState<MiningBeamState>({
     active: false,
@@ -1429,8 +1436,13 @@ export function PlanetSurfaceScene() {
               planetColor={planets.find((p) => p.name === landedPlanet)?.color}
             />
             <ResourceNodes planetName={landedPlanet} />
-            <SurfaceMovementController onMiningBeamChange={setMiningBeamState} />
-            <MiningBeamVisual active={miningBeamState.active} targetPosition={miningBeamState.target} />
+            <SurfaceMovementController
+              onMiningBeamChange={setMiningBeamState}
+            />
+            <MiningBeamVisual
+              active={miningBeamState.active}
+              targetPosition={miningBeamState.target}
+            />
             <AtmosphericEffects
               planetName={landedPlanet}
               flashlightOn={isFlashlightOn}

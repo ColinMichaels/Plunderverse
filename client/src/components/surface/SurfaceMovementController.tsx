@@ -93,7 +93,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
   const lastShootPressRef = useRef(0);
   const [miningBeamActive, setMiningBeamActive] = useState(false);
   const [miningBeamTarget, setMiningBeamTarget] = useState<THREE.Vector3 | null>(null);
-  const miningRange = 15; // Maximum mining range in units
+  const miningRange = 10; // Maximum mining range in units
   const currentMiningNodeRef = useRef<any>(null); // Track the node we're actively mining
   const lastSoundPlayRef = useRef(0); // Track when we last played the laser sound
 
@@ -177,7 +177,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
     const moveSpeed = 6; // Rover movement speed
     const turnSpeed = 0.55; // Reduced turning speed for smoother control (was 0.9)
     const maxVelocity = 15; // Cap velocity to prevent runaway acceleration
-    const playerCollisionRadius = 2.5; // Collision detection radius
+    const playerCollisionRadius = 1.5; // Collision detection radius
 
     // Reset velocity for this frame
     velocity.set(0, 0, 0);
