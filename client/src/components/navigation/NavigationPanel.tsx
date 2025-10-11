@@ -182,7 +182,7 @@ export const NavigationPanel: React.FC = () => {
       return { distance: 0, fuelCost: 0, creditFee: 0, totalCredits: 0 };
     }
 
-    const planetPos = new THREE.Vector3(planet.position.x, 0, planet.position.z);
+    const planetPos = calculatePlanetPosition(planet);
     const currentPos = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z);
     const distance = currentPos.distanceTo(planetPos);
 
@@ -283,10 +283,11 @@ export const NavigationPanel: React.FC = () => {
 
       // Teleport to planet orbit
       const orbitDistance = planet.size * 3;
+      const planetPos = calculatePlanetPosition(planet);
       const targetPosition = new THREE.Vector3(
-        planet.position.x + orbitDistance,
+        planetPos.x + orbitDistance,
         0,
-        planet.position.z
+        planetPos.z
       );
 
       await new Promise(resolve => setTimeout(resolve, 500));
