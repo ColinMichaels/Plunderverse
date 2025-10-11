@@ -11,9 +11,9 @@ export class ParrotSpeechService {
   private audioContext: AudioContext | null = null;
   private settings: ParrotVoiceSettings = {
     rate: 1.1,
-    pitch: 3.2,
+    pitch: 2.2,
     volume: 0.5,
-    echoEnabled: true,
+    echoEnabled: false,
     reverbEnabled: true,
   };
   private currentUtterance: SpeechSynthesisUtterance | null = null;
@@ -27,42 +27,46 @@ export class ParrotSpeechService {
 
   private initAudioContext() {
     try {
-      this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-      console.log('[ParrotSpeech] Audio context initialized for voice effects');
+      this.audioContext = new (window.AudioContext ||
+        (window as any).webkitAudioContext)();
+      console.log("[ParrotSpeech] Audio context initialized for voice effects");
     } catch (error) {
-      console.warn('[ParrotSpeech] Web Audio API not available, effects disabled:', error);
+      console.warn(
+        "[ParrotSpeech] Web Audio API not available, effects disabled:",
+        error,
+      );
     }
   }
 
   private getPreferredVoice(): SpeechSynthesisVoice | null {
     const voices = this.synth.getVoices();
-    
+
     // Use selected voice if set
     if (this.selectedVoiceName) {
-      const selected = voices.find(v => v.name === this.selectedVoiceName);
+      const selected = voices.find((v) => v.name === this.selectedVoiceName);
       if (selected) return selected;
     }
-    
+
     const preferredVoices = [
-      'Google UK English Male',
-      'Google US English',
-      'Microsoft David',
-      'Alex',
-      'Daniel',
+      "Google UK English Male",
+      "Google US English",
+      "Microsoft David",
+      "Alex",
+      "Daniel",
     ];
 
     for (const preferred of preferredVoices) {
-      const voice = voices.find(v => v.name.includes(preferred));
+      const voice = voices.find((v) => v.name.includes(preferred));
       if (voice) return voice;
     }
 
-    const englishVoice = voices.find(v => v.lang.startsWith('en'));
+    const englishVoice = voices.find((v) => v.lang.startsWith("en"));
     return englishVoice || voices[0] || null;
   }
 
   setVoice(voiceName: string | null) {
     this.selectedVoiceName = voiceName;
-    console.log('[ParrotSpeech] Voice changed to:', voiceName || 'default');
+    console.log("[ParrotSpeech] Voice changed to:", voiceName || "default");
   }
 
   getAvailableVoices(): SpeechSynthesisVoice[] {
@@ -76,7 +80,7 @@ export class ParrotSpeechService {
 
     const utterance = new SpeechSynthesisUtterance(text);
     const voice = this.getPreferredVoice();
-    
+
     if (voice) {
       utterance.voice = voice;
     }
@@ -86,30 +90,24 @@ export class ParrotSpeechService {
     utterance.volume = this.settings.volume;
 
     utterance.onend = () => {
-      console.log('[ParrotSpeech] Finished speaking:', text);
+      console.log("[ParrotSpeech] Finished speaking:", text);
       this.currentUtterance = null;
       if (onComplete) onComplete();
     };
 
     utterance.onerror = (event) => {
-      console.error('[ParrotSpeech] Speech error:', event);
+      console.error("[ParrotSpeech] Speech error:", event);
       this.currentUtterance = null;
     };
 
     this.currentUtterance = utterance;
     this.synth.speak(utterance);
-    
-    console.log('[ParrotSpeech] Speaking:', text);
+
+    console.log("[ParrotSpeech] Speaking:", text);
   }
 
   squawk() {
-    const squawks = [
-      'Squawk!',
-      'Awk awk!',
-      'Rawk!',
-      'Screee!',
-      'Chirp chirp!',
-    ];
+    const squawks = ["Squawk!", "Awk awk!", "Rawk!", "Screee!", "Chirp chirp!"];
     const randomSquawk = squawks[Math.floor(Math.random() * squawks.length)];
     this.speak(randomSquawk);
   }
@@ -126,7 +124,7 @@ export class ParrotSpeechService {
     if (muted) {
       this.stop();
     }
-    console.log('[ParrotSpeech] Muted:', muted);
+    console.log("[ParrotSpeech] Muted:", muted);
   }
 
   isSpeaking(): boolean {
@@ -135,7 +133,7 @@ export class ParrotSpeechService {
 
   updateSettings(settings: Partial<ParrotVoiceSettings>) {
     this.settings = { ...this.settings, ...settings };
-    console.log('[ParrotSpeech] Settings updated:', this.settings);
+    console.log("[ParrotSpeech] Settings updated:", this.settings);
   }
 
   getSettings(): ParrotVoiceSettings {
