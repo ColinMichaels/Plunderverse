@@ -139,23 +139,30 @@ export const useLandedState = create<LandedState>((set, get) => ({
       landedPlanet: state.landedPlanet
     });
     
-    // FIRST: Set isLanded to false to trigger scene switch
-    console.log(`[TAKEOFF-COMPLETE] Setting isLanded to false...`);
+    // First set isTakingOff to false to unmount the transition overlay
+    console.log(`[TAKEOFF-COMPLETE] Setting isTakingOff to false to unmount transition...`);
     set({ 
-      isLanded: false,
       isTakingOff: false,
-      landedPlanet: null,
       takeoffPlanetName: previousPlanet // Store for positioning
     });
     
-    // Log the new state
-    const newState = get();
-    console.log(`[TAKEOFF-COMPLETE] State after update:`, {
-      isLanded: newState.isLanded,
-      isTakingOff: newState.isTakingOff,
-      landedPlanet: newState.landedPlanet,
-      takeoffPlanetName: newState.takeoffPlanetName
-    });
+    // Add a small delay before switching scenes to ensure transition is fully unmounted
+    setTimeout(() => {
+      console.log(`[TAKEOFF-COMPLETE] Now setting isLanded to false to switch to space scene...`);
+      set({ 
+        isLanded: false,
+        landedPlanet: null
+      });
+      
+      // Log the new state
+      const newState = get();
+      console.log(`[TAKEOFF-COMPLETE] State after delayed update:`, {
+        isLanded: newState.isLanded,
+        isTakingOff: newState.isTakingOff,
+        landedPlanet: newState.landedPlanet,
+        takeoffPlanetName: newState.takeoffPlanetName
+      });
+    }, 100); // 100ms delay to ensure clean transition
     
     // Handle memory profiling
     if (import.meta.env.DEV && previousPlanet) {

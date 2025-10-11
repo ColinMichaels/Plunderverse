@@ -43,17 +43,29 @@ function GameContent() {
   useEffect(() => {
     console.log(`[APP-SCENE-SWITCH] isLanded changed to: ${isLanded}`, {
       phase,
-      willRender: phase === "playing" ? (isLanded ? "PlanetSurfaceScene" : "SolarSystem") : "None"
+      willRender: phase === "playing" ? (isLanded ? "PlanetSurfaceScene" : "SolarSystem") : "None",
+      showCanvas,
+      timestamp: Date.now()
     });
     
     if (phase === "playing") {
       if (isLanded) {
         console.log("[APP-SCENE-SWITCH] ✅ Now rendering PLANET SURFACE scene");
       } else {
-        console.log("[APP-SCENE-SWITCH] 🚀 Now rendering SPACE scene");
+        console.log("[APP-SCENE-SWITCH] 🚀 Now rendering SPACE scene - Canvas and SolarSystem should mount");
+        console.log("[APP-SCENE-SWITCH] Current rendering conditions:", {
+          phase,
+          isLanded,
+          showCanvas,
+          willRenderCanvas: phase === "playing" && !isLanded && showCanvas
+        });
+        // Add a small delay to check if Canvas actually mounts
+        setTimeout(() => {
+          console.log("[APP-SCENE-SWITCH] Check after 100ms - Canvas should be mounted now");
+        }, 100);
       }
     }
-  }, [isLanded, phase]);
+  }, [isLanded, phase, showCanvas]);
 
   // FORCE MOBILE DETECTION FOR SMALL VIEWPORTS
   // Check viewport width directly as a fallback
@@ -552,14 +564,18 @@ function GameContent() {
                           antialias: true,
                           powerPreference: "high-performance",
                         }}
-                        onCreated={({ gl }) => {
+                        onCreated={({ gl, camera }) => {
+                          console.log("[CANVAS-SPACE] Canvas created with camera at:", camera.position.toArray());
                           gl.toneMapping = 1; // ACESFilmicToneMapping for better HDR
                           gl.toneMappingExposure = 1.0;
+                        }}
+                        onError={(error) => {
+                          console.error("[CANVAS-SPACE] Canvas/Three.js error:", error);
                         }}
                       >
                         <color attach="background" args={["#000000"]} />
 
-                        <Suspense fallback={null}>
+                        <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial color="red" /></mesh>}>
                           <SolarSystem />
                         </Suspense>
                       </Canvas>

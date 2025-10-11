@@ -22,13 +22,28 @@ export function SolarSystem() {
 
   // Initialize universe time and cleanup resources on unmount
   useEffect(() => {
-    console.log("[SolarSystem] Component mounted, initializing universe time");
+    console.log("[SolarSystem] 🌌 Component MOUNTED at", new Date().toISOString());
+    console.log("[SolarSystem] Mounting details:", {
+      systemRef: systemRef.current,
+      time,
+      universeTime: getUniverseTime(),
+      timestamp: Date.now()
+    });
     console.log("[Bloom] Sun glow effect loaded for space scene");
     
     // Initialize universe time if not already initialized
     initializeUniverseTime();
     
+    // Check if we're properly mounted after a small delay
+    setTimeout(() => {
+      console.log("[SolarSystem] 🌌 Component still mounted after 100ms, systemRef:", {
+        hasRef: !!systemRef.current,
+        refValue: systemRef.current
+      });
+    }, 100);
+    
     return () => {
+      console.log("[SolarSystem] 🌌 Component UNMOUNTING at", new Date().toISOString());
       console.log("[SolarSystem] Component unmounting, cleaning up space-scene resources and stores");
       
       // Clean up space-related stores (but preserve universe time)

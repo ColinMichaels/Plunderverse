@@ -25,7 +25,20 @@ export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
   const [running, setRunning] = useState(!!props.startOnMount);
   const [fadeOpacity, setFadeOpacity] = useState(0);
   
-  if (!running) return null;
+  console.log("[PlanetTransitionOverlay] Render state:", { running, fadeOpacity, direction: props.direction });
+  
+  useEffect(() => {
+    // Reset fade opacity when unmounting to prevent lingering overlay
+    return () => {
+      console.log("[PlanetTransitionOverlay] Component unmounting, resetting fade");
+      setFadeOpacity(0);
+    };
+  }, []);
+  
+  if (!running) {
+    console.log("[PlanetTransitionOverlay] Not running, returning null");
+    return null;
+  }
   
   // For landing, start camera far away; for takeoff, start close
   const initialCameraPos = props.direction === 'landing' 
@@ -52,8 +65,11 @@ export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
             direction={props.direction}
             duration={props.duration ?? 5.2}
             onComplete={() => {
+              console.log("[PlanetTransitionOverlay] Scene animation complete, setting running to false");
               setRunning(false);
+              console.log("[PlanetTransitionOverlay] Calling props.onComplete");
               props.onComplete?.();
+              console.log("[PlanetTransitionOverlay] onComplete callback finished");
             }}
             onThrustStart={props.onThrustStart}
             targetPlanet={props.targetPlanet}
@@ -346,7 +362,7 @@ function PlanetTransitionScene({
   
   // Safety tracking to prevent multiple onComplete calls
   const completedRef = useRef(false);
-  const animationTimeoutRef = useRef<number | null>(null);
+  const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Easing helpers
   const easeInOut = (t: number) => 0.5 * (1 - Math.cos(Math.PI * t)); // cosine ease
