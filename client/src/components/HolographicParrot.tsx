@@ -7,6 +7,9 @@ export function HolographicParrot({ position = [0, 0, 0] }: { position?: [number
   const meshRef = useRef<THREE.Mesh>(null);
   const { settings } = useParrot();
   const flickerRef = useRef(0);
+  
+  // Only show when visible setting is enabled AND parrot is speaking
+  const shouldShow = settings.isVisible && settings.isSpeaking;
 
   const parrotMaterial = useMemo(() => {
     return new THREE.MeshPhongMaterial({
@@ -32,7 +35,7 @@ export function HolographicParrot({ position = [0, 0, 0] }: { position?: [number
   }, []);
 
   useFrame((state) => {
-    if (!meshRef.current || !settings.isVisible) return;
+    if (!meshRef.current || !shouldShow) return;
 
     const time = state.clock.getElapsedTime();
     
@@ -51,7 +54,7 @@ export function HolographicParrot({ position = [0, 0, 0] }: { position?: [number
     parrotMaterial.emissive = color;
   });
 
-  if (!settings.isVisible) return null;
+  if (!shouldShow) return null;
 
   return (
     <group position={position}>
