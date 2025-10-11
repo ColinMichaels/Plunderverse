@@ -14,6 +14,21 @@ type ParrotEvent =
   | "cargo_full"
   | "idle_hint";
 
+type Difficulty = "easy" | "normal" | "hard" | "nightmare";
+
+export interface PlayerMetrics {
+  deathsPerMin?: number;
+  damagePerMin?: number;
+  missionFailures?: number;
+  objectiveRate?: number;
+  idleFrac?: number;
+  accuracy?: number;
+  fuelWasteRate?: number;
+  killStreak?: number;
+  difficulty?: Difficulty;
+  timeSinceLastObjectiveSec?: number;
+}
+
 interface MemoryEntry {
   phrase: string;
   timestamp: number;
@@ -53,17 +68,15 @@ class NonRepeatingPicker {
   private recent: Record<string, string[]> = {};
   constructor(
     private rng: RNG,
-    private window = 4,
+    private window = 5,
   ) {}
   pick<T>(key: string, arr: T[]): T {
     if (arr.length <= 1) return arr[0]!;
-    // avoid repeating immediate
     let idx = this.rng.int(arr.length);
     const last = this.lastIndex.get(key);
     if (last !== undefined && idx === last)
       idx = (idx + 1 + this.rng.int(arr.length - 1)) % arr.length;
     this.lastIndex.set(key, idx);
-    // track recent string versions to reduce loops
     const s = String(arr[idx]);
     this.recent[key] ||= [];
     if (
@@ -78,7 +91,7 @@ class NonRepeatingPicker {
         }
       }
     }
-    this.recent[key].push(s);
+    this.recent[key].push(String(arr[idx]));
     if (this.recent[key].length > this.window) this.recent[key].shift();
     return arr[idx]!;
   }
@@ -86,18 +99,18 @@ class NonRepeatingPicker {
 
 // ----------------------- Personality class ----------------------------------
 export class ParrotPersonality {
-  // Original state (kept)
+  // --- Original state (kept) ------------------------------------------------
   private mode: ParrotMode = "chatty";
   private memory: MemoryEntry[] = [];
   private lastSpokenTime = 0;
 
-  // Tunables
+  // --- Tunables (safe defaults) ---------------------------------------------
   private misunderstandingChance = 0.25;
-  private minRandomGapMs = 10_000;
-  private randomGapJitterMs = 4_000;
+  private minRandomGapMs = 10_000; // base cooldown for random chatter
+  private randomGapJitterMs = 4_000; // jitter to avoid cadence
   private memoryLimit = 80;
 
-  // Extra word-noise
+  // Extra noise (per-word random swaps)
   private freeformNoiseChancePerWord = 0.08;
   private freeformNoiseMaxSwaps = 2;
   private freeformNoiseEnabled = true;
@@ -111,7 +124,7 @@ export class ParrotPersonality {
   private moodStrength = 0.4; // 0..1 influence
   private lastMoodTick = Date.now();
 
-  // Event book-keeping
+  // Event system
   private lastEventSpoken: Record<string, number> = {};
   private eventCount: Record<ParrotEvent, number> = {
     low_health: 0,
@@ -131,7 +144,27 @@ export class ParrotPersonality {
     info: 18000,
   };
 
-  // Phrase banks
+  // --- Adaptation state -----------------------------------------------------
+  private autoAdaptEnabled = true;
+  private baseline = {
+    misunderstanding: this.misunderstandingChance,
+    minRandomGapMs: this.minRandomGapMs,
+    interjectBias: 0.18,
+  };
+  private ema = {
+    deathsPerMin: 0,
+    damagePerMin: 0,
+    missionFailures: 0,
+    objectiveRate: 0,
+    idleFrac: 0,
+    accuracy: 0,
+    fuelWasteRate: 0,
+  };
+  private lastAdapt = Date.now();
+  private streak = { good: 0, bad: 0 };
+  private _interjectBiasRuntime = this.baseline.interjectBias;
+
+  // --- Phrase banks (expanded) ----------------------------------------------
   private pirateSlang = [
     "Aye aye",
     "Har har",
@@ -193,6 +226,7 @@ export class ParrotPersonality {
       pattern: /\brudder\b/gi,
       replacements: ["router", "ruddery", "rubber", "routery"],
     },
+    // Space/game terms
     {
       pattern: /\bstar\b/gi,
       replacements: ["scar", "stair", "tar", "GPU-star"],
@@ -306,6 +340,7 @@ export class ParrotPersonality {
     "Noted. Logging your complaint under /logs/grumpy/human.json",
   ];
 
+  // Extra word buckets for freeform noise
   private randomBuckets: Record<string, string[]> = {
     nautical: [
       "barnacle",
@@ -428,6 +463,9 @@ export class ParrotPersonality {
   setEventCooldown(severity: Severity, ms: number) {
     this.defaultCooldowns[severity] = Math.max(0, ms);
   }
+  enableAutoAdapt(enabled: boolean) {
+    this.autoAdaptEnabled = enabled;
+  }
   getMemoryCount() {
     return this.memory.length;
   }
@@ -442,39 +480,67 @@ export class ParrotPersonality {
   private pick<T>(arr: T[], key: string) {
     return this.picker.pick(key, arr);
   }
-
   private capLike(sample: string, word: string) {
     if (sample === sample.toUpperCase()) return word.toUpperCase();
     if (sample[0] === sample[0].toUpperCase())
       return word[0].toUpperCase() + word.slice(1);
     return word.toLowerCase();
   }
-
   private speak(text: string) {
     parrotSpeechService.speak(text);
     this.lastSpokenTime = this.now();
   }
-
   private addToMemory(phrase: string, context?: string) {
     this.memory.push({ phrase, timestamp: this.now(), context });
     if (this.memory.length > this.memoryLimit) this.memory.shift();
   }
 
+  private emaUpdate(
+    current: number,
+    incoming: number | undefined,
+    alpha = 0.25,
+  ) {
+    if (incoming === undefined) return current;
+    return current + alpha * (incoming - current);
+  }
+  private lerp(a: number, b: number, t: number) {
+    return a + (b - a) * t;
+  }
+  private clamp(v: number, lo: number, hi: number) {
+    return Math.max(lo, Math.min(hi, v));
+  }
+
   // ------------------- Mood logic -------------------------------------------
   private tickMood() {
     const t = this.now();
-    if (t - this.lastMoodTick < 10000) return; // drift every 10s
-    this.lastMoodTick = t;
-    // slight random walk
-    const roll = this.rng.next();
-    if (roll < 0.25) this.mood = "cheeky";
-    else if (roll < 0.5) this.mood = "helpful";
-    else if (roll < 0.75) this.mood = "grumpy";
-    else this.mood = "sleepy";
+    if (t - this.lastMoodTick >= 10000) {
+      this.lastMoodTick = t;
+      const roll = this.rng.next();
+      if (roll < 0.25) this.mood = "cheeky";
+      else if (roll < 0.5) this.mood = "helpful";
+      else if (roll < 0.75) this.mood = "grumpy";
+      else this.mood = "sleepy";
+    }
+    // Auto-drift back to baseline if no recent adaptation
+    const since = t - this.lastAdapt;
+    if (since > 20000) {
+      this.misunderstandingChance = this.lerp(
+        this.misunderstandingChance,
+        this.baseline.misunderstanding,
+        0.05,
+      );
+      this.minRandomGapMs = Math.round(
+        this.lerp(this.minRandomGapMs, this.baseline.minRandomGapMs, 0.05),
+      );
+      this._interjectBiasRuntime = this.lerp(
+        this._interjectBiasRuntime,
+        this.baseline.interjectBias,
+        0.05,
+      );
+    }
   }
 
   private moodAdjustments() {
-    // returns multipliers/additions for behavior knobs
     switch (this.mood) {
       case "cheeky":
         return { misunderstand: +0.1, chatterMs: -1500, interject: 0.3 };
@@ -544,23 +610,27 @@ export class ParrotPersonality {
 
   // ------------------- Speech filters (low cost) -----------------------------
   private applySpeechFilters(s: string): string {
-    // optional interjection
     const adj = this.moodAdjustments();
-    if (this.mode === "chatty" && this.maybe(adj.interject)) {
+    const baseInterject = this._interjectBiasRuntime ?? 0.18;
+    const interjectP = this.clamp(
+      baseInterject +
+        (this.moodStrength * adj.interject -
+          0.1 * (this.mode === "serious" ? 1 : 0)),
+      0,
+      0.5,
+    );
+    if (this.mode === "chatty" && this.maybe(interjectP)) {
       s = `${this.pick(this.randomBuckets.exclaim, "exclaim")} ${s}`;
     }
-    // stutter (rare)
     if (this.maybe(0.06)) {
       s = s.replace(
         /\b([A-Za-z])([A-Za-z]{2,})/,
         (_, a: string, rest: string) => `${a}-${a}-${a}${rest}`,
       );
     }
-    // vowel stretch (rare)
     if (this.maybe(0.08)) {
       s = s.replace(/[aeiou]{1,2}/i, (m) => m + (this.maybe(0.5) ? m : m[0]));
     }
-    // emoji seasoning (very rare)
     if (this.maybe(0.03)) {
       s += this.maybe(0.5) ? " 🦜" : " ✨";
     }
@@ -576,7 +646,6 @@ export class ParrotPersonality {
   }
 
   private expandVariants(s: string): string {
-    // expands [a|b|c] choices
     return s.replace(/\[([^\]]+)\]/g, (_m, group) => {
       const parts = String(group)
         .split("|")
@@ -593,13 +662,136 @@ export class ParrotPersonality {
     return this.expandVariants(base);
   }
 
+  // ------------------- Adaptation -------------------------------------------
+  /**
+   * Adapt parrot behavior based on recent player metrics.
+   * Call every 2–5s or on major events.
+   */
+  adapt(m: PlayerMetrics) {
+    if (!this.autoAdaptEnabled) return;
+
+    // Smooth metrics (EMA)
+    this.ema.deathsPerMin = this.emaUpdate(
+      this.ema.deathsPerMin,
+      m.deathsPerMin,
+      0.35,
+    );
+    this.ema.damagePerMin = this.emaUpdate(
+      this.ema.damagePerMin,
+      m.damagePerMin,
+      0.25,
+    );
+    this.ema.missionFailures = this.emaUpdate(
+      this.ema.missionFailures,
+      m.missionFailures,
+      0.35,
+    );
+    this.ema.objectiveRate = this.emaUpdate(
+      this.ema.objectiveRate,
+      m.objectiveRate,
+      0.35,
+    );
+    this.ema.idleFrac = this.emaUpdate(this.ema.idleFrac, m.idleFrac, 0.3);
+    this.ema.accuracy = this.emaUpdate(this.ema.accuracy, m.accuracy, 0.3);
+    this.ema.fuelWasteRate = this.emaUpdate(
+      this.ema.fuelWasteRate,
+      m.fuelWasteRate,
+      0.3,
+    );
+
+    // Derive struggle vs success signals (0..1)
+    const struggle =
+      this.clamp(this.ema.deathsPerMin * 1.2, 0, 1) * 0.35 +
+      this.clamp(this.ema.damagePerMin / 100, 0, 1) * 0.25 +
+      this.clamp(this.ema.missionFailures / 3, 0, 1) * 0.25 +
+      this.clamp((m.timeSinceLastObjectiveSec ?? 0) / 120, 0, 1) * 0.15;
+
+    const success =
+      this.clamp((m.killStreak ?? 0) / 8, 0, 1) * 0.45 +
+      this.clamp(this.ema.objectiveRate / 0.5, 0, 1) * 0.35 +
+      this.clamp(this.ema.accuracy, 0, 1) * 0.2;
+
+    // Streaks
+    if (success > 0.55 && struggle < 0.35) {
+      this.streak.good = this.clamp(this.streak.good + 1, 0, 8);
+      this.streak.bad = Math.max(0, this.streak.bad - 1);
+    } else if (struggle > 0.55 && success < 0.35) {
+      this.streak.bad = this.clamp(this.streak.bad + 1, 0, 8);
+      this.streak.good = Math.max(0, this.streak.good - 1);
+    } else {
+      this.streak.good = Math.max(0, this.streak.good - 0.5);
+      this.streak.bad = Math.max(0, this.streak.bad - 0.5);
+    }
+
+    // Mood drift with difficulty
+    const diff = m.difficulty ?? "normal";
+    const hardish = diff === "hard" || diff === "nightmare" ? 1 : 0;
+
+    if (struggle > 0.6) {
+      this.mood = hardish
+        ? "helpful"
+        : this.rng.chance(0.7)
+          ? "helpful"
+          : "cheeky";
+    } else if (success > 0.6) {
+      this.mood = this.rng.chance(0.5) ? "cheeky" : "sleepy";
+    } else if (this.ema.idleFrac > 0.5) {
+      this.mood = "sleepy";
+    } else if (this.ema.fuelWasteRate > 0.5) {
+      this.mood = "grumpy";
+    }
+
+    // Parameter nudges (bounded around baselines)
+    const misunderstandBase = this.baseline.misunderstanding;
+    const chatterBase = this.baseline.minRandomGapMs;
+    const calmBias = struggle * 0.6 + (hardish ? 0.2 : 0);
+    const hypeBias = success * 0.6;
+
+    const targetMis = this.clamp(
+      misunderstandBase * (1 - 0.5 * calmBias) + 0.2 * hypeBias,
+      0.05,
+      0.6,
+    );
+    const targetGap = this.clamp(
+      chatterBase * (1 + 0.4 * hypeBias - 0.35 * calmBias),
+      6000,
+      20000,
+    );
+    const targetInterject = this.clamp(
+      this.baseline.interjectBias + 0.15 * hypeBias - 0.12 * calmBias,
+      0.05,
+      0.35,
+    );
+
+    this.misunderstandingChance = this.lerp(
+      this.misunderstandingChance,
+      targetMis,
+      0.25,
+    );
+    this.minRandomGapMs = Math.round(
+      this.lerp(this.minRandomGapMs, targetGap, 0.25),
+    );
+    this.moodStrength = this.lerp(
+      this.moodStrength,
+      0.4 + 0.2 * hypeBias - 0.2 * calmBias,
+      0.2,
+    );
+    this._interjectBiasRuntime = this.lerp(
+      this._interjectBiasRuntime,
+      targetInterject,
+      0.3,
+    );
+
+    this.lastAdapt = Date.now();
+  }
+
   // ------------------- Public behaviors (API preserved) ----------------------
   repeatAndConfirm(playerCommand: string) {
     this.tickMood();
     this.addToMemory(playerCommand, "player_command");
+
     const { text: processed, wasMisunderstood } =
       this.applyMisunderstanding(playerCommand);
-
     let response = wasMisunderstood
       ? `${processed}? Wait… ${this.pick(this.recoveryPhrases, "recovery")}`
       : this.addPirateFlare(processed);
@@ -614,10 +806,8 @@ export class ParrotPersonality {
     type: "info" | "warning" | "critical" | "random" = "info",
   ) {
     this.tickMood();
-
     if (this.mode === "serious" && type === "random") return;
 
-    // Throttle random chatter with mood influence
     if (type === "random") {
       const adj = this.moodAdjustments();
       const since = this.now() - this.lastSpokenTime;
@@ -670,13 +860,11 @@ export class ParrotPersonality {
     if (this.memory.length === 0) return;
     this.tickMood();
 
-    const m =
-      this.memory[
-        this.picker.pick(
-          "memoryIndex",
-          this.memory.map((_, i) => i),
-        )
-      ];
+    const idx = this.picker.pick(
+      "memoryIndex",
+      this.memory.map((_, i) => i),
+    );
+    const m = this.memory[idx];
     const glitchy = this.maybe(0.3);
     const recall = glitchy
       ? `Remember when ye said "${m.phrase}"? Or was that me dreamin' in low-power mode…`
@@ -691,7 +879,7 @@ export class ParrotPersonality {
     this.speak(this.pick(this.scoldLines, "scold"));
   }
 
-  // ------------------- Events (unchanged surface, better brains) ------------
+  // ------------------- Events ------------------------------------------------
   private canFireEvent(event: ParrotEvent): boolean {
     const sev = this.eventSeverity[event];
     const last = this.lastEventSpoken[event] ?? 0;
@@ -707,7 +895,7 @@ export class ParrotPersonality {
     if (!this.canFireEvent(event)) return;
 
     this.eventCount[event] = (this.eventCount[event] ?? 0) + 1;
-    const escalate = this.eventCount[event] >= 3; // say it spicier after 3x
+    const escalate = this.eventCount[event] >= 3;
 
     let line = this.format(
       this.pick(this.eventPhrases[event], `event:${event}`),
@@ -718,7 +906,7 @@ export class ParrotPersonality {
         this.mood === "grumpy"
           ? " This be gettin' old!"
           : " Recommend immediate action!";
-      this.eventCount[event] = 0; // reset after escalation
+      this.eventCount[event] = 0;
     }
 
     const type: "info" | "warning" | "critical" =
