@@ -1,8 +1,8 @@
-import { create } from "zustand";
-import { Howl } from "howler";
-import { AUDIO_CONFIG } from "../../audioConfig";
-import { useMusicPlayer } from "@/lib/stores";
-import { useEnhancedMusicPlayer } from "./useEnhancedMusicPlayer";
+import {create} from "zustand";
+import {Howl} from "howler";
+import {AUDIO_CONFIG} from "../../audioConfig";
+import {useMusicPlayer} from "@/lib/stores";
+import {useEnhancedMusicPlayer} from "./useEnhancedMusicPlayer";
 import * as THREE from "three";
 
 // Sound Effects Cache using Howler.js for better performance
@@ -113,11 +113,7 @@ interface AudioState {
   playExplosion: (position: THREE.Vector3) => void;
   playTakeoff: () => void;
   stopThruster: () => void;
-  
-  // Atmospheric sounds
-  playWind: (intensity?: number) => Promise<void>;
   stopWind: () => void;
-  playRain: (intensity?: number) => Promise<void>;
   stopRain: () => void;
 
   // Preload frequently used sounds
@@ -202,7 +198,7 @@ export const useAudio = create<AudioState>((set, get) => ({
       (window as any).audioStore.explosionSound = sound;
     }
   },
-  playExplosion: async (position?: THREE.Vector3) => {
+    playExplosion: async () => {
     const { masterMute, sfxMute, soundEffectsCache } = get();
     
     if (masterMute || sfxMute) {
@@ -373,8 +369,8 @@ export const useAudio = create<AudioState>((set, get) => ({
       thrusterSound.pause();
       thrusterSound.currentTime = 0;
     }
-    
-    // Stop atmospheric sounds
+
+      // Stop atmospheric sounds
     get().stopWind();
     get().stopRain();
     get().stopThruster();
@@ -552,8 +548,8 @@ export const useAudio = create<AudioState>((set, get) => ({
         "wind",
         { ...AUDIO_CONFIG.soundEffects.wind, loop: true }
       );
-      
-      // Stop existing wind sound if playing
+
+        // Stop existing wind sound if playing
       if (activeWindSound !== null) {
         windSound.stop(activeWindSound);
       }
@@ -561,12 +557,12 @@ export const useAudio = create<AudioState>((set, get) => ({
       // Set volume based on intensity (0 to 1)
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
       const volume = clampedIntensity * 0.4; // Max volume 0.4 for wind
-      
-      windSound.volume(volume);
+
+        windSound.volume(volume);
       const soundId = windSound.play();
       set({ activeWindSound: soundId });
-      
-      console.log(`Wind sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
+
+        console.log(`Wind sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
     } catch (error) {
       console.error("Failed to play wind sound:", error);
     }
@@ -596,8 +592,8 @@ export const useAudio = create<AudioState>((set, get) => ({
         "rain",
         { ...AUDIO_CONFIG.soundEffects.rain, loop: true }
       );
-      
-      // Stop existing rain sound if playing
+
+        // Stop existing rain sound if playing
       if (activeRainSound !== null) {
         rainSound.stop(activeRainSound);
       }
@@ -605,12 +601,12 @@ export const useAudio = create<AudioState>((set, get) => ({
       // Set volume based on intensity (0 to 1)
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
       const volume = clampedIntensity * 0.5; // Max volume 0.5 for rain
-      
-      rainSound.volume(volume);
+
+        rainSound.volume(volume);
       const soundId = rainSound.play();
       set({ activeRainSound: soundId });
-      
-      console.log(`Rain sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
+
+        console.log(`Rain sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
     } catch (error) {
       console.error("Failed to play rain sound:", error);
     }

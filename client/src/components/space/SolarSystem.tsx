@@ -1,19 +1,17 @@
-import { useFrame } from "@react-three/fiber";
-import { useRef, useEffect } from "react";
+import {useFrame} from "@react-three/fiber";
+import {useEffect, useRef} from "react";
 import * as THREE from "three";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { Sun } from "./Sun";
-import { Planet } from "./Planet";
-import { Moon } from "./Moon";
-import { Starfield } from "./Starfield";
-import { CameraController } from "../navigation/CameraController";
-import { ShootingSystem } from "../combat/ShootingSystem";
-import { EnemyField } from "../combat/EnemyField";
-import { planets } from "../../lib/planetData";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
-import { resourceManager } from "../../lib/utils/ResourceManager";
-import { HolographicParrot } from "../HolographicParrot";
+import {Bloom, EffectComposer} from "@react-three/postprocessing";
+import {Sun} from "./Sun";
+import {Planet} from "./Planet";
+import {Moon} from "./Moon";
+import {Starfield} from "./Starfield";
+import {CameraController} from "../navigation/CameraController";
+import {ShootingSystem} from "../combat/ShootingSystem";
+import {EnemyField} from "../combat/EnemyField";
+import {planets} from "@/lib/planetData.ts";
+import {useDebugTools, useSolarSystem} from "@/lib/stores";
+import {HolographicParrot} from "../HolographicParrot";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);

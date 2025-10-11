@@ -1,5 +1,5 @@
 // ParrotPersonality.ts
-import { parrotSpeechService } from "./ParrotSpeechService";
+import {parrotSpeechService} from "./ParrotSpeechService";
 
 export type ParrotMode = "serious" | "chatty";
 type Severity = "critical" | "warning" | "info";
@@ -27,6 +27,15 @@ export interface PlayerMetrics {
   killStreak?: number;
   difficulty?: Difficulty;
   timeSinceLastObjectiveSec?: number;
+}
+
+export interface AskParrotContext {
+    locationName?: string;
+    objectiveName?: string;
+    fuelPct?: number;
+    hpPct?: number;
+    enemiesNearby?: number;
+    difficulty?: Difficulty;
 }
 
 interface MemoryEntry {
@@ -646,7 +655,7 @@ export class ParrotPersonality {
   }
 
   private expandVariants(s: string): string {
-    return s.replace(/\[([^\]]+)\]/g, (_m, group) => {
+      return s.replace(/\[([^\]]+)]/g, (_m, group) => {
       const parts = String(group)
         .split("|")
         .map((p) => p.trim())
@@ -656,7 +665,7 @@ export class ParrotPersonality {
   }
 
   private format(s: string, data: Record<string, any> = {}): string {
-    const base = s.replace(/\{(\w+)\}/g, (_, k) =>
+      const base = s.replace(/\{(\w+)}/g, (_, k) =>
       (data[k] ?? `{${k}}`).toString(),
     );
     return this.expandVariants(base);
@@ -834,14 +843,10 @@ export class ParrotPersonality {
     this.addToMemory(message, type);
   }
 
-  randomComment() {
-    if (this.mode === "serious") return;
-    this.tickMood();
-
+    private generateRandomSaying(): string {
     const improv = `Note to self: ${this.pick(this.techJargon, "techJargon")} + ${this.pick(this.pirateSlang, "pirateSlang")} = performance gains.`;
     const mash = `Deployin' ${this.pick(Object.keys(this.randomBuckets), "noise.bucket")} mode with ${this.pick(this.fixedOneLiners, "oneLiners")}`;
-
-    const comments: string[] = [
+        const options: string[] = [
       "All systems be runnin' smoother than a greased cannonball!",
       "I may be code, but I've got heart — digital or not!",
       `Me circuits are ${this.pick(this.techJargon, "techJargon")}!`,
@@ -853,7 +858,188 @@ export class ParrotPersonality {
       improv,
       mash,
     ];
-    this.comment(this.pick(comments, "comments"), "random");
+        let line = this.pick(options, "randomSaying");
+        line = this.applySpeechFilters(line);
+        return line;
+    }
+
+    randomComment() {
+        if (this.mode === "serious") return;
+        this.tickMood();
+
+        // Throttle logic remains in comment()
+        const line = this.generateRandomSaying();
+        this.comment(line, "random");
+    }
+
+    /** Returns a random personality-driven saying WITHOUT speaking. */
+    getRandomSaying(): string {
+        this.tickMood();
+        return this.generateRandomSaying();
+    }
+
+    /** Speaks a random saying immediately (subject to internal throttles in comment()) */
+    speakRandomSaying() {
+        if (this.mode === "serious") return;
+        const line = this.generateRandomSaying();
+        this.comment(line, "random");
+    }
+
+    /** Speak exactly what you pass: no pirate flair, no filters, no memory updates. */
+    sayRaw(text: string) {
+        // Bypass comment()/filters; still update lastSpokenTime for throttle coherence
+        parrotSpeechService.speak(String(text ?? ""));
+        this.lastSpokenTime = this.now();
+    }
+
+    /** Play the parrot squawk SFX through the speech service while updating timing. */
+    squawk() {
+        // Route SFX via the service but keep throttle coherence
+        if (typeof (parrotSpeechService as any).squawk === "function") {
+            (parrotSpeechService as any).squawk();
+        } else {
+            // Fallback if squawk() not provided
+            parrotSpeechService.speak("SQUAWK!");
+        }
+        this.lastSpokenTime = this.now();
+    }
+
+    /**
+     * Lightweight Q&amp;A without external AI. Pattern-matches common intents and
+     * produces a pirate-flavored but helpful answer. Returns the text and also
+     * speaks it by default.
+     */
+    askParrot(
+        question: string,
+        ctx: AskParrotContext = {},
+        opts: { speak?: boolean; allowMisunderstand?: boolean } = {}
+    ): string {
+        this.tickMood();
+        const speak = opts.speak !== false; // default true
+        const allowMis = opts.allowMisunderstand === true;
+
+        let q = String(question || "").trim();
+        if (!q) return "";
+
+        // Optional playful misunderstanding in chatty mode
+        if (allowMis && this.mode !== "serious") {
+            const m = this.applyMisunderstanding(q);
+            q = m.text;
+        }
+
+        const lower = q.toLowerCase();
+
+        // Intent bank
+        type Rule = { test: RegExp; replies: string[] };
+        const mkReplies = (arr: string[], data: Record<string, any> = {}) =>
+            arr.map((s) => this.format(s, data));
+
+        const hp = Math.round((ctx.hpPct ?? 0) as number);
+        const fuel = Math.round((ctx.fuelPct ?? 0) as number);
+        const near = ctx.enemiesNearby ?? 0;
+        const where = ctx.locationName ?? "these parts";
+        const obj = ctx.objectiveName ?? "the objective";
+
+        const rules: Rule[] = [
+            {
+                test: /\b(hello|hi|hey|ahoy|yo)\b/i,
+                replies: mkReplies([
+                    "[Ahoy|Aye] there, Cap'n! Needin' somethin'?",
+                    "Yo-ho! What be yer question, Cap'n?",
+                    "Avast! Parrot online and listenin'.",
+                ]),
+            },
+            {
+                test: /(who are you|what are you|your name)/i,
+                replies: mkReplies([
+                    "I'm yer loyal AI parrot—part code, part squawk, all attitude.",
+                    "Designation: Sidekick Supreme. Specialty: banter and battlefield tips.",
+                    "Name's classified, but me beak answers to 'Cap'n's favorite'.",
+                ]),
+            },
+            {
+                test: /(how.*fuel|fuel.*(level|status)|refuel|gas)/i,
+                replies: mkReplies([
+                    "Fuel at about {fuel}%. Featherlight on the throttle till we top off.",
+                    "Reading {fuel}% fuel. Tap the docks to refuel when ye spot 'em.",
+                    "We be at {fuel}%. Mind yer boosts, Cap'n.",
+                ], {fuel}),
+            },
+            {
+                test: /(how.*health|status.*(ship|hull)|damage|repairs?)/i,
+                replies: mkReplies([
+                    "Hull be at {hp}%. I'd patch her sooner than later.",
+                    "Status: {hp}% integrity. Avoid headbuttin' asteroids.",
+                    "Armor {hp}% — could be better, could be barnacles.",
+                ], {hp}),
+            },
+            {
+                test: /(hint|what.*do|where.*go|objective|mission)/i,
+                replies: mkReplies([
+                    "Plot a course to {obj}. Keep {where} on yer starboard.",
+                    "I'd scan and head toward {obj}. The shine calls ye.",
+                    "Step one: eyes on {obj}. Step two: profit. Probably.",
+                ], {obj, where}),
+            },
+            {
+                test: /(enemy|hostile|bogey|danger)/i,
+                replies: mkReplies([
+                    "{near} hostiles nearby. Peck the small ones first; kite the bruisers.",
+                    "I spy about {near}. Use cover and burst yer thrusters.",
+                    "Danger level: {near}&times;Squawk. Keep shields primed.",
+                ], {near}),
+            },
+            {
+                test: /(controls?|help|how.*(fly|shoot|boost))/i,
+                replies: mkReplies([
+                    "Boost with Shift, scan with R, and never park on a mine. Trust me.",
+                    "Rule o' thumb: move, shoot, move. And then move again.",
+                    "If ye forget, the keybindings screen be friendlier than a tavern cat.",
+                ]),
+            },
+            {
+                test: /\b(joke|funny|laugh|pun)\b/i,
+                replies: mkReplies([
+                    "Why'd the pirate learn TypeScript? Fer the strong ARR types!",
+                    "I put the ARR in ARRay. (I'll see meself out.)",
+                    "I pirated the pirates. Recursive justice!",
+                ]),
+            },
+            {
+                test: /(thank(s| you)|ty|cheers)/i,
+                replies: mkReplies([
+                    "Anytime, Cap'n. Logging gratitude to /logs/feelings.json.",
+                    "Aye! Praise accepted. Baskin' in it already.",
+                    "Har! Yer welcome. Onward we sail!",
+                ]),
+            },
+        ];
+
+        // Match the first rule
+        let answer: string | null = null;
+        for (const r of rules) {
+            if (r.test.test(lower)) {
+                answer = this.pick(r.replies, "qa.replies");
+                break;
+            }
+        }
+
+        // Fallback: helpful generic
+        if (!answer) {
+            answer = this.format(
+                "I'd steer toward {obj} near {where}. Keep fuel {fuel}% and hull {hp}% in mind.",
+                {obj, where, fuel, hp}
+            );
+        }
+
+        // Pirate flair + speech filters
+        answer = this.mode === "chatty" ? this.addPirateFlare(answer) : answer;
+        answer = this.applySpeechFilters(answer);
+
+        // Speak + memory
+        if (speak) this.speak(answer);
+        this.addToMemory(question, "ask");
+        return answer;
   }
 
   recallMemory() {
@@ -927,3 +1113,5 @@ function clamp01(x: number) {
 }
 
 export const parrotPersonality = new ParrotPersonality();
+// Simple alias to provide a single, consistent import point across the app.
+export const Parrot = parrotPersonality;

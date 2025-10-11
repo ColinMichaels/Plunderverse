@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { parrotSpeechService } from '@/services/ParrotSpeechService';
-import { parrotPersonality, ParrotMode } from '@/services/ParrotPersonality';
+import {create} from 'zustand';
+import {parrotSpeechService} from '@/services/ParrotSpeechService';
+import {Parrot, ParrotMode} from '@/services/ParrotPersonality';
 
 interface ParrotSettings {
   mode: ParrotMode;
@@ -26,7 +26,7 @@ interface ParrotState {
   isInitialized: boolean;
   messages: ParrotMessage[]; // Message queue for text display
   currentMessage: string | null; // Current message being displayed
-  
+
   initialize: () => void;
   setMode: (mode: ParrotMode) => void;
   setMuted: (muted: boolean) => void;
@@ -37,8 +37,9 @@ interface ParrotState {
   setSpeaking: (speaking: boolean) => void;
   setCurrentMessage: (message: string | null) => void;
   clearMessages: () => void;
-  
+
   speak: (text: string) => void;
+    speakRaw: (text: string) => void;
   comment: (message: string, type?: 'info' | 'warning' | 'critical' | 'random') => void;
   repeatCommand: (command: string) => void;
   squawk: () => void;
@@ -68,8 +69,8 @@ export const useParrot = create<ParrotState>((set, get) => ({
     parrotSpeechService.ensureVoicesLoaded(() => {
       console.log('[Parrot] Voice synthesis initialized');
       set({ isInitialized: true });
-      
-      parrotPersonality.comment('Squawk! Parrot systems online, Cap\'n!', 'info');
+
+        Parrot.comment('Squawk! Parrot systems online, Cap\'n!', 'info');
     });
   },
 
@@ -77,12 +78,12 @@ export const useParrot = create<ParrotState>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, mode },
     }));
-    parrotPersonality.setMode(mode);
-    
+      Parrot.setMode(mode);
+
     if (mode === 'serious') {
-      parrotPersonality.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
+        Parrot.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
     } else {
-      parrotPersonality.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
+        Parrot.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
     }
   },
 
@@ -135,11 +136,11 @@ export const useParrot = create<ParrotState>((set, get) => ({
 
   speak: (text) => {
     const state = get();
-    
+
     // Set current message and speaking state
     set({ currentMessage: text });
     get().setSpeaking(true);
-    
+
     // Add to message queue if text display is enabled
     if (state.settings.showText) {
       const message: ParrotMessage = {
@@ -152,16 +153,65 @@ export const useParrot = create<ParrotState>((set, get) => ({
         messages: [...state.messages, message].slice(-10), // Keep last 10 messages
       }));
     }
-    
+
     // Speak if not muted
     if (!state.settings.isMuted) {
-      parrotSpeechService.speak(text, () => {
-        // When speech completes, clear speaking state
-        get().setSpeaking(false);
+        // Route through personality so voice, filters, memory & mood apply
+        Parrot.comment(text, 'info');
+
+        // Monitor speech completion (same approach as in comment())
+        const checkSpeaking = setInterval(() => {
+            if (!parrotSpeechService.isSpeaking()) {
+                clearInterval(checkSpeaking);
+                get().setSpeaking(false);
+                setTimeout(() => {
+                    get().setCurrentMessage(null);
+                }, 1000);
+            }
+        }, 100);
+    } else {
+        // If muted, just clear speaking state after delay
         setTimeout(() => {
-          get().setCurrentMessage(null);
-        }, 1000); // Keep message visible for 1 second after speaking
-      });
+            get().setSpeaking(false);
+            get().setCurrentMessage(null);
+        }, 3000);
+    }
+  },
+
+    speakRaw: (text) => {
+        const state = get();
+
+        // Set current message and speaking state
+        set({currentMessage: text});
+        get().setSpeaking(true);
+
+        // Add to message queue if text display is enabled
+        if (state.settings.showText) {
+            const message: ParrotMessage = {
+                id: `msg-${Date.now()}-${Math.random()}`,
+                text,
+                type: 'info',
+                timestamp: Date.now(),
+            };
+            set((state) => ({
+                messages: [...state.messages, message].slice(-10),
+            }));
+        }
+
+        if (!state.settings.isMuted) {
+            // Speak without personality filters
+            Parrot.sayRaw(text);
+
+            // Monitor speech completion
+            const checkSpeaking = setInterval(() => {
+                if (!parrotSpeechService.isSpeaking()) {
+                    clearInterval(checkSpeaking);
+                    get().setSpeaking(false);
+                    setTimeout(() => {
+                        get().setCurrentMessage(null);
+                    }, 1000);
+                }
+            }, 100);
     } else {
       // If muted, just clear speaking state after delay
       setTimeout(() => {
@@ -173,11 +223,11 @@ export const useParrot = create<ParrotState>((set, get) => ({
 
   comment: (message, type = 'info') => {
     const state = get();
-    
+
     // Set current message and speaking state
     set({ currentMessage: message });
     get().setSpeaking(true);
-    
+
     // Add to message queue if text display is enabled
     if (state.settings.showText) {
       const msg: ParrotMessage = {
@@ -190,10 +240,10 @@ export const useParrot = create<ParrotState>((set, get) => ({
         messages: [...state.messages, msg].slice(-10), // Keep last 10 messages
       }));
     }
-    
-    // Speak if not muted
+
+      // Speak if not muted
     if (!state.settings.isMuted) {
-      parrotPersonality.comment(message, type);
+        Parrot.comment(message, type);
       // Monitor speech completion
       const checkSpeaking = setInterval(() => {
         if (!parrotSpeechService.isSpeaking()) {
@@ -215,37 +265,37 @@ export const useParrot = create<ParrotState>((set, get) => ({
 
   repeatCommand: (command) => {
     if (!get().settings.isMuted) {
-      parrotPersonality.repeatAndConfirm(command);
+        Parrot.repeatAndConfirm(command);
     }
   },
 
   squawk: () => {
     if (!get().settings.isMuted) {
-      parrotSpeechService.squawk();
+        Parrot.squawk();
     }
   },
 
   praise: () => {
     if (!get().settings.isMuted) {
-      parrotPersonality.praise();
+        Parrot.praise();
     }
   },
 
   scold: () => {
     if (!get().settings.isMuted) {
-      parrotPersonality.scold();
+        Parrot.scold();
     }
   },
 
   randomComment: () => {
     if (!get().settings.isMuted) {
-      parrotPersonality.randomComment();
+        Parrot.randomComment();
     }
   },
 
   recallMemory: () => {
     if (!get().settings.isMuted) {
-      parrotPersonality.recallMemory();
+        Parrot.recallMemory();
     }
   },
 }));

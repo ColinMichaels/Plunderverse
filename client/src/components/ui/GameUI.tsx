@@ -1,48 +1,44 @@
-import { useState, useEffect } from "react";
+import {useEffect, useState} from "react";
 import * as THREE from "three";
-import { PlanetTransitionOverlay } from "../surface/PlanetTransition";
-import { CockpitOverlay } from "../cockpit/CockpitOverlay";
-import { LandingWarning } from "../surface/LandingWarning";
-import { MobileHUD } from "../mobile/MobileHUD";
-import { OrbitalInterface } from "../navigation/OrbitalInterface";
-import { NavigationSidebar } from "../navigation/NavigationSidebar";
-import { MusicPlayer } from "../screens/MusicPlayer";
-import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
-import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
-import { ParrotHolographicPopup } from "../ParrotHolographicPopup";
+import {PlanetTransitionOverlay} from "../surface/PlanetTransition";
+import {CockpitOverlay} from "../cockpit/CockpitOverlay";
+import {LandingWarning} from "../surface/LandingWarning";
+import {MobileHUD} from "../mobile/MobileHUD";
+import {OrbitalInterface} from "../navigation/OrbitalInterface";
+import {NavigationSidebar} from "../navigation/NavigationSidebar";
+import {MusicPlayer} from "../screens/MusicPlayer";
+import {CryptoMarketplace} from "../economy/crypto/CryptoMarketplace";
+import {CrewRecruitmentInterface} from "../ship/CrewRecruitmentInterface";
+import {ParrotHolographicPopup} from "../ParrotHolographicPopup";
 
-import { ActionBar } from "./ActionBar";
-import { ObjectiveTracker } from "../economy/ObjectiveTracker";
-import { MissionHUD } from "./MissionHUD";
-import { CrewBonusDisplay } from "./CrewBonusDisplay";
+import {ActionBar} from "./ActionBar";
+import {ObjectiveTracker} from "../economy/ObjectiveTracker";
+import {MissionHUD} from "./MissionHUD";
+import {CrewBonusDisplay} from "./CrewBonusDisplay";
 // Save and Menu Components
-import { MainMenu } from "./MainMenu";
-import { SaveGamePanel } from "./SaveGamePanel";
-import { AutoSaveIndicator } from "./AutoSaveIndicator";
-import { HintModal } from "../screens/HintModal";
-import { DeathScreen } from "./DeathScreen";
+import {MainMenu} from "./MainMenu";
+import {SaveGamePanel} from "./SaveGamePanel";
+import {AutoSaveIndicator} from "./AutoSaveIndicator";
+import {HintModal} from "../screens/HintModal";
+import {DeathScreen} from "./DeathScreen";
 // Store Hooks
-import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
-import { useGame } from "../../lib/stores/ui/useGame";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useRewards } from "../../lib/stores/ui/useRewards";
-import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
-import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
-import { useParrot } from "../../lib/stores/useParrot";
-import { useParrotEvents } from "../../hooks/useParrotEvents";
-import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
-import { AutopilotIndicator } from "../navigation/AutopilotIndicator";
+import {useHUDContext} from "../../lib/stores/ui/useHUDContext";
+import {useAutopilot, useGame, useLandedState, useLandingWarning, useRewards, useSolarSystem} from "@/lib/stores";
+import {useAuthStore} from "@/lib/stores/auth/useAuthStore.ts";
+import {useParrot} from "@/lib/stores/useParrot.ts";
+import {useParrotEvents} from "@/hooks/useParrotEvents.ts";
+import {useCrewManagement} from "../../lib/stores/ship/useCrewManagement";
+import {AutopilotIndicator} from "../navigation/AutopilotIndicator";
 // Other Hooks
-import { useDockingDetection } from "../../hooks/useDockingDetection";
-import { useAutoSave } from "../../hooks/useAutoSave";
-import { planets } from "../../lib/planetData";
-import { BottomControlSidebar } from "./BottomControlSidebar";
-import { PauseOverlay } from "./PauseOverlay";
-import { PauseMenu } from "./PauseMenu";
-import { PlanetInfo } from "../shared/PlanetInfo";
-import { TargetLockNotification } from "../combat/TargetLockNotification";
+import {useDockingDetection} from "../../hooks/useDockingDetection";
+import {useAutoSave} from "../../hooks/useAutoSave";
+import {planets} from "@/lib/planetData.ts";
+import {BottomControlSidebar} from "./BottomControlSidebar";
+import {PauseOverlay} from "./PauseOverlay";
+import {PauseMenu} from "./PauseMenu";
+import {PlanetInfo} from "../shared/PlanetInfo";
+import {TargetLockNotification} from "../combat/TargetLockNotification";
+import {Parrot} from "@/services/ParrotPersonality";
 
 export function GameUI() {
   const [showCrewRecruitment, setShowCrewRecruitment] = useState(false);
@@ -58,12 +54,14 @@ export function GameUI() {
 
   // Initialize docking detection
   useDockingDetection();
-  
+
   // Initialize Parrot on mount
   useEffect(() => {
     initializeParrot();
+      // Brief greeting through personality once UI mounts
+      Parrot.comment("Systems online. Cockpit HUD linked.", "info");
   }, [initializeParrot]);
-  
+
   // Update crew task progress every second
   useEffect(() => {
     const interval = setInterval(() => {
@@ -72,8 +70,8 @@ export function GameUI() {
 
     return () => clearInterval(interval);
   }, [crewManagement]);
-  
-  // Enable Parrot event hooks
+
+    // Enable Parrot event hooks
   useParrotEvents();
   const { selectedPlanet, time, isLanding, setIsLanding } = useSolarSystem();
   const {
@@ -169,9 +167,12 @@ export function GameUI() {
           targetPlanet={selectedPlanet}
           onThrustStart={() => {
             console.log('[Landing] Deceleration started - play retro-thrust sound');
+              Parrot.notify('mission_update', {text: 'Decelerating for landing burn.'});
           }}
           onComplete={() => {
             console.log('[Landing] Landing sequence complete - switching to surface view');
+              Parrot.notify('checkpoint_reached');
+              Parrot.praise();
             setIsLanding(false);
             setLanded(selectedPlanet);
             processLandingReward(selectedPlanet);
