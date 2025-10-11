@@ -69,7 +69,7 @@ export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
           inset: 0,
           background: "black",
           opacity: fadeOpacity,
-          transition: "opacity 0.8s ease-in-out",
+          transition: "opacity 0.25s ease-in-out",
           pointerEvents: "none",
         }}
       />
@@ -255,13 +255,16 @@ function PlanetTransitionScene({
     cam.position.x += (Math.random() - 0.5) * shake;
     cam.position.y += (Math.random() - 0.5) * shake * 0.5;
 
-    // Fade to black for takeoff near the end
-    if (direction === 'takeoff' && t > 0.75) {
-      const fadeProgress = clamp01((t - 0.75) / 0.25); // Fade over last 0.25 seconds
+    // Fade to black for takeoff near the end (last 0.25 seconds of real time)
+    const elapsedSeconds = clockRef.current;
+    const remainingSeconds = duration - elapsedSeconds;
+    
+    if (direction === 'takeoff' && remainingSeconds <= 0.25) {
+      const fadeProgress = clamp01((0.25 - remainingSeconds) / 0.25);
       onFadeStart?.(fadeProgress);
-    } else if (direction === 'landing' && t < 0.25) {
-      // Fade in from black at start of landing
-      const fadeProgress = clamp01(1 - (t / 0.25));
+    } else if (direction === 'landing' && elapsedSeconds <= 0.25) {
+      // Fade in from black at start of landing (first 0.25 seconds)
+      const fadeProgress = clamp01(1 - (elapsedSeconds / 0.25));
       onFadeStart?.(fadeProgress);
     }
 
