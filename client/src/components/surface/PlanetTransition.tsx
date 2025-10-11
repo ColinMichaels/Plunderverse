@@ -158,10 +158,12 @@ function Starfield({ opacity = 1 }: { opacity: number }) {
 // Keeping only the core elements: starfield, engine glow, and planet animation
 
 // Engine glow component
-function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, number] }) {
+function EngineGlow({intensity = 0}: { intensity?: number }) {
   const glowRef = useRef<THREE.Mesh>(null);
   const lightRef = useRef<THREE.PointLight>(null);
-  
+    const {camera} = useThree();
+    const groupRef = useRef<THREE.Group>(null);
+
   // Animated glow material
   const glowMaterial = useMemo(() => {
     const uniforms = {
@@ -170,7 +172,7 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
       uCoreColor: { value: new THREE.Color("#ffaa00") },
       uGlowColor: { value: new THREE.Color("#0088ff") },
     };
-    
+
     const vertexShader = /* glsl */`
       varying vec2 vUv;
       varying vec3 vNormal;
@@ -180,7 +182,7 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
       }
     `;
-    
+
     const fragmentShader = /* glsl */`
       uniform float uTime;
       uniform float uIntensity;
@@ -188,29 +190,25 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
       uniform vec3 uGlowColor;
       varying vec2 vUv;
       varying vec3 vNormal;
-      
+
       void main() {
-        // Radial gradient from center
         vec2 center = vUv - 0.5;
         float dist = length(center);
-        
-        // Pulsing effect
+
+        float flicker = sin(uTime * 8.0 + dist * 12.0) * 0.15 + 0.85;
         float pulse = sin(uTime * 3.0) * 0.1 + 0.9;
-        
-        // Core to edge gradient
-        float glow = 1.0 - smoothstep(0.0, 0.5, dist);
-        glow = pow(glow, 2.0) * pulse;
-        
-        // Mix core and glow colors
-        vec3 color = mix(uGlowColor, uCoreColor, glow);
-        
-        // Fade based on intensity
-        float alpha = glow * uIntensity;
-        
-        gl_FragColor = vec4(color * alpha * 2.0, alpha);
+
+        float innerGlow = smoothstep(0.4, 0.0, dist);
+        float outerGlow = smoothstep(0.7, 0.3, dist);
+        float combined = mix(innerGlow, outerGlow, 0.5) * flicker * pulse;
+
+        vec3 color = mix(uCoreColor, uGlowColor, dist * 1.5);
+        float alpha = combined * uIntensity;
+
+        gl_FragColor = vec4(color * alpha * 1.8, alpha);
       }
     `;
-    
+
     return new THREE.ShaderMaterial({
       uniforms,
       vertexShader,
@@ -220,35 +218,46 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
       depthWrite: false,
     });
   }, [intensity]);
-  
+
   useFrame((state) => {
+      // Anchor the glow behind the camera, facing out the back
+      if (groupRef.current) {
+          const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+          const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+          const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+          const pos = new THREE.Vector3().copy(camera.position)
+              .add(fwd.clone().multiplyScalar(-2.2))
+              .add(up.clone().multiplyScalar(-0.8))
+              .add(right.clone().multiplyScalar(0.0));
+          groupRef.current.position.copy(pos);
+          groupRef.current.quaternion.copy(camera.quaternion);
+      }
     if (glowRef.current && glowMaterial) {
       (glowMaterial.uniforms.uTime as any).value = state.clock.elapsedTime;
       (glowMaterial.uniforms.uIntensity as any).value = intensity;
-      
       // Animate scale for pulsing effect
       const pulse = Math.sin(state.clock.elapsedTime * 4) * 0.1 + 1;
       glowRef.current.scale.setScalar(pulse);
     }
-    
     if (lightRef.current) {
       // Animate light intensity
       lightRef.current.intensity = intensity * 3 * (Math.sin(state.clock.elapsedTime * 5) * 0.2 + 0.8);
     }
   });
-  
+
   if (intensity === 0) return null;
-  
   return (
-    <group position={position}>
-      {/* Engine glow mesh */}
+      <group ref={groupRef}>
       <mesh ref={glowRef}>
         <planeGeometry args={[4, 4]} />
         {/* @ts-ignore */}
         <primitive object={glowMaterial} attach="material" />
       </mesh>
-      
-      {/* Dynamic point light */}
+          <mesh rotation={[0, Math.PI / 2, 0]}>
+              <planeGeometry args={[4, 4]}/>
+              {/* @ts-ignore */}
+              <primitive object={glowMaterial} attach="material"/>
+          </mesh>
       <pointLight
         ref={lightRef}
         color={new THREE.Color("#ff8800")}
@@ -261,28 +270,57 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
 }
 
 // Simple CPU particle smoke trail for takeoff
-function SmokeTrail({
-                        active,
-                        planetRadius,
-                        emit,
-                    }: { active: boolean; planetRadius: number; emit: boolean }) {
-    const COUNT = 200;
+function SmokeTrail({active, planetRadius, emit}: { active: boolean; planetRadius: number; emit: boolean }) {
+    const COUNT = 300;
+    const {camera} = useThree();
     const geoRef = useRef<THREE.BufferGeometry>(null);
-    const ptsRef = useRef<THREE.Points>(null);
 
     const positions = useMemo(() => new Float32Array(COUNT * 3), []);
     const velocities = useMemo(() => new Float32Array(COUNT * 3), []);
     const life = useMemo(() => new Float32Array(COUNT), []);
-    const maxLife = 2.4;
+    const seed = useMemo(() => new Float32Array(COUNT), []);
+    const maxLife = 2.8;
 
     const mat = useMemo(() => {
-        return new THREE.PointsMaterial({
-            size: 2.0,
-            color: new THREE.Color("#cccccc"),
+        const uniforms = {
+            uTime: {value: 0},
+            uOpacity: {value: 0.9},
+        };
+        const vs = /* glsl */`
+      attribute float aLife; // seconds since birth
+      attribute float aSeed; // 0..1 random
+      varying float vLife;
+      varying float vSeed;
+      void main() {
+        vLife = aLife;
+        vSeed = aSeed;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        float size = mix(12.0, 28.0, clamp(vLife / 2.0, 0.0, 1.0));
+        gl_PointSize = size;
+      }
+    `;
+        const fs = /* glsl */`
+      precision mediump float;
+      varying float vLife;
+      varying float vSeed;
+      uniform float uOpacity;
+      void main() {
+        vec2 p = gl_PointCoord - 0.5;
+        float r = length(p);
+        float alpha = smoothstep(0.5, 0.0, r);
+        // Age fade out
+        alpha *= smoothstep(1.0, 0.0, vLife / 2.8);
+        // Slight per-particle noise flicker
+        alpha *= (0.9 + 0.1 * sin(vSeed * 20.0 + vLife * 6.0));
+        gl_FragColor = vec4(vec3(0.8, 0.82, 0.85) * alpha, alpha * uOpacity);
+      }
+    `;
+        return new THREE.ShaderMaterial({
+            uniforms,
+            vertexShader: vs,
+            fragmentShader: fs,
             transparent: true,
             depthWrite: false,
-            opacity: 0.0,
-            sizeAttenuation: true,
             blending: THREE.AdditiveBlending,
         });
     }, []);
@@ -291,58 +329,76 @@ function SmokeTrail({
         const geo = geoRef.current;
         if (!geo) return;
         geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-        // Seed life so they don't all pop at once
-        for (let i = 0; i < COUNT; i++) life[i] = Math.random() * maxLife;
-    }, [positions, life]);
+        geo.setAttribute("aLife", new THREE.BufferAttribute(life, 1));
+        geo.setAttribute("aSeed", new THREE.BufferAttribute(seed, 1));
+        for (let i = 0; i < COUNT; i++) {
+            life[i] = 10.0; // start dead
+            seed[i] = Math.random();
+        }
+    }, [positions, life, seed]);
 
     const emitOne = () => {
         const i = Math.floor(Math.random() * COUNT);
-        const angle = Math.random() * Math.PI * 2;
-        const r = planetRadius * (0.05 + Math.random() * 0.06);
-        positions[i * 3] = Math.cos(angle) * r;
-        positions[i * 3 + 1] = -planetRadius * 0.9;
-        positions[i * 3 + 2] = Math.sin(angle) * r;
+        const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(camera.quaternion);
+        const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion);
+        const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+        const base = new THREE.Vector3().copy(camera.position)
+            .add(fwd.clone().multiplyScalar(-2.2))
+            .add(up.clone().multiplyScalar(-0.8));
 
-        velocities[i * 3] = (Math.random() - 0.5) * 0.2;
-        velocities[i * 3 + 1] = 0.8 + Math.random() * 0.6;
-        velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+        const ringR = 0.35 + Math.random() * 0.25;
+        const a = Math.random() * Math.PI * 2.0;
+        const offset = right.clone().multiplyScalar(Math.cos(a) * ringR)
+            .add(up.clone().multiplyScalar(Math.sin(a) * ringR));
+
+        positions[i * 3 + 0] = base.x + offset.x;
+        positions[i * 3 + 1] = base.y + offset.y;
+        positions[i * 3 + 2] = base.z + offset.z;
+
+        velocities[i * 3 + 0] = fwd.x * -0.8 + (Math.random() - 0.5) * 0.25;
+        velocities[i * 3 + 1] = fwd.y * -0.8 + (Math.random() - 0.5) * 0.25;
+        velocities[i * 3 + 2] = fwd.z * -0.8 + (Math.random() - 0.5) * 0.25;
 
         life[i] = 0.0001;
+        seed[i] = Math.random();
     };
 
-    useFrame((_, dt) => {
+    useFrame((state, dt) => {
         const geo = geoRef.current;
-        if (!geo) return;
-        if (!active) return;
+        if (!geo || !active) return;
+        (mat.uniforms as any).uTime.value = state.clock.elapsedTime;
+
         if (emit) {
-            for (let k = 0; k < 6; k++) emitOne();
+            for (let k = 0; k < 10; k++) emitOne();
         }
 
+        // Integrate and age
         for (let i = 0; i < COUNT; i++) {
-            if (life[i] >= maxLife) continue;
+            const li = life[i];
+            if (li >= maxLife) continue;
 
-            positions[i * 3] += velocities[i * 3] * dt;
+            positions[i * 3 + 0] += velocities[i * 3 + 0] * dt;
             positions[i * 3 + 1] += velocities[i * 3 + 1] * dt;
             positions[i * 3 + 2] += velocities[i * 3 + 2] * dt;
 
-            velocities[i * 3] *= (0.98 - 0.2 * dt);
-            velocities[i * 3 + 2] *= (0.98 - 0.2 * dt);
-            velocities[i * 3 + 1] *= (0.98 - 0.15 * dt);
+            // Drag
+            velocities[i * 3 + 0] *= (0.985 - 0.15 * dt);
+            velocities[i * 3 + 1] *= (0.985 - 0.15 * dt);
+            velocities[i * 3 + 2] *= (0.985 - 0.15 * dt);
 
-            life[i] += dt;
+            life[i] = li + dt;
         }
 
-        const alive = life.reduce((a, b) => a + (b < maxLife ? 1 : 0), 0);
-        const o = THREE.MathUtils.clamp(alive / COUNT, 0, 0.9);
-        (mat as any).opacity = o * 0.7;
-
-        (geoRef.current!.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+        (geo.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+        (geo.getAttribute('aLife') as THREE.BufferAttribute).needsUpdate = true;
     });
 
     if (!active) return null;
     return (
-        <points ref={ptsRef} material={mat}>
+        <points>
             <bufferGeometry ref={geoRef}/>
+            {/* @ts-ignore */}
+            <primitive object={mat} attach="material"/>
         </points>
     );
 }
@@ -363,17 +419,17 @@ function PlanetTransitionScene({
   onFadeStart?: (opacity: number) => void;
 }) {
   const { landedPlanet } = useLandedState();
-  
+
   // For takeoff, use currently landed planet; for landing, use target planet
   const planetName = direction === 'takeoff' ? landedPlanet : targetPlanet;
   const planetData = planetName ? planets.find(p => p.name === planetName) : null;
-  
+
   const currentPlanet = planetData ? {
     textureUrl: planetData.texture || `/textures/planets/2k_${planetName?.toLowerCase()}_daymap.jpg`,
     radius: planetData.size || 5,
     name: planetData.name
   } : null;
-  
+
   const textureUrl = currentPlanet?.textureUrl ?? "/textures/planets/2k_earth_daymap.jpg";
     const planetRadius = (currentPlanet?.radius ?? 5);
 
@@ -450,28 +506,27 @@ function PlanetTransitionScene({
   const cam = useThree((s) => s.camera);
   const clockRef = useRef<number>(0);
   const startedThrust = useRef(false);
-  
-  // Track starfield opacity for takeoff
-  const [starfieldOpacity, setStarfieldOpacity] = useState(direction === 'takeoff' ? 0 : 0);
-  
+
+    // Track starfield opacity for takeoff/landing
+    const [starfieldOpacity, setStarfieldOpacity] = useState(direction === 'takeoff' ? 0 : 1);
+
   // Engine glow intensity (keeping only this effect)
   const [engineGlowIntensity, setEngineGlowIntensity] = useState(0);
-  
-  // Safety tracking to prevent multiple onComplete calls
+
+    // Safety tracking to prevent multiple onComplete calls
   const completedRef = useRef(false);
   const animationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Easing helpers
   const easeInOut = (t: number) => 0.5 * (1 - Math.cos(Math.PI * t)); // cosine ease
-  const easeExpo = (t: number) => (t === 0 ? 0 : Math.pow(2, 10 * (t - 1))); // sharp kick
   const clamp01 = (x: number) => Math.max(0, Math.min(1, x));
   const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
   // Precompute path parameters based on direction
   const lowPos = new THREE.Vector3(0, planetRadius * 0.18, planetRadius * 2.1); // low over surface
   const farPos = new THREE.Vector3(0, planetRadius * 3.2, planetRadius * 6.5); // far out
-  
-  // Swap start/end positions based on direction
+
+    // Swap start/end positions based on direction
   const startCam = direction === 'takeoff' ? lowPos : farPos;
   const endCam = direction === 'takeoff' ? farPos : lowPos;
   const lookTarget = new THREE.Vector3(0, 0, 0);
@@ -496,8 +551,8 @@ function PlanetTransitionScene({
     // initial camera pose
     cam.position.copy(startCam);
     cam.lookAt(lookTarget);
-    
-    // Debug: Component mounted
+
+      // Debug: Component mounted
     console.log('[PlanetTransition] Component mounted', {
       direction,
       duration,
@@ -505,19 +560,17 @@ function PlanetTransitionScene({
       startCam: startCam.toArray(),
       endCam: endCam.toArray()
     });
-    
-    // Set a safety timeout to prevent indefinite running (add 2 seconds to expected duration)
-    const safetyTimeout = setTimeout(() => {
+
+      // Set a safety timeout to prevent indefinite running (add 2 seconds to expected duration)
+      animationTimeoutRef.current = setTimeout(() => {
       console.warn('[PlanetTransition] Safety timeout triggered! Forcing completion');
       if (!completedRef.current) {
         completedRef.current = true;
         onComplete?.();
       }
     }, (duration + 2) * 1000);
-    
-    animationTimeoutRef.current = safetyTimeout;
-    
-    return () => {
+
+      return () => {
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
       }
@@ -527,13 +580,13 @@ function PlanetTransitionScene({
   useFrame((state, dt) => {
     // Safety check: prevent running if already completed
     if (completedRef.current) return;
-    
-    clockRef.current += dt;
+
+      clockRef.current += dt;
     const t = clamp01(clockRef.current / duration);
-    
-    // Debug: Log progress every 10% (0.0, 0.1, 0.2, etc)
+
+      // Debug: Log progress every 10% (0.0, 0.1, 0.2, etc)
     const progressPercent = Math.floor(t * 10) * 10;
-    if (progressPercent > 0 && progressPercent % 10 === 0 && 
+      if (progressPercent > 0 && progressPercent % 10 === 0 &&
         !(`logged_${progressPercent}` in (window as any))) {
       (window as any)[`logged_${progressPercent}`] = true;
       console.log(`[PlanetTransition] Progress: ${progressPercent}%`, {
@@ -558,8 +611,8 @@ function PlanetTransitionScene({
     const camPos = new THREE.Vector3().lerpVectors(startCam, endCam, u);
     camPos.x += arc;
     cam.position.copy(camPos);
-    
-    // Calculate altitude for effects
+
+      // Calculate altitude for effects
     const altitude = cam.position.length() - planetRadius;
     const normalizedAltitude = clamp01(altitude / (planetRadius * 2));
 
@@ -573,8 +626,8 @@ function PlanetTransitionScene({
       const thrustPhase = clamp01((t - 0.12) / 0.58); // 0.12 to 0.7
       const glowIntensity = thrustPhase * (1 - t * 0.3); // Fade out toward end
       setEngineGlowIntensity(glowIntensity);
-      
-      // REMOVED: Speed lines and atmospheric burn particles
+
+        // REMOVED: Speed lines and atmospheric burn particles
       // Keeping only the engine glow for simpler, more reliable animation
     }
 
@@ -583,8 +636,8 @@ function PlanetTransitionScene({
     const atmo = atmoRef.current!;
     if (planet) {
       planet.rotation.y += 0.15 * dt;
-      
-      if (direction === 'takeoff') {
+
+        if (direction === 'takeoff') {
         // Takeoff: planet shrinks and moves down
         const scl = lerp(1.0, 0.35, u);
         planet.scale.setScalar(scl);
@@ -596,8 +649,8 @@ function PlanetTransitionScene({
         planet.position.set(0, -planetRadius * (1.9 - 1.0 * u), 0);
       }
     }
-    
-    if (atmo) {
+
+      if (atmo) {
       if (direction === 'takeoff') {
         // Takeoff: atmosphere fades with enhanced rim
         const shell = 1.03 + 0.2 * (1 - u);
@@ -619,33 +672,39 @@ function PlanetTransitionScene({
     // Stronger shake at low altitude, diminishes with height
     const altitudeFactor = direction === 'takeoff' ? (1 - normalizedAltitude) : normalizedAltitude;
     const shake = 0.04 * (1 - Math.cos(thrustT * Math.PI)) * altitudeFactor * (1 - u);
-    
-    // Apply shake with more variance
+
+      // Apply shake with more variance
     cam.position.x += (Math.random() - 0.5) * shake;
     cam.position.y += (Math.random() - 0.5) * shake * 0.5;
     cam.position.z += (Math.random() - 0.5) * shake * 0.3;
-    
-    // Slight rotation shake for more dramatic effect
+
+      // Slight rotation shake for more dramatic effect
     const rotShake = shake * 0.1;
     cam.rotation.z += (Math.random() - 0.5) * rotShake;
-    
-    // Starfield fade-in during takeoff (progressive from 0.3 to 1.0 of progress)
+
+      // Starfield fade depending on direction
     if (direction === 'takeoff') {
-      const starFadeStart = 0.3; // Start fading in at 30% progress
-      const starFadeEnd = 1.0;   // Fully visible at end
+        const starFadeStart = 0.3;
+        const starFadeEnd = 1.0;
       const starT = clamp01((t - starFadeStart) / (starFadeEnd - starFadeStart));
       setStarfieldOpacity(starT);
+    } else {
+        // Landing: start with stars visible and fade them out near the end
+        const starFadeOutStart = 0.0;
+        const starFadeOutEnd = 0.6; // by 60% into landing, stars mostly gone
+        const starT = 1.0 - clamp01((t - starFadeOutStart) / (starFadeOutEnd - starFadeOutStart));
+        setStarfieldOpacity(starT);
     }
 
     // Fade to black for takeoff near the end (last 0.25 seconds of real time)
     const elapsedSeconds = clockRef.current;
     const remainingSeconds = duration - elapsedSeconds;
-    
-    if (direction === 'takeoff' && remainingSeconds <= 0.25) {
+
+      if (direction === 'takeoff' && remainingSeconds <= 0.25) {
       const fadeProgress = clamp01((0.25 - remainingSeconds) / 0.25);
       onFadeStart?.(fadeProgress);
-      
-      // Debug: Log fade progress
+
+          // Debug: Log fade progress
       if (fadeProgress > 0 && !(`fade_logged` in (window as any))) {
         (window as any).fade_logged = true;
         console.log('[PlanetTransition] Fade to black starting', {
@@ -663,42 +722,40 @@ function PlanetTransitionScene({
     // Complete with safety check
     if (t >= 1 && !completedRef.current) {
       completedRef.current = true;
-      
-      // Clear safety timeout
+
+        // Clear safety timeout
       if (animationTimeoutRef.current) {
         clearTimeout(animationTimeoutRef.current);
         animationTimeoutRef.current = null;
       }
-      
-      // Debug: Log completion
+
+        // Debug: Log completion
       console.log('[PlanetTransition] Animation completed!', {
         t,
         elapsedSeconds: clockRef.current,
         direction,
         finalCamPos: cam.position.toArray()
       });
-      
-      // Clean up logging flags
+
+        // Clean up logging flags
       for (let i = 10; i <= 100; i += 10) {
         delete (window as any)[`logged_${i}`];
       }
       delete (window as any).fade_logged;
-      
-      onComplete?.();
+
+        onComplete?.();
     }
   });
 
   return (
     <>
-      {/* Starfield for takeoff - renders behind everything */}
-      {direction === 'takeoff' && (
-        <Starfield opacity={starfieldOpacity} />
-      )}
-      
+      {/* Starfield - always render, opacity controlled */}
+          <Starfield opacity={starfieldOpacity}/>
+
       {/* Simple ambient lighting */}
       <ambientLight intensity={0.3} />
 
-      {/* Smoke trail from surface on takeoff */}
+      {/* Smoke trail from emitter/camera for takeoff */}
       {direction === 'takeoff' && (
           <SmokeTrail
               active={true}
@@ -709,9 +766,8 @@ function PlanetTransitionScene({
 
       {/* Engine glow effect for takeoff */}
       {direction === 'takeoff' && (
-        <EngineGlow 
-          intensity={engineGlowIntensity} 
-          position={[0, -3, 2]}
+          <EngineGlow
+              intensity={engineGlowIntensity}
         />
       )}
 
