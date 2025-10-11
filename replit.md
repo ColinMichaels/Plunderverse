@@ -8,6 +8,25 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-11: Fixed Player Stats & Authentication UI on Splash Screen
+- **Stats Panel Fix**: Fixed player stats panel visibility and interaction on splash screen
+  - **Issue**: Account dropdown was always visible, stats panel not showing properly
+  - **Solution**: Made dropdown conditional, added click trigger button, implemented click-outside handler
+  - **Impact**: Player stats now properly display when authenticated, account menu works correctly
+  - **UI Flow**: Minimized stats always visible → Hover expands details → Click user for account menu
+
+### 2025-10-11: WebSocket Authentication Fix
+- **WebSocket Auth**: Added authentication tokens to CloudSyncManager WebSocket connections
+  - **Issue**: WebSocket connections failing due to missing authentication tokens
+  - **Solution**: Added token to WebSocket URL as query parameter
+  - **Impact**: Stable WebSocket connections, no more connection errors
+
+### 2025-10-11: Mining System Crash Fixes
+- **Mining Fix**: Fixed spacebar mining crash on planet surfaces
+  - **Issue**: Resource data undefined when pressing spacebar, causing crash
+  - **Solution**: Added resource data to collision registration, comprehensive null checks
+  - **Impact**: Mining system now stable and crash-free
+
 ### 2025-10-09: Unified Sync Architecture - Consolidated WebSocket Connections
 - **Sync Consolidation**: Removed duplicate WebSocket in MiniGameSyncService, unified with CloudSyncManager
   - **Issue**: Mini-game created separate WebSocket connection causing duplicate connections and sync errors
