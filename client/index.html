@@ -12,7 +12,9 @@
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     <script>
-      // Register service worker for offline support
+      // Temporarily disable service worker to debug
+      console.log('[HTML] Page loaded, service worker disabled for debugging');
+      /*
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', async () => {
           try {
@@ -29,6 +31,7 @@
           }
         });
       }
+      */
     </script>
   </body>
 </html>

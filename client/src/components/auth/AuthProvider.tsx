@@ -16,8 +16,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Initialize authentication on mount
   useEffect(() => {
     const init = async () => {
-      await initializeAuth();
-      setIsInitialized(true);
+      console.log('[AuthProvider] Starting initialization...');
+      try {
+        await initializeAuth();
+        console.log('[AuthProvider] Initialization completed');
+      } catch (error) {
+        console.error('[AuthProvider] Initialization failed:', error);
+      } finally {
+        setIsInitialized(true);
+        console.log('[AuthProvider] Set initialized to true');
+      }
     };
     
     init();
@@ -35,7 +43,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => clearInterval(interval);
   }, [isAuthenticated, isGuest, checkAuth]);
   
-  // Show loading screen while initializing
+  // Show loading screen while initializing (with timeout fallback)
+  useEffect(() => {
+    // Fallback timeout - if initialization takes too long, proceed anyway
+    const timeout = setTimeout(() => {
+      if (!isInitialized) {
+        console.warn('[AuthProvider] Initialization timeout, proceeding as guest');
+        setIsInitialized(true);
+        useAuthStore.setState({ isGuest: true, isAuthReady: true });
+      }
+    }, 3000); // 3 second timeout
+    
+    return () => clearTimeout(timeout);
+  }, [isInitialized]);
+  
   if (!isInitialized || isLoading) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center">

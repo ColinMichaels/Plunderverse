@@ -258,21 +258,34 @@ export const useAuthStore = create<AuthState>()(
         }
         
         try {
+          // Add timeout to prevent hanging
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+          
           const response = await fetch('/api/auth/verify', {
             headers: {
               'Authorization': `Bearer ${accessToken}`,
             },
+            signal: controller.signal,
           });
+          
+          clearTimeout(timeoutId);
           
           const data = await response.json();
           
           if (data.success && data.valid) {
-            // Get current user info
+            // Get current user info with timeout
+            const meController = new AbortController();
+            const meTimeoutId = setTimeout(() => meController.abort(), 5000);
+            
             const meResponse = await fetch('/api/auth/me', {
               headers: {
                 'Authorization': `Bearer ${accessToken}`,
               },
+              signal: meController.signal,
             });
+            
+            clearTimeout(meTimeoutId);
             
             const meData = await meResponse.json();
             
@@ -374,16 +387,27 @@ export const useAuthStore = create<AuthState>()(
 
 // Initialize auth on app start
 export const initializeAuth = async () => {
+  console.log('[Auth] Starting initialization...');
   const accessToken = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
   const refreshToken = localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
   
   if (accessToken && refreshToken) {
+    console.log('[Auth] Found tokens, checking authentication...');
     useAuthStore.setState({
       accessToken,
       refreshToken,
       rememberMe: !!localStorage.getItem('accessToken'),
     });
     
-    await useAuthStore.getState().checkAuth();
+    try {
+      await useAuthStore.getState().checkAuth();
+      console.log('[Auth] Authentication check completed');
+    } catch (error) {
+      console.error('[Auth] Authentication check failed:', error);
+      // Don't throw, just let it proceed
+    }
+  } else {
+    console.log('[Auth] No tokens found, user needs to login or play as guest');
+    useAuthStore.setState({ isAuthReady: true });
   }
 };

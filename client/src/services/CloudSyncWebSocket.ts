@@ -80,7 +80,8 @@ export class CloudSyncManager {
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
-    const port = window.location.port || (protocol === 'wss:' ? '443' : '80');
+    // In development, always use port 5000 for the backend server
+    const port = import.meta.env.DEV ? '5000' : (window.location.port || (protocol === 'wss:' ? '443' : '80'));
     
     const wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}`;
     
