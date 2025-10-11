@@ -458,7 +458,8 @@ export function restoreGameState(gameState: GameStateData | any): void {
   // Restore destroyed nodes
   if (stores.destroyedNodes) {
     const destroyedState = useDestroyedNodes.getState();
-    destroyedState.destroyedNodeIds = new Set(stores.destroyedNodes.destroyedNodeIds || []);
+    const nodeIds = stores.destroyedNodes.destroyedNodeIds;
+    destroyedState.destroyedNodeIds = new Set(Array.isArray(nodeIds) ? nodeIds : []);
   }
   
   // Restore heat system
@@ -477,7 +478,8 @@ export function restoreGameState(gameState: GameStateData | any): void {
   if (stores.rewards) {
     const rewardsState = useRewards.getState();
     rewardsState.landingRewards = stores.rewards.landingRewards || {};
-    rewardsState.visitedPlanets = new Set(stores.rewards.visitedPlanets || []);
+    const visited = stores.rewards.visitedPlanets;
+    rewardsState.visitedPlanets = new Set(Array.isArray(visited) ? visited : []);
   }
   
   // Restore settings
