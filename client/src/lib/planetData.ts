@@ -35,7 +35,7 @@ export const planets: PlanetData[] = [
     distance: 15 * distanceScale,
     color: "#8C7853",
     orbitalSpeed: 0.087, // Realistic speed: Mercury orbit ~1.2 minutes real time
-    rotationSpeed: 0.004,
+    rotationSpeed: 0.0008, // Slowed down 5x for better visual
     realDistance: "0.39",
     diameter: "4,879",
     orbitalPeriod: "88 Earth days",
@@ -58,7 +58,7 @@ export const planets: PlanetData[] = [
     distance: 22 * distanceScale,
     color: "#FFC649",
     orbitalSpeed: 0.034, // Realistic speed: Venus orbit ~3 minutes real time
-    rotationSpeed: -0.002, // Retrograde rotation
+    rotationSpeed: -0.0004, // Retrograde rotation, slowed down 5x
     realDistance: "0.72",
     diameter: "12,104",
     orbitalPeriod: "225 Earth days",
@@ -81,7 +81,7 @@ export const planets: PlanetData[] = [
     distance: 30 * distanceScale,
     color: "#6B93D6",
     orbitalSpeed: 0.021, // Realistic speed: Earth orbit ~5 minutes real time
-    rotationSpeed: 0.02,
+    rotationSpeed: 0.004, // Slowed down 5x for better visual
     realDistance: "1.00",
     diameter: "12,756",
     orbitalPeriod: "365.25 days",
@@ -104,7 +104,7 @@ export const planets: PlanetData[] = [
     distance: 40 * distanceScale,
     color: "#CD5C5C",
     orbitalSpeed: 0.011, // Realistic speed: Mars orbit ~9.5 minutes real time
-    rotationSpeed: 0.018,
+    rotationSpeed: 0.0036, // Slowed down 5x for better visual
     realDistance: "1.52",
     diameter: "6,792",
     orbitalPeriod: "687 Earth days",
@@ -127,7 +127,7 @@ export const planets: PlanetData[] = [
     distance: 65 * distanceScale,
     color: "#D8CA9D",
     orbitalSpeed: 0.00176, // Realistic speed: Jupiter orbit ~59 minutes real time
-    rotationSpeed: 0.04,
+    rotationSpeed: 0.008, // Slowed down 5x for better visual
     realDistance: "5.20",
     diameter: "142,984",
     orbitalPeriod: "11.9 Earth years",
@@ -150,7 +150,7 @@ export const planets: PlanetData[] = [
     distance: 90 * distanceScale,
     color: "#FAD5A5",
     orbitalSpeed: 0.00071, // Realistic speed: Saturn orbit ~147 minutes real time
-    rotationSpeed: 0.038,
+    rotationSpeed: 0.0076, // Slowed down 5x for better visual
     realDistance: "9.58",
     diameter: "120,536",
     orbitalPeriod: "29.4 Earth years",
@@ -173,7 +173,7 @@ export const planets: PlanetData[] = [
     distance: 120 * distanceScale,
     color: "#4FD0E7",
     orbitalSpeed: 0.00025, // Realistic speed: Uranus orbit ~420 minutes real time
-    rotationSpeed: 0.03,
+    rotationSpeed: 0.006, // Slowed down 5x for better visual
     realDistance: "19.22",
     diameter: "51,118",
     orbitalPeriod: "84 Earth years",
@@ -196,7 +196,7 @@ export const planets: PlanetData[] = [
     distance: 150 * distanceScale,
     color: "#4B70DD",
     orbitalSpeed: 0.00013, // Realistic speed: Neptune orbit ~825 minutes real time
-    rotationSpeed: 0.032,
+    rotationSpeed: 0.0064, // Slowed down 5x for better visual
     realDistance: "30.05",
     diameter: "49,528",
     orbitalPeriod: "165 Earth years",
@@ -219,7 +219,7 @@ export const planets: PlanetData[] = [
     distance: 55 * distanceScale,
     color: "#8C7853",
     orbitalSpeed: 0.0046, // Realistic speed: Ceres orbit ~23 minutes real time
-    rotationSpeed: 0.025,
+    rotationSpeed: 0.005, // Slowed down 5x for better visual
     realDistance: "2.77",
     diameter: "939",
     orbitalPeriod: "4.6 Earth years",
