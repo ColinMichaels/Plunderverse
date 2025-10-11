@@ -16,6 +16,11 @@ interface SolarSystemState {
   cameraPosition: THREE.Vector3;
   distanceToTarget: number;
   
+  // Ship state for save/load
+  shipPosition: THREE.Vector3;
+  shipRotation: THREE.Euler;
+  shipVelocity: THREE.Vector3;
+  
   // Actions
   initializeUniverseTime: () => void;
   updateUniverseTime: (delta: number) => void;
@@ -25,6 +30,9 @@ interface SolarSystemState {
   setIsLanding: (landing: boolean) => void;
   setCameraPosition: (position: THREE.Vector3) => void;
   setDistanceToTarget: (distance: number) => void;
+  setShipPosition: (position: THREE.Vector3) => void;
+  setShipRotation: (rotation: THREE.Euler) => void;
+  setShipVelocity: (velocity: THREE.Vector3) => void;
   cleanup: () => void; // Clean up store state but preserve universe time
 }
 
@@ -40,6 +48,11 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   isLanding: false,
   cameraPosition: new THREE.Vector3(0, 10, 50),
   distanceToTarget: 0,
+  
+  // Ship state for save/load
+  shipPosition: new THREE.Vector3(0, 10, 50),
+  shipRotation: new THREE.Euler(0, 0, 0),
+  shipVelocity: new THREE.Vector3(0, 0, 0),
   
   // Initialize universe time on first game start
   initializeUniverseTime: () => {
@@ -88,6 +101,9 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   setIsLanding: (landing) => set({ isLanding: landing }),
   setCameraPosition: (position) => set({ cameraPosition: position.clone() }),
   setDistanceToTarget: (distance) => set({ distanceToTarget: distance }),
+  setShipPosition: (position) => set({ shipPosition: position.clone() }),
+  setShipRotation: (rotation) => set({ shipRotation: rotation.clone() }),
+  setShipVelocity: (velocity) => set({ shipVelocity: velocity.clone() }),
   
   cleanup: () => {
     console.log("[useSolarSystem] Cleanup: Preserving universe time, resetting scene state");
@@ -104,7 +120,10 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
       selectedPlanet: null,
       isLanding: false,
       cameraPosition: new THREE.Vector3(0, 10, 50),
-      distanceToTarget: 0
+      distanceToTarget: 0,
+      shipPosition: new THREE.Vector3(0, 10, 50),
+      shipRotation: new THREE.Euler(0, 0, 0),
+      shipVelocity: new THREE.Vector3(0, 0, 0),
     });
   }
 }));
