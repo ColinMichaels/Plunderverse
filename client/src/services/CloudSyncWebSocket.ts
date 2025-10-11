@@ -81,11 +81,14 @@ export class CloudSyncManager {
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
-    // In development, always use port 5000 for the backend server
-    const port = import.meta.env.DEV ? '5000' : (window.location.port || (protocol === 'wss:' ? '443' : '80'));
     
-    // Include authentication token in the WebSocket URL
-    const wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+    // In development, use port 5000. In production, don't specify port (uses default for protocol)
+    let wsUrl;
+    if (import.meta.env.DEV) {
+      wsUrl = `${protocol}//${host}:5000/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+    } else {
+      wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+    }
     
     console.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
     
