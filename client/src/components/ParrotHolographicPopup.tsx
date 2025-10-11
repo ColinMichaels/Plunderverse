@@ -1,23 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParrot } from '@/lib/stores/useParrot';
+import { usePlatform } from '@/lib/stores/ui/usePlatform';
 
 export function ParrotHolographicPopup() {
   const { settings, currentMessage } = useParrot();
   const [visible, setVisible] = useState(false);
   const [displayText, setDisplayText] = useState('');
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { isMobile } = usePlatform();
 
   useEffect(() => {
+    // Clear any pending hide timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
     if (settings.isSpeaking && currentMessage) {
       setDisplayText(currentMessage);
       setVisible(true);
     } else {
-      setTimeout(() => {
+      // Schedule hide with proper cleanup
+      hideTimeoutRef.current = setTimeout(() => {
         setVisible(false);
+        hideTimeoutRef.current = null;
       }, 1000);
     }
+
+    // Cleanup on unmount
+    return () => {
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+    };
   }, [settings.isSpeaking, currentMessage]);
 
-  if (!visible || !displayText) return null;
+  // Only show on desktop
+  if (isMobile || !visible || !displayText) return null;
 
   return (
     <div
