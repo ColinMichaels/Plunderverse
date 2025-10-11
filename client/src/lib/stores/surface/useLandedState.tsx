@@ -13,6 +13,7 @@ interface LandedState {
   landingUniverseTime: number | null; // Universe time when landed
   isTakingOff: boolean;
   takeoffPlanetName: string | null; // Planet we're taking off from
+  takeoffTimeoutId: NodeJS.Timeout | null; // Timeout ID for tracking delayed takeoff completion
   
   // Actions
   setLanded: (planetName: string) => void;
@@ -30,8 +31,16 @@ export const useLandedState = create<LandedState>((set, get) => ({
   landingUniverseTime: null,
   isTakingOff: false,
   takeoffPlanetName: null,
+  takeoffTimeoutId: null,
   
   setLanded: (planetName) => {
+    // Cancel any pending takeoff timeout to prevent race conditions
+    const state = get();
+    if (state.takeoffTimeoutId) {
+      clearTimeout(state.takeoffTimeoutId);
+      console.log(`[TAKEOFF-TIMEOUT] Cancelled pending takeoff timeout due to new landing on ${planetName}`);
+    }
+    
     // Memory profiling: Before landing
     if (import.meta.env.DEV) {
       memoryProfiler.logCurrentStatus(`Before landing on ${planetName}`);
@@ -44,7 +53,8 @@ export const useLandedState = create<LandedState>((set, get) => ({
       isLanded: true,
       landedPlanet: planetName,
       landingTime: Date.now(),
-      landingUniverseTime: universeTime
+      landingUniverseTime: universeTime,
+      takeoffTimeoutId: null // Clear timeout ID
     });
     console.log(`Successfully landed on ${planetName} at universe time ${universeTime}`);
     
@@ -124,7 +134,17 @@ export const useLandedState = create<LandedState>((set, get) => ({
   },
   
   setIsTakingOff: (takingOff) => {
-    set({ isTakingOff: takingOff });
+    // Cancel any pending takeoff timeout to prevent race conditions
+    const state = get();
+    if (state.takeoffTimeoutId) {
+      clearTimeout(state.takeoffTimeoutId);
+      console.log(`[TAKEOFF-TIMEOUT] Cancelled pending takeoff timeout due to new takeoff state: ${takingOff}`);
+    }
+    
+    set({ 
+      isTakingOff: takingOff,
+      takeoffTimeoutId: null // Clear timeout ID
+    });
     if (takingOff) {
       console.log(`Initiating takeoff sequence from ${get().landedPlanet}`);
     }
@@ -139,6 +159,16 @@ export const useLandedState = create<LandedState>((set, get) => ({
       landedPlanet: state.landedPlanet
     });
     
+    // Cancel any existing timeout to prevent race conditions
+    if (state.takeoffTimeoutId) {
+      clearTimeout(state.takeoffTimeoutId);
+      console.log(`[TAKEOFF-TIMEOUT] Cancelled existing timeout before creating new one`);
+    }
+    
+    // Store expected state values before creating timeout
+    const expectedPlanet = previousPlanet;
+    const expectedIsTakingOff = false; // We expect isTakingOff to be false after we set it
+    
     // First set isTakingOff to false to unmount the transition overlay
     console.log(`[TAKEOFF-COMPLETE] Setting isTakingOff to false to unmount transition...`);
     set({ 
@@ -147,11 +177,32 @@ export const useLandedState = create<LandedState>((set, get) => ({
     });
     
     // Add a small delay before switching scenes to ensure transition is fully unmounted
-    setTimeout(() => {
-      console.log(`[TAKEOFF-COMPLETE] Now setting isLanded to false to switch to space scene...`);
+    const timeoutId = setTimeout(() => {
+      // Guard: Check if state has changed since we started
+      const currentState = get();
+      
+      // Verify we're still in the expected state
+      if (currentState.isTakingOff !== expectedIsTakingOff) {
+        console.log(`[TAKEOFF-TIMEOUT] State guard failed: isTakingOff changed from ${expectedIsTakingOff} to ${currentState.isTakingOff}, skipping delayed update`);
+        return;
+      }
+      
+      if (currentState.landedPlanet !== expectedPlanet) {
+        console.log(`[TAKEOFF-TIMEOUT] State guard failed: landedPlanet changed from ${expectedPlanet} to ${currentState.landedPlanet}, skipping delayed update`);
+        return;
+      }
+      
+      // Additional guard: Check if we've already completed the takeoff
+      if (!currentState.isLanded) {
+        console.log(`[TAKEOFF-TIMEOUT] State guard: Already in space (isLanded=false), skipping redundant update`);
+        return;
+      }
+      
+      console.log(`[TAKEOFF-COMPLETE] State guards passed, now setting isLanded to false to switch to space scene...`);
       set({ 
         isLanded: false,
-        landedPlanet: null
+        landedPlanet: null,
+        takeoffTimeoutId: null // Clear timeout ID since it's completed
       });
       
       // Log the new state
@@ -163,6 +214,9 @@ export const useLandedState = create<LandedState>((set, get) => ({
         takeoffPlanetName: newState.takeoffPlanetName
       });
     }, 100); // 100ms delay to ensure clean transition
+    
+    // Store the timeout ID for potential cancellation
+    set({ takeoffTimeoutId: timeoutId });
     
     // Handle memory profiling
     if (import.meta.env.DEV && previousPlanet) {
