@@ -39,11 +39,15 @@ const easings = {
   easeOutExpo: (t: number) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
 };
 
-// Simple camera controller that orbits around Earth
+// Simple camera controller that orbits around Earth with smooth space-like movement
 function SimpleOrbitCamera() {
   const angleRef = useRef(0);
   const radiusRef = useRef(35);
   const verticalAngleRef = useRef(0);
+  const smoothPositionRef = useRef(new THREE.Vector3());
+  const smoothLookAtRef = useRef(new THREE.Vector3());
+  const velocityRef = useRef(new THREE.Vector3());
+  const targetQuaternionRef = useRef(new THREE.Quaternion());
 
   const earthData = planets.find((p) => p.name === "Earth");
 
@@ -58,18 +62,29 @@ function SimpleOrbitCamera() {
     angleRef.current += delta * 0.12;
     verticalAngleRef.current = Math.sin(state.clock.elapsedTime * 0.08) * 0.25;
 
-    const cameraX = earthX + Math.cos(angleRef.current) * radiusRef.current;
-    const cameraY = 12 + Math.sin(verticalAngleRef.current) * 7;
-    const cameraZ = earthZ + Math.sin(angleRef.current) * radiusRef.current;
+    const targetX = earthX + Math.cos(angleRef.current) * radiusRef.current;
+    const targetY = 12 + Math.sin(verticalAngleRef.current) * 7;
+    const targetZ = earthZ + Math.sin(angleRef.current) * radiusRef.current;
+    const targetPosition = new THREE.Vector3(targetX, targetY, targetZ);
+    
+    // Apply velocity-based momentum for smoother movement
+    const positionDelta = targetPosition.clone().sub(smoothPositionRef.current);
+    velocityRef.current.lerp(positionDelta, 0.08);
+    smoothPositionRef.current.add(velocityRef.current.clone().multiplyScalar(0.10));
+    velocityRef.current.multiplyScalar(0.92);  // Damping
 
-    state.camera.position.lerp(
-      new THREE.Vector3(cameraX, cameraY, cameraZ),
-      0.04,
-    );
+    state.camera.position.lerp(smoothPositionRef.current, 0.10);  // Increased lerp
 
     const lookAheadX = earthX + Math.cos(earthAngle + 0.1) * 2;
     const lookAheadZ = earthZ + Math.sin(earthAngle + 0.1) * 2;
-    state.camera.lookAt(lookAheadX, 0, lookAheadZ);
+    const targetLookAt = new THREE.Vector3(lookAheadX, 0, lookAheadZ);
+    smoothLookAtRef.current.lerp(targetLookAt, 0.10);
+    
+    // Use quaternion for smooth rotation
+    const tempMatrix = new THREE.Matrix4();
+    tempMatrix.lookAt(state.camera.position, smoothLookAtRef.current, state.camera.up);
+    targetQuaternionRef.current.setFromRotationMatrix(tempMatrix);
+    state.camera.quaternion.slerp(targetQuaternionRef.current, 0.10);
 
     radiusRef.current = 35 + Math.sin(state.clock.elapsedTime * 0.04) * 6;
   });
@@ -88,6 +103,16 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
   const isTransitioningRef = useRef(false);
   const lastCameraPositionRef = useRef(new THREE.Vector3());
   const lastLookAtRef = useRef(new THREE.Vector3());
+  
+  // Velocity and momentum tracking for smooth space movement
+  const velocityRef = useRef(new THREE.Vector3());
+  const lookAtVelocityRef = useRef(new THREE.Vector3());
+  const currentQuaternionRef = useRef(new THREE.Quaternion());
+  const targetQuaternionRef = useRef(new THREE.Quaternion());
+  const smoothedPositionRef = useRef(new THREE.Vector3());
+  const smoothedLookAtRef = useRef(new THREE.Vector3());
+  const transitionStartPositionRef = useRef(new THREE.Vector3());
+  const transitionStartLookAtRef = useRef(new THREE.Vector3());
 
   const transitionDurationMultiplier = 2.5;
 
@@ -179,7 +204,7 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
   // Helper function to generate smooth curve points using Catmull-Rom splines
   const generateSplinePath = (
     points: THREE.Vector3[],
-    segments = 70,
+    segments = 180,  // Increased for much smoother paths
   ): THREE.Vector3[] => {
     if (points.length < 2) return points;
 
@@ -459,11 +484,11 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
       }
     }
 
-    // Generate smooth spline paths
+    // Generate smooth spline paths with high segment count for extra smoothness
     if (points.length > 1) {
       return {
-        cameraPath: generateSplinePath(points, 100),
-        lookAtPath: generateSplinePath(lookAtPoints, 100),
+        cameraPath: generateSplinePath(points, 200),  // Increased for ultra-smooth paths
+        lookAtPath: generateSplinePath(lookAtPoints, 200),  // Increased for ultra-smooth paths
       };
     }
 
@@ -471,7 +496,7 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
   };
 
   useFrame((state, delta) => {
-    // Initialize sequence start time
+    // Initialize sequence start time and smooth initial values
     if (sequenceStartTimeRef.current === null) {
       sequenceStartTimeRef.current = state.clock.elapsedTime;
       const { cameraPath, lookAtPath } = generateCameraPath(
@@ -480,6 +505,19 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
       );
       cameraPathRef.current = cameraPath;
       lookAtPathRef.current = lookAtPath;
+      
+      // Initialize smooth position and look-at if not set
+      if (!smoothedPositionRef.current.length()) {
+        smoothedPositionRef.current.copy(state.camera.position);
+      }
+      if (!smoothedLookAtRef.current.length()) {
+        state.camera.getWorldDirection(smoothedLookAtRef.current);
+        smoothedLookAtRef.current.multiplyScalar(10).add(state.camera.position);
+      }
+      
+      // Initialize quaternion
+      currentQuaternionRef.current.copy(state.camera.quaternion);
+      
       console.log(
         `[CinematicCamera] Starting sequence: ${currentSequence.type} targeting ${currentSequence.targetPlanet || "System"}`,
       );
@@ -498,48 +536,85 @@ function AdvancedCinematicCamera({ initialSequenceIndex = 0 }: { initialSequence
       : sequenceProgress;
     sequenceProgressRef.current = easedProgress;
 
-    // Handle sequence transitions
+    // Handle seamless sequence transitions (no setTimeout!)
     if (sequenceProgress >= 1 && !isTransitioningRef.current) {
       isTransitioningRef.current = true;
-
-      // Store last position for smooth transition
-      lastCameraPositionRef.current = state.camera.position.clone();
-      lastLookAtRef.current = new THREE.Vector3();
-      state.camera.getWorldDirection(lastLookAtRef.current);
-      lastLookAtRef.current.add(state.camera.position);
-
-      // Move to next sequence
-      setTimeout(() => {
-        const nextIndex =
-          (currentSequenceIndex + 1) % cinematicSequences.length;
-        setCurrentSequenceIndex(nextIndex);
-        sequenceStartTimeRef.current = null;
-        transitionProgressRef.current = 0;
-        isTransitioningRef.current = false;
-      }, 100);
+      
+      // Store transition start positions for smooth blending
+      transitionStartPositionRef.current.copy(smoothedPositionRef.current);
+      transitionStartLookAtRef.current.copy(smoothedLookAtRef.current);
+      
+      // Immediately move to next sequence (no pause)
+      const nextIndex = (currentSequenceIndex + 1) % cinematicSequences.length;
+      setCurrentSequenceIndex(nextIndex);
+      sequenceStartTimeRef.current = state.clock.elapsedTime;
+      transitionProgressRef.current = 0;
+      
+      // Generate new path for next sequence
+      const nextSequence = cinematicSequences[nextIndex];
+      const { cameraPath, lookAtPath } = generateCameraPath(
+        nextSequence,
+        state.clock.elapsedTime,
+      );
+      cameraPathRef.current = cameraPath;
+      lookAtPathRef.current = lookAtPath;
+      
+      // Reset transitioning flag after a frame
+      isTransitioningRef.current = false;
     }
 
-    // Update camera position along path
+    // Update camera position along path with smooth interpolation
     if (cameraPathRef.current.length > 1 && lookAtPathRef.current.length > 1) {
-      const pathIndex = Math.min(
-        Math.floor(easedProgress * (cameraPathRef.current.length - 1)),
-        cameraPathRef.current.length - 1,
-      );
-
-      const targetPosition = cameraPathRef.current[pathIndex];
-      const targetLookAt = lookAtPathRef.current[pathIndex];
-
-      if (targetPosition && targetLookAt) {
-        // Smooth camera position
-        state.camera.position.lerp(targetPosition, 0.05);
-
-        // Smooth look at
-        const currentLookAt = new THREE.Vector3();
-        state.camera.getWorldDirection(currentLookAt);
-        currentLookAt.add(state.camera.position);
-        currentLookAt.lerp(targetLookAt, 0.05);
-        state.camera.lookAt(currentLookAt);
+      // Use fractional interpolation for ultra-smooth movement between path points
+      const pathLength = cameraPathRef.current.length - 1;
+      const exactIndex = easedProgress * pathLength;
+      const lowerIndex = Math.floor(exactIndex);
+      const upperIndex = Math.min(lowerIndex + 1, pathLength);
+      const fraction = exactIndex - lowerIndex;
+      
+      // Interpolate between two path points for smooth movement
+      const targetPosition = new THREE.Vector3();
+      const targetLookAt = new THREE.Vector3();
+      
+      if (cameraPathRef.current[lowerIndex] && cameraPathRef.current[upperIndex]) {
+        targetPosition.lerpVectors(
+          cameraPathRef.current[lowerIndex],
+          cameraPathRef.current[upperIndex],
+          fraction
+        );
+        targetLookAt.lerpVectors(
+          lookAtPathRef.current[lowerIndex],
+          lookAtPathRef.current[upperIndex],
+          fraction
+        );
+      } else if (cameraPathRef.current[lowerIndex]) {
+        targetPosition.copy(cameraPathRef.current[lowerIndex]);
+        targetLookAt.copy(lookAtPathRef.current[lowerIndex]);
       }
+
+      // Apply velocity-based momentum for space-like movement
+      const positionDelta = targetPosition.clone().sub(smoothedPositionRef.current);
+      velocityRef.current.lerp(positionDelta, 0.08);  // Momentum accumulation
+      smoothedPositionRef.current.add(velocityRef.current.clone().multiplyScalar(0.12));  // Apply with damping
+      
+      const lookAtDelta = targetLookAt.clone().sub(smoothedLookAtRef.current);
+      lookAtVelocityRef.current.lerp(lookAtDelta, 0.08);
+      smoothedLookAtRef.current.add(lookAtVelocityRef.current.clone().multiplyScalar(0.10));
+      
+      // Apply damping to velocity for natural deceleration
+      velocityRef.current.multiplyScalar(0.92);
+      lookAtVelocityRef.current.multiplyScalar(0.92);
+      
+      // Smooth camera position with higher lerp value
+      state.camera.position.lerp(smoothedPositionRef.current, 0.10);  // Increased from 0.05
+      
+      // Quaternion-based smooth rotation for seamless look-at
+      const tempMatrix = new THREE.Matrix4();
+      tempMatrix.lookAt(state.camera.position, smoothedLookAtRef.current, state.camera.up);
+      targetQuaternionRef.current.setFromRotationMatrix(tempMatrix);
+      
+      // Smooth quaternion slerp for rotation
+      state.camera.quaternion.slerp(targetQuaternionRef.current, 0.10);  // Smooth rotation
     }
   });
 
