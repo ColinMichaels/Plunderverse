@@ -253,6 +253,24 @@ export function EnhancedSplashScreen() {
     return () => stopAmbientMusic();
   }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
 
+  // Handle clicking outside to close account menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // Check if click was outside the account menu and stats panel
+      const target = event.target as HTMLElement;
+      if (!target.closest('.stats-panel-container')) {
+        setShowAccountMenu(false);
+      }
+    };
+
+    if (showAccountMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [showAccountMenu]);
+
   // Function to fade out music smoothly
   const fadeOutMusic = async () => {
     const player = useMusicPlayer.getState();
@@ -513,7 +531,7 @@ export function EnhancedSplashScreen() {
       {/* Compact Player Stats Widget - Only show when authenticated */}
       {isAuthenticated && !isGuest && (
         <div
-          className="absolute top-6 right-6 z-30 transition-all duration-300 ease-in-out"
+          className="stats-panel-container absolute top-6 right-6 z-30 transition-all duration-300 ease-in-out"
           onMouseEnter={() => setIsStatsExpanded(true)}
           onMouseLeave={() => setIsStatsExpanded(false)}
           onClick={() => setIsStatsExpanded(true)}
@@ -573,13 +591,34 @@ export function EnhancedSplashScreen() {
                           ${isStatsExpanded ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}`}
           >
             <div className="flex items-center gap-2 mb-2 pb-2 border-b border-cyan-400/20">
-              {/* User Account Menu - Top Right */}
-              {(isAuthenticated || isGuest) && (
-                <div className="relative">
-                  {/* Dropdown Menu */}
-
+              {/* User Avatar and Info - clickable to open account menu */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAccountMenu(!showAccountMenu);
+                }}
+                className="flex items-center gap-2 hover:opacity-80 transition-opacity cursor-pointer flex-1"
+              >
+                <div className="bg-cyan-400/10 p-1.5 rounded-full">
+                  <User className="w-5 h-5 text-cyan-400" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-cyan-400 font-bold text-sm">
+                    {user?.username || "Space Outlaw"}
+                  </h3>
+                  <p className="text-[11px] text-slate-400">
+                    {rankTitle || "Space Drifter"}
+                  </p>
+                </div>
+              </button>
+              
+              <ChevronUp className="w-3 h-3 text-cyan-400/50" />
+              
+              {/* User Account Menu Dropdown - Only show when showAccountMenu is true */}
+              {showAccountMenu && (isAuthenticated || isGuest) && (
+                <div className="absolute top-full left-0 mt-1 z-50">
                   <div
-                    className="mt-2 w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
+                    className="w-56 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
                                     rounded-lg shadow-xl overflow-hidden"
                   >
                     {/* User Info Header */}
@@ -611,21 +650,6 @@ export function EnhancedSplashScreen() {
                   </div>
                 </div>
               )}
-
-              {/* User Stats  panel*/}
-
-              <div className="bg-cyan-400/10 p-1.5 rounded-full">
-                <User className="w-5 h-5 text-cyan-400" />
-              </div>
-              <div>
-                <h3 className="text-cyan-400 font-bold text-sm">
-                  {user?.username || "Space Outlaw"}
-                </h3>
-                <p className="text-[11px] text-slate-400">
-                  {rankTitle || "Space Drifter"}
-                </p>
-              </div>
-              <ChevronUp className="w-3 h-3 text-cyan-400/50 ml-auto" />
             </div>
 
             <div className="space-y-1.5">
