@@ -72,7 +72,7 @@ export class ParrotSpeechService {
   }
 
   getAvailableVoices(): SpeechSynthesisVoice[] {
-    return this.synth.getVoices();
+      return this.synth.getVoices();
   }
 
   speak(text: string, onComplete?: () => void) {
