@@ -350,20 +350,21 @@ export function ResourceNode({
     }
   }, [progress]);
 
-  // Register collision object
+  // Register collision object with resource data for spacebar mining
   useEffect(() => {
     const collisionObj = {
       id: nodeId,
       position: new THREE.Vector3(position[0], position[1], position[2]),
       radius: 1.5,
       type: "resource" as const,
+      resource: resource, // Include resource data for spacebar mining
     };
     registerCollisionObject(collisionObj);
 
     return () => {
       unregisterCollisionObject(nodeId);
     };
-  }, [nodeId, position, registerCollisionObject, unregisterCollisionObject]);
+  }, [nodeId, position, resource, registerCollisionObject, unregisterCollisionObject]);
 
   // Determine geometry based on resource type
   const { geometry, useShader } = useMemo(() => {

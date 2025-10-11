@@ -1412,7 +1412,7 @@ export function PlanetSurfaceScene() {
     { name: "turnRight", keys: ["KeyE"] },
     { name: "flashlight", keys: ["KeyF"] },
     { name: "charge", keys: ["KeyC"] },
-    { name: "shoot", keys: ["Space"] }, // Spacebar for mining/shooting
+    { name: "shoot", keys: [" "] }, // Spacebar for mining/shooting
   ];
 
   return (

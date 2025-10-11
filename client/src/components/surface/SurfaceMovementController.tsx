@@ -305,7 +305,10 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         
         // If we found a mineral and it's different from what we're mining
         if (nearestNode && landedPlanet) {
-          if (!isMining || currentNodeId !== nearestNode.id) {
+          // Check if the node has resource data (safety check)
+          if (!nearestNode.resource) {
+            console.warn(`[Mining] Node ${nearestNode.id} is missing resource data. Skipping.`);
+          } else if (!isMining || currentNodeId !== nearestNode.id) {
             // Start mining new node
             startMining(landedPlanet, nearestNode.resource, nearestNode.id);
             currentMiningNodeRef.current = nearestNode;
