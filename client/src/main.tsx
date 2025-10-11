@@ -4,7 +4,6 @@ import "./utils/websocketPatch";
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./testStatsPanel"; // Import test script for stats panel
 // Temporarily disable test imports to fix app loading
 // import "./__tests__/index"; // Import all tests from index
 // import "./autoTestMissions"; // This will auto-run after 5 seconds
@@ -30,7 +29,5 @@ const rootElement = document.getElementById("root");
 if (!rootElement) {
   console.error('[Main] Root element not found!');
 } else {
-  console.log('[Main] Root element found, rendering app...');
   createRoot(rootElement).render(<App />);
-  console.log('[Main] App rendered successfully');
 }
