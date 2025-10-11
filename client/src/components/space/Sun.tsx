@@ -221,13 +221,14 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
 
   return (
     <group>
-      {/* Sunlight for planets - very strong intensity for visible day/night contrast */}
+      {/* Sunlight for planets - strong directional light from sun's center */}
       <pointLight
         position={[0, 0, 0]}
-        intensity={100}
+        intensity={120}  // Slightly increased for better day/night contrast
         distance={5000}
         decay={1}
         color={"#FFD77A"}
+        castShadow={false}  // Shadows are expensive, rely on shading
       />
 
       {/* Core */}

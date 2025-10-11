@@ -193,7 +193,7 @@ export function Planet({ data, time }: PlanetProps) {
           roughness={materialProps.roughness}
           metalness={materialProps.metalness}
           emissive={isSelected || hovered ? data.color : "#000000"}
-          emissiveIntensity={isSelected ? 0.12 : hovered ? 0.06 : 0}
+          emissiveIntensity={isSelected ? 0.08 : hovered ? 0.04 : 0} // Reduced emissive for more realistic shading
           wireframe={showWireframes}
         />
       </Sphere>
