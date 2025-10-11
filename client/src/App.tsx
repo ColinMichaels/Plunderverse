@@ -536,6 +536,10 @@ function GameContent() {
                           antialias: true,
                           powerPreference: "high-performance",
                         }}
+                        onCreated={({ gl }) => {
+                          gl.toneMapping = 1; // ACESFilmicToneMapping for better HDR
+                          gl.toneMappingExposure = 1.0;
+                        }}
                       >
                         <color attach="background" args={["#000000"]} />
 

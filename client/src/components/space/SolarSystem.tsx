@@ -50,8 +50,8 @@ export function SolarSystem() {
   return (
     <>
       <group ref={systemRef}>
-        {/* Extremely minimal ambient - sun is primary light */}
-        <ambientLight intensity={0.005} />
+        {/* Minimal ambient for base visibility - sun is primary light */}
+        <ambientLight intensity={0.02} />
 
         {/* Starfield background */}
         <Starfield />

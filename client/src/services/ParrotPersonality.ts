@@ -32,11 +32,16 @@ export class ParrotPersonality {
   private memory: MemoryEntry[] = [];
   private lastSpokenTime = 0;
 
-  // --- Tunables (new, with safe defaults) -----------------------------------
+  // --- Tunables (safe defaults) ---------------------------------------------
   private misunderstandingChance = 0.25;
   private minRandomGapMs = 10_000; // base cooldown for random chatter
   private randomGapJitterMs = 4_000; // jitter avoids robotic cadence
   private memoryLimit = 80;
+
+  // Extra noise (per-word random swaps)
+  private freeformNoiseChancePerWord = 0.08; // 8% per eligible word
+  private freeformNoiseMaxSwaps = 2; // cap per line
+  private freeformNoiseEnabled = true;
 
   // Internal no-repeat bookkeeping
   private lastPickIndex: Map<string, number> = new Map();
@@ -70,14 +75,113 @@ export class ParrotPersonality {
   ];
 
   private misunderstandings: MisunderstandingRule[] = [
-    { pattern: /\bship\b/gi, replacements: ["chip", "sheep", "skip"] },
-    { pattern: /\bloot\b/gi, replacements: ["root", "boot", "toot"] },
-    { pattern: /\bsails\b/gi, replacements: ["sales", "snails", "fails"] },
-    { pattern: /\bcourse\b/gi, replacements: ["curse", "coarse", "corpse"] },
-    { pattern: /\bcrew\b/gi, replacements: ["screw", "brew", "queue"] },
-    { pattern: /\bfire\b/gi, replacements: ["wire", "hire", "tire"] },
-    { pattern: /\bport\b/gi, replacements: ["report", "sport", "fort"] },
-    { pattern: /\brudder\b/gi, replacements: ["router", "ruddery", "rubber"] },
+    { pattern: /\bship\b/gi, replacements: ["chip", "sheep", "skip", "sip"] },
+    { pattern: /\bloot\b/gi, replacements: ["root", "boot", "toot", "flute"] },
+    {
+      pattern: /\bsails?\b/gi,
+      replacements: ["sales", "snails", "fails", "scales"],
+    },
+    {
+      pattern: /\bcourse\b/gi,
+      replacements: ["curse", "coarse", "corpse", "source"],
+    },
+    { pattern: /\bcrew\b/gi, replacements: ["screw", "brew", "queue", "stew"] },
+    { pattern: /\bfire\b/gi, replacements: ["wire", "hire", "tire", "friar"] },
+    {
+      pattern: /\bport\b/gi,
+      replacements: ["report", "sport", "fort", "COM-port"],
+    },
+    {
+      pattern: /\brudder\b/gi,
+      replacements: ["router", "ruddery", "rubber", "routery"],
+    },
+    // Space/game terms
+    {
+      pattern: /\bstar\b/gi,
+      replacements: ["scar", "stair", "tar", "GPU-star"],
+    },
+    { pattern: /\bmap\b/gi, replacements: ["app", "nap", "snap", "yaml"] },
+    {
+      pattern: /\bscan\b/gi,
+      replacements: ["scam", "scarf", "span", "cron-scan"],
+    },
+    { pattern: /\bdock\b/gi, replacements: ["sock", "doc", "docker", "dork"] },
+    {
+      pattern: /\bcargo\b/gi,
+      replacements: ["targo", "argot", "carb-o", "cargo-cult"],
+    },
+    {
+      pattern: /\bpirate\b/gi,
+      replacements: ["parrot", "private", "pir-API", "pi-rate"],
+    },
+    {
+      pattern: /\bparrot\b/gi,
+      replacements: ["pirate", "carrot", "parent", "packet"],
+    },
+    {
+      pattern: /\blaser(s)?\b/gi,
+      replacements: ["tasers$1", "lazers$1", "lasagna$1", "phasors$1"],
+    },
+    {
+      pattern: /\bshield(s)?\b/gi,
+      replacements: ["squeals$1", "fields$1", "shields.js$1", "shelves$1"],
+    },
+    {
+      pattern: /\bengine(s)?\b/gi,
+      replacements: ["pigeons$1", "engines.ts$1", "ginger$1", "enginex$1"],
+    },
+    {
+      pattern: /\bthruster(s)?\b/gi,
+      replacements: ["trusters$1", "bustlers$1", "thrashers$1", "thrushes$1"],
+    },
+    {
+      pattern: /\bcomms?\b/gi,
+      replacements: ["comma", "commas", "comps", "commsat"],
+    },
+    {
+      pattern: /\bdeck\b/gi,
+      replacements: ["duck", "decaf", "dreck", "dev-deck"],
+    },
+    {
+      pattern: /\bbridge\b/gi,
+      replacements: ["badge", "brunch", "fridge", "bridge-mode"],
+    },
+    {
+      pattern: /\bplanet\b/gi,
+      replacements: ["plan it", "plummet", "plannet", "planet.js"],
+    },
+    {
+      pattern: /\basteroid\b/gi,
+      replacements: ["asteroid.css", "asterisk", "astrid", "asteroid-lite"],
+    },
+    {
+      pattern: /\bsector\b/gi,
+      replacements: ["vector", "sexton", "selector", "spectre"],
+    },
+    {
+      pattern: /\bnavigate\b/gi,
+      replacements: ["navicate", "aggivate", "navigate()", "advocate"],
+    },
+    {
+      pattern: /\bcannon\b/gi,
+      replacements: ["cannon.js", "canyon", "canine", "cannoli"],
+    },
+    {
+      pattern: /\btreasure\b/gi,
+      replacements: ["measure", "pressure", "trash-sure", "treazure"],
+    },
+    {
+      pattern: /\bcompass\b/gi,
+      replacements: ["compress", "comp-sass", "campus", "comms-pass"],
+    },
+    {
+      pattern: /\banchor\b/gi,
+      replacements: ["ancho", "angkor", "anker", "angular"],
+    },
+    {
+      pattern: /\bgalley\b/gi,
+      replacements: ["gallery", "galley-ram", "jelly", "gulley"],
+    },
   ];
 
   private recoveryPhrases = [
@@ -117,6 +221,46 @@ export class ParrotPersonality {
     "I’m doin’ me best here, Cap’n!",
     "Noted. Logging your complaint under /logs/grumpy/human.json",
   ];
+
+  // Extra word buckets for freeform noise
+  private randomBuckets: Record<string, string[]> = {
+    nautical: [
+      "barnacle",
+      "bilge",
+      "bosun",
+      "keel",
+      "mizzen",
+      "hard-a-port",
+      "broadside",
+      "keelhaulin’",
+      "cutlass",
+      "plank",
+      "privateer",
+    ],
+    tech: [
+      "websocket",
+      "protobuf",
+      "hotfix",
+      "segfault",
+      "cron",
+      "kernel",
+      "vectorize",
+      "worker",
+      "shader",
+      "pipeline",
+      "cacheline",
+      "opcode",
+    ],
+    exclaim: ["SQUAWK!", "Blimey!", "Arr!", "Har!", "Avast!", "Yo-ho!"],
+    snacks: [
+      "hardtack",
+      "sea-biscuit",
+      "citrus-gel",
+      "ship-coffee",
+      "rum-jelly",
+    ],
+    fauna: ["albatross", "gull", "kraken", "manta", "barn-owl"],
+  };
 
   // --- Event system ----------------------------------------------------------
   private lastEventSpoken: Record<string, number> = {};
@@ -187,7 +331,7 @@ export class ParrotPersonality {
     ],
   };
 
-  // --- Public controls (backwards-compatible + new) -------------------------
+  // --- Public controls (back-compat + new) ----------------------------------
   setMode(mode: ParrotMode) {
     this.mode = mode;
   }
@@ -197,6 +341,14 @@ export class ParrotPersonality {
 
   setMisunderstandingChance(p: number) {
     this.misunderstandingChance = Math.min(1, Math.max(0, p));
+  }
+
+  setFreeformNoiseChance(p: number) {
+    this.freeformNoiseChancePerWord = Math.min(1, Math.max(0, p));
+  }
+
+  enableFreeformNoise(enabled: boolean) {
+    this.freeformNoiseEnabled = enabled;
   }
 
   setMinRandomGapMs(ms: number, jitterMs = 4000) {
@@ -235,6 +387,14 @@ export class ParrotPersonality {
     return array[this.pickIndex(array.length, key)];
   }
 
+  private capLike(sample: string, word: string) {
+    // Preserve capitalization pattern (ALLCAPS, Capitalized, lower)
+    if (sample === sample.toUpperCase()) return word.toUpperCase();
+    if (sample[0] === sample[0].toUpperCase())
+      return word[0].toUpperCase() + word.slice(1);
+    return word.toLowerCase();
+  }
+
   private speak(text: string) {
     parrotSpeechService.speak(text);
     this.lastSpokenTime = this.now();
@@ -249,19 +409,63 @@ export class ParrotPersonality {
     return this.mode !== "serious" && this.maybe(this.misunderstandingChance);
   }
 
+  private applyFreeformNoise(text: string): { text: string; swapped: boolean } {
+    if (!this.freeformNoiseEnabled || this.freeformNoiseChancePerWord <= 0) {
+      return { text, swapped: false };
+    }
+    // Tokenize while keeping word boundaries
+    const tokens = text.split(/(\b)/);
+    let swaps = 0;
+
+    for (let i = 0; i < tokens.length; i++) {
+      const tok = tokens[i];
+      // simple word check: letters/apostrophes, length >= 3
+      if (!/^[A-Za-z][A-Za-z']{2,}$/.test(tok)) continue;
+      if (swaps >= this.freeformNoiseMaxSwaps) break;
+      if (!this.maybe(this.freeformNoiseChancePerWord)) continue;
+
+      const bucketKeys = Object.keys(this.randomBuckets);
+      const bucket = this.pick(bucketKeys, "noise.bucket");
+      const replacement = this.pick(
+        this.randomBuckets[bucket],
+        `noise.${bucket}`,
+      );
+      tokens[i] = this.capLike(tok, replacement);
+      swaps++;
+    }
+    return { text: tokens.join(""), swapped: swaps > 0 };
+  }
+
   private applyMisunderstanding(text: string): {
     text: string;
     wasMisunderstood: boolean;
   } {
     if (!this.shouldMisunderstand()) return { text, wasMisunderstood: false };
+
+    let out = text;
+    let changed = false;
+    let applied = 0;
+    const MAX_RULES = 3; // cap cost & chaos
+
     for (const rule of this.misunderstandings) {
-      if (!rule.pattern.test(text)) continue;
-      const replaced = text.replace(rule.pattern, () =>
-        this.pick(rule.replacements, rule.pattern.source),
-      );
-      return { text: replaced, wasMisunderstood: true };
+      if (applied >= MAX_RULES) break;
+      if (!rule.pattern.test(out)) continue;
+
+      // Replace each match with a separately-random choice; preserve case
+      out = out.replace(rule.pattern, (m) => {
+        const raw = this.pick(rule.replacements, rule.pattern.source);
+        return this.capLike(m, raw);
+      });
+      changed = true;
+      applied++;
     }
-    return { text, wasMisunderstood: false };
+
+    if (!changed) {
+      // Fallback: try small freeform noise (1–2 words) for extra variety
+      const noisy = this.applyFreeformNoise(out);
+      if (noisy.swapped) return { text: noisy.text, wasMisunderstood: true };
+    }
+    return { text: out, wasMisunderstood: changed };
   }
 
   private addPirateFlare(text: string): string {
@@ -322,6 +526,10 @@ export class ParrotPersonality {
 
   randomComment() {
     if (this.mode === "serious") return;
+
+    const improv = `Note to self: ${this.pick(this.techJargon, "techJargon")} + ${this.pick(this.pirateSlang, "pirateSlang")} = performance gains.`;
+    const mash = `Deployin' ${this.pick(Object.keys(this.randomBuckets), "noise.bucket")} mode with ${this.pick(this.fixedOneLiners, "oneLiners")}`;
+
     const comments: string[] = [
       "All systems be runnin' smoother than a greased cannonball!",
       "I may be code, but I've got heart — digital or not!",
@@ -331,6 +539,8 @@ export class ParrotPersonality {
       "Squawk! The stars look mighty fine today, Cap'n!",
       "I once knew a pirate bot… or did I dream that in sleep mode?",
       this.pick(this.fixedOneLiners, "oneLiners"),
+      improv,
+      mash,
     ];
     this.comment(this.pick(comments, "comments"), "random");
   }
@@ -352,7 +562,7 @@ export class ParrotPersonality {
     this.speak(this.pick(this.scoldLines, "scold"));
   }
 
-  // --- Event bridge (new) ---------------------------------------------------
+  // --- Event bridge ----------------------------------------------------------
   private canFireEvent(event: ParrotEvent): boolean {
     const sev = this.eventSeverity[event];
     const last = this.lastEventSpoken[event] ?? 0;

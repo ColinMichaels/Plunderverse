@@ -4,9 +4,7 @@ import { Sphere, Billboard, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 type SunProps = {
-  /** radius of the photosphere in world units */
   radius?: number;
-  /** disables the small corona billboards if you want even less overdraw */
   disableCoronaSprites?: boolean;
 };
 
@@ -14,11 +12,15 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
   const coreRef = useRef<THREE.Mesh>(null);
   const innerGlowRef = useRef<THREE.Mesh>(null);
   const outerGlowRef = useRef<THREE.Mesh>(null);
+  const bigFlareRef = useRef<THREE.Mesh>(null);
 
-  // Textures: base sun texture (noise texture removed - not available)
+  // Base photosphere texture
   const sunTex = useTexture("/textures/planets/2k_sun.jpg");
-  
-  // Create a simple noise texture in memory as fallback
+
+  // Flare sprite texture from your public folder
+  const flareTex = useTexture("/textures/planets/sun_flare.png");
+
+  // Create a tiny procedural noise as a fallback warp source (cheap)
   const noiseTex = useMemo(() => {
     const size = 512;
     const data = new Uint8Array(size * size * 4);
@@ -33,37 +35,43 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
     texture.needsUpdate = true;
     return texture;
   }, []);
-  
-  // Cleanup: dispose noise texture on unmount to prevent GPU memory leak
-  useEffect(() => {
-    return () => {
-      noiseTex.dispose();
-    };
-  }, [noiseTex]);
 
-  // Texture setup for performance
+  useEffect(() => () => noiseTex.dispose(), [noiseTex]);
+
+  // Texture setup for performance/quality
   useMemo(() => {
+    // photosphere
     sunTex.wrapS = sunTex.wrapT = THREE.RepeatWrapping;
     sunTex.minFilter = THREE.LinearMipMapLinearFilter;
     sunTex.magFilter = THREE.LinearFilter;
     sunTex.anisotropy = 2;
-    
+
+    // noise
     noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping;
     noiseTex.minFilter = THREE.LinearFilter;
     noiseTex.magFilter = THREE.LinearFilter;
-  }, [sunTex, noiseTex]);
 
-  // === Shader material (cheap: 2 scrolling noise layers to subtly warp UVs) ===
+    // flare sprite (keep edge clean)
+    flareTex.generateMipmaps = true;
+    flareTex.minFilter = THREE.LinearMipMapLinearFilter;
+    flareTex.magFilter = THREE.LinearFilter;
+    flareTex.wrapS = flareTex.wrapT = THREE.ClampToEdgeWrapping;
+    // If you’re using linear workflow/tone mapping, leave colorSpace as SRGB for UI-ish sprites
+    // @ts-ignore
+    flareTex.colorSpace = THREE.SRGBColorSpace ?? THREE.sRGBEncoding;
+  }, [sunTex, noiseTex, flareTex]);
+
+  // === Photosphere shader (UV warp via two scrolling noise samples) ===
   const material = useMemo(() => {
     const uniforms = {
       uTex: { value: sunTex },
       uNoise: { value: noiseTex },
       uTime: { value: 0 },
-      uEmissiveBoost: { value: 1.6 }, // overall glow
-      uWarpStrength: { value: 0.06 }, // how much the noise warps UVs
+      uEmissiveBoost: { value: 1.6 },
+      uWarpStrength: { value: 0.06 },
       uScroll1: { value: new THREE.Vector2(0.02, 0.011) },
       uScroll2: { value: new THREE.Vector2(-0.015, 0.018) },
-      uTint: { value: new THREE.Color("#FFD05A") }, // subtle warm tint
+      uTint: { value: new THREE.Color("#FFD05A") },
     };
 
     const vert = /* glsl */ `
@@ -85,28 +93,22 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       uniform vec2 uScroll1;
       uniform vec2 uScroll2;
       uniform vec3 uTint;
-
       varying vec3 vNormal;
       varying vec2 vUv;
 
-      // cheap luminance
       float luma(vec3 c){ return dot(c, vec3(0.2126,0.7152,0.0722)); }
 
       void main() {
-        // Two scrolling noise samples (tileable), combine and center around 0
         vec2 nUV1 = vUv + uScroll1 * uTime;
         vec2 nUV2 = vUv + uScroll2 * uTime * 0.7;
         float n1 = texture2D(uNoise, nUV1 * 3.0).r;
         float n2 = texture2D(uNoise, nUV2 * 2.0).r;
         float n = (n1 + n2) * 0.5;
-        n = (n - 0.5) * 2.0; // [-1,1]
+        n = (n - 0.5) * 2.0;
 
-        // Warp the base UVs slightly with noise (avoid obvious smearing)
         vec2 warpedUv = vUv + uWarpStrength * vec2(n, -n * 0.6);
-
         vec3 base = texture2D(uTex, warpedUv).rgb;
 
-        // Warm tint and emissive push that reacts a bit to the base luminance
         float hot = smoothstep(0.35, 0.9, luma(base));
         vec3 color = mix(base, base * uTint, 0.25);
         color *= mix(1.0, uEmissiveBoost, 0.35 + 0.65 * hot);
@@ -122,12 +124,12 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       blending: THREE.NormalBlending,
       depthWrite: true,
       depthTest: true,
+      side: THREE.FrontSide,
     });
-    mat.side = THREE.FrontSide;
     return mat;
   }, [sunTex, noiseTex]);
 
-  // Fresnel glow shells (very cheap)
+  // Fresnel glow shells (cheap)
   const fresnelMat = useMemo(() => {
     const uniforms = {
       uTime: { value: 0 },
@@ -165,7 +167,7 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       }
     `;
 
-    const mat = new THREE.ShaderMaterial({
+    return new THREE.ShaderMaterial({
       uniforms,
       vertexShader: vert,
       fragmentShader: frag,
@@ -174,27 +176,32 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       depthWrite: false,
       side: THREE.BackSide,
     });
-    return mat;
   }, []);
 
-  // Optional small corona sprites (additive, camera-facing)
-  const coronaSpriteMat = useMemo(() => {
-    const mat = new THREE.MeshBasicMaterial({
-      color: new THREE.Color("#FFDF80"),
+  // Flare materials using your PNG (billboarded sprites)
+  const flareMat = useMemo(() => {
+    return new THREE.MeshBasicMaterial({
+      map: flareTex,
       transparent: true,
-      opacity: 0.22,
+      opacity: 0.34,
       blending: THREE.AdditiveBlending,
       depthWrite: false,
-    });
-    return mat;
-  }, []);
+      depthTest: false, // keep the glow even when peeking at edges
+      toneMapped: false, // don’t dim via tone mapping
+    } as any);
+  }, [flareTex]);
+
+  const smallFlareMat = useMemo(() => {
+    return flareMat.clone();
+  }, [flareMat]);
 
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     (material.uniforms.uTime as any).value = t;
     (fresnelMat.uniforms.uTime as any).value = t;
 
-    if (coreRef.current) coreRef.current.rotation.y += 0.002; // slow rotation
+    if (coreRef.current) coreRef.current.rotation.y += 0.002;
+
     if (innerGlowRef.current) {
       const s = 1.0 + Math.sin(t * 2.0) * 0.03;
       innerGlowRef.current.scale.setScalar(s);
@@ -203,62 +210,86 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       const s = 1.0 + Math.sin(t * 1.3) * 0.05;
       outerGlowRef.current.scale.setScalar(s);
     }
-  });
 
-  // Lighting notes:
-  // - The sun is emissive; it doesn't need to receive or cast shadows itself.
-  // - Keep a single shadow-casting directional light elsewhere for planets if required.
+    // gentle spin/pulse on the big flare
+    if (bigFlareRef.current) {
+      bigFlareRef.current.rotation.z += 0.002;
+      const m = bigFlareRef.current.material as THREE.MeshBasicMaterial;
+      m.opacity = 0.28 + Math.sin(t * 0.7) * 0.08;
+    }
+  });
 
   return (
     <group>
-      {/* Extremely strong point light from sun center for dramatic day/night contrast */}
+      {/* Sunlight for planets - very strong intensity for visible day/night contrast */}
       <pointLight
         position={[0, 0, 0]}
-        intensity={25.0}
-        distance={3000}
-        decay={2}
+        intensity={100}
+        distance={5000}
+        decay={1}
         color={"#FFD77A"}
       />
 
-      {/* Core (emissive shader) */}
+      {/* Core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[radius, 64, 64]} />
         {/* @ts-ignore */}
         <primitive object={material} attach="material" />
       </mesh>
 
-      {/* Inner Fresnel glow (thin shell) */}
+      {/* Inner/Outer Fresnel shells */}
       <mesh ref={innerGlowRef} scale={1.06}>
         <sphereGeometry args={[radius * 1.06, 48, 48]} />
         {/* @ts-ignore */}
         <primitive object={fresnelMat} attach="material" />
       </mesh>
 
-      {/* Outer Fresnel glow (wider) */}
       <mesh ref={outerGlowRef} scale={1.18}>
         <sphereGeometry args={[radius * 1.18, 48, 48]} />
         {/* @ts-ignore */}
         <primitive object={fresnelMat} attach="material" />
       </mesh>
 
-      {/* Optional: a few tiny corona billboards (super cheap, additive) */}
+      {/* --- Flare sprites using your PNG --- */}
+      {/* Big, soft halo — sits just beyond the shells */}
+      <Billboard position={[0, 0, 0]}>
+        <mesh ref={bigFlareRef} renderOrder={999}>
+          {/* Wider than the sun so it bleeds nicely */}
+          <planeGeometry args={[radius * 3.2, radius * 3.2]} />
+          {/* @ts-ignore */}
+          <primitive object={flareMat} attach="material" />
+        </mesh>
+      </Billboard>
+
+      {/* Optional: three smaller angled streaks */}
       {!disableCoronaSprites && (
-        <group>
+        <group renderOrder={1000}>
           {[
-            [1.3, 0.2, 0.0],
-            [-0.7, -0.4, 0.9],
-            [0.1, 0.9, -0.8],
-          ].map((p, i) => (
-            <Billboard
-              key={i}
-              position={new THREE.Vector3()
-                .fromArray(p)
-                .multiplyScalar(radius * 1.25)}
-            >
-              <mesh>
-                <planeGeometry args={[radius * 0.6, radius * 0.35]} />
+            {
+              pos: new THREE.Vector3(0.0, radius * 0.4, 0.0),
+              size: [radius * 1.4, radius * 0.9],
+              rot: 0.35,
+            },
+            {
+              pos: new THREE.Vector3(
+                radius * -0.5,
+                -radius * 0.3,
+                radius * 0.4,
+              ),
+              size: [radius * 1.2, radius * 0.8],
+              rot: -0.6,
+            },
+            {
+              pos: new THREE.Vector3(radius * 0.3, radius * 0.7, -radius * 0.5),
+              size: [radius * 1.0, radius * 0.7],
+              rot: 0.9,
+            },
+          ].map((cfg, i) => (
+            <Billboard key={i} position={cfg.pos}>
+              <mesh rotation={[0, 0, cfg.rot]}>
+                <planeGeometry args={cfg.size as [number, number]} />
                 {/* @ts-ignore */}
-                <primitive object={coronaSpriteMat} attach="material" />
+                <primitive object={smallFlareMat} attach="material" />
               </mesh>
             </Billboard>
           ))}
