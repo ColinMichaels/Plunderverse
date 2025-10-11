@@ -58,6 +58,7 @@ export class CloudSyncManager {
   static getInstance(): CloudSyncManager {
     if (!CloudSyncManager.instance) {
       CloudSyncManager.instance = new CloudSyncManager();
+      console.log('[CloudSyncWebSocket] Instance created with token support');
     }
     return CloudSyncManager.instance;
   }
@@ -83,9 +84,10 @@ export class CloudSyncManager {
     // In development, always use port 5000 for the backend server
     const port = import.meta.env.DEV ? '5000' : (window.location.port || (protocol === 'wss:' ? '443' : '80'));
     
-    const wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}`;
+    // Include authentication token in the WebSocket URL
+    const wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     
-    console.log('[CloudSyncManager] Connecting to:', wsUrl);
+    console.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
     
     try {
       this.ws = new WebSocket(wsUrl);
@@ -136,27 +138,29 @@ export class CloudSyncManager {
   }
   
   private authenticate(): void {
+    // Authentication is now handled via the WebSocket URL token parameter
+    // This method is just for setting the authenticated state after connection
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) {
       console.log('[CloudSyncManager] No auth token');
       return;
     }
     
-    // Send auth message
+    // Mark as authenticated and extract user ID
+    this.authenticated = true;
+    this.userId = this.getUserIdFromToken(token);
+    console.log('[CloudSyncManager] Authenticated as user:', this.userId);
+    
+    // Request initial state sync
     this.sendMessage({
       type: 'state_request',
       timestamp: Date.now(),
       version: this.localVersion,
       data: {
-        authToken: token,
         deviceId: this.deviceId,
         stores: []  // Request all stores
       }
     });
-    
-    this.authenticated = true;
-    this.userId = this.getUserIdFromToken(token);
-    console.log('[CloudSyncManager] Authenticated as user:', this.userId);
   }
   
   private handleMessage(payload: SyncPayload): void {
@@ -331,6 +335,28 @@ export class CloudSyncManager {
    * Initialize and connect
    */
   async initialize(): Promise<void> {
+    await this.connect();
+  }
+  
+  /**
+   * Reconnect with new token (call after token refresh)
+   */
+  async reconnectWithNewToken(): Promise<void> {
+    console.log('[CloudSyncManager] Reconnecting with new token...');
+    
+    // Disconnect current connection
+    if (this.ws) {
+      this.ws.close();
+      this.ws = null;
+    }
+    
+    this.connected = false;
+    this.authenticated = false;
+    
+    // Reset reconnect attempts
+    this.reconnectAttempts = 0;
+    
+    // Connect with new token
     await this.connect();
   }
   

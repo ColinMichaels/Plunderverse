@@ -227,6 +227,16 @@ export const useAuthStore = create<AuthState>()(
             
             set({ accessToken: data.accessToken });
             
+            // Reconnect CloudSyncWebSocket with new token
+            try {
+              const { CloudSyncManager } = await import('../../../services/CloudSyncWebSocket');
+              const instance = CloudSyncManager.getInstance();
+              await instance.reconnectWithNewToken();
+              console.log('[Auth] CloudSyncWebSocket reconnected with new token');
+            } catch (error) {
+              console.error('[Auth] Failed to reconnect CloudSyncWebSocket:', error);
+            }
+            
             // Schedule next refresh
             get().scheduleTokenRefresh();
           } else {
