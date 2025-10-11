@@ -1,27 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Billboard, Stars, useTexture } from "@react-three/drei";
+import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { planets } from "../../lib/planetData";
-
-/** Planet store implementation using existing landed state */
-const usePlanetStore = () => {
-  const { landedPlanet } = useLandedState();
-  
-  // Find the planet data for the currently landed planet
-  const planetData = landedPlanet ? planets.find(p => p.name === landedPlanet) : null;
-  
-  // Return in the expected format
-  const currentPlanet = planetData ? {
-    textureUrl: planetData.texture || `/textures/planets/2k_${landedPlanet?.toLowerCase()}_daymap.jpg`,
-    radius: planetData.size || 5,
-    name: planetData.name
-  } : null;
-  
-  return { currentPlanet };
-};
 
 type PlanetTransitionProps = {
   /** Direction of transition - 'landing' or 'takeoff' */
@@ -40,6 +23,8 @@ type PlanetTransitionProps = {
 
 export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
   const [running, setRunning] = useState(!!props.startOnMount);
+  const [fadeOpacity, setFadeOpacity] = useState(0);
+  
   if (!running) return null;
   
   // For landing, start camera far away; for takeoff, start close
@@ -52,27 +37,42 @@ export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
       style={{
         position: "fixed",
         inset: 0,
-        pointerEvents: "none", // block interactions during transition if desired set to 'auto'
+        pointerEvents: "none",
         zIndex: 1000,
-        background: "black",
       }}
     >
-      <Canvas
-        gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
-        dpr={[1, 2]}
-        camera={{ position: initialCameraPos as [number, number, number], fov: 50, near: 0.1, far: 5000 }}
-      >
-        <PlanetTransitionScene
-          direction={props.direction}
-          duration={props.duration ?? 5.2}
-          onComplete={() => {
-            setRunning(false);
-            props.onComplete?.();
-          }}
-          onThrustStart={props.onThrustStart}
-          targetPlanet={props.targetPlanet}
-        />
-      </Canvas>
+      {/* Main scene */}
+      <div style={{ position: "absolute", inset: 0, background: "black" }}>
+        <Canvas
+          gl={{ antialias: true, powerPreference: "high-performance", alpha: false }}
+          dpr={[1, 2]}
+          camera={{ position: initialCameraPos as [number, number, number], fov: 50, near: 0.1, far: 5000 }}
+        >
+          <PlanetTransitionScene
+            direction={props.direction}
+            duration={props.duration ?? 5.2}
+            onComplete={() => {
+              setRunning(false);
+              props.onComplete?.();
+            }}
+            onThrustStart={props.onThrustStart}
+            targetPlanet={props.targetPlanet}
+            onFadeStart={(opacity: number) => setFadeOpacity(opacity)}
+          />
+        </Canvas>
+      </div>
+      
+      {/* Fade overlay for smooth transition */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "black",
+          opacity: fadeOpacity,
+          transition: "opacity 0.8s ease-in-out",
+          pointerEvents: "none",
+        }}
+      />
     </div>
   );
 }
@@ -83,12 +83,14 @@ function PlanetTransitionScene({
   onComplete,
   onThrustStart,
   targetPlanet,
+  onFadeStart,
 }: {
   direction: 'landing' | 'takeoff';
   duration: number;
   onComplete?: () => void;
   onThrustStart?: () => void;
   targetPlanet?: string;
+  onFadeStart?: (opacity: number) => void;
 }) {
   const { landedPlanet } = useLandedState();
   
@@ -153,22 +155,7 @@ function PlanetTransitionScene({
     });
   }, []);
 
-  // Speed lines (very cheap: a few billboarded quads that streak scale/opacity)
-  const speedMat = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        color: new THREE.Color("#ffffff"),
-        transparent: true,
-        opacity: 0,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        toneMapped: false,
-      }),
-    []
-  );
-
-  // Stars fade in later
-  const starRef = useRef<THREE.Group>(null);
+  // Planet and atmosphere references
   const planetRef = useRef<THREE.Mesh>(null);
   const atmoRef = useRef<THREE.Mesh>(null);
   const cam = useThree((s) => s.camera);
@@ -262,56 +249,29 @@ function PlanetTransitionScene({
       }
     }
 
-    // Screen shake (tiny; stronger during 0.15..0.55)
+    // Subtle screen shake (tiny; stronger during 0.15..0.55)
     const thrustT = clamp01((t - 0.15) / 0.4);
-    const shake = 0.03 * (1 - Math.cos(thrustT * Math.PI)) * (1 - u);
+    const shake = 0.02 * (1 - Math.cos(thrustT * Math.PI)) * (1 - u);
     cam.position.x += (Math.random() - 0.5) * shake;
-    cam.position.y += (Math.random() - 0.5) * shake * 0.7;
+    cam.position.y += (Math.random() - 0.5) * shake * 0.5;
 
-    // Speed lines opacity & length driven by thrustT
-    const speedOpacity = thrustT > 0 ? 0.3 * (0.5 + 0.5 * Math.sin(6.0 * Math.PI * thrustT)) : 0.0;
-    (speedMat.opacity as number) = speedOpacity;
-
-    // Stars visibility based on direction
-    if (starRef.current) {
-      starRef.current.visible = true;
-      starRef.current.children.forEach((c) => {
-        const m = (c as any).material as THREE.Material & { opacity?: number; transparent?: boolean; depthWrite?: boolean };
-        if (m && "opacity" in m) {
-          m.transparent = true;
-          (m as any).depthWrite = false;
-          
-          if (direction === 'takeoff') {
-            // Stars fade in late for takeoff
-            (m as any).opacity = clamp01((t - 0.65) / 0.3);
-          } else {
-            // Stars fade out late for landing
-            (m as any).opacity = clamp01(1.0 - (t - 0.35) / 0.3);
-          }
-        }
-      });
+    // Fade to black for takeoff near the end
+    if (direction === 'takeoff' && t > 0.75) {
+      const fadeProgress = clamp01((t - 0.75) / 0.25); // Fade over last 0.25 seconds
+      onFadeStart?.(fadeProgress);
+    } else if (direction === 'landing' && t < 0.25) {
+      // Fade in from black at start of landing
+      const fadeProgress = clamp01(1 - (t / 0.25));
+      onFadeStart?.(fadeProgress);
     }
 
     // Complete
     if (t >= 1) onComplete?.();
   });
 
-  // Speed lines geometry instances
-  const speedLines = useMemo(() => {
-    const arr = [];
-    for (let i = 0; i < 24; i++) {
-      const angle = (i / 24) * Math.PI * 2;
-      const r = planetRadius * (1.3 + Math.random() * 0.7);
-      const len = 0.8 + Math.random() * 1.4;
-      const w = 0.015 + Math.random() * 0.02;
-      arr.push({ x: Math.cos(angle) * r, y: (Math.random() - 0.5) * r * 0.4, z: Math.sin(angle) * r, len, w, rot: Math.random() * Math.PI });
-    }
-    return arr;
-  }, [planetRadius]);
-
   return (
     <>
-      {/* black-to-brown space background via fog color fade is overkill—just use Stars and keep it dark */}
+      {/* Simple ambient lighting */}
       <ambientLight intensity={0.3} />
 
       {/* Planet directly under camera path */}
@@ -332,32 +292,6 @@ function PlanetTransitionScene({
           {/* @ts-ignore */}
           <primitive object={atmosphereMat} attach="material" />
         </mesh>
-      </group>
-
-      {/* Speed lines (billboards) */}
-      <group>
-        {speedLines.map((sp, i) => (
-          <Billboard key={i} position={[sp.x, sp.y, sp.z]} follow={true}>
-            <mesh rotation-z={sp.rot}>
-              <planeGeometry args={[sp.w, sp.len]} />
-              {/* @ts-ignore */}
-              <primitive object={speedMat} attach="material" />
-            </mesh>
-          </Billboard>
-        ))}
-      </group>
-
-      {/* Stars fade-in */}
-      <group ref={starRef} visible={false}>
-        <Stars
-          radius={400}
-          depth={100}
-          count={4000}
-          factor={2}
-          saturation={0}
-          fade
-          speed={0}
-        />
       </group>
     </>
   );
