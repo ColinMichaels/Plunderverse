@@ -51,7 +51,7 @@ export function SolarSystem() {
     <>
       <group ref={systemRef}>
         {/* Minimal ambient lighting - sun is primary light source */}
-        <ambientLight intensity={0.05} />
+        <ambientLight intensity={0.08} />
 
         {/* Starfield background */}
         <Starfield />

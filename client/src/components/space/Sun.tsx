@@ -211,13 +211,19 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
 
   return (
     <group>
-      {/* Lightweight "sunlight" for planets (no shadows from the sun mesh itself) */}
+      {/* Shadow-casting sun point light - radiates from sun center */}
       <pointLight
         position={[0, 0, 0]}
-        intensity={3.2}
+        intensity={3.5}
         distance={3000}
         decay={1}
         color={"#FFD77A"}
+        castShadow
+        shadow-mapSize-width={2048}
+        shadow-mapSize-height={2048}
+        shadow-camera-near={1}
+        shadow-camera-far={1000}
+        shadow-bias={-0.0001}
       />
 
       {/* Core (emissive shader) */}
