@@ -1,6 +1,77 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
+    <script>
+      // WebSocket Patch - Applied early to catch all WebSocket connections
+      // This must run before any other scripts that might create WebSocket connections
+      (function() {
+        console.log('[WebSocketPatch] Applying early patch in HTML...');
+        
+        // Store the original WebSocket constructor
+        const OriginalWebSocket = window.WebSocket;
+        
+        // Create a patched WebSocket constructor
+        window.WebSocket = function(url, protocols) {
+          let fixedUrl = url.toString();
+          const originalUrl = fixedUrl;
+          
+          // Log EVERY WebSocket connection for debugging
+          console.log('[WebSocketPatch] WebSocket connection:', originalUrl);
+          
+          // Fix undefined port issues
+          if (fixedUrl.includes(':undefined')) {
+            fixedUrl = fixedUrl.replace(/:undefined/g, ':5000');
+            console.warn('[WebSocketPatch] Fixed undefined port:', originalUrl, '->', fixedUrl);
+          }
+          
+          // Check if this is a connection to port 5000
+          const isPort5000 = fixedUrl.includes(':5000') || 
+                            fixedUrl.match(/^wss?:\/\/localhost\/?(\?|$)/) || 
+                            fixedUrl.match(/^wss?:\/\/127\.0\.0\.1\/?(\?|$)/);
+          
+          // Check if URL has token parameter (runtime WebSocket)
+          const hasToken = fixedUrl.includes('token=');
+          
+          if (isPort5000 && hasToken) {
+            try {
+              const parsedUrl = new URL(fixedUrl);
+              
+              // Redirect token connections to /ws/sync if not already there
+              if (parsedUrl.pathname !== '/ws/sync') {
+                const oldPath = parsedUrl.pathname;
+                parsedUrl.pathname = '/ws/sync';
+                fixedUrl = parsedUrl.toString();
+                console.warn('[WebSocketPatch] REDIRECTED to /ws/sync:', oldPath, '->', '/ws/sync');
+                console.warn('[WebSocketPatch] Full URL:', originalUrl, '->', fixedUrl);
+              }
+            } catch (err) {
+              // Fallback regex approach
+              console.warn('[WebSocketPatch] URL parse failed, using regex:', err);
+              const match = fixedUrl.match(/(wss?:\/\/[^\/]+)(\/[^?]*)?(.*)/);
+              if (match && !match[2]?.includes('/ws/sync')) {
+                fixedUrl = match[1] + '/ws/sync' + (match[3] || '');
+                console.warn('[WebSocketPatch] REDIRECTED via regex:', originalUrl, '->', fixedUrl);
+              }
+            }
+          }
+          
+          // Create the WebSocket with the fixed URL
+          if (protocols) {
+            return new OriginalWebSocket(fixedUrl, protocols);
+          } else {
+            return new OriginalWebSocket(fixedUrl);
+          }
+        };
+        
+        // Copy static properties
+        window.WebSocket.CONNECTING = OriginalWebSocket.CONNECTING;
+        window.WebSocket.OPEN = OriginalWebSocket.OPEN;
+        window.WebSocket.CLOSING = OriginalWebSocket.CLOSING;
+        window.WebSocket.CLOSED = OriginalWebSocket.CLOSED;
+        
+        console.log('[WebSocketPatch] Early patch applied successfully');
+      })();
+    </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />

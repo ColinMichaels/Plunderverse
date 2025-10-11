@@ -14,13 +14,17 @@ export function patchWebSocket() {
   // Create a patched WebSocket constructor
   const PatchedWebSocket = function(url: string | URL, protocols?: string | string[]) {
     let fixedUrl = url.toString();
+    const originalUrl = fixedUrl;
+    
+    // Log EVERY WebSocket connection attempt for debugging
+    console.log(`[WebSocketPatch] NEW WebSocket connection attempt:`, originalUrl);
     
     // Check if URL contains "localhost:undefined" and fix it
     if (fixedUrl.includes('localhost:undefined')) {
       // Use port 5000 as the default fallback port
       const defaultPort = '5000';
       fixedUrl = fixedUrl.replace('localhost:undefined', `localhost:${defaultPort}`);
-      console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${url} -> ${fixedUrl}`);
+      console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${originalUrl} -> ${fixedUrl}`);
     }
     
     // Check for other undefined port patterns (e.g., ":undefined")
@@ -37,34 +41,70 @@ export function patchWebSocket() {
         fixedUrl = fixedUrl.replace(/:undefined/g, `:${defaultPort}`);
       }
       
-      console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${url} -> ${fixedUrl}`);
+      console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${originalUrl} -> ${fixedUrl}`);
     }
     
-    // For any WebSocket connection to port 5000 with a token parameter,
-    // ensure it has the /ws/sync path (this is for runtime-injected WebSockets)
-    if (fixedUrl.includes(':5000') && fixedUrl.includes('?token=')) {
-      // Parse the URL
+    // CRITICAL: Redirect runtime WebSocket connections to /ws/sync
+    // Check if this is a connection to port 5000 (various formats)
+    const isPort5000 = fixedUrl.includes(':5000') || 
+                       fixedUrl.match(/^wss?:\/\/localhost\/?(\?|$)/) || 
+                       fixedUrl.match(/^wss?:\/\/127\.0\.0\.1\/?(\?|$)/);
+    
+    // Check if this is a runtime WebSocket (has token parameter)
+    // IMPORTANT: Check for both ?token= and token= anywhere in the query string
+    const hasToken = fixedUrl.includes('token=');
+    
+    if (isPort5000) {
+      console.log(`[WebSocketPatch] WebSocket to port 5000 detected: ${fixedUrl}`);
+      
       try {
         const parsedUrl = new URL(fixedUrl);
-        // If the path is just "/" or empty, add /ws/sync
-        if (!parsedUrl.pathname || parsedUrl.pathname === '/' || parsedUrl.pathname === '') {
+        
+        // Check if this has a token in the search params
+        const urlHasToken = parsedUrl.search.includes('token=');
+        
+        // If it's connecting to port 5000 with a token and NOT already on /ws/sync, redirect it
+        if (urlHasToken && parsedUrl.pathname !== '/ws/sync') {
+          const oldPath = parsedUrl.pathname;
           parsedUrl.pathname = '/ws/sync';
           fixedUrl = parsedUrl.toString();
-          console.warn(`[WebSocketPatch] Added /ws/sync path to token URL: ${url} -> ${fixedUrl}`);
+          console.warn(`[WebSocketPatch] REDIRECTED runtime WebSocket with token to /ws/sync: path "${oldPath}" -> "/ws/sync"`);
+          console.warn(`[WebSocketPatch] Original URL: ${originalUrl}`);
+          console.warn(`[WebSocketPatch] Fixed URL: ${fixedUrl}`);
+        } else if (urlHasToken && parsedUrl.pathname === '/ws/sync') {
+          console.log(`[WebSocketPatch] Runtime WebSocket with token already has correct path: ${parsedUrl.pathname}`);
+        } else if (!urlHasToken && parsedUrl.pathname === '/') {
+          // This is likely Vite HMR - leave it alone
+          console.log(`[WebSocketPatch] WebSocket to root path without token (likely Vite HMR), preserving: ${fixedUrl}`);
+        } else if (!urlHasToken && parsedUrl.pathname === '/ws/sync') {
+          // This is a valid connection to /ws/sync without token (like deviceId connections)
+          console.log(`[WebSocketPatch] WebSocket to /ws/sync without token, preserving: ${fixedUrl}`);
         }
       } catch (err) {
-        // If we can't parse it, try a regex approach
-        const match = fixedUrl.match(/(wss?:\/\/[^\/]+)(\/[^?]*)?(.*)/);
-        if (match) {
-          const base = match[1];
-          const path = match[2];
-          const query = match[3];
-          if (!path || path === '/') {
-            fixedUrl = `${base}/ws/sync${query}`;
-            console.warn(`[WebSocketPatch] Added /ws/sync path via regex: ${url} -> ${fixedUrl}`);
+        // If we can't parse it as URL, try regex approach
+        console.warn(`[WebSocketPatch] Could not parse URL, trying regex approach: ${err}`);
+        
+        // Check if URL has token parameter
+        if (hasToken) {
+          const match = fixedUrl.match(/(wss?:\/\/[^\/]+)(\/[^?]*)?(.*)/);
+          if (match) {
+            const base = match[1];
+            const path = match[2] || '/';
+            const query = match[3] || '';
+            
+            // Redirect to /ws/sync if not already there
+            if (!path.includes('/ws/sync')) {
+              fixedUrl = `${base}/ws/sync${query}`;
+              console.warn(`[WebSocketPatch] REDIRECTED via regex (has token): ${originalUrl} -> ${fixedUrl}`);
+            }
           }
+        } else {
+          console.log(`[WebSocketPatch] No token in malformed URL, preserving: ${fixedUrl}`);
         }
       }
+    } else {
+      // Connection to non-5000 port - don't modify
+      console.log(`[WebSocketPatch] WebSocket to non-5000 port, preserving original: ${fixedUrl}`);
     }
     
     // Validate the URL before creating the WebSocket
