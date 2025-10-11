@@ -11,9 +11,9 @@ export class ParrotSpeechService {
   private audioContext: AudioContext | null = null;
   private settings: ParrotVoiceSettings = {
     rate: 1.1,
-    pitch: 2.2,
-    volume: 0.5,
-    echoEnabled: false,
+    pitch: 1.8,
+    volume: 0.8,
+    echoEnabled: true,
     reverbEnabled: true,
   };
   private currentUtterance: SpeechSynthesisUtterance | null = null;
