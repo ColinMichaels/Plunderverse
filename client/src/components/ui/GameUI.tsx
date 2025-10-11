@@ -10,8 +10,7 @@ import { NavigationSidebar } from "../navigation/NavigationSidebar";
 import { MusicPlayer } from "../screens/MusicPlayer";
 import { CryptoMarketplace } from "../economy/crypto/CryptoMarketplace";
 import { CrewRecruitmentInterface } from "../ship/CrewRecruitmentInterface";
-import { ParrotControls } from "../ParrotControls";
-import { ParrotTextDisplay } from "../ParrotTextDisplay";
+import { ParrotHolographicPopup } from "../ParrotHolographicPopup";
 
 import { ActionBar } from "./ActionBar";
 import { ObjectiveTracker } from "../economy/ObjectiveTracker";
@@ -194,9 +193,8 @@ export function GameUI() {
         <MusicPlayer />
       </div>
 
-      {/* Parrot AI Controls */}
-      <ParrotControls />
-      <ParrotTextDisplay />
+      {/* Parrot Holographic Popup - Shows when speaking */}
+      <ParrotHolographicPopup />
 
       {/* Crew Recruitment Interface - Modal overlay */}
       {showCrewRecruitment && (
