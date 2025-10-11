@@ -288,8 +288,9 @@ function SmokeTrail({
     }, []);
 
     useEffect(() => {
-        if (!geoRef.current) return;
-        geoRef.current.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        const geo = geoRef.current;
+        if (!geo) return;
+        geo.setAttribute("position", new THREE.BufferAttribute(positions, 3));
         // Seed life so they don't all pop at once
         for (let i = 0; i < COUNT; i++) life[i] = Math.random() * maxLife;
     }, [positions, life]);
@@ -310,6 +311,8 @@ function SmokeTrail({
     };
 
     useFrame((_, dt) => {
+        const geo = geoRef.current;
+        if (!geo) return;
         if (!active) return;
         if (emit) {
             for (let k = 0; k < 6; k++) emitOne();
@@ -337,7 +340,11 @@ function SmokeTrail({
     });
 
     if (!active) return null;
-    return <points ref={ptsRef} geometry={geoRef.current ?? undefined} material={mat}/>;
+    return (
+        <points ref={ptsRef} material={mat}>
+            <bufferGeometry ref={geoRef}/>
+        </points>
+    );
 }
 
 function PlanetTransitionScene({
@@ -597,15 +604,13 @@ function PlanetTransitionScene({
         atmo.scale.setScalar(shell);
         (atmosphereMat.uniforms.uCut as any).value = lerp(0.0, 0.6, u);
         (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.45, 0.08, u);
-        // Fade rim intensity as we leave
-        (atmosphereMat.uniforms.uRimIntensity as any).value = lerp(1.0, 0.2, u);
+
       } else {
         // Landing: atmosphere appears
         const shell = 1.23 - 0.2 * u;
         atmo.scale.setScalar(shell);
         (atmosphereMat.uniforms.uCut as any).value = lerp(0.6, 0.0, u);
         (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.08, 0.45, u);
-        (atmosphereMat.uniforms.uRimIntensity as any).value = lerp(0.2, 1.0, u);
       }
     }
 
