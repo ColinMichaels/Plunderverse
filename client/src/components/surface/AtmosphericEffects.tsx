@@ -699,9 +699,6 @@ export function AtmosphericEffects({
                 material,
                 ["atmospheric-effects", `planet-${planetName}-atmosphere`],
               );
-              console.log(
-                `[AtmosphericEffects] Registered particle material: ${particleMaterialIdRef.current}`,
-              );
             }
           }}
           size={1}
@@ -734,9 +731,6 @@ export function AtmosphericEffects({
                     "heat-shimmer",
                   ],
                 );
-                console.log(
-                  `[AtmosphericEffects] Registered heat shimmer material: ${heatShimmerMaterialIdRef.current}`,
-                );
               }
             }}
             transparent
@@ -761,7 +755,7 @@ export function AtmosphericEffects({
       {atmosphere.fogDensity > 0.003 && (
         <>
           {[0, 10, 20, 30].map((height, index) => {
-            const fogMaterialId = `fog-plane-material-${height}-${planetName}-${Date.now()}`;
+            const fogMaterialId = `fog-plane-material-${height}-${planetName}`;
             if (!fogPlaneMaterialIdsRef.current.includes(fogMaterialId)) {
               fogPlaneMaterialIdsRef.current.push(fogMaterialId);
             }

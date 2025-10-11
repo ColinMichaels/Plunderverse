@@ -86,10 +86,12 @@ class ResourceManager {
       material.forEach((mat, index) => {
         this.registerResource(`${id}_${index}`, 'material', mat, tags);
       });
-      this.log(`Registered material array: ${id} (${material.length} materials)`);
+      // Only log in debug mode
+      // this.log(`Registered material array: ${id} (${material.length} materials)`);
     } else {
       this.registerResource(id, 'material', material, tags);
-      this.log(`Registered material: ${id}`);
+      // Only log in debug mode
+      // this.log(`Registered material: ${id}`);
     }
   }
 
