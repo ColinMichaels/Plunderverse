@@ -64,6 +64,35 @@ self.addEventListener('activate', event => {
   self.clients.claim();
 });
 
+// Helper function to check if a request/response can be cached
+function isCacheable(request, response) {
+  const url = new URL(request.url);
+  
+  // Only cache http and https URLs
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    console.log('[ServiceWorker] Skipping cache for unsupported protocol:', url.protocol);
+    return false;
+  }
+  
+  // Skip partial responses (status 206)
+  if (response && response.status === 206) {
+    console.log('[ServiceWorker] Skipping cache for partial response (206)');
+    return false;
+  }
+  
+  // Skip chrome-extension and other browser internal URLs
+  if (url.href.startsWith('chrome-extension://') || 
+      url.href.startsWith('chrome://') ||
+      url.href.startsWith('edge://') ||
+      url.href.startsWith('firefox://') ||
+      url.href.startsWith('about:')) {
+    console.log('[ServiceWorker] Skipping cache for browser internal URL');
+    return false;
+  }
+  
+  return true;
+}
+
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', event => {
   const { request } = event;
@@ -102,8 +131,13 @@ async function cacheFirstStrategy(request) {
     
     const networkResponse = await fetch(request);
     
-    if (networkResponse.ok) {
-      cache.put(request, networkResponse.clone());
+    // Only cache if response is OK and cacheable
+    if (networkResponse.ok && isCacheable(request, networkResponse)) {
+      try {
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        console.warn('[ServiceWorker] Unable to cache response:', cacheError.message);
+      }
     }
     
     return networkResponse;
@@ -131,13 +165,18 @@ async function networkFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request);
     
-    if (networkResponse.ok) {
-      // Cache successful API responses
-      const cache = await caches.open(DYNAMIC_CACHE);
-      cache.put(request, networkResponse.clone());
-      
-      // Clean up old dynamic cache entries
-      cleanDynamicCache();
+    // Only cache if response is OK and cacheable
+    if (networkResponse.ok && isCacheable(request, networkResponse)) {
+      try {
+        // Cache successful API responses
+        const cache = await caches.open(DYNAMIC_CACHE);
+        await cache.put(request, networkResponse.clone());
+        
+        // Clean up old dynamic cache entries
+        cleanDynamicCache();
+      } catch (cacheError) {
+        console.warn('[ServiceWorker] Unable to cache API response:', cacheError.message);
+      }
     }
     
     return networkResponse;
@@ -168,9 +207,15 @@ async function fetchAndCache(request, cacheName) {
   try {
     const networkResponse = await fetch(request);
     
-    if (networkResponse.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, networkResponse.clone());
+    // Only cache if response is OK and cacheable
+    if (networkResponse.ok && isCacheable(request, networkResponse)) {
+      try {
+        const cache = await caches.open(cacheName);
+        await cache.put(request, networkResponse.clone());
+      } catch (cacheError) {
+        // Silent fail for background updates but log for debugging
+        console.debug('[ServiceWorker] Background cache update failed:', cacheError.message);
+      }
     }
   } catch (error) {
     // Silent fail for background updates
