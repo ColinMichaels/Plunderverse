@@ -59,7 +59,7 @@ export const useCreditsStore = create<CreditsStore>((set, get) => ({
       
       console.log(`${DEBUG_PREFIXES.SYNC_CHECK} spendCredits: ${initialCredits} - ${amount} = ${newCredits}`);
       
-      set({ credits: newCredits });
+      set(state => ({ credits: state.credits - amount }));
       
       // Post-transaction validation
       const finalState = get();

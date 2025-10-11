@@ -11,15 +11,18 @@ export interface DebugConfig {
   performanceTracking: boolean;
 }
 
-// Default configuration - enable all debugging in development
-const getDefaultConfig = (): DebugConfig => ({
-  enabled: true, // Set to true for development, false for production
-  transactionLogging: true,
-  stateAssertions: true,
-  eventValidation: true,
-  consistencyChecks: true,
-  performanceTracking: true
-});
+// Default configuration - enable debugging in development only
+const getDefaultConfig = (): DebugConfig => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  return {
+    enabled: !isProduction, // Enable debugging only in development
+    transactionLogging: !isProduction,
+    stateAssertions: !isProduction,
+    eventValidation: !isProduction,
+    consistencyChecks: !isProduction,
+    performanceTracking: false // Disable by default to avoid performance impact
+  };
+};
 
 let debugConfig: DebugConfig = getDefaultConfig();
 
