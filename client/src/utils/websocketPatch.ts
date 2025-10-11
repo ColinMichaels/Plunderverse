@@ -40,6 +40,33 @@ export function patchWebSocket() {
       console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${url} -> ${fixedUrl}`);
     }
     
+    // For any WebSocket connection to port 5000 with a token parameter,
+    // ensure it has the /ws/sync path (this is for runtime-injected WebSockets)
+    if (fixedUrl.includes(':5000') && fixedUrl.includes('?token=')) {
+      // Parse the URL
+      try {
+        const parsedUrl = new URL(fixedUrl);
+        // If the path is just "/" or empty, add /ws/sync
+        if (!parsedUrl.pathname || parsedUrl.pathname === '/' || parsedUrl.pathname === '') {
+          parsedUrl.pathname = '/ws/sync';
+          fixedUrl = parsedUrl.toString();
+          console.warn(`[WebSocketPatch] Added /ws/sync path to token URL: ${url} -> ${fixedUrl}`);
+        }
+      } catch (err) {
+        // If we can't parse it, try a regex approach
+        const match = fixedUrl.match(/(wss?:\/\/[^\/]+)(\/[^?]*)?(.*)/);
+        if (match) {
+          const base = match[1];
+          const path = match[2];
+          const query = match[3];
+          if (!path || path === '/') {
+            fixedUrl = `${base}/ws/sync${query}`;
+            console.warn(`[WebSocketPatch] Added /ws/sync path via regex: ${url} -> ${fixedUrl}`);
+          }
+        }
+      }
+    }
+    
     // Validate the URL before creating the WebSocket
     try {
       new URL(fixedUrl); // This will throw if the URL is invalid

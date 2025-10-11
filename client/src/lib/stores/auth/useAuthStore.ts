@@ -406,6 +406,13 @@ export const initializeAuth = async () => {
       console.error('[Auth] Authentication check failed:', error);
       // Don't throw, just let it proceed
     }
+    // IMPORTANT: Always set isAuthReady after checking auth
+    // In case checkAuth didn't set it (e.g., due to network error)
+    const state = useAuthStore.getState();
+    if (!state.isAuthReady) {
+      console.log('[Auth] Setting isAuthReady after auth check');
+      useAuthStore.setState({ isAuthReady: true });
+    }
   } else {
     console.log('[Auth] No tokens found, user needs to login or play as guest');
     useAuthStore.setState({ isAuthReady: true });

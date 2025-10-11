@@ -66,9 +66,10 @@ class SyncService {
   }
 
   public setupWebSocketServer(server: HTTPServer): void {
+    // Create WebSocket server without path restriction to accept connections on both / and /ws/sync
     this.wss = new WebSocketServer({
       server,
-      path: '/ws/sync',
+      // Remove path restriction - we'll handle path checking in verifyClient
       verifyClient: this.verifyClient.bind(this)
     });
 
@@ -77,17 +78,52 @@ class SyncService {
     // Start heartbeat monitoring
     this.startHeartbeatMonitor();
     
-    console.log('[SyncService] WebSocket server setup complete on /ws/sync');
+    console.log('[SyncService] WebSocket server setup complete - accepting connections only on /ws/sync');
   }
 
   private verifyClient(info: any, callback: (result: boolean) => void): void {
-    // In production, verify authentication here
-    // For now, allow all connections
-    callback(true);
+    const url = info.req.url;
+    const parsedUrl = new URL(url, `http://${info.req.headers.host}`);
+    const path = parsedUrl.pathname;
+    const token = parsedUrl.searchParams.get('token');
+    
+    // Only accept connections on /ws/sync
+    // The client-side websocketPatch.ts automatically redirects token connections to /ws/sync
+    if (path === '/ws/sync') {
+      if (token) {
+        console.log(`[SyncService] Accepting runtime WebSocket connection on /ws/sync with token: ${token.substring(0, 8)}...`);
+      } else {
+        console.log('[SyncService] Accepting app WebSocket connection on /ws/sync');
+      }
+      // Accept all connections on /ws/sync
+      callback(true);
+    } else if (path === '/') {
+      // ALWAYS reject root path connections
+      // This lets Vite's HMR WebSocket work properly on the root path
+      console.log('[SyncService] Rejecting root path WebSocket connection (reserved for Vite HMR)');
+      callback(false);
+    } else {
+      console.log(`[SyncService] Rejecting WebSocket connection on unsupported path: ${path}`);
+      callback(false);
+    }
   }
 
   private handleConnection(ws: WebSocket, request: any): void {
     const clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Parse the request URL to determine connection type
+    const parsedUrl = new URL(request.url, `http://${request.headers.host}`);
+    const path = parsedUrl.pathname;
+    const token = parsedUrl.searchParams.get('token');
+    
+    // Determine connection type
+    let connectionType = 'unknown';
+    if (path === '/ws/sync' && token) {
+      connectionType = 'runtime-websocket';
+    } else if (path === '/ws/sync') {
+      connectionType = 'app-cloudsync';
+    }
+    
     const syncClient: SyncClient = {
       id: clientId,
       ws,
@@ -99,7 +135,10 @@ class SyncService {
 
     this.clients.set(clientId, syncClient);
     
-    console.log(`[SyncService] Client connected: ${clientId}`);
+    console.log(`[SyncService] Client connected: ${clientId} (Type: ${connectionType}, Path: ${path}${token ? ', Has token' : ''})`);
+    
+    // For runtime WebSocket connections, we might need to handle them differently
+    // For now, treat all connections the same way
 
     ws.on('message', (data) => this.handleMessage(clientId, data));
     ws.on('close', () => this.handleDisconnection(clientId));
