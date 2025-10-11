@@ -9,11 +9,12 @@ import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, ResourceData } from "../../lib/planetData";
-import { SurfaceMovementController } from "./SurfaceMovementController";
+import { SurfaceMovementController, MiningBeamState } from "./SurfaceMovementController";
 import { FlashlightSystem } from "./FlashlightSystem";
 import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
 import { MiningLaser } from "./MiningLaser";
 import { ResourceNode } from "./EnhancedResourceNode";
+import { MiningBeamVisual } from "./MiningBeamVisual";
 import { ScreenEffects } from "./ScreenEffects";
 import { CameraShake } from "./CameraShake";
 import { ResourceManager } from "../../lib/utils/ResourceManager";
@@ -1091,91 +1092,39 @@ function ResourceNodes({ planetName }: { planetName: string }) {
     resource: ResourceData,
     nodeId: string,
   ) => {
-    console.log(
-      `[MINING-DEBUG] Resource click detected: ${resource.type} on ${planetName}`,
-    );
-    console.log(
-      `[MINING-DEBUG] Current mining state: isActive=${isActive}, targetResource=${targetResource?.type}`,
-    );
-
     try {
       // Check if we're currently mining THIS SPECIFIC node
       const { currentNodeId: activeNodeId } = useMining.getState();
 
       if (isActive && activeNodeId === nodeId) {
         // If already mining this specific node, perform a click
-        console.log(
-          `[MINING-DEBUG] Performing mining click for ${resource.type} (node: ${nodeId})`,
-        );
         playHit();
         const result = await performClick();
-        console.log(`[MINING-DEBUG] performClick result:`, result);
 
         if (result) {
           // Mining completed - check if transaction was successful
-          console.log(
-            `[MINING-DEBUG] Mining completed! Transaction result:`,
-            result,
-          );
-
           if (result.success) {
             // Transaction successful - resources, credits, equipment wear, and sounds already handled by economy service
-            console.log(
-              `[MINING-DEBUG] Mining transaction successful: ${result.message}`,
-            );
-
-            // Extract details for logging if available
-            if (
-              result.details?.resourcesAdded &&
-              result.details.resourcesAdded.length > 0
-            ) {
-              const addedResource = result.details.resourcesAdded[0];
-              console.log(
-                `[MINING-DEBUG] Successfully mined ${addedResource.quantity} ${addedResource.type}`,
-              );
-            }
-
-            if (result.details?.creditsEarned) {
-              console.log(
-                `[MINING-DEBUG] Earned ${result.details.creditsEarned} credits from mining`,
-              );
-            }
-
             // Node destruction is now handled in the mining store after successful transaction
-            console.log(
-              `[MINING-DEBUG] Mining successful - node destruction handled by mining store`,
-            );
           } else {
             // Transaction failed - handle failure case
-            console.warn(
-              `[MINING-DEBUG] Mining transaction failed: ${result.message}`,
-            );
-
             // Check for specific equipment failure cases
             if (
               result.message.includes("broken") ||
               result.message.includes("full")
             ) {
-              console.warn(`[MINING-DEBUG] ${result.message}`);
               // Note: Equipment failure sounds and UI feedback are handled by the economy service
             }
           }
         } else {
           // Continue mining
-          console.log(`[MINING-DEBUG] Mining click registered, continuing...`);
         }
       } else {
         // Start mining a new resource
-        console.log(
-          `[MINING-DEBUG] Starting new mining operation for ${resource.type} (node: ${nodeId}) on ${planetName}`,
-        );
         startMining(planetName, resource, nodeId);
-        console.log(
-          `[MINING-DEBUG] startMining called for ${resource.type} (node: ${nodeId}) on ${planetName}`,
-        );
       }
     } catch (error) {
-      console.error(`[MINING-DEBUG] Failed to mine ${resource.type}:`, error);
+      console.error(`Failed to mine ${resource.type}:`, error);
     }
   };
 
@@ -1410,6 +1359,12 @@ export function PlanetSurfaceScene() {
   const { isOn: isFlashlightOn } = useFlashlight();
   const { playTakeoff } = useAudio();
   const resourceManager = ResourceManager.getInstance();
+  
+  // Mining beam state for spacebar mining visual feedback
+  const [miningBeamState, setMiningBeamState] = useState<MiningBeamState>({
+    active: false,
+    target: null,
+  });
 
   // Initialize weather updates for periodic notifications
   useWeatherUpdates();
@@ -1457,6 +1412,7 @@ export function PlanetSurfaceScene() {
     { name: "turnRight", keys: ["KeyE"] },
     { name: "flashlight", keys: ["KeyF"] },
     { name: "charge", keys: ["KeyC"] },
+    { name: "shoot", keys: ["Space"] }, // Spacebar for mining/shooting
   ];
 
   return (
@@ -1473,7 +1429,8 @@ export function PlanetSurfaceScene() {
               planetColor={planets.find((p) => p.name === landedPlanet)?.color}
             />
             <ResourceNodes planetName={landedPlanet} />
-            <SurfaceMovementController />
+            <SurfaceMovementController onMiningBeamChange={setMiningBeamState} />
+            <MiningBeamVisual active={miningBeamState.active} targetPosition={miningBeamState.target} />
             <AtmosphericEffects
               planetName={landedPlanet}
               flashlightOn={isFlashlightOn}

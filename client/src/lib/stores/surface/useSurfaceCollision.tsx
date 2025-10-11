@@ -6,6 +6,7 @@ export interface CollisionObject {
   position: THREE.Vector3;
   radius: number;
   type: "resource" | "rock";
+  resource?: any; // Optional resource data for resource nodes
 }
 
 interface SurfaceCollisionState {
@@ -14,6 +15,7 @@ interface SurfaceCollisionState {
   unregisterCollisionObject: (id: string) => void;
   clearCollisionObjects: () => void;
   checkCollision: (position: THREE.Vector3, playerRadius: number) => CollisionObject | null;
+  getResourceNodes: () => CollisionObject[]; // Get all resource nodes for spacebar mining
 }
 
 export const useSurfaceCollision = create<SurfaceCollisionState>((set, get) => ({
@@ -48,5 +50,11 @@ export const useSurfaceCollision = create<SurfaceCollisionState>((set, get) => (
     }
     
     return null;
+  },
+
+  getResourceNodes: () => {
+    const { collisionObjects } = get();
+    // Return only resource type collision objects
+    return collisionObjects.filter(obj => obj.type === "resource");
   },
 }));

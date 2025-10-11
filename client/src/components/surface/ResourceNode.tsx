@@ -215,20 +215,21 @@ export function ResourceNode({
     }
   }, [progress]);
 
-  // Register collision object
+  // Register collision object with resource data for spacebar mining
   useEffect(() => {
     const collisionObj = {
       id: nodeId,
       position: new THREE.Vector3(position[0], position[1], position[2]),
       radius: 1.5,
       type: "resource" as const,
+      resource: resource, // Include resource data for spacebar mining
     };
     registerCollisionObject(collisionObj);
 
     return () => {
       unregisterCollisionObject(nodeId);
     };
-  }, [nodeId, position[0], position[1], position[2]]);
+  }, [nodeId, position[0], position[1], position[2], resource]);
 
   // Get color based on rarity
   const getResourceColor = (rarity: string) => {
@@ -294,14 +295,47 @@ export function ResourceNode({
   const hoverScale = hovered ? 1.1 : 1;
   const finalScale = baseScale * hoverScale;
 
-  // Animation frame updates
+  // Animation frame updates with enhanced pulsing based on rarity
   useFrame((state) => {
     if (meshRef.current) {
       const isWater = resource.type.includes("Water") || resource.type.includes("Ice");
       
+      // Pulsing animation based on rarity
+      let pulseSpeed = 1;
+      let pulseAmplitude = 0.1;
+      
+      switch (resource.rarity) {
+        case "legendary":
+          pulseSpeed = 4; // Fast pulse for legendary
+          pulseAmplitude = 0.25;
+          break;
+        case "rare":
+          pulseSpeed = 2.5; // Medium-fast pulse for rare
+          pulseAmplitude = 0.2;
+          break;
+        case "uncommon":
+          pulseSpeed = 1.5; // Slow pulse for uncommon
+          pulseAmplitude = 0.15;
+          break;
+        case "common":
+        default:
+          pulseSpeed = 1; // Very slow pulse for common
+          pulseAmplitude = 0.1;
+          break;
+      }
+      
+      // Apply pulsing scale based on rarity
+      const pulseScale = 1 + Math.sin(state.clock.elapsedTime * pulseSpeed) * pulseAmplitude * (1 - progress);
+      meshRef.current.scale.setScalar(finalScale * pulseScale);
+      
       // Base position with floating animation
       if (!isWater) {
-        meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.2 * (1 - progress);
+        // Enhanced floating for rare minerals
+        const floatSpeed = resource.rarity === "legendary" ? 3 : 
+                          resource.rarity === "rare" ? 2.5 : 2;
+        const floatHeight = resource.rarity === "legendary" ? 0.4 : 
+                           resource.rarity === "rare" ? 0.3 : 0.2;
+        meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * floatSpeed) * floatHeight * (1 - progress);
       } else {
         meshRef.current.position.y = position[1];
       }
@@ -312,22 +346,39 @@ export function ResourceNode({
         meshRef.current.rotation.z = Math.cos(state.clock.elapsedTime * 8) * wobbleIntensity;
       }
       
-      // Rotation when hovered
+      // Rotation with speed based on rarity
+      const rotationSpeed = resource.rarity === "legendary" ? 0.04 : 
+                           resource.rarity === "rare" ? 0.03 : 
+                           resource.rarity === "uncommon" ? 0.02 : 0.01;
+      
       if (hovered && progress < 0.5) {
-        meshRef.current.rotation.y += 0.02;
+        meshRef.current.rotation.y += rotationSpeed * 2;
+      } else if (progress === 0) {
+        // Slow ambient rotation for undamaged resources
+        meshRef.current.rotation.y += rotationSpeed;
       }
     }
 
-    // Update shader uniforms
+    // Update shader uniforms with dynamic emissive intensity
     if (materialRef.current && useShader) {
       materialRef.current.uTime = clock.elapsedTime;
       materialRef.current.uProgress = progress;
       materialRef.current.uCrackIntensity = 1 + progress * 2;
+      
+      // Pulsing emissive intensity for rare minerals
+      if (resource.rarity === "legendary" || resource.rarity === "rare") {
+        const emissivePulse = 0.3 + Math.sin(clock.elapsedTime * 3) * 0.3;
+        materialRef.current.uEmissiveIntensity = emissivePulse * (1 - progress * 0.8);
+      }
     }
   });
 
   const resourceColor = getResourceColor(resource.rarity);
-  const emissiveIntensity = hovered ? 0.5 : 0.1;
+  // Enhanced emissive intensity based on rarity
+  const baseEmissive = resource.rarity === "legendary" ? 0.5 : 
+                       resource.rarity === "rare" ? 0.3 : 
+                       resource.rarity === "uncommon" ? 0.2 : 0.1;
+  const emissiveIntensity = hovered ? baseEmissive * 2 : baseEmissive;
 
   return (
     <group>

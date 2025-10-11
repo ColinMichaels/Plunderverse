@@ -1,4 +1,4 @@
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { useKeyboardControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -9,6 +9,8 @@ import { useMining } from "../../lib/stores/economy/useMining";
 import { useAudio } from "../../lib/stores/ui/useAudio";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
 import { useSettings } from "../../lib/stores/ui/useSettings";
+import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
 
 enum SurfaceControls {
   forward = "forward",
@@ -19,6 +21,7 @@ enum SurfaceControls {
   turnRight = "turnRight",
   flashlight = "flashlight",
   charge = "charge",
+  shoot = "shoot", // Spacebar for mining/shooting
 }
 
 // Function to calculate terrain height at any x,z position (uses new terrain system)
@@ -27,8 +30,17 @@ function terrainHeightAt(x: number, z: number): number {
   return terrainStore.getHeightAt(x, z);
 }
 
-export function SurfaceMovementController() {
-  const { camera, gl } = useThree();
+export interface MiningBeamState {
+  active: boolean;
+  target: THREE.Vector3 | null;
+}
+
+interface SurfaceMovementControllerProps {
+  onMiningBeamChange?: (state: MiningBeamState) => void;
+}
+
+export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovementControllerProps = {}) {
+  const { camera, gl, scene } = useThree();
   const [subscribe, get] = useKeyboardControls<SurfaceControls>();
   const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
   const rotationRef = useRef(0); // Yaw (left/right)
@@ -48,10 +60,12 @@ export function SurfaceMovementController() {
   }, []);
 
   // Collision system
-  const { checkCollision } = useSurfaceCollision();
-  const { isActive: isMining, currentNodeId } = useMining();
-  const { playHit } = useAudio();
+  const { checkCollision, getResourceNodes } = useSurfaceCollision();
+  const { isActive: isMining, currentNodeId, startMining, performClick } = useMining();
+  const { playHit, playZap } = useAudio();
   const { setPosition, setRotation } = useSurfacePlayer();
+  const { landedPlanet } = useLandedState();
+  const { isNodeDestroyed } = useDestroyedNodes();
   const lastCollisionSoundRef = useRef(0);
   const lastCollisionTimeRef = useRef(0);
 
@@ -74,6 +88,12 @@ export function SurfaceMovementController() {
   } = useFlashlight();
   const lastFlashlightPressRef = useRef(0);
   const lastChargePressRef = useRef(0);
+  
+  // Spacebar mining system
+  const lastShootPressRef = useRef(0);
+  const [miningBeamActive, setMiningBeamActive] = useState(false);
+  const [miningBeamTarget, setMiningBeamTarget] = useState<THREE.Vector3 | null>(null);
+  const miningRange = 15; // Maximum mining range in units
 
   // Debug logging for controls
   useEffect(() => {
@@ -222,6 +242,84 @@ export function SurfaceMovementController() {
 
     // Update flashlight battery (drain/charge based on state)
     updateBattery(delta);
+    
+    // Spacebar mining - detect and mine nearest mineral
+    if (controls.shoot && currentTime - lastShootPressRef.current > 200) {
+      lastShootPressRef.current = currentTime;
+      
+      // Create a raycaster from the camera position and direction
+      const raycaster = new THREE.Raycaster();
+      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+      
+      // Get all resource nodes from the collision system
+      const resourceNodes = getResourceNodes ? getResourceNodes() : [];
+      
+      // Find the nearest mineral within range
+      let nearestNode: any = null;
+      let nearestDistance = Infinity;
+      
+      resourceNodes.forEach((node: any) => {
+        // Skip destroyed nodes
+        if (landedPlanet && isNodeDestroyed(landedPlanet, node.id)) {
+          return;
+        }
+        
+        const nodePosition = new THREE.Vector3(...node.position);
+        const distance = position.distanceTo(nodePosition);
+        
+        // Check if within mining range and if it's closer than previous
+        if (distance <= miningRange && distance < nearestDistance) {
+          // Check if we have line of sight (simple angle check)
+          const toNode = nodePosition.clone().sub(position).normalize();
+          const cameraDir = new THREE.Vector3(0, 0, -1);
+          cameraDir.applyQuaternion(camera.quaternion);
+          
+          const angle = cameraDir.angleTo(toNode);
+          if (angle < Math.PI / 4) { // 45 degree cone
+            nearestNode = node;
+            nearestDistance = distance;
+          }
+        }
+      });
+      
+      // If we found a mineral, start mining it
+      if (nearestNode && landedPlanet) {
+        if (!isMining || currentNodeId !== nearestNode.id) {
+          // Start mining new node
+          startMining(landedPlanet, nearestNode.resource, nearestNode.id);
+          playZap();
+          setMiningBeamActive(true);
+          setMiningBeamTarget(new THREE.Vector3(...nearestNode.position));
+          // Notify parent component about mining beam state
+          if (onMiningBeamChange) {
+            onMiningBeamChange({ active: true, target: new THREE.Vector3(...nearestNode.position) });
+          }
+        } else {
+          // Continue mining current node
+          performClick();
+          playHit();
+        }
+      } else {
+        // No target found - just play shooting sound
+        playZap();
+        setMiningBeamActive(false);
+        setMiningBeamTarget(null);
+        // Notify parent component about mining beam state
+        if (onMiningBeamChange) {
+          onMiningBeamChange({ active: false, target: null });
+        }
+      }
+    }
+    
+    // Clear mining beam when not shooting
+    if (!controls.shoot && miningBeamActive) {
+      setMiningBeamActive(false);
+      setMiningBeamTarget(null);
+      // Notify parent component about mining beam state
+      if (onMiningBeamChange) {
+        onMiningBeamChange({ active: false, target: null });
+      }
+    }
 
     // Clamp velocity to prevent runaway acceleration
     velocity.clampLength(0, maxVelocity);
