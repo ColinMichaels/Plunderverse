@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { useTexture } from "@react-three/drei";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {Canvas, useFrame, useThree} from "@react-three/fiber";
+import {useTexture} from "@react-three/drei";
 import * as THREE from "three";
 
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { planets } from "../../lib/planetData";
+import {useLandedState} from "@/lib/stores";
+import {planets} from "@/lib/planetData.ts";
 
 type PlanetTransitionProps = {
   /** Direction of transition - 'landing' or 'takeoff' */
@@ -260,6 +260,86 @@ function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, n
   );
 }
 
+// Simple CPU particle smoke trail for takeoff
+function SmokeTrail({
+                        active,
+                        planetRadius,
+                        emit,
+                    }: { active: boolean; planetRadius: number; emit: boolean }) {
+    const COUNT = 200;
+    const geoRef = useRef<THREE.BufferGeometry>(null);
+    const ptsRef = useRef<THREE.Points>(null);
+
+    const positions = useMemo(() => new Float32Array(COUNT * 3), []);
+    const velocities = useMemo(() => new Float32Array(COUNT * 3), []);
+    const life = useMemo(() => new Float32Array(COUNT), []);
+    const maxLife = 2.4;
+
+    const mat = useMemo(() => {
+        return new THREE.PointsMaterial({
+            size: 2.0,
+            color: new THREE.Color("#cccccc"),
+            transparent: true,
+            depthWrite: false,
+            opacity: 0.0,
+            sizeAttenuation: true,
+            blending: THREE.AdditiveBlending,
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!geoRef.current) return;
+        geoRef.current.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+        // Seed life so they don't all pop at once
+        for (let i = 0; i < COUNT; i++) life[i] = Math.random() * maxLife;
+    }, [positions, life]);
+
+    const emitOne = () => {
+        const i = Math.floor(Math.random() * COUNT);
+        const angle = Math.random() * Math.PI * 2;
+        const r = planetRadius * (0.05 + Math.random() * 0.06);
+        positions[i * 3] = Math.cos(angle) * r;
+        positions[i * 3 + 1] = -planetRadius * 0.9;
+        positions[i * 3 + 2] = Math.sin(angle) * r;
+
+        velocities[i * 3] = (Math.random() - 0.5) * 0.2;
+        velocities[i * 3 + 1] = 0.8 + Math.random() * 0.6;
+        velocities[i * 3 + 2] = (Math.random() - 0.5) * 0.2;
+
+        life[i] = 0.0001;
+    };
+
+    useFrame((_, dt) => {
+        if (!active) return;
+        if (emit) {
+            for (let k = 0; k < 6; k++) emitOne();
+        }
+
+        for (let i = 0; i < COUNT; i++) {
+            if (life[i] >= maxLife) continue;
+
+            positions[i * 3] += velocities[i * 3] * dt;
+            positions[i * 3 + 1] += velocities[i * 3 + 1] * dt;
+            positions[i * 3 + 2] += velocities[i * 3 + 2] * dt;
+
+            velocities[i * 3] *= (0.98 - 0.2 * dt);
+            velocities[i * 3 + 2] *= (0.98 - 0.2 * dt);
+            velocities[i * 3 + 1] *= (0.98 - 0.15 * dt);
+
+            life[i] += dt;
+        }
+
+        const alive = life.reduce((a, b) => a + (b < maxLife ? 1 : 0), 0);
+        const o = THREE.MathUtils.clamp(alive / COUNT, 0, 0.9);
+        (mat as any).opacity = o * 0.7;
+
+        (geoRef.current!.attributes.position as THREE.BufferAttribute).needsUpdate = true;
+    });
+
+    if (!active) return null;
+    return <points ref={ptsRef} geometry={geoRef.current ?? undefined} material={mat}/>;
+}
+
 function PlanetTransitionScene({
   direction,
   duration,
@@ -288,7 +368,7 @@ function PlanetTransitionScene({
   } : null;
   
   const textureUrl = currentPlanet?.textureUrl ?? "/textures/planets/2k_earth_daymap.jpg";
-  const planetRadius = (currentPlanet?.radius ?? 5) * 1.0;
+    const planetRadius = (currentPlanet?.radius ?? 5);
 
   // Textures
   const planetTex = useTexture(textureUrl);
@@ -301,51 +381,61 @@ function PlanetTransitionScene({
   }, [planetTex]);
 
   // Enhanced atmosphere shader with blue rim light
-  const atmosphereMat = useMemo(() => {
-    const uniforms = {
-      uColor: { value: new THREE.Color("#4da6ff") }, // More blue color
-      uRimColor: { value: new THREE.Color("#0066ff") }, // Deep blue rim
-      uOpacity: { value: 0.45 },
-      uPower: { value: 2.5 },
-      uCut: { value: 0.0 },
-      uRimIntensity: { value: 1.0 },
-    };
-    const vs = /* glsl */`
-      varying vec3 vWN;
-      varying vec3 vWP;
-      void main() {
-        vec4 wp = modelMatrix * vec4(position,1.0);
-        vWP = wp.xyz;
-        vWN = normalize(mat3(modelMatrix) * normal);
-        gl_Position = projectionMatrix * viewMatrix * wp;
-      }
-    `;
-    const fs = /* glsl */`
-      uniform vec3 uColor;
-      uniform vec3 uRimColor;
-      uniform float uOpacity;
-      uniform float uPower;
-      uniform float uCut;
-      uniform float uRimIntensity;
-      varying vec3 vWN;
-      varying vec3 vWP;
-      void main() {
-        vec3 V = normalize(cameraPosition - vWP);
-        float f = pow(1.0 - max(dot(normalize(vWN), V), 0.0), uPower);
-        float a = clamp(f - uCut, 0.0, 1.0);
-        
-        // Enhanced rim lighting
-        float rim = pow(1.0 - max(dot(normalize(vWN), V), 0.0), 1.5);
-        vec3 finalColor = mix(uColor, uRimColor, rim * uRimIntensity);
-        
-        gl_FragColor = vec4(finalColor * a, a * uOpacity);
-      }
-    `;
-    return new THREE.ShaderMaterial({
-      uniforms, vertexShader: vs, fragmentShader: fs,
-      transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide
-    });
-  }, []);
+// Enhanced atmosphere shader (simple Rayleigh/Mie-inspired rim with sun direction)
+    const atmosphereMat = useMemo(() => {
+        const uniforms = {
+            uColor: {value: new THREE.Color("#5db3ff")},     // base blue
+            uRimColor: {value: new THREE.Color("#9fd3ff")},  // pale rim
+            uSunDir: {value: new THREE.Vector3(0.5, 0.8, 0.2).normalize()},
+            uOpacity: {value: 0.5},
+            uRimPower: {value: 2.2},
+            uMieStrength: {value: 0.6},
+            uCut: {value: 0.0},
+        };
+        const vs = /* glsl */`
+    varying vec3 vWN;
+    varying vec3 vWP;
+    void main() {
+      vec4 wp = modelMatrix * vec4(position,1.0);
+      vWP = wp.xyz;
+      vWN = normalize(mat3(modelMatrix) * normal);
+      gl_Position = projectionMatrix * viewMatrix * wp;
+    }
+  `;
+        const fs = /* glsl */`
+    uniform vec3 uColor;
+    uniform vec3 uRimColor;
+    uniform vec3 uSunDir;
+    uniform float uOpacity;
+    uniform float uRimPower;
+    uniform float uMieStrength;
+    uniform float uCut;
+    varying vec3 vWN;
+    varying vec3 vWP;
+
+    void main() {
+      vec3 N = normalize(vWN);
+      vec3 V = normalize(cameraPosition - vWP);
+      float ndov = max(dot(N, V), 0.0);
+
+      // Fresnel-like rim
+      float rim = pow(1.0 - ndov, uRimPower);
+
+      // Forward scattering towards sun
+      float ndol = max(dot(N, normalize(uSunDir)), 0.0);
+      float mie = pow(ndol, 6.0) * uMieStrength;
+
+      float a = clamp(rim - uCut, 0.0, 1.0);
+      vec3 col = mix(uColor, uRimColor, rim) + mie * uRimColor;
+
+      gl_FragColor = vec4(col * a, a * uOpacity);
+    }
+  `;
+        return new THREE.ShaderMaterial({
+            uniforms, vertexShader: vs, fragmentShader: fs,
+            transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.BackSide
+        });
+    }, []);
 
   // Planet and atmosphere references
   const planetRef = useRef<THREE.Mesh>(null);
@@ -381,11 +471,19 @@ function PlanetTransitionScene({
 
   // Prepare scene light (sun fake) so the limb looks right
   const light = useMemo(() => new THREE.DirectionalLight("#fff8e0", 1.1), []);
+    const hemi = useMemo(() => new THREE.HemisphereLight("#8fb8ff", "#1a1a1a", 0.35), []);
+    useEffect(() => {
+        (cam as any).add?.(hemi);
+        return () => (cam as any).remove?.(hemi);
+    }, [cam, hemi]);
   useEffect(() => {
-    light.position.set(5, 10, 8);
-    (cam as any).add?.(light); // cheap attach; overlay scene only
-    return () => (cam as any).remove?.(light);
-  }, [cam, light]);
+      light.position.set(5, 10, 8);
+      (cam as any).add?.(light);
+      // Update sun direction for atmosphere
+      const sunDir = new THREE.Vector3().copy(light.position).normalize();
+      (atmosphereMat.uniforms as any).uSunDir.value.copy(sunDir);
+      return () => (cam as any).remove?.(light);
+  }, [cam, light, atmosphereMat]);
 
   useEffect(() => {
     // initial camera pose
@@ -595,6 +693,15 @@ function PlanetTransitionScene({
       {/* Simple ambient lighting */}
       <ambientLight intensity={0.3} />
 
+      {/* Smoke trail from surface on takeoff */}
+      {direction === 'takeoff' && (
+          <SmokeTrail
+              active={true}
+              planetRadius={planetRadius}
+              emit={clockRef.current / duration > 0.12 && clockRef.current / duration < 0.7}
+          />
+      )}
+
       {/* Engine glow effect for takeoff */}
       {direction === 'takeoff' && (
         <EngineGlow 
@@ -609,9 +716,10 @@ function PlanetTransitionScene({
           <sphereGeometry args={[planetRadius, 64, 64]} />
           <meshStandardMaterial
             map={planetTex}
-            roughness={1}
+            roughness={0.85}
             metalness={0}
-            emissive={"#000000"}
+            emissive={"#0a0a0a"}
+            emissiveIntensity={0.6}
           />
         </mesh>
 
