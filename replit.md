@@ -10,10 +10,11 @@ Preferred communication style: Simple, everyday language.
 
 ### 2025-10-11: Fixed React Duplicate Key Warning in Mission IDs
 - **Mission ID Fix**: Fixed duplicate React key warning by improving mission ID generation
-  - **Issue**: Mission IDs used pattern `${location}_${rank}_${i}_${seed}` causing duplicates
-  - **Solution**: Changed to `${location}_${i}_player${rank}_${Date.now()}_${seed}` for guaranteed uniqueness
-  - **Impact**: Eliminated React duplicate key warnings, more robust mission tracking
-  - **Pattern**: Earth_0_player1_1760225145123_Earth_1
+  - **Issue**: Mission IDs included seed with location name, causing location to appear twice (e.g., `Earth_0_player1_timestamp_playerId_Earth_1`)
+  - **Root Cause**: Seed pattern `${playerId}:${location}:${gameDay}` contained location, duplicating it in final mission ID
+  - **Solution**: Replaced seed with random string: `${location}_mission${i}_rank${playerRank}_${timestamp}_${random9chars}`
+  - **Impact**: Eliminated all React duplicate key warnings, truly unique mission IDs
+  - **Pattern**: Earth_mission0_rank1_1760225145123_a2b3c4d5e
 
 ### 2025-10-11: Fixed Player Stats & Authentication UI on Splash Screen
 - **Stats Panel Fix**: Fixed player stats panel visibility and interaction on splash screen

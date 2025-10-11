@@ -93,7 +93,7 @@ export const usePlunderverseMissions = create<PlunderverseMissionsState>((set, g
     // Mission templates would be loaded from content registry
     // For now, create placeholder missions with faction requirements
     for (let i = 0; i < missionCount; i++) {
-      const missionId = `${location}_${i}_player${playerRank}_${Date.now()}_${seed.replace(/:/g, '_')}`;
+      const missionId = `${location}_mission${i}_rank${playerRank}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       const difficulty = getDifficultyForRank(playerRank, random);
       const missionType = getMissionType(random);
       
