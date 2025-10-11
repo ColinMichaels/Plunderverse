@@ -1,3 +1,6 @@
+// Apply WebSocket patch FIRST to fix undefined port issues
+import "./utils/websocketPatch";
+
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
