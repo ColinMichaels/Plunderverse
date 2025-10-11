@@ -211,19 +211,13 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
 
   return (
     <group>
-      {/* Shadow-casting sun point light - radiates from sun center */}
+      {/* Extremely strong point light from sun center for dramatic day/night contrast */}
       <pointLight
         position={[0, 0, 0]}
-        intensity={3.5}
+        intensity={25.0}
         distance={3000}
-        decay={1}
+        decay={2}
         color={"#FFD77A"}
-        castShadow
-        shadow-mapSize-width={2048}
-        shadow-mapSize-height={2048}
-        shadow-camera-near={1}
-        shadow-camera-far={1000}
-        shadow-bias={-0.0001}
       />
 
       {/* Core (emissive shader) */}
