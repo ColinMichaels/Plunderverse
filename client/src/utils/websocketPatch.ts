@@ -19,17 +19,41 @@ export function patchWebSocket() {
     // Log EVERY WebSocket connection attempt for debugging
     console.log(`[WebSocketPatch] NEW WebSocket connection attempt:`, originalUrl);
     
+    // Special handling for Vite HMR in Replit environment
+    // Check if this is a Vite HMR connection (usually starts with ws:// or wss:// and has no path or root path)
+    const isViteHMR = (fixedUrl.includes('localhost:undefined') || fixedUrl.includes(':undefined')) && 
+                      !fixedUrl.includes('token=') && 
+                      !fixedUrl.includes('/ws/sync');
+    
+    if (isViteHMR) {
+      console.log('[WebSocketPatch] Detected Vite HMR connection attempt');
+      
+      // For Replit environment, use the proper WebSocket URL
+      if (typeof window !== 'undefined' && window.location.hostname.includes('replit')) {
+        // Use the Replit dev URL for HMR
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname;
+        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        
+        // Vite HMR WebSocket path
+        fixedUrl = `${protocol}//${host}:${port}/`;
+        console.warn(`[WebSocketPatch] Fixed Vite HMR URL for Replit: ${originalUrl} -> ${fixedUrl}`);
+      } else {
+        // Local development fallback
+        fixedUrl = fixedUrl.replace('localhost:undefined', 'localhost:5000');
+        fixedUrl = fixedUrl.replace(':undefined', ':5000');
+        console.warn(`[WebSocketPatch] Fixed Vite HMR URL for local dev: ${originalUrl} -> ${fixedUrl}`);
+      }
+    }
     // Check if URL contains "localhost:undefined" and fix it
-    if (fixedUrl.includes('localhost:undefined')) {
+    else if (fixedUrl.includes('localhost:undefined')) {
       // Use port 5000 as the default fallback port
       const defaultPort = '5000';
       fixedUrl = fixedUrl.replace('localhost:undefined', `localhost:${defaultPort}`);
       console.warn(`[WebSocketPatch] Fixed undefined port in URL: ${originalUrl} -> ${fixedUrl}`);
     }
-    
     // Check for other undefined port patterns (e.g., ":undefined")
-    const portUndefinedPattern = /:undefined/g;
-    if (portUndefinedPattern.test(fixedUrl)) {
+    else if (fixedUrl.includes(':undefined')) {
       // Determine the default port based on the protocol
       const isSecure = fixedUrl.startsWith('wss://');
       const defaultPort = isSecure ? '443' : '80';
