@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-11: Performance Fix - Eliminated Excessive Material Logging
+- **Performance Optimization**: Fixed AtmosphericEffects fog plane material regeneration causing performance issues
+  - **Issue**: Fog plane materials used `Date.now()` in IDs, creating new materials every render, causing console spam and performance degradation
+  - **Solution**: Removed `Date.now()` from material IDs, using stable IDs: `fog-plane-material-${height}-${planetName}`
+  - **Logging**: Disabled verbose material registration logging in ResourceManager and AtmosphericEffects
+  - **Impact**: Eliminated thousands of console logs per second, improved rendering performance
+
 ### 2025-10-11: Fixed React Duplicate Key Warning in Mission IDs
 - **Mission ID Fix**: Fixed duplicate React key warning by improving mission ID generation
   - **Issue**: Mission IDs included seed with location name, causing location to appear twice (e.g., `Earth_0_player1_timestamp_playerId_Earth_1`)
