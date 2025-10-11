@@ -3,11 +3,25 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { Billboard, Stars, useTexture } from "@react-three/drei";
 import * as THREE from "three";
 
-/** Replace with your actual planet store hook. Needs { textureUrl: string, radius?: number, name?: string } */
-type PlanetInfo = { textureUrl: string; radius?: number; name?: string };
-type UsePlanetStore = () => { currentPlanet: PlanetInfo | null };
-// Example shape; wire your real store:
-declare const usePlanetStore: UsePlanetStore;
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { planets } from "../../lib/planetData";
+
+/** Planet store implementation using existing landed state */
+const usePlanetStore = () => {
+  const { landedPlanet } = useLandedState();
+  
+  // Find the planet data for the currently landed planet
+  const planetData = landedPlanet ? planets.find(p => p.name === landedPlanet) : null;
+  
+  // Return in the expected format
+  const currentPlanet = planetData ? {
+    textureUrl: planetData.texture || `/textures/planets/2k_${landedPlanet?.toLowerCase()}_daymap.jpg`,
+    radius: planetData.size || 5,
+    name: planetData.name
+  } : null;
+  
+  return { currentPlanet };
+};
 
 type TakeoffTransitionProps = {
   /** Call to start; or mount with `autoStart` */
