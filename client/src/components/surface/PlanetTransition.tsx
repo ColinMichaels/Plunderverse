@@ -647,7 +647,7 @@ function PlanetTransitionScene({
         const scl = lerp(0.35, 1.0, u);
         planet.scale.setScalar(scl);
         planet.position.set(0, -planetRadius * (1.9 - 1.0 * u), 0);
-      }
+        }
     }
 
       if (atmo) {
