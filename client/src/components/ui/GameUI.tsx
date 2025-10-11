@@ -179,22 +179,8 @@ export function GameUI() {
         />
       )}
 
-      {/* Takeoff Sequence - Using unified planet transition component */}
-      {isTakingOff && (
-        <PlanetTransitionOverlay
-          direction="takeoff"
-          startOnMount
-          duration={5.2}
-          onThrustStart={() => {
-            console.log('[Takeoff] Thrust started - play whoosh/rumble sound');
-          }}
-          onComplete={() => {
-            console.log('[Takeoff] Takeoff sequence complete - switching to space view');
-            setIsTakingOff(false);
-            setNotLanded();
-          }}
-        />
-      )}
+      {/* Takeoff Sequence is handled by PlanetSurfaceScene, not here */}
+      {/* This prevents duplicate PlanetTransitionOverlay components */}
 
       {/* Landing Warning Dialog */}
       <LandingWarning

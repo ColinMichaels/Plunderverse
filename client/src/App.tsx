@@ -38,6 +38,22 @@ function GameContent() {
   const { phase } = useGame();
   const { isLanded } = useLandedState();
     const {platformType, updatePlatform} = usePlatform();
+  
+  // Log scene switches when isLanded changes
+  useEffect(() => {
+    console.log(`[APP-SCENE-SWITCH] isLanded changed to: ${isLanded}`, {
+      phase,
+      willRender: phase === "playing" ? (isLanded ? "PlanetSurfaceScene" : "SolarSystem") : "None"
+    });
+    
+    if (phase === "playing") {
+      if (isLanded) {
+        console.log("[APP-SCENE-SWITCH] ✅ Now rendering PLANET SURFACE scene");
+      } else {
+        console.log("[APP-SCENE-SWITCH] 🚀 Now rendering SPACE scene");
+      }
+    }
+  }, [isLanded, phase]);
 
   // FORCE MOBILE DETECTION FOR SMALL VIEWPORTS
   // Check viewport width directly as a fallback

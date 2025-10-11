@@ -132,13 +132,56 @@ export const useLandedState = create<LandedState>((set, get) => ({
   
   completeTakeoff: () => {
     const state = get();
-    console.log(`[TAKEOFF] Completing takeoff sequence from ${state.landedPlanet}`);
+    const previousPlanet = state.landedPlanet;
+    console.log(`[TAKEOFF-COMPLETE] Starting completion from ${previousPlanet}`, {
+      isLanded: state.isLanded,
+      isTakingOff: state.isTakingOff,
+      landedPlanet: state.landedPlanet
+    });
     
-    // Reset takeoff flag
-    set({ isTakingOff: false });
+    // FIRST: Set isLanded to false to trigger scene switch
+    console.log(`[TAKEOFF-COMPLETE] Setting isLanded to false...`);
+    set({ 
+      isLanded: false,
+      isTakingOff: false,
+      landedPlanet: null,
+      takeoffPlanetName: previousPlanet // Store for positioning
+    });
     
-    // Transition to space
-    get().setNotLanded();
+    // Log the new state
+    const newState = get();
+    console.log(`[TAKEOFF-COMPLETE] State after update:`, {
+      isLanded: newState.isLanded,
+      isTakingOff: newState.isTakingOff,
+      landedPlanet: newState.landedPlanet,
+      takeoffPlanetName: newState.takeoffPlanetName
+    });
+    
+    // Handle memory profiling
+    if (import.meta.env.DEV && previousPlanet) {
+      memoryProfiler.logCurrentStatus(`After takeoff from ${previousPlanet}`);
+      memoryProfiler.logSceneTransition(`${previousPlanet}-surface`, 'space');
+    }
+    
+    // Report location trigger progress for missions
+    try {
+      const triggers = useObjectiveTriggers.getState();
+      triggers.reportProgress('location', { planet: 'space' });
+      console.log(`[OBJECTIVE-TRIGGER] Reported return to space after takeoff`);
+    } catch (error) {
+      console.error('[OBJECTIVE-TRIGGER] Error reporting takeoff:', error);
+    }
+    
+    // Trigger space music scheduling
+    try {
+      const musicPlayer = useMusicPlayer.getState();
+      musicPlayer.resetTimerOnLocationChange('space');
+      console.log(`[MUSIC] Triggered space entry music schedule after takeoff`);
+    } catch (error) {
+      console.error('[MUSIC] Error triggering space music:', error);
+    }
+    
+    console.log(`[TAKEOFF-COMPLETE] Takeoff sequence FULLY COMPLETE!`);
   },
   
   // Calculate orbital position for takeoff based on current universe time
