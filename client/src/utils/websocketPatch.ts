@@ -46,14 +46,34 @@ export function patchWebSocket() {
     } catch (error) {
       console.error(`[WebSocketPatch] Invalid URL after fix attempt: ${fixedUrl}`, error);
       // If the URL is still invalid, try one more fix by ensuring it has a valid structure
-      if (fixedUrl.includes('?token=')) {
-        // Extract the token and rebuild the URL
-        const tokenMatch = fixedUrl.match(/\?token=([^&]+)/);
-        if (tokenMatch) {
-          const token = tokenMatch[1];
-          const protocol = fixedUrl.startsWith('wss') ? 'wss' : 'ws';
-          fixedUrl = `${protocol}://localhost:5000/?token=${token}`;
-          console.warn(`[WebSocketPatch] Rebuilt URL with token: ${fixedUrl}`);
+      if (fixedUrl.includes('?token=') || fixedUrl.includes('?deviceId=')) {
+        // Try to extract the path and query from the URL
+        try {
+          // Parse what we can from the malformed URL
+          const urlParts = fixedUrl.match(/(wss?):\/\/([^\/]+)(\/[^?]*)?(.*)?/);
+          if (urlParts) {
+            const protocol = urlParts[1] || 'ws';
+            const host = urlParts[2] || 'localhost:5000';
+            const path = urlParts[3] || '/ws/sync'; // Default to /ws/sync if no path found
+            const query = urlParts[4] || '';
+            
+            // Ensure host has port 5000 for localhost
+            const finalHost = host.includes('localhost') && !host.includes(':') 
+              ? `${host}:5000` 
+              : host.replace(':undefined', ':5000');
+            
+            fixedUrl = `${protocol}://${finalHost}${path}${query}`;
+            console.warn(`[WebSocketPatch] Rebuilt URL preserving path: ${fixedUrl}`);
+          } else {
+            // Fallback if regex doesn't match
+            const protocol = fixedUrl.startsWith('wss') ? 'wss' : 'ws';
+            const queryMatch = fixedUrl.match(/\?(.+)/);
+            const query = queryMatch ? queryMatch[0] : '';
+            fixedUrl = `${protocol}://localhost:5000/ws/sync${query}`;
+            console.warn(`[WebSocketPatch] Fallback URL rebuild: ${fixedUrl}`);
+          }
+        } catch (err) {
+          console.error(`[WebSocketPatch] Error parsing URL parts:`, err);
         }
       }
     }
