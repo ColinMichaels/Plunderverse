@@ -19,6 +19,8 @@ export class ParrotSpeechService {
   private currentUtterance: SpeechSynthesisUtterance | null = null;
   private isMuted: boolean = false;
   private selectedVoiceName: string | null = null;
+    private lastSpeakAt = 0;
+    private speakCooldownMs = 250; // avoid cancel/speak thrash during rapid transitions
 
   constructor() {
     this.synth = window.speechSynthesis;
@@ -76,14 +78,34 @@ export class ParrotSpeechService {
   speak(text: string, onComplete?: () => void) {
     if (this.isMuted || !text) return;
 
+      // If voices are not yet loaded (Safari/Chrome race), defer speaking until they are.
+      if (this.synth.getVoices().length === 0) {
+          return this.ensureVoicesLoaded(() => this.speak(text, onComplete));
+      }
+
+      // Debounce to avoid rapid cancel/speak cycles during scene transitions.
+      const now = performance.now();
+      if (now - this.lastSpeakAt < this.speakCooldownMs) {
+          const delay = this.speakCooldownMs - (now - this.lastSpeakAt);
+          setTimeout(() => this.speak(text, onComplete), Math.max(50, delay));
+          return;
+      }
+      this.lastSpeakAt = now;
+
+      // Resume AudioContext on user interaction devices (mobile/safari autplay policies)
+      try {
+          this.audioContext?.resume?.();
+      } catch {
+      }
+
+      // Cancel any current utterance cleanly
+
     this.stop();
 
     const utterance = new SpeechSynthesisUtterance(text);
     const voice = this.getPreferredVoice();
 
-    if (voice) {
-      utterance.voice = voice;
-    }
+      if (voice) utterance.voice = voice;
 
     utterance.rate = this.settings.rate;
     utterance.pitch = this.settings.pitch;
@@ -95,10 +117,16 @@ export class ParrotSpeechService {
       if (onComplete) onComplete();
     };
 
-    utterance.onerror = (event) => {
-      console.error("[ParrotSpeech] Speech error:", event);
-      this.currentUtterance = null;
-    };
+      utterance.onerror = (event: any) => {
+          const err = (event?.error || event?.name || "unknown").toString();
+          // During fast transitions, browsers often emit 'interrupted' or 'canceled'—not fatal.
+          if (err === "interrupted" || err === "canceled" || err === "not-allowed") {
+              console.debug("[ParrotSpeech] Non-fatal speech issue:", err, text);
+              if (onComplete) onComplete();
+          } else {
+              console.error("[ParrotSpeech] Speech error:", err, event, this.currentUtterance, utterance);
+          }
+      };
 
     this.currentUtterance = utterance;
     this.synth.speak(utterance);
@@ -141,13 +169,18 @@ export class ParrotSpeechService {
   }
 
   ensureVoicesLoaded(callback: () => void) {
+      const run = () => {
+          try {
+              this.synth.onvoiceschanged = null as any;
+          } catch {
+          }
+          callback();
+      };
     const voices = this.synth.getVoices();
     if (voices.length > 0) {
-      callback();
+        run();
     } else {
-      this.synth.onvoiceschanged = () => {
-        callback();
-      };
+        this.synth.onvoiceschanged = run;
     }
   }
 }
