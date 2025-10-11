@@ -137,6 +137,262 @@ function Starfield({ opacity = 1 }: { opacity: number }) {
   );
 }
 
+// Speed lines component for acceleration effect
+function SpeedLines({ intensity = 0, direction = 'takeoff' }: { intensity: number; direction: string }) {
+  const linesRef = useRef<THREE.Points>(null);
+  const velocitiesRef = useRef<Float32Array>(null);
+  
+  const { linesGeometry, initialVelocities } = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const particleCount = 500;
+    const positions = new Float32Array(particleCount * 3);
+    const velocities = new Float32Array(particleCount * 3);
+    const alphas = new Float32Array(particleCount);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      // Start particles in a cylinder around the camera
+      const angle = Math.random() * Math.PI * 2;
+      const radius = 2 + Math.random() * 8;
+      const height = (Math.random() - 0.5) * 10;
+      
+      positions[i3] = Math.cos(angle) * radius;
+      positions[i3 + 1] = height;
+      positions[i3 + 2] = Math.sin(angle) * radius;
+      
+      // Set velocities backward for speed effect
+      velocities[i3] = 0;
+      velocities[i3 + 1] = 0;
+      velocities[i3 + 2] = 10 + Math.random() * 20; // Speed backward
+      
+      alphas[i] = Math.random();
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('alpha', new THREE.BufferAttribute(alphas, 1));
+    
+    return { linesGeometry: geometry, initialVelocities: velocities };
+  }, []);
+  
+  velocitiesRef.current = initialVelocities;
+  
+  useFrame((state, delta) => {
+    if (!linesRef.current || intensity === 0) return;
+    
+    const positions = linesGeometry.attributes.position.array as Float32Array;
+    const velocities = velocitiesRef.current!;
+    const alphas = linesGeometry.attributes.alpha.array as Float32Array;
+    
+    for (let i = 0; i < positions.length / 3; i++) {
+      const i3 = i * 3;
+      
+      // Move particles
+      positions[i3 + 2] += velocities[i3 + 2] * delta * intensity * 2;
+      
+      // Reset particles that go too far
+      if (positions[i3 + 2] > 15) {
+        positions[i3 + 2] = -15;
+        alphas[i] = Math.random();
+      }
+    }
+    
+    linesGeometry.attributes.position.needsUpdate = true;
+    linesGeometry.attributes.alpha.needsUpdate = true;
+  });
+  
+  if (intensity === 0) return null;
+  
+  return (
+    <points ref={linesRef} geometry={linesGeometry}>
+      <pointsMaterial
+        size={0.5}
+        color={new THREE.Color("#00ddff")}
+        transparent
+        opacity={intensity * 0.4}
+        blending={THREE.AdditiveBlending}
+        sizeAttenuation={false}
+      />
+    </points>
+  );
+}
+
+// Atmospheric burn effect particles
+function AtmosphericBurnParticles({ intensity = 0 }: { intensity: number }) {
+  const particlesRef = useRef<THREE.Points>(null);
+  
+  const particlesGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const particleCount = 200;
+    const positions = new Float32Array(particleCount * 3);
+    const colors = new Float32Array(particleCount * 3);
+    const sizes = new Float32Array(particleCount);
+    
+    for (let i = 0; i < particleCount; i++) {
+      const i3 = i * 3;
+      // Random positions around the camera
+      const radius = 1 + Math.random() * 3;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI;
+      
+      positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i3 + 2] = radius * Math.cos(phi) - 2;
+      
+      // Orange to white colors for burn effect
+      const temp = Math.random();
+      colors[i3] = 1.0; // R
+      colors[i3 + 1] = 0.4 + temp * 0.4; // G
+      colors[i3 + 2] = 0.1 + temp * 0.3; // B
+      
+      sizes[i] = 0.5 + Math.random() * 1.5;
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+    
+    return geometry;
+  }, []);
+  
+  useFrame((state, delta) => {
+    if (!particlesRef.current || intensity === 0) return;
+    
+    const positions = particlesGeometry.attributes.position.array as Float32Array;
+    
+    for (let i = 0; i < positions.length; i += 3) {
+      // Add turbulence
+      positions[i] += (Math.random() - 0.5) * delta * intensity * 2;
+      positions[i + 1] += (Math.random() - 0.5) * delta * intensity * 2;
+      positions[i + 2] += Math.random() * delta * intensity * 3;
+      
+      // Reset particles that drift too far
+      if (positions[i + 2] > 5) {
+        positions[i + 2] = -3;
+      }
+    }
+    
+    particlesGeometry.attributes.position.needsUpdate = true;
+  });
+  
+  if (intensity === 0) return null;
+  
+  return (
+    <points ref={particlesRef} geometry={particlesGeometry}>
+      <pointsMaterial
+        size={2}
+        vertexColors
+        transparent
+        opacity={intensity * 0.7}
+        blending={THREE.AdditiveBlending}
+        sizeAttenuation={false}
+      />
+    </points>
+  );
+}
+
+// Engine glow component
+function EngineGlow({ intensity = 0, position = [0, -3, 0] as [number, number, number] }) {
+  const glowRef = useRef<THREE.Mesh>(null);
+  const lightRef = useRef<THREE.PointLight>(null);
+  
+  // Animated glow material
+  const glowMaterial = useMemo(() => {
+    const uniforms = {
+      uTime: { value: 0 },
+      uIntensity: { value: intensity },
+      uCoreColor: { value: new THREE.Color("#ffaa00") },
+      uGlowColor: { value: new THREE.Color("#0088ff") },
+    };
+    
+    const vertexShader = /* glsl */`
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      void main() {
+        vUv = uv;
+        vNormal = normalize(normalMatrix * normal);
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      }
+    `;
+    
+    const fragmentShader = /* glsl */`
+      uniform float uTime;
+      uniform float uIntensity;
+      uniform vec3 uCoreColor;
+      uniform vec3 uGlowColor;
+      varying vec2 vUv;
+      varying vec3 vNormal;
+      
+      void main() {
+        // Radial gradient from center
+        vec2 center = vUv - 0.5;
+        float dist = length(center);
+        
+        // Pulsing effect
+        float pulse = sin(uTime * 3.0) * 0.1 + 0.9;
+        
+        // Core to edge gradient
+        float glow = 1.0 - smoothstep(0.0, 0.5, dist);
+        glow = pow(glow, 2.0) * pulse;
+        
+        // Mix core and glow colors
+        vec3 color = mix(uGlowColor, uCoreColor, glow);
+        
+        // Fade based on intensity
+        float alpha = glow * uIntensity;
+        
+        gl_FragColor = vec4(color * alpha * 2.0, alpha);
+      }
+    `;
+    
+    return new THREE.ShaderMaterial({
+      uniforms,
+      vertexShader,
+      fragmentShader,
+      transparent: true,
+      blending: THREE.AdditiveBlending,
+      depthWrite: false,
+    });
+  }, [intensity]);
+  
+  useFrame((state) => {
+    if (glowRef.current && glowMaterial) {
+      (glowMaterial.uniforms.uTime as any).value = state.clock.elapsedTime;
+      (glowMaterial.uniforms.uIntensity as any).value = intensity;
+      
+      // Animate scale for pulsing effect
+      const pulse = Math.sin(state.clock.elapsedTime * 4) * 0.1 + 1;
+      glowRef.current.scale.setScalar(pulse);
+    }
+    
+    if (lightRef.current) {
+      // Animate light intensity
+      lightRef.current.intensity = intensity * 3 * (Math.sin(state.clock.elapsedTime * 5) * 0.2 + 0.8);
+    }
+  });
+  
+  if (intensity === 0) return null;
+  
+  return (
+    <group position={position}>
+      {/* Engine glow mesh */}
+      <mesh ref={glowRef}>
+        <planeGeometry args={[4, 4]} />
+        {/* @ts-ignore */}
+        <primitive object={glowMaterial} attach="material" />
+      </mesh>
+      
+      {/* Dynamic point light */}
+      <pointLight
+        ref={lightRef}
+        color={new THREE.Color("#ff8800")}
+        intensity={intensity * 3}
+        distance={20}
+        decay={2}
+      />
+    </group>
+  );
+}
+
 function PlanetTransitionScene({
   direction,
   duration,
@@ -177,13 +433,15 @@ function PlanetTransitionScene({
     planetTex.colorSpace = THREE.SRGBColorSpace ?? THREE.sRGBEncoding;
   }, [planetTex]);
 
-  // Cheap atmosphere (shader fresnel on backside)
+  // Enhanced atmosphere shader with blue rim light
   const atmosphereMat = useMemo(() => {
     const uniforms = {
-      uColor: { value: new THREE.Color("#8ecbff") },
-      uOpacity: { value: 0.38 },
+      uColor: { value: new THREE.Color("#4da6ff") }, // More blue color
+      uRimColor: { value: new THREE.Color("#0066ff") }, // Deep blue rim
+      uOpacity: { value: 0.45 },
       uPower: { value: 2.5 },
       uCut: { value: 0.0 },
+      uRimIntensity: { value: 1.0 },
     };
     const vs = /* glsl */`
       varying vec3 vWN;
@@ -197,16 +455,23 @@ function PlanetTransitionScene({
     `;
     const fs = /* glsl */`
       uniform vec3 uColor;
+      uniform vec3 uRimColor;
       uniform float uOpacity;
       uniform float uPower;
       uniform float uCut;
+      uniform float uRimIntensity;
       varying vec3 vWN;
       varying vec3 vWP;
       void main() {
         vec3 V = normalize(cameraPosition - vWP);
         float f = pow(1.0 - max(dot(normalize(vWN), V), 0.0), uPower);
         float a = clamp(f - uCut, 0.0, 1.0);
-        gl_FragColor = vec4(uColor * a, a * uOpacity);
+        
+        // Enhanced rim lighting
+        float rim = pow(1.0 - max(dot(normalize(vWN), V), 0.0), 1.5);
+        vec3 finalColor = mix(uColor, uRimColor, rim * uRimIntensity);
+        
+        gl_FragColor = vec4(finalColor * a, a * uOpacity);
       }
     `;
     return new THREE.ShaderMaterial({
@@ -224,6 +489,11 @@ function PlanetTransitionScene({
   
   // Track starfield opacity for takeoff
   const [starfieldOpacity, setStarfieldOpacity] = useState(direction === 'takeoff' ? 0 : 0);
+  
+  // Effect intensities
+  const [engineGlowIntensity, setEngineGlowIntensity] = useState(0);
+  const [speedLinesIntensity, setSpeedLinesIntensity] = useState(0);
+  const [atmosphericBurnIntensity, setAtmosphericBurnIntensity] = useState(0);
 
   // Easing helpers
   const easeInOut = (t: number) => 0.5 * (1 - Math.cos(Math.PI * t)); // cosine ease
@@ -271,11 +541,31 @@ function PlanetTransitionScene({
     const camPos = new THREE.Vector3().lerpVectors(startCam, endCam, u);
     camPos.x += arc;
     cam.position.copy(camPos);
+    
+    // Calculate altitude for effects
+    const altitude = cam.position.length() - planetRadius;
+    const normalizedAltitude = clamp01(altitude / (planetRadius * 2));
 
     // Look at planet center during early phase; then ahead slightly
     const aheadFactor = direction === 'takeoff' ? u : (1 - u);
     const ahead = new THREE.Vector3(0.25 * aheadFactor, 0.1 * aheadFactor, -0.2 * aheadFactor);
     cam.lookAt(lookTarget.clone().add(ahead));
+
+    // Engine glow effect (strongest during thrust phase)
+    if (direction === 'takeoff') {
+      const thrustPhase = clamp01((t - 0.12) / 0.58); // 0.12 to 0.7
+      const glowIntensity = thrustPhase * (1 - t * 0.3); // Fade out toward end
+      setEngineGlowIntensity(glowIntensity);
+      
+      // Speed lines (start after initial thrust, peak mid-flight)
+      const speedPhase = clamp01((t - 0.2) / 0.5); // 0.2 to 0.7
+      setSpeedLinesIntensity(speedPhase * (1 - t * 0.2));
+      
+      // Atmospheric burn (peak when leaving atmosphere)
+      const burnPhase = clamp01((t - 0.3) / 0.3); // 0.3 to 0.6
+      const burnFade = clamp01(1 - (t - 0.6) / 0.2); // Fade after 0.6
+      setAtmosphericBurnIntensity(burnPhase * burnFade);
+    }
 
     // Planet scale and position based on direction
     const planet = planetRef.current!;
@@ -298,25 +588,37 @@ function PlanetTransitionScene({
     
     if (atmo) {
       if (direction === 'takeoff') {
-        // Takeoff: atmosphere fades
+        // Takeoff: atmosphere fades with enhanced rim
         const shell = 1.03 + 0.2 * (1 - u);
         atmo.scale.setScalar(shell);
         (atmosphereMat.uniforms.uCut as any).value = lerp(0.0, 0.6, u);
-        (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.42, 0.08, u);
+        (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.45, 0.08, u);
+        // Fade rim intensity as we leave
+        (atmosphereMat.uniforms.uRimIntensity as any).value = lerp(1.0, 0.2, u);
       } else {
         // Landing: atmosphere appears
         const shell = 1.23 - 0.2 * u;
         atmo.scale.setScalar(shell);
         (atmosphereMat.uniforms.uCut as any).value = lerp(0.6, 0.0, u);
-        (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.08, 0.42, u);
+        (atmosphereMat.uniforms.uOpacity as any).value = lerp(0.08, 0.45, u);
+        (atmosphereMat.uniforms.uRimIntensity as any).value = lerp(0.2, 1.0, u);
       }
     }
 
-    // Subtle screen shake (tiny; stronger during 0.15..0.55)
+    // Enhanced altitude-dependent camera shake
     const thrustT = clamp01((t - 0.15) / 0.4);
-    const shake = 0.02 * (1 - Math.cos(thrustT * Math.PI)) * (1 - u);
+    // Stronger shake at low altitude, diminishes with height
+    const altitudeFactor = direction === 'takeoff' ? (1 - normalizedAltitude) : normalizedAltitude;
+    const shake = 0.04 * (1 - Math.cos(thrustT * Math.PI)) * altitudeFactor * (1 - u);
+    
+    // Apply shake with more variance
     cam.position.x += (Math.random() - 0.5) * shake;
     cam.position.y += (Math.random() - 0.5) * shake * 0.5;
+    cam.position.z += (Math.random() - 0.5) * shake * 0.3;
+    
+    // Slight rotation shake for more dramatic effect
+    const rotShake = shake * 0.1;
+    cam.rotation.z += (Math.random() - 0.5) * rotShake;
     
     // Starfield fade-in during takeoff (progressive from 0.3 to 1.0 of progress)
     if (direction === 'takeoff') {
@@ -353,6 +655,27 @@ function PlanetTransitionScene({
       {/* Simple ambient lighting */}
       <ambientLight intensity={0.3} />
 
+      {/* Engine glow effect for takeoff */}
+      {direction === 'takeoff' && (
+        <EngineGlow 
+          intensity={engineGlowIntensity} 
+          position={[0, -3, 2]}
+        />
+      )}
+      
+      {/* Speed lines effect */}
+      {direction === 'takeoff' && (
+        <SpeedLines 
+          intensity={speedLinesIntensity}
+          direction={direction}
+        />
+      )}
+      
+      {/* Atmospheric burn particles */}
+      {direction === 'takeoff' && (
+        <AtmosphericBurnParticles intensity={atmosphericBurnIntensity} />
+      )}
+
       {/* Planet directly under camera path */}
       <group position={[0, 0, 0]}>
         <mesh ref={planetRef}>
@@ -365,7 +688,7 @@ function PlanetTransitionScene({
           />
         </mesh>
 
-        {/* Atmosphere shell */}
+        {/* Atmosphere shell with enhanced rim lighting */}
         <mesh ref={atmoRef} scale={1.06}>
           <sphereGeometry args={[planetRadius * 1.06, 48, 48]} />
           {/* @ts-ignore */}
