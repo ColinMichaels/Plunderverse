@@ -1358,11 +1358,15 @@ export function CameraController() {
       camera.position.add(tempVec3_1.current);
     }
 
-    // Update camera position, rotation, and velocity in store for save/load
+    // Update camera position in store (keep this for existing functionality)
     setCameraPosition(camera.position);
-    setShipPosition(camera.position);
-    setShipRotation(camera.rotation);
-    setShipVelocity(velocity);
+    
+    // Update ship position/rotation/velocity for save/load, but only every 10 frames to avoid performance issues
+    if (frameCount % 10 === 0) {
+      setShipPosition(camera.position);
+      setShipRotation(camera.rotation);
+      setShipVelocity(velocityRef.current);
+    }
 
     // Consume fuel if thrusting (consolidated at end of frame)
     if (thrusterActive && !isAutopilotActive) {
@@ -1403,25 +1407,37 @@ export function CameraController() {
   // Restore saved camera position, rotation, and velocity when hasRestoredState becomes true
   useEffect(() => {
     if (hasRestoredState) {
-      const solarState = useSolarSystem.getState();
-      
-      // Restore camera position
-      camera.position.copy(solarState.shipPosition);
-      
-      // Restore camera rotation
-      camera.rotation.copy(solarState.shipRotation);
-      
-      // Restore velocity
-      velocityRef.current.copy(solarState.shipVelocity);
-      
-      console.log('[CameraController] Restored saved camera state:', {
-        position: solarState.shipPosition,
-        rotation: solarState.shipRotation,
-        velocity: solarState.shipVelocity,
-      });
-      
-      // Reset the flag after restoring
-      setHasRestoredState(false);
+      try {
+        const solarState = useSolarSystem.getState();
+        
+        console.log('[CameraController] Attempting to restore saved camera state...');
+        
+        // Restore camera position
+        if (solarState.shipPosition) {
+          camera.position.copy(solarState.shipPosition);
+        }
+        
+        // Restore camera rotation
+        if (solarState.shipRotation) {
+          camera.rotation.copy(solarState.shipRotation);
+        }
+        
+        // Restore velocity
+        if (solarState.shipVelocity) {
+          velocityRef.current.copy(solarState.shipVelocity);
+        }
+        
+        console.log('[CameraController] Successfully restored saved camera state:', {
+          position: solarState.shipPosition,
+          rotation: solarState.shipRotation,
+          velocity: solarState.shipVelocity,
+        });
+      } catch (error) {
+        console.error('[CameraController] Error restoring saved camera state:', error);
+      } finally {
+        // Always reset the flag after attempting restore
+        setHasRestoredState(false);
+      }
     }
   }, [hasRestoredState, camera, setHasRestoredState]); // Run when hasRestoredState changes
   
