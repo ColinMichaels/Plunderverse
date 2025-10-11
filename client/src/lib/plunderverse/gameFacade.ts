@@ -626,7 +626,11 @@ export class GameFacade {
 
       // Initialize trigger system for this mission
       const triggerSystem = useObjectiveTriggers.getState();
-      triggerSystem.initializeMissionTriggers(mission);
+      if (triggerSystem && triggerSystem.initializeMissionTriggers) {
+        triggerSystem.initializeMissionTriggers(mission);
+      } else {
+        console.warn(`[GameFacade] Trigger system not available or method missing`);
+      }
 
       return {
         success: true,

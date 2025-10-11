@@ -47,6 +47,7 @@ interface ObjectiveTriggerState {
   getActiveObjectives: () => MissionObjective[];
   clearAll: () => void;
   initializeFromMissions: (missions: Mission[]) => void;
+  initializeMissionTriggers: (mission: Mission) => void;
 }
 
 export const useObjectiveTriggers = create<ObjectiveTriggerState>((set, get) => ({
@@ -380,6 +381,21 @@ export const useObjectiveTriggers = create<ObjectiveTriggerState>((set, get) => 
     });
     
     console.log(`[ObjectiveTriggers] Initialized ${state.activeListeners.size} objective triggers from ${missions.length} missions`);
+  },
+  
+  initializeMissionTriggers: (mission: Mission) => {
+    const state = get();
+    
+    // Register objectives for a single mission
+    if (mission && !mission.completed) {
+      mission.objectives.forEach(objective => {
+        if (!objective.completed) {
+          state.registerObjective(mission, objective);
+        }
+      });
+      
+      console.log(`[ObjectiveTriggers] Initialized triggers for mission "${mission.title}" with ${mission.objectives.length} objectives`);
+    }
   },
   
   // Helper function to match trigger conditions  
