@@ -251,13 +251,8 @@ export function SurfaceMovementController() {
         
         // Only trigger collision feedback if moving with some velocity and not too recent
         if (velocityMagnitude > 0.5 && currentTime - lastCollisionTimeRef.current > 100) {
-          // Trigger camera shake
-          shake.active = true;
-          shake.intensity = 0.08 + (collisionIntensity * 0.12); // 0.08 to 0.2
-          shake.duration = 0.25;
-          shake.elapsed = 0;
-          
-          // Play collision sound with cooldown (0.5 seconds)
+          // Removed camera shake - it was disorienting
+          // Just play collision sound with cooldown (0.5 seconds)
           if (currentTime - lastCollisionSoundRef.current > 500) {
             playHit();
             lastCollisionSoundRef.current = currentTime;
@@ -295,36 +290,17 @@ export function SurfaceMovementController() {
     setPosition(positionRef.current);
     setRotation(rotationRef.current);
 
-    // Update camera shake
-    if (shake.active) {
-      shake.elapsed += delta;
-      
-      if (shake.elapsed < shake.duration) {
-        // Generate random shake offset
-        const progress = shake.elapsed / shake.duration;
-        const damping = 1 - progress; // Fade out shake over time
-        
-        shake.offset.set(
-          (Math.random() - 0.5) * shake.intensity * damping,
-          (Math.random() - 0.5) * shake.intensity * damping,
-          (Math.random() - 0.5) * shake.intensity * damping * 0.5
-        );
-      } else {
-        // Shake complete - reset
-        shake.active = false;
-        shake.offset.set(0, 0, 0);
-      }
-    }
+    // Camera shake removed - was causing disorientation on planet surfaces
+    // Will be replaced with environmental effects like wind
 
-    // Update camera position and rotation with shake
-    const finalCameraPosition = positionRef.current.clone().add(shake.offset);
-    camera.position.copy(finalCameraPosition);
+    // Update camera position and rotation without shake
+    camera.position.copy(positionRef.current);
     
-    // Apply mouse look rotation (yaw and pitch) with shake effects
+    // Apply mouse look rotation (yaw and pitch)
     camera.rotation.order = 'YXZ'; // Yaw-Pitch-Roll order for proper FPS controls
     camera.rotation.y = rotationRef.current; // Yaw (left/right) from mouse or keyboard
-    camera.rotation.x = pitchRef.current + shake.offset.y * 0.5; // Pitch (up/down) from mouse + shake
-    camera.rotation.z = shake.offset.x * 0.3; // Roll only from shake
+    camera.rotation.x = pitchRef.current; // Pitch (up/down) from mouse
+    camera.rotation.z = 0; // No roll
     camera.updateMatrixWorld();
   });
 
