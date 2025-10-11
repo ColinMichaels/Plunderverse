@@ -44,6 +44,31 @@ export const useMining = create<MiningState>((set, get) => ({
   extractorLevel: 1,
   
   startMining: (planet, resource, nodeId) => {
+    // Null safety check for resource parameter
+    if (!resource || resource === null || resource === undefined) {
+      console.warn(`[MINING-DEBUG] Cannot start mining - resource is null/undefined`);
+      return;
+    }
+    
+    // Null safety check for planet parameter
+    if (!planet || planet === null || planet === undefined) {
+      console.warn(`[MINING-DEBUG] Cannot start mining - planet is null/undefined`);
+      return;
+    }
+    
+    // Validate resource properties exist
+    if (!resource.type || !resource.complexity || resource.complexity === null || resource.complexity === undefined) {
+      console.warn(`[MINING-DEBUG] Cannot start mining - resource missing required properties (type: ${resource.type}, complexity: ${resource.complexity})`);
+      return;
+    }
+    
+    // Ensure complexity is a valid number
+    const complexity = Number(resource.complexity);
+    if (isNaN(complexity) || complexity <= 0) {
+      console.warn(`[MINING-DEBUG] Cannot start mining - invalid complexity value: ${resource.complexity}`);
+      return;
+    }
+    
     // Check if ship is actually landed on the planet
     const landedState = useLandedState.getState();
     console.log(`[MINING-DEBUG] Checking landing status: isLanded=${landedState.isLanded}, landedPlanet=${landedState.landedPlanet}, targetPlanet=${planet}`);
@@ -60,9 +85,9 @@ export const useMining = create<MiningState>((set, get) => ({
       targetResource: resource,
       currentNodeId: nodeId || null,
       clicksCompleted: 0,
-      clicksRequired: resource.complexity
+      clicksRequired: complexity
     });
-    console.log(`[MINING-DEBUG] Started mining ${resource.type} (node: ${nodeId}) on ${planet} surface - ${resource.complexity} clicks needed`);
+    console.log(`[MINING-DEBUG] Started mining ${resource.type} (node: ${nodeId}) on ${planet} surface - ${complexity} clicks needed`);
   },
   
   stopMining: () => {
@@ -79,16 +104,41 @@ export const useMining = create<MiningState>((set, get) => ({
   
   performClick: async () => {
     const state = get();
-    if (!state.isActive || !state.targetResource) return null;
+    
+    // Comprehensive null checks for state and targetResource
+    if (!state || !state.isActive) {
+      console.warn('[MINING-DEBUG] Mining is not active');
+      return null;
+    }
+    
+    if (!state.targetResource || state.targetResource === null || state.targetResource === undefined) {
+      console.warn('[MINING-DEBUG] No target resource for mining');
+      return null;
+    }
+    
+    // Validate targetResource properties
+    if (!state.targetResource.type || !state.targetResource.rarity) {
+      console.warn('[MINING-DEBUG] Target resource missing required properties (type or rarity)');
+      return null;
+    }
+    
+    // Validate numeric values
+    const clicksCompleted = Number(state.clicksCompleted) || 0;
+    const clicksRequired = Number(state.clicksRequired) || 1;
+    
+    if (isNaN(clicksCompleted) || isNaN(clicksRequired) || clicksRequired <= 0) {
+      console.warn('[MINING-DEBUG] Invalid click counts - completed:', clicksCompleted, 'required:', clicksRequired);
+      return null;
+    }
     
     // Calculate previous and new progress percentages
-    const previousProgress = (state.clicksCompleted / state.clicksRequired) * 100;
-    const newClicksCompleted = state.clicksCompleted + 1;
-    const newProgress = (newClicksCompleted / state.clicksRequired) * 100;
+    const previousProgress = (clicksCompleted / clicksRequired) * 100;
+    const newClicksCompleted = clicksCompleted + 1;
+    const newProgress = (newClicksCompleted / clicksRequired) * 100;
     
     set({ clicksCompleted: newClicksCompleted });
     
-    console.log(`Mining click ${newClicksCompleted}/${state.clicksRequired} on ${state.targetResource!.type}`);
+    console.log(`Mining click ${newClicksCompleted}/${clicksRequired} on ${state.targetResource.type}`);
     
     // Trigger enhanced mining effects (screen shake, dynamic audio, visual effects)
     import('../surface/useMiningEffects').then(({ useMiningEffects }) => {
@@ -100,7 +150,10 @@ export const useMining = create<MiningState>((set, get) => ({
       const equipmentScale = 0.5 + (drillPerformance * 0.5); // 0.5 to 1.0 scale
       
       effectsStore.setEffectsIntensity(equipmentScale);
-      effectsStore.triggerMiningImpact(state.targetResource!, newProgress / 100);
+      // Safe access to targetResource with null check
+      if (state.targetResource) {
+        effectsStore.triggerMiningImpact(state.targetResource, newProgress / 100);
+      }
     }).catch(err => {
       console.warn('[MINING-EFFECTS] Could not load mining effects:', err);
       // Fallback to basic audio
@@ -139,12 +192,14 @@ export const useMining = create<MiningState>((set, get) => ({
       const baseExtraction = Math.max(0.1, state.miningEfficiency * equipmentMultiplier);
       
       // Apply rarity-based yield reduction and round to reasonable amounts
+      // Safe access to rarity with validation
+      const resourceRarity = state.targetResource?.rarity || 'common';
       const rarityYieldMultiplier = {
         common: 1.0,
         uncommon: 0.8,
         rare: 0.6,
         legendary: 0.4
-      }[state.targetResource!.rarity] || 1.0;
+      }[resourceRarity] || 1.0;
       
       const extractedAmount = extractorPerformance === 0 ? 0 : Math.max(1, Math.ceil(baseExtraction * rarityYieldMultiplier));
       
@@ -158,7 +213,7 @@ export const useMining = create<MiningState>((set, get) => ({
         };
       }
       
-      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource!.type} after ${newClicksCompleted} clicks`);
+      console.log(`Mining complete! Extracted ${extractedAmount} ${state.targetResource?.type || 'unknown'} after ${newClicksCompleted} clicks`);
       
       // Play success sound at 100% completion
       const { playSuccess } = useAudio.getState();
@@ -170,8 +225,15 @@ export const useMining = create<MiningState>((set, get) => ({
       const completedNodeId = state.currentNodeId;
       
       // Use EconomyService to handle all mining yield processing (resources, credits, equipment wear, sounds, events)
+      // Additional null check before calling economyService
+      if (!state.targetResource) {
+        console.warn('[MINING-DEBUG] Target resource became null before applying yield');
+        get().stopMining();
+        return null;
+      }
+      
       const result = await economyService.applyMiningYield(
-        state.targetResource!,
+        state.targetResource,
         extractedAmount,
         state.currentPlanet || "Unknown"
       );
@@ -185,16 +247,18 @@ export const useMining = create<MiningState>((set, get) => ({
         try {
           const { useObjectiveTriggers } = await import('./useObjectiveTriggers');
           const triggers = useObjectiveTriggers.getState();
+          // Safe access to targetResource type
+          const resourceType = state.targetResource?.type || 'unknown';
           triggers.reportProgress('collection', { 
-            itemType: state.targetResource!.type, 
+            itemType: resourceType, 
             amount: extractedAmount 
           });
           triggers.reportCollectionProgress(
-            state.targetResource!.type,
-            state.targetResource!.type,
+            resourceType,
+            resourceType,
             extractedAmount
           );
-          console.log(`[OBJECTIVE-TRIGGER] Reported mining ${extractedAmount}x ${state.targetResource!.type} for mission objectives`);
+          console.log(`[OBJECTIVE-TRIGGER] Reported mining ${extractedAmount}x ${resourceType} for mission objectives`);
         } catch (error) {
           console.error('[OBJECTIVE-TRIGGER] Error reporting mining:', error);
         }
@@ -215,7 +279,30 @@ export const useMining = create<MiningState>((set, get) => ({
   
   updateProgress: (deltaTime) => {
     const state = get();
-    if (!state.isActive || !state.targetResource) return null;
+    
+    // Comprehensive null checks
+    if (!state || !state.isActive) {
+      console.warn('[MINING-DEBUG] Mining is not active in updateProgress');
+      return null;
+    }
+    
+    if (!state.targetResource || state.targetResource === null || state.targetResource === undefined) {
+      console.warn('[MINING-DEBUG] No target resource in updateProgress');
+      return null;
+    }
+    
+    // Validate targetResource has required properties
+    if (!state.targetResource.rarity) {
+      console.warn('[MINING-DEBUG] Target resource missing rarity property');
+      return null;
+    }
+    
+    // Validate deltaTime is a valid number
+    const validDeltaTime = Number(deltaTime) || 0;
+    if (isNaN(validDeltaTime) || validDeltaTime < 0) {
+      console.warn('[MINING-DEBUG] Invalid deltaTime value:', deltaTime);
+      return null;
+    }
     
     // Get equipment performance multipliers
     const equipmentStore = useEquipment.getState();
