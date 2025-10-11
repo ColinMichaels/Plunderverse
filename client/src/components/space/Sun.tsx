@@ -1,4 +1,4 @@
-import { useRef, useMemo } from "react";
+import { useRef, useMemo, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Sphere, Billboard, useTexture } from "@react-three/drei";
 import * as THREE from "three";
@@ -15,20 +15,42 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
   const innerGlowRef = useRef<THREE.Mesh>(null);
   const outerGlowRef = useRef<THREE.Mesh>(null);
 
-  // Textures: base sun + a small tiling noise for UV warp
-  const [sunTex, noiseTex] = useTexture([
-    "/textures/planets/2k_sun.jpg",
-    "/textures/noise/noise-512.png",
-  ]);
+  // Textures: base sun texture (noise texture removed - not available)
+  const sunTex = useTexture("/textures/planets/2k_sun.jpg");
+  
+  // Create a simple noise texture in memory as fallback
+  const noiseTex = useMemo(() => {
+    const size = 512;
+    const data = new Uint8Array(size * size * 4);
+    for (let i = 0; i < size * size; i++) {
+      const noise = Math.random() * 255;
+      data[i * 4] = noise;
+      data[i * 4 + 1] = noise;
+      data[i * 4 + 2] = noise;
+      data[i * 4 + 3] = 255;
+    }
+    const texture = new THREE.DataTexture(data, size, size, THREE.RGBAFormat);
+    texture.needsUpdate = true;
+    return texture;
+  }, []);
+  
+  // Cleanup: dispose noise texture on unmount to prevent GPU memory leak
+  useEffect(() => {
+    return () => {
+      noiseTex.dispose();
+    };
+  }, [noiseTex]);
 
   // Texture setup for performance
   useMemo(() => {
-    [sunTex, noiseTex].forEach((t) => {
-      t.wrapS = t.wrapT = THREE.RepeatWrapping;
-      t.minFilter = THREE.LinearMipMapLinearFilter;
-      t.magFilter = THREE.LinearFilter;
-      t.anisotropy = 2;
-    });
+    sunTex.wrapS = sunTex.wrapT = THREE.RepeatWrapping;
+    sunTex.minFilter = THREE.LinearMipMapLinearFilter;
+    sunTex.magFilter = THREE.LinearFilter;
+    sunTex.anisotropy = 2;
+    
+    noiseTex.wrapS = noiseTex.wrapT = THREE.RepeatWrapping;
+    noiseTex.minFilter = THREE.LinearFilter;
+    noiseTex.magFilter = THREE.LinearFilter;
   }, [sunTex, noiseTex]);
 
   // === Shader material (cheap: 2 scrolling noise layers to subtly warp UVs) ===
