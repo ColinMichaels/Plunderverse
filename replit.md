@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-11: Fixed React Duplicate Key Warning in Mission IDs
+- **Mission ID Fix**: Fixed duplicate React key warning by improving mission ID generation
+  - **Issue**: Mission IDs used pattern `${location}_${rank}_${i}_${seed}` causing duplicates
+  - **Solution**: Changed to `${location}_${i}_player${rank}_${Date.now()}_${seed}` for guaranteed uniqueness
+  - **Impact**: Eliminated React duplicate key warnings, more robust mission tracking
+  - **Pattern**: Earth_0_player1_1760225145123_Earth_1
+
 ### 2025-10-11: Fixed Player Stats & Authentication UI on Splash Screen
 - **Stats Panel Fix**: Fixed player stats panel visibility and interaction on splash screen
   - **Issue**: Account dropdown was always visible, stats panel not showing properly
