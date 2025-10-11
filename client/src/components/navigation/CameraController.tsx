@@ -40,7 +40,7 @@ export function CameraController() {
   const velocityRef = useRef(new THREE.Vector3());
   const accelerationRef = useRef(new THREE.Vector3());
   const [, get] = useKeyboardControls<Controls>();
-  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition } =
+  const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, setShipPosition, setShipRotation, setShipVelocity } =
     useSolarSystem();
   const { addProjectile } = useShooting();
   const { playLaser } = useAudio();
@@ -1358,8 +1358,11 @@ export function CameraController() {
       camera.position.add(tempVec3_1.current);
     }
 
-    // Update camera position in store
+    // Update camera position, rotation, and velocity in store for save/load
     setCameraPosition(camera.position);
+    setShipPosition(camera.position);
+    setShipRotation(camera.rotation);
+    setShipVelocity(velocity);
 
     // Consume fuel if thrusting (consolidated at end of frame)
     if (thrusterActive && !isAutopilotActive) {
