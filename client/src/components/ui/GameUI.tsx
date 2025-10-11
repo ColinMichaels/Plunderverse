@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import * as THREE from "three";
-import { LandingTransition } from "../surface/LandingTransition";
-import { TakeoffTransitionOverlay } from "../surface/TakeoffSequence";
+import { PlanetTransitionOverlay } from "../surface/PlanetTransition";
 import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
@@ -28,6 +27,7 @@ import { useGame } from "../../lib/stores/ui/useGame";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import { useRewards } from "../../lib/stores/ui/useRewards";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { useParrot } from "../../lib/stores/useParrot";
@@ -53,7 +53,8 @@ export function GameUI() {
   const { phase } = useGame();
   const { initialize: initializeParrot } = useParrot();
   const crewManagement = useCrewManagement();
-  const { isTakingOff, setIsTakingOff, setNotLanded } = useLandedState();
+  const { isTakingOff, setIsTakingOff, setNotLanded, setLanded } = useLandedState();
+  const { processLandingReward } = useRewards();
 
   // Initialize docking detection
   useDockingDetection();
@@ -74,7 +75,7 @@ export function GameUI() {
   
   // Enable Parrot event hooks
   useParrotEvents();
-  const { selectedPlanet, time } = useSolarSystem();
+  const { selectedPlanet, time, isLanding, setIsLanding } = useSolarSystem();
   const {
     isVisible: showLandingWarning,
     planetName,
@@ -159,12 +160,29 @@ export function GameUI() {
       {/* Top Left - Objective Tracker (below ship status) */}
       {uiZoneVisibility.topLeft && <ObjectiveTracker />}
 
-      {/* Landing Transition */}
-      <LandingTransition />
+      {/* Landing Transition - Using unified planet transition component */}
+      {isLanding && selectedPlanet && (
+        <PlanetTransitionOverlay
+          direction="landing"
+          startOnMount
+          duration={5.2}
+          targetPlanet={selectedPlanet}
+          onThrustStart={() => {
+            console.log('[Landing] Deceleration started - play retro-thrust sound');
+          }}
+          onComplete={() => {
+            console.log('[Landing] Landing sequence complete - switching to surface view');
+            setIsLanding(false);
+            setLanded(selectedPlanet);
+            processLandingReward(selectedPlanet);
+          }}
+        />
+      )}
 
-      {/* Takeoff Sequence - New animation overlay */}
+      {/* Takeoff Sequence - Using unified planet transition component */}
       {isTakingOff && (
-        <TakeoffTransitionOverlay
+        <PlanetTransitionOverlay
+          direction="takeoff"
           startOnMount
           duration={5.2}
           onThrustStart={() => {
