@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import * as THREE from "three";
 import { LandingTransition } from "../surface/LandingTransition";
-import { TakeoffSequence } from "../surface/TakeoffSequence";
+import { TakeoffTransitionOverlay } from "../surface/TakeoffSequence";
 import { CockpitOverlay } from "../cockpit/CockpitOverlay";
 import { LandingWarning } from "../surface/LandingWarning";
 import { MobileHUD } from "../mobile/MobileHUD";
@@ -27,6 +27,7 @@ import { useHUDContext } from "../../lib/stores/ui/useHUDContext";
 import { useGame } from "../../lib/stores/ui/useGame";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useLandingWarning } from "../../lib/stores/surface/useLandingWarning";
+import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
 import { useParrot } from "../../lib/stores/useParrot";
@@ -52,6 +53,7 @@ export function GameUI() {
   const { phase } = useGame();
   const { initialize: initializeParrot } = useParrot();
   const crewManagement = useCrewManagement();
+  const { isTakingOff, setIsTakingOff, setNotLanded } = useLandedState();
 
   // Initialize docking detection
   useDockingDetection();
@@ -160,8 +162,21 @@ export function GameUI() {
       {/* Landing Transition */}
       <LandingTransition />
 
-      {/* Takeoff Sequence */}
-      <TakeoffSequence />
+      {/* Takeoff Sequence - New animation overlay */}
+      {isTakingOff && (
+        <TakeoffTransitionOverlay
+          startOnMount
+          duration={5.2}
+          onThrustStart={() => {
+            console.log('[Takeoff] Thrust started - play whoosh/rumble sound');
+          }}
+          onComplete={() => {
+            console.log('[Takeoff] Takeoff sequence complete - switching to space view');
+            setIsTakingOff(false);
+            setNotLanded();
+          }}
+        />
+      )}
 
       {/* Landing Warning Dialog */}
       <LandingWarning
