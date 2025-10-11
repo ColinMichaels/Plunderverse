@@ -77,6 +77,66 @@ export function PlanetTransitionOverlay(props: PlanetTransitionProps) {
   );
 }
 
+// Starfield component for takeoff background
+function Starfield({ opacity = 1 }: { opacity: number }) {
+  const pointsRef = useRef<THREE.Points>(null);
+  
+  // Generate star positions
+  const starsGeometry = useMemo(() => {
+    const geometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(3000 * 3); // 3000 stars
+    const colors = new Float32Array(3000 * 3);
+    
+    for (let i = 0; i < 3000; i++) {
+      const i3 = i * 3;
+      
+      // Random positions in a sphere around the camera
+      const radius = 100 + Math.random() * 900;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos((Math.random() * 2) - 1);
+      
+      positions[i3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+      positions[i3 + 2] = radius * Math.cos(phi);
+      
+      // Star colors (white to slightly blue/yellow)
+      const colorVariance = Math.random();
+      colors[i3] = 0.9 + colorVariance * 0.1; // R
+      colors[i3 + 1] = 0.9 + colorVariance * 0.05; // G
+      colors[i3 + 2] = 0.95 + colorVariance * 0.05; // B
+    }
+    
+    geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+    
+    return geometry;
+  }, []);
+  
+  // Star material with opacity control
+  const starsMaterial = useMemo(() => {
+    return new THREE.PointsMaterial({
+      size: 2.0,
+      vertexColors: true,
+      transparent: true,
+      opacity: opacity,
+      sizeAttenuation: true,
+      blending: THREE.AdditiveBlending,
+    });
+  }, [opacity]);
+  
+  // Rotate stars slowly
+  useFrame((state, delta) => {
+    if (pointsRef.current) {
+      pointsRef.current.rotation.y += delta * 0.01;
+      pointsRef.current.rotation.x += delta * 0.005;
+    }
+  });
+  
+  return (
+    <points ref={pointsRef} geometry={starsGeometry} material={starsMaterial} />
+  );
+}
+
 function PlanetTransitionScene({
   direction,
   duration,
@@ -161,6 +221,9 @@ function PlanetTransitionScene({
   const cam = useThree((s) => s.camera);
   const clockRef = useRef<number>(0);
   const startedThrust = useRef(false);
+  
+  // Track starfield opacity for takeoff
+  const [starfieldOpacity, setStarfieldOpacity] = useState(direction === 'takeoff' ? 0 : 0);
 
   // Easing helpers
   const easeInOut = (t: number) => 0.5 * (1 - Math.cos(Math.PI * t)); // cosine ease
@@ -254,6 +317,14 @@ function PlanetTransitionScene({
     const shake = 0.02 * (1 - Math.cos(thrustT * Math.PI)) * (1 - u);
     cam.position.x += (Math.random() - 0.5) * shake;
     cam.position.y += (Math.random() - 0.5) * shake * 0.5;
+    
+    // Starfield fade-in during takeoff (progressive from 0.3 to 1.0 of progress)
+    if (direction === 'takeoff') {
+      const starFadeStart = 0.3; // Start fading in at 30% progress
+      const starFadeEnd = 1.0;   // Fully visible at end
+      const starT = clamp01((t - starFadeStart) / (starFadeEnd - starFadeStart));
+      setStarfieldOpacity(starT);
+    }
 
     // Fade to black for takeoff near the end (last 0.25 seconds of real time)
     const elapsedSeconds = clockRef.current;
@@ -274,6 +345,11 @@ function PlanetTransitionScene({
 
   return (
     <>
+      {/* Starfield for takeoff - renders behind everything */}
+      {direction === 'takeoff' && (
+        <Starfield opacity={starfieldOpacity} />
+      )}
+      
       {/* Simple ambient lighting */}
       <ambientLight intensity={0.3} />
 

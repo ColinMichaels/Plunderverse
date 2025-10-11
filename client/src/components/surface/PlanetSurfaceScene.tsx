@@ -32,6 +32,7 @@ import { SurfaceScatter } from "./SurfaceScatter";
 import { AtmosphericEffects } from "./AtmosphericEffects";
 import { AtmosphericSounds } from "./AtmosphericSounds";
 import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
+import { PlanetTransitionOverlay } from "./PlanetTransition";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -1405,8 +1406,9 @@ function PostProcessingEffects() {
 }
 
 export function PlanetSurfaceScene() {
-  const { isLanded, landedPlanet } = useLandedState();
+  const { isLanded, landedPlanet, isTakingOff, completeTakeoff } = useLandedState();
   const { isOn: isFlashlightOn } = useFlashlight();
+  const { playTakeoff } = useAudio();
   const resourceManager = ResourceManager.getInstance();
 
   // Initialize weather updates for periodic notifications
@@ -1492,6 +1494,22 @@ export function PlanetSurfaceScene() {
 
       {/* Atmospheric sounds */}
       <AtmosphericSounds planetName={landedPlanet} stormActive={false} />
+
+      {/* Takeoff transition overlay - renders on top when taking off */}
+      {isTakingOff && (
+        <PlanetTransitionOverlay
+          direction="takeoff"
+          startOnMount={true}
+          onThrustStart={() => {
+            console.log("[TAKEOFF] Playing takeoff sound");
+            playTakeoff();
+          }}
+          onComplete={() => {
+            console.log("[TAKEOFF] Transition complete, switching to space");
+            completeTakeoff();
+          }}
+        />
+      )}
     </div>
   );
 }

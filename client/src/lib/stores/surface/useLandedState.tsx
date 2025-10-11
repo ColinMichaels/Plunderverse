@@ -19,6 +19,7 @@ interface LandedState {
   setNotLanded: () => void;
   getLandedDuration: () => number;
   setIsTakingOff: (takingOff: boolean) => void;
+  completeTakeoff: () => void;
   getTakeoffOrbitPosition: () => { position: THREE.Vector3; velocity: THREE.Vector3 } | null;
 }
 
@@ -127,6 +128,17 @@ export const useLandedState = create<LandedState>((set, get) => ({
     if (takingOff) {
       console.log(`Initiating takeoff sequence from ${get().landedPlanet}`);
     }
+  },
+  
+  completeTakeoff: () => {
+    const state = get();
+    console.log(`[TAKEOFF] Completing takeoff sequence from ${state.landedPlanet}`);
+    
+    // Reset takeoff flag
+    set({ isTakingOff: false });
+    
+    // Transition to space
+    get().setNotLanded();
   },
   
   // Calculate orbital position for takeoff based on current universe time
