@@ -48,7 +48,6 @@ export function MiningBeamVisual({ active, targetPosition, color = "#00ff88" }: 
       if (materialRef.current) {
         const pulse = Math.sin(state.clock.elapsedTime * 10) * 0.2 + 0.8;
         materialRef.current.opacity = 0.6 * pulse;
-        materialRef.current.emissiveIntensity = pulse;
       }
       
       beamRef.current.visible = true;
@@ -64,8 +63,6 @@ export function MiningBeamVisual({ active, targetPosition, color = "#00ff88" }: 
       <meshBasicMaterial 
         ref={materialRef}
         color={color}
-        emissive={color}
-        emissiveIntensity={1}
         transparent={true}
         opacity={0.6}
         depthWrite={false}

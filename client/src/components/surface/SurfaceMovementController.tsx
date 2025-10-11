@@ -62,7 +62,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
   // Collision system
   const { checkCollision, getResourceNodes } = useSurfaceCollision();
   const { isActive: isMining, currentNodeId, startMining, performClick } = useMining();
-  const { playHit, playZap } = useAudio();
+  const { playHit, playLaser } = useAudio();
   const { setPosition, setRotation } = useSurfacePlayer();
   const { landedPlanet } = useLandedState();
   const { isNodeDestroyed } = useDestroyedNodes();
@@ -94,6 +94,8 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
   const [miningBeamActive, setMiningBeamActive] = useState(false);
   const [miningBeamTarget, setMiningBeamTarget] = useState<THREE.Vector3 | null>(null);
   const miningRange = 15; // Maximum mining range in units
+  const currentMiningNodeRef = useRef<any>(null); // Track the node we're actively mining
+  const lastSoundPlayRef = useRef(0); // Track when we last played the laser sound
 
   // Debug logging for controls
   useEffect(() => {
@@ -243,81 +245,97 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
     // Update flashlight battery (drain/charge based on state)
     updateBattery(delta);
     
-    // Spacebar mining - detect and mine nearest mineral
-    if (controls.shoot && currentTime - lastShootPressRef.current > 200) {
-      lastShootPressRef.current = currentTime;
-      
-      // Create a raycaster from the camera position and direction
-      const raycaster = new THREE.Raycaster();
-      raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
-      
-      // Get all resource nodes from the collision system
-      const resourceNodes = getResourceNodes ? getResourceNodes() : [];
-      
-      // Find the nearest mineral within range
-      let nearestNode: any = null;
-      let nearestDistance = Infinity;
-      
-      resourceNodes.forEach((node: any) => {
-        // Skip destroyed nodes
-        if (landedPlanet && isNodeDestroyed(landedPlanet, node.id)) {
-          return;
-        }
-        
-        const nodePosition = new THREE.Vector3(...node.position);
-        const distance = position.distanceTo(nodePosition);
-        
-        // Check if within mining range and if it's closer than previous
-        if (distance <= miningRange && distance < nearestDistance) {
-          // Check if we have line of sight (simple angle check)
-          const toNode = nodePosition.clone().sub(position).normalize();
-          const cameraDir = new THREE.Vector3(0, 0, -1);
-          cameraDir.applyQuaternion(camera.quaternion);
+    // Spacebar mining - handle both starting new mining and continuing existing mining
+    if (controls.shoot) {
+      // If we're already mining, continuously call performClick to progress
+      if (isMining && currentMiningNodeRef.current && landedPlanet) {
+        // Check if the node still exists (not destroyed)
+        if (!isNodeDestroyed(landedPlanet, currentMiningNodeRef.current.id)) {
+          // Call performClick every frame to progress mining
+          performClick();
           
-          const angle = cameraDir.angleTo(toNode);
-          if (angle < Math.PI / 4) { // 45 degree cone
-            nearestNode = node;
-            nearestDistance = distance;
-          }
-        }
-      });
-      
-      // If we found a mineral, start mining it
-      if (nearestNode && landedPlanet) {
-        if (!isMining || currentNodeId !== nearestNode.id) {
-          // Start mining new node
-          startMining(landedPlanet, nearestNode.resource, nearestNode.id);
-          playZap();
-          setMiningBeamActive(true);
-          setMiningBeamTarget(new THREE.Vector3(...nearestNode.position));
-          // Notify parent component about mining beam state
-          if (onMiningBeamChange) {
-            onMiningBeamChange({ active: true, target: new THREE.Vector3(...nearestNode.position) });
+          // Keep the mining beam active
+          if (!miningBeamActive) {
+            setMiningBeamActive(true);
+            setMiningBeamTarget(new THREE.Vector3(...currentMiningNodeRef.current.position));
+            if (onMiningBeamChange) {
+              onMiningBeamChange({ active: true, target: new THREE.Vector3(...currentMiningNodeRef.current.position) });
+            }
           }
         } else {
-          // Continue mining current node
-          performClick();
-          playHit();
+          // Node was destroyed, clear current mining
+          currentMiningNodeRef.current = null;
         }
-      } else {
-        // No target found - just play shooting sound
-        playZap();
+      }
+      
+      // Check for new targets (with debounce to prevent rapid switching)
+      if (currentTime - lastShootPressRef.current > 200) {
+        lastShootPressRef.current = currentTime;
+        
+        // Get all resource nodes from the collision system
+        const resourceNodes = getResourceNodes ? getResourceNodes() : [];
+        
+        // Find the nearest mineral within range
+        let nearestNode: any = null;
+        let nearestDistance = Infinity;
+        
+        resourceNodes.forEach((node: any) => {
+          // Skip destroyed nodes
+          if (landedPlanet && isNodeDestroyed(landedPlanet, node.id)) {
+            return;
+          }
+          
+          const nodePosition = new THREE.Vector3(...node.position);
+          const distance = position.distanceTo(nodePosition);
+          
+          // Check if within mining range and if it's closer than previous
+          if (distance <= miningRange && distance < nearestDistance) {
+            // Check if we have line of sight (simple angle check)
+            const toNode = nodePosition.clone().sub(position).normalize();
+            const cameraDir = new THREE.Vector3(0, 0, -1);
+            cameraDir.applyQuaternion(camera.quaternion);
+            
+            const angle = cameraDir.angleTo(toNode);
+            if (angle < Math.PI / 4) { // 45 degree cone
+              nearestNode = node;
+              nearestDistance = distance;
+            }
+          }
+        });
+        
+        // If we found a mineral and it's different from what we're mining
+        if (nearestNode && landedPlanet) {
+          if (!isMining || currentNodeId !== nearestNode.id) {
+            // Start mining new node
+            startMining(landedPlanet, nearestNode.resource, nearestNode.id);
+            currentMiningNodeRef.current = nearestNode;
+            playLaser();
+            setMiningBeamActive(true);
+            setMiningBeamTarget(new THREE.Vector3(...nearestNode.position));
+            // Notify parent component about mining beam state
+            if (onMiningBeamChange) {
+              onMiningBeamChange({ active: true, target: new THREE.Vector3(...nearestNode.position) });
+            }
+          }
+        } else if (!isMining) {
+          // No target found and not currently mining
+          // Only play sound if we haven't played it recently (prevent spam)
+          if (currentTime - lastSoundPlayRef.current > 500) {
+            playLaser();
+            lastSoundPlayRef.current = currentTime;
+          }
+        }
+      }
+    } else {
+      // Spacebar released - clear mining state
+      if (miningBeamActive) {
         setMiningBeamActive(false);
         setMiningBeamTarget(null);
+        currentMiningNodeRef.current = null;
         // Notify parent component about mining beam state
         if (onMiningBeamChange) {
           onMiningBeamChange({ active: false, target: null });
         }
-      }
-    }
-    
-    // Clear mining beam when not shooting
-    if (!controls.shoot && miningBeamActive) {
-      setMiningBeamActive(false);
-      setMiningBeamTarget(null);
-      // Notify parent component about mining beam state
-      if (onMiningBeamChange) {
-        onMiningBeamChange({ active: false, target: null });
       }
     }
 
