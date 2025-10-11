@@ -8,6 +8,7 @@ import { useWind } from "../../lib/stores/surface/useWind";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useSettings } from "../../lib/stores/ui/useSettings";
 import { useTerrain } from "../../lib/stores/surface/useTerrain";
+import { useAudio } from "../../lib/stores/ui/useAudio";
 import { ResourceManager } from "../../lib/utils/ResourceManager";
 
 // Create custom heat shimmer material
@@ -260,6 +261,7 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
   const { enableParticles, graphicsQuality } = useSettings();
   const { updateWind, getWindVector, triggerStorm, stopStorm } = useWind();
   const { getHeightAt } = useTerrain();
+  const { playWind, stopWind, playRain, stopRain } = useAudio();
   
   const particlePoolRef = useRef<AtmosphericParticlePool>();
   const particlesRef = useRef<THREE.Points>(null);
@@ -338,7 +340,7 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
     };
   }, [scene, atmosphere, flashlightOn]);
   
-  // Handle storm events
+  // Handle storm events and atmospheric sounds
   useEffect(() => {
     const shouldHaveStorm = atmosphere.stormIntensity && atmosphere.stormIntensity > 1.0;
     
@@ -352,6 +354,62 @@ export function AtmosphericEffects({ planetName, position = [0, 0, 0], flashligh
       console.log(`[ATMOSPHERE] Storm ended on ${planetName}`);
     }
   }, [atmosphere.stormIntensity, isStormActive, planetName, triggerStorm, stopStorm]);
+  
+  // Handle atmospheric sounds based on planet conditions
+  useEffect(() => {
+    // Determine wind intensity based on planet and conditions
+    let windIntensity = 0;
+    let rainIntensity = 0;
+    
+    switch (planetName) {
+      case "Mars":
+        // Mars has dust storms with moderate to strong winds
+        windIntensity = isStormActive ? 0.8 : 0.3;
+        break;
+      case "Venus":
+        // Venus has slow, dense atmosphere
+        windIntensity = 0.2;
+        break;
+      case "Earth":
+        // Earth has variable conditions
+        windIntensity = isStormActive ? 0.6 : 0.15;
+        rainIntensity = atmosphere.rainIntensity || 0;
+        break;
+      case "Jupiter":
+      case "Saturn": 
+      case "Neptune":
+        // Gas giants have very strong winds
+        windIntensity = 0.9;
+        break;
+      case "Moon":
+      case "Mercury":
+        // No atmosphere, no wind
+        windIntensity = 0;
+        break;
+      default:
+        windIntensity = 0.2;
+    }
+    
+    // Play or update wind sound
+    if (windIntensity > 0) {
+      playWind(windIntensity);
+    } else {
+      stopWind();
+    }
+    
+    // Play or update rain sound (Earth only for now)
+    if (rainIntensity > 0) {
+      playRain(rainIntensity);
+    } else {
+      stopRain();
+    }
+    
+    // Cleanup sounds when component unmounts or planet changes
+    return () => {
+      stopWind();
+      stopRain();
+    };
+  }, [planetName, isStormActive, atmosphere.rainIntensity, playWind, stopWind, playRain, stopRain]);
   
   // Generate particle geometry
   const particleGeometry = useMemo(() => {

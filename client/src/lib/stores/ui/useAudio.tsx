@@ -69,9 +69,12 @@ interface AudioState {
   // Legacy HTMLAudioElement support for background/ambient music
   backgroundMusic: HTMLAudioElement | null;
   ambientMusic: HTMLAudioElement | null;
+  thrusterSound: HTMLAudioElement | null; // Legacy thruster sound
 
   // Active Howl instances for continuous sounds
   activeThrusterSound: number | null; // Howl sound ID
+  activeWindSound: number | null; // Howl sound ID for wind
+  activeRainSound: number | null; // Howl sound ID for rain
 
   // Last play times for throttling
   lastPlayTimes: Map<string, number>;
@@ -110,6 +113,12 @@ interface AudioState {
   playExplosion: (position: THREE.Vector3) => void;
   playTakeoff: () => void;
   stopThruster: () => void;
+  
+  // Atmospheric sounds
+  playWind: (intensity?: number) => Promise<void>;
+  stopWind: () => void;
+  playRain: (intensity?: number) => Promise<void>;
+  stopRain: () => void;
 
   // Preload frequently used sounds
   preloadSounds: () => Promise<void>;
@@ -122,9 +131,12 @@ export const useAudio = create<AudioState>((set, get) => ({
   // Legacy HTMLAudioElement support
   backgroundMusic: null,
   ambientMusic: null,
+  thrusterSound: null,
 
   // Active Howl instances
   activeThrusterSound: null,
+  activeWindSound: null,
+  activeRainSound: null,
 
   // Last play times for throttling
   lastPlayTimes: new Map(),
@@ -361,6 +373,11 @@ export const useAudio = create<AudioState>((set, get) => ({
       thrusterSound.pause();
       thrusterSound.currentTime = 0;
     }
+    
+    // Stop atmospheric sounds
+    get().stopWind();
+    get().stopRain();
+    get().stopThruster();
 
     // Stop music player
     try {
@@ -518,6 +535,94 @@ export const useAudio = create<AudioState>((set, get) => ({
       soundEffectsCache.getCached("thruster")?.stop(activeThrusterSound);
       set({ activeThrusterSound: null });
       console.log("Thruster sound stopped");
+    }
+  },
+
+  playWind: async (intensity = 0.5) => {
+    const { masterMute, sfxMute, soundEffectsCache, activeWindSound } = get();
+
+    // Check both master and sfx mute
+    if (masterMute || sfxMute) {
+      console.log("Wind sound skipped (muted)");
+      return;
+    }
+
+    try {
+      const windSound = await soundEffectsCache.getSound(
+        "wind",
+        { ...AUDIO_CONFIG.soundEffects.wind, loop: true }
+      );
+      
+      // Stop existing wind sound if playing
+      if (activeWindSound !== null) {
+        windSound.stop(activeWindSound);
+      }
+
+      // Set volume based on intensity (0 to 1)
+      const clampedIntensity = Math.max(0, Math.min(1, intensity));
+      const volume = clampedIntensity * 0.4; // Max volume 0.4 for wind
+      
+      windSound.volume(volume);
+      const soundId = windSound.play();
+      set({ activeWindSound: soundId });
+      
+      console.log(`Wind sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
+    } catch (error) {
+      console.error("Failed to play wind sound:", error);
+    }
+  },
+
+  stopWind: () => {
+    const { soundEffectsCache, activeWindSound } = get();
+
+    if (activeWindSound !== null) {
+      soundEffectsCache.getCached("wind")?.stop(activeWindSound);
+      set({ activeWindSound: null });
+      console.log("Wind sound stopped");
+    }
+  },
+
+  playRain: async (intensity = 0.5) => {
+    const { masterMute, sfxMute, soundEffectsCache, activeRainSound } = get();
+
+    // Check both master and sfx mute
+    if (masterMute || sfxMute) {
+      console.log("Rain sound skipped (muted)");
+      return;
+    }
+
+    try {
+      const rainSound = await soundEffectsCache.getSound(
+        "rain",
+        { ...AUDIO_CONFIG.soundEffects.rain, loop: true }
+      );
+      
+      // Stop existing rain sound if playing
+      if (activeRainSound !== null) {
+        rainSound.stop(activeRainSound);
+      }
+
+      // Set volume based on intensity (0 to 1)
+      const clampedIntensity = Math.max(0, Math.min(1, intensity));
+      const volume = clampedIntensity * 0.5; // Max volume 0.5 for rain
+      
+      rainSound.volume(volume);
+      const soundId = rainSound.play();
+      set({ activeRainSound: soundId });
+      
+      console.log(`Rain sound started - Intensity: ${clampedIntensity.toFixed(2)}, Volume: ${volume.toFixed(2)}`);
+    } catch (error) {
+      console.error("Failed to play rain sound:", error);
+    }
+  },
+
+  stopRain: () => {
+    const { soundEffectsCache, activeRainSound } = get();
+
+    if (activeRainSound !== null) {
+      soundEffectsCache.getCached("rain")?.stop(activeRainSound);
+      set({ activeRainSound: null });
+      console.log("Rain sound stopped");
     }
   },
 
