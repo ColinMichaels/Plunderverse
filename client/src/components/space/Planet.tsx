@@ -109,11 +109,11 @@ export function Planet({ data, time }: PlanetProps) {
 
       // Update atmospheric material properties directly for performance
       if (atmosphereRef.current) {
-        const baseOpacity = data.name === "Venus" ? 0.15 : data.name === "Earth" ? 0.08 : 0.06;
+        const baseOpacity = data.name === "Venus" ? 0.06 : data.name === "Earth" ? 0.03 : 0.02; // Reduced base opacity
         atmosphereRef.current.opacity = baseOpacity * Math.sqrt(clampedIntensity);
       }
       if (atmosphereOuterRef.current) {
-        atmosphereOuterRef.current.opacity = 0.03 * Math.sqrt(clampedIntensity);
+        atmosphereOuterRef.current.opacity = 0.01 * Math.sqrt(clampedIntensity); // Very subtle
       }
     }
 
@@ -209,12 +209,12 @@ export function Planet({ data, time }: PlanetProps) {
       {/* Enhanced atmospheric glow for planets with atmospheres */}
       {materialProps.atmosphericGlow && (
         <>
-          {/* Primary atmospheric layer */}
+          {/* Primary atmospheric layer - reduced opacity for more realistic night sides */}
           <Sphere args={[data.size * 1.08 * scaleMultiplier, 32, 32]}>
             <meshBasicMaterial
               color={data.color}
               transparent
-              opacity={data.name === "Venus" ? 0.15 : data.name === "Earth" ? 0.08 : 0.06}
+              opacity={data.name === "Venus" ? 0.06 : data.name === "Earth" ? 0.03 : 0.02} // Significantly reduced for realistic shadows
               ref={atmosphereRef}
               side={THREE.BackSide}
             />
@@ -225,7 +225,7 @@ export function Planet({ data, time }: PlanetProps) {
               <meshBasicMaterial
                 color={data.color}
                 transparent
-                opacity={0.03}
+                opacity={0.01} // Very subtle outer glow
                 ref={atmosphereOuterRef}
                 side={THREE.BackSide}
               />
