@@ -125,6 +125,22 @@ export function CameraController() {
   const mobileRotationRef = useRef(new THREE.Vector2(0, 0));
   const mobileThrustRef = useRef(new THREE.Vector3(0, 0, 0));
 
+  // Mouse movement tracking for flight pause system
+  const lastMousePositionRef = useRef(new THREE.Vector2(0, 0));
+  const mouseVelocityRef = useRef(0);
+  const mouseStationaryTimeRef = useRef(0);
+  const mouseStationaryThreshold = 0.5; // seconds before considering mouse stationary
+  const mouseMovementThreshold = 0.001; // minimum movement to consider active
+
+  // Tap-based throttle system
+  const throttleLevelRef = useRef(0); // 0, 0.5, 0.75, 1.0
+  const lastThrottleTapRef = useRef(0);
+  const throttleTapWindow = 0.4; // 400ms window for multi-tap detection
+  const throttleTapCountRef = useRef(0);
+  const targetThrottleRef = useRef(0);
+  const currentThrottleRef = useRef(0);
+  const throttleEaseSpeed = 2.0; // How fast throttle eases to target
+
   // ===== PERFORMANCE OPTIMIZATIONS =====
   // Frame counters for throttling expensive operations
   const frameCounterRef = useRef(0);
@@ -568,7 +584,7 @@ export function CameraController() {
       ] as const;
 
       // Update boost state
-      const isBoosting = controls.boost && boostMeterRef.current > 0;
+      const isBoosting = (controls as any).boost && boostMeterRef.current > 0;
       if (isBoosting !== isBoostingRef.current) {
         isBoostingRef.current = isBoosting;
         if (isBoosting) {
@@ -596,6 +612,9 @@ export function CameraController() {
       const currentMaxVelocity = isBoosting
         ? maxVelocity * boostVelocityMultiplier
         : maxVelocity;
+
+      // Cache forward key state BEFORE loop updates it
+      const wasForwardPressed = previousKeyStateRef.current.forward;
 
       // Track key states and detect taps for each thrust direction
       thrustKeys.forEach((key) => {
@@ -663,14 +682,68 @@ export function CameraController() {
         previousKeyStateRef.current[key] = isPressed;
       });
 
-      // Apply held thrust with ramping
-      if (controls.forward && hasFuel) {
-        const multiplier = calculateThrustMultiplier(
-          thrustHoldTimeRef.current.forward,
-          false,
+      // ===== TAP-BASED THROTTLE SYSTEM FOR FORWARD KEY =====
+      // Special handling for forward key: tap detection for throttle levels
+      // Use cached wasForwardPressed to avoid race condition with forEach loop
+      if (controls.forward && !wasForwardPressed) {
+        // Forward key just pressed - check for tap pattern
+        const timeSinceLastTap = currentTime - lastThrottleTapRef.current;
+        
+        if (timeSinceLastTap < throttleTapWindow) {
+          // Within tap window - increment tap count
+          throttleTapCountRef.current++;
+        } else {
+          // Outside tap window - reset to first tap
+          throttleTapCountRef.current = 1;
+        }
+        
+        lastThrottleTapRef.current = currentTime;
+        
+        // Set throttle based on tap count
+        switch (throttleTapCountRef.current) {
+          case 1:
+            targetThrottleRef.current = 0.5; // 50% throttle
+            console.log('[THROTTLE] Set to 50% (1 tap)');
+            break;
+          case 2:
+            targetThrottleRef.current = 0.75; // 75% throttle
+            console.log('[THROTTLE] Set to 75% (2 taps)');
+            break;
+          case 3:
+          default:
+            targetThrottleRef.current = 1.0; // 100% throttle
+            console.log('[THROTTLE] Set to 100% (3 taps)');
+            throttleTapCountRef.current = 3; // Cap at 3
+            break;
+        }
+      }
+      
+      // Forward key released - ease throttle down to 0
+      if (!controls.forward && wasForwardPressed) {
+        targetThrottleRef.current = 0;
+        throttleTapCountRef.current = 0;
+      }
+      
+      // Smooth throttle easing (always active to provide ease-in/ease-out)
+      if (currentThrottleRef.current < targetThrottleRef.current) {
+        // Ease in to target throttle
+        currentThrottleRef.current = Math.min(
+          targetThrottleRef.current,
+          currentThrottleRef.current + throttleEaseSpeed * delta
         );
+      } else if (currentThrottleRef.current > targetThrottleRef.current) {
+        // Ease down to target throttle
+        currentThrottleRef.current = Math.max(
+          targetThrottleRef.current,
+          currentThrottleRef.current - throttleEaseSpeed * delta
+        );
+      }
+
+      // Apply held thrust with throttle system (replaces old ramping)
+      if (controls.forward && hasFuel) {
+        // Use throttle instead of hold-time ramping
         const effectiveThrust =
-          baseThrustWithPerformance * multiplier * currentBoostMultiplier;
+          baseThrustWithPerformance * currentThrottleRef.current * currentBoostMultiplier;
 
         // Check for double-click warp mode (preserve existing logic)
         if (currentTime - lastForwardPressRef.current < 0.3) {
@@ -683,7 +756,7 @@ export function CameraController() {
         }
         lastForwardPressRef.current = currentTime;
 
-        // Apply ramped thrust
+        // Apply thrust with throttle
         const finalThrust = isWarpMode
           ? effectiveThrust * warpThrustMultiplier
           : effectiveThrust;
@@ -696,6 +769,7 @@ export function CameraController() {
         console.log("[WARP] Mode deactivated");
       }
 
+      // Apply other directional thrust with ease-in/ease-out based on hold time
       if (controls.backward && hasFuel) {
         const multiplier = calculateThrustMultiplier(
           thrustHoldTimeRef.current.backward,
@@ -835,6 +909,26 @@ export function CameraController() {
       acceleration.add(tempVec3_2.current);
     }
 
+    // Get mouse position early for tracking
+    const mouse = state.mouse;
+    
+    // Track mouse movement for flight pause system (before physics)
+    const currentMousePos = new THREE.Vector2(mouse.x, mouse.y);
+    const mouseDelta = currentMousePos.distanceTo(lastMousePositionRef.current);
+    mouseVelocityRef.current = mouseDelta / delta;
+    
+    // Update mouse stationary timer
+    if (mouseDelta > mouseMovementThreshold) {
+      mouseStationaryTimeRef.current = 0; // Reset timer on movement
+    } else {
+      mouseStationaryTimeRef.current += delta;
+    }
+    
+    lastMousePositionRef.current.copy(currentMousePos);
+    
+    // Determine if mouse is active (moving) or stationary
+    const isMouseActive = mouseStationaryTimeRef.current < mouseStationaryThreshold;
+
     // Stop all movement when mining, landing, or landed on surface
     if (isMining || isLanding || isLanded) {
       velocity.set(0, 0, 0);
@@ -844,19 +938,40 @@ export function CameraController() {
       tempVec3_1.current.copy(acceleration).multiplyScalar(delta);
       velocity.add(tempVec3_1.current);
 
-      // ===== IMPROVED FRICTION DAMPING SYSTEM =====
-      // Apply smooth friction-based deceleration instead of hard clamping
-      if (!thrusterActive) {
-        // Only apply friction when not actively thrusting
-        velocity.multiplyScalar(frictionCoefficient);
-
-        // Clamp very small velocities to zero to prevent drift
-        if (velocity.length() < minVelocityThreshold) {
+      // ===== MOUSE-BASED FLIGHT PAUSE SYSTEM =====
+      // When mouse is stationary or window loses focus, apply heavy damping to slow to halt
+      const shouldPauseFlight = !isMouseActive || !hasFocus || isPaused;
+      const pauseDampingCoefficient = 0.85; // Strong damping when paused (15% reduction per frame)
+      
+      // Calculate currentMaxVelocity (needed for logging)
+      const isBoosting = isBoostingRef.current;
+      const currentMaxVelocity = isBoosting
+        ? maxVelocity * boostVelocityMultiplier
+        : maxVelocity;
+      
+      if (shouldPauseFlight) {
+        // Apply heavy damping to bring ship to halt
+        velocity.multiplyScalar(pauseDampingCoefficient);
+        
+        // Clamp to zero faster when pausing
+        if (velocity.length() < minVelocityThreshold * 5) {
           velocity.set(0, 0, 0);
         }
       } else {
-        // Apply reduced drag when thrusting (allows momentum buildup)
-        velocity.multiplyScalar(dragCoefficient);
+        // ===== IMPROVED FRICTION DAMPING SYSTEM =====
+        // Apply smooth friction-based deceleration instead of hard clamping
+        if (!thrusterActive) {
+          // Only apply friction when not actively thrusting
+          velocity.multiplyScalar(frictionCoefficient);
+
+          // Clamp very small velocities to zero to prevent drift
+          if (velocity.length() < minVelocityThreshold) {
+            velocity.set(0, 0, 0);
+          }
+        } else {
+          // Apply reduced drag when thrusting (allows momentum buildup)
+          velocity.multiplyScalar(dragCoefficient);
+        }
       }
 
       // Log velocity for debugging when boosting
@@ -1041,7 +1156,6 @@ export function CameraController() {
     }
 
     // Mouse and mobile look controls with damping for smoother rotation
-    const mouse = state.mouse;
     camera.rotation.order = "YXZ";
 
     // Only apply look controls if not landing, has focus, not paused, AND not in autopilot
@@ -1463,4 +1577,6 @@ export function CameraController() {
       });
     };
   }, []);
+
+  return null; // Component doesn't render anything, only manages camera
 }
