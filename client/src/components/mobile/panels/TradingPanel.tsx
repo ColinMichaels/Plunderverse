@@ -107,8 +107,8 @@ export const TradingPanel: React.FC<TradingPanelProps> = ({
         if ((item.category === 'contraband' || item.illegal) && factionRep > -20) {
           return false;
         }
-        // Advanced shields and legal cargo for good standing
-        if (item.category === 'shields' && item.rarity === 'rare' && factionRep < 20) {
+        // Advanced equipment and legal cargo for good standing
+        if (item.category === 'equipment' && item.rarity === 'rare' && factionRep < 20) {
           return false;
         }
       } else if (faction === 'outlaws') {
