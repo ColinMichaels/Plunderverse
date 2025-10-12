@@ -71,9 +71,8 @@ export class TransactionClient {
 
   private setupMessageHandler(): void {
     // Listen for transaction results from server
-      this.messageHandler = (raw: any) => {
+      this.messageHandler = async (raw: any) => {
           try {
-              // Accept { type, data: { actionId, ... } } or { type, actionId, ... }
               const type = raw?.type;
               if (type !== 'transaction_result') return;
               const payload = raw?.data ?? raw;
@@ -88,18 +87,32 @@ export class TransactionClient {
 
               const success = (typeof payload.success === 'boolean') ? payload.success : !!raw?.success;
               if (success) {
-                  pending.resolve({
+                  return pending.resolve({
                       success: true,
                       transactionId: payload.transactionId || raw?.transactionId,
                       newBalances: payload.newBalances || raw?.newBalances,
                       sideEffects: payload.sideEffects || raw?.sideEffects,
                   });
-              } else {
-                  pending.resolve({
-                      success: false,
-                      error: payload.error || raw?.error || 'Transaction failed',
-                  });
               }
+
+              const errMsg = (payload.error || raw?.error || '').toString();
+              // If server says not authenticated, fall back to local apply and queue for sync
+              if (/not\s*authenticated|unauthorized|401/i.test(errMsg)) {
+                  try {
+                      if (typeof navigator !== 'undefined' && (navigator as any).serviceWorker?.controller) {
+                          (navigator as any).serviceWorker.controller.postMessage({
+                              type: 'queue-sync',
+                              data: {kind: 'transaction_offline', ts: Date.now(), transaction: pending.request},
+                          });
+              }
+                  } catch {
+                  }
+                  const local = await this.executeLocalTransaction(pending.request);
+                  return pending.resolve(local);
+              }
+
+              // Otherwise surface the failure
+              return pending.resolve({success: false, error: errMsg || 'Transaction failed'});
           } catch (e) {
               console.warn('[TransactionClient] Message handler error:', e);
           }
@@ -189,7 +202,7 @@ export class TransactionClient {
                   transaction: request,
                   data: request, // backwards compatibility
               };
-              console.log(`[TransactionClient] Sending transaction: ${request.category}/${request.subtype} amount=${request.amount}`);
+              console.log(`[TransactionClient] Sending transaction: ${request.category}/${request.subtype ?? '—'} amount=${request.amount}`);
               (sm as any).sendMessage(message);
           } catch (err) {
               clearTimeout(timeout);
@@ -240,6 +253,7 @@ export class TransactionClient {
     return this.executeTransaction({
       type: 'debit',
       category: 'fast_travel',
+        subtype: 'jump',
       amount: cost,
       metadata: {
         destination,
