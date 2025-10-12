@@ -1,8 +1,8 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { toast } from 'sonner';
-import { useCreditsStore } from '../../../domain/economy/credits.store';
-import { usePlayer } from '../player/usePlayer';
+import {create} from 'zustand';
+import {persist} from 'zustand/middleware';
+import {toast} from 'sonner';
+import {useCreditsStore} from '@/domain';
+import {usePlayer} from '@/lib/stores';
 
 // Import crew data
 import crewDataJson from '../../../content/plunderverse/crew.json';
