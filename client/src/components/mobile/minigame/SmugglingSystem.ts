@@ -1,8 +1,7 @@
 import Phaser from 'phaser';
-import { useHeatSystem } from '../../../lib/stores/player/useHeatSystem';
-import { useCreditsStore } from '../../../domain/economy/credits.store';
-import { useInventoryStore } from '../../../domain/economy/inventory.store';
-import { toast } from 'sonner';
+import {CrimeType, useHeatSystem} from '../../../lib/stores/player/useHeatSystem';
+import {useCreditsStore} from '../../../domain/economy/credits.store';
+import {toast} from 'sonner';
 
 export interface ContrabandType {
   id: string;
@@ -525,7 +524,7 @@ export class SmugglingSystem {
     const creditsStore = useCreditsStore.getState();
     
     if (creditsStore.credits >= cost) {
-      creditsStore.removeCredits(cost);
+        creditsStore.spendCredits(cost);
       patrol.alertLevel = 'normal';
       patrol.lastSeenPlayer = undefined;
       this.detectionMeter = Math.max(0, this.detectionMeter - 50);
@@ -561,7 +560,7 @@ export class SmugglingSystem {
     // Fine the player
     const fine = Math.floor(totalValue * 0.5);
     const creditsStore = useCreditsStore.getState();
-    creditsStore.removeCredits(Math.min(fine, creditsStore.credits));
+      creditsStore.spendCredits(Math.min(fine, creditsStore.credits));
     
     // Fail current mission
     if (this.activeMission) {
@@ -770,7 +769,7 @@ export class SmugglingSystem {
     
     // Give rewards
     const creditsStore = useCreditsStore.getState();
-    creditsStore.addCredits(totalReward);
+      creditsStore.earnCredits(totalReward);
     
     // Clear contraband
     this.carriedContraband.delete(this.activeMission.contraband.id);
@@ -829,7 +828,8 @@ export class SmugglingSystem {
     
     // Sync with main game heat system
     const heatSystem = useHeatSystem.getState();
-    heatSystem.addHeat('smuggling', amount);
+      const crime: CrimeType = "minor_smuggling";
+      heatSystem.applyHeat(crime, amount);
     
     // Update UI
     this.scene.events.emit('updateHeat', this.playerHeat);
@@ -845,7 +845,7 @@ export class SmugglingSystem {
     
     // Sync with main game
     const heatSystem = useHeatSystem.getState();
-    heatSystem.reduceHeat(amount);
+      heatSystem.applyHeatDecay(amount);
     
     this.scene.events.emit('updateHeat', this.playerHeat);
   }

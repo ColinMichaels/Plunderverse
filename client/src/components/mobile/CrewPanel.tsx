@@ -214,7 +214,7 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-cyan-400/30 bg-gray-800/30">
+                <div className="flex border-b border-cyan-400/30 bg-gray-800/30 text-white">
                     <TabButton active={selectedTab === 'active'} onClick={() => setSelectedTab('active')}>
                         Active ({crew.activeCrew.length}/{crew.maxCrewSize})
                     </TabButton>

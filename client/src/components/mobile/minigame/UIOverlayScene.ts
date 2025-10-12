@@ -1,8 +1,7 @@
 import Phaser from 'phaser';
-import { DialogueChoice } from './NPCDialogueSystem';
-import { NPCMission } from './NPCMissionSystem';
-import { SmugglingMission } from './SmugglingSystem';
-import { CrewMember, CrewTask } from './CrewManagementSystem';
+import {DialogueChoice} from './NPCDialogueSystem';
+import {NPCMission} from './NPCMissionSystem';
+import {SmugglingMission} from './SmugglingSystem';
 
 /**
  * UIOverlayScene - HUD and UI elements overlay for the mini-game
