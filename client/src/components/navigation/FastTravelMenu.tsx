@@ -1,6 +1,6 @@
 import React, {useState} from "react";
 import * as THREE from "three";
-import {useCredits, useEquipment, useSolarSystem} from "@/lib/stores";
+import {useCredits, useEquipment, useLandedState, useSolarSystem} from "@/lib/stores";
 import {TransactionClient} from "@/services/TransactionClient.ts";
 import {planets} from "@/lib/planetData.ts";
 import {Button} from "../ui/button";
@@ -79,6 +79,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
                 .add(new THREE.Vector3(viewDistance, 5, viewDistance));
 
             useSolarSystem.getState().setCameraPosition(cameraPos);
+            useLandedState.getState().setLanded(planetName);
             console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
         }
     };
