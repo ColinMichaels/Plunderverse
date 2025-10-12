@@ -20,28 +20,36 @@ export function patchWebSocket() {
     console.log(`[WebSocketPatch] NEW WebSocket connection attempt:`, originalUrl);
     
     // Special handling for Vite HMR in Replit environment
-    // Check if this is a Vite HMR connection (usually starts with ws:// or wss:// and has no path or root path)
-    const isViteHMR = (fixedUrl.includes('localhost:undefined') || fixedUrl.includes(':undefined')) && 
-                      !fixedUrl.includes('token=') && 
-                      !fixedUrl.includes('/ws/sync');
+    // Check if this is a Vite HMR connection (no token, no /ws/sync path, often has undefined port)
+    const isViteHMR = !fixedUrl.includes('token=') && !fixedUrl.includes('/ws/sync');
     
     if (isViteHMR) {
       console.log('[WebSocketPatch] Detected Vite HMR connection attempt');
       
-      // For Replit environment, use the proper WebSocket URL
+      // For Replit environment
       if (typeof window !== 'undefined' && window.location.hostname.includes('replit')) {
-        // Use the Replit dev URL for HMR
+        // Use the Replit WebSocket URL for HMR
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.hostname;
-        const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '80');
+        const port = window.location.port;
         
-        // Vite HMR WebSocket path
-        fixedUrl = `${protocol}//${host}:${port}/`;
+        // Vite HMR WebSocket path (root path)
+        if (port && port !== '80' && port !== '443') {
+          fixedUrl = `${protocol}//${host}:${port}/`;
+        } else {
+          fixedUrl = `${protocol}//${host}/`;
+        }
         console.warn(`[WebSocketPatch] Fixed Vite HMR URL for Replit: ${originalUrl} -> ${fixedUrl}`);
       } else {
-        // Local development fallback
-        fixedUrl = fixedUrl.replace('localhost:undefined', 'localhost:5000');
-        fixedUrl = fixedUrl.replace(':undefined', ':5000');
+        // Local development - ensure port 5000
+        if (fixedUrl.includes('undefined')) {
+          fixedUrl = fixedUrl.replace('localhost:undefined', 'localhost:5000');
+          fixedUrl = fixedUrl.replace(':undefined', ':5000');
+        }
+        // Ensure we have localhost:5000 for HMR
+        if (!fixedUrl.includes(':5000') && fixedUrl.includes('localhost')) {
+          fixedUrl = fixedUrl.replace('localhost', 'localhost:5000');
+        }
         console.warn(`[WebSocketPatch] Fixed Vite HMR URL for local dev: ${originalUrl} -> ${fixedUrl}`);
       }
     }

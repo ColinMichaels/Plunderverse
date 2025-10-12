@@ -82,12 +82,20 @@ export class CloudSyncManager {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
     
-    // In development, use port 5000. In production, don't specify port (uses default for protocol)
+    // Construct WebSocket URL based on environment
     let wsUrl;
     if (import.meta.env.DEV) {
-      wsUrl = `${protocol}//${host}:5000/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+      // Development: use localhost with explicit port
+      wsUrl = `${protocol}//localhost:5000/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     } else {
-      wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+      // Production: use current host with appropriate port
+      // In Replit production, WebSocket uses standard ports (443 for wss, 80 for ws)
+      const port = window.location.port;
+      if (port && port !== '80' && port !== '443') {
+        wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+      } else {
+        wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+      }
     }
     
     console.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
