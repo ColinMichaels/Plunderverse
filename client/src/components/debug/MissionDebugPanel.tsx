@@ -148,7 +148,7 @@ function SyncStatusPanel() {
     async function probeAuth() {
         try {
             // @ts-ignore
-            const mod = await import(/* @vite-ignore */ '../../lib/cloud/CloudSyncManager');
+            const mod = await import(/* @vite-ignore */ '../../services/CloudSyncManager');
             if (mod?.cloudSyncManager?.isAuthenticated) {
                 setIsAuth(!!mod.cloudSyncManager.isAuthenticated());
             }
@@ -169,7 +169,7 @@ function SyncStatusPanel() {
         setBusy(true);
         try {
             // @ts-ignore
-            const mod = await import(/* @vite-ignore */ '../../lib/cloud/CloudSyncManager');
+            const mod = await import(/* @vite-ignore */ '../../services/CloudSyncManager');
             if (mod?.cloudSyncManager?.ping) {
                 await mod.cloudSyncManager.ping();
                 setLastSync(Date.now());
