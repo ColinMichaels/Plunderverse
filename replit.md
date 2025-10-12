@@ -8,22 +8,27 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### 2025-10-12: Player Death Crash Fix - Radix UI Component Cleanup During Unmount
-- **Death Screen Crash Fix**: Fixed infinite loop crash when player dies
-  - **Issue**: "Maximum update depth exceeded" error when death screen appears, causing app to freeze/crash
-  - **Root Cause**: Radix UI components (Slider in ParrotSettingsPanel, ScrollAreas in various panels) tried to update state during unmount when death screen appeared
-  - **Solution**: Wrapped all UI components containing Radix elements in `phase !== "ended"` conditionals to unmount cleanly before death screen, plus added mounted flag to ParrotSettingsPanel useEffect
-  - **Components Fixed**: NavigationSidebar, ActionBar, OrbitalInterface, MobileHUD, MusicPlayer, MainMenu, SaveGamePanel, BottomControlSidebar
-  - **Impact**: Player death now works smoothly without crashes, death screen displays properly, revival flow intact
+### 2025-10-12: Final Death Crash Fix - Deferred Phase Transition
+- **Death Screen Crash Resolution**: Fixed persistent Radix UI infinite loop crash when killed by enemies
+  - **Issue**: Even with UI components hidden, Radix Slider tried to update state during unmount causing "Maximum update depth exceeded"
+  - **Root Cause**: Synchronous phase change to "ended" unmounted all UI components immediately, triggering Radix's internal ref cleanup that tried to update state
+  - **Solution**: Added 100ms setTimeout delay before calling `useGame.getState().end()` in death handler, allowing React to complete current render cycle
+  - **Impact**: Player death from enemy damage now works smoothly, no more crashes or infinite loops
 
-### 2025-10-12: WebSocket Connection Fix - Proper Environment Handling
-- **WebSocket Environment Fix**: Fixed WebSocket connection failures in Replit production environment
-  - **Issue**: Multiple WebSocket connection errors - both Vite HMR and CloudSync failing with undefined ports
-  - **Root Cause**: CloudSync using localhost in production, HMR patch not detecting Replit environment properly
-  - **Solution**: Updated CloudSyncWebSocket to properly detect dev vs production, improved HMR detection in websocketPatch
-  - **Dev Behavior**: Uses `ws://localhost:5000/ws/sync` for CloudSync, patches HMR to use port 5000
-  - **Production Behavior**: Uses current hostname with appropriate port (443 for wss, 80 for ws), HMR gets proper Replit URL
-  - **Impact**: Eliminated all WebSocket connection errors, both Vite HMR and CloudSync working properly
+### 2025-10-12: WebSocket Hostname Detection Fix
+- **WebSocket Connection Fix**: Fixed "wss://localhost:5000" connection failures in Replit preview
+  - **Issue**: WebSocket tried connecting to `wss://localhost:5000` in Replit preview causing connection failures
+  - **Root Cause**: Used `import.meta.env.DEV` for environment detection, but Replit preview has DEV=true with HTTPS protocol, creating invalid `wss://localhost` URL
+  - **Solution**: Changed detection to check actual hostname (`localhost` or `127.0.0.1`) instead of env variable
+  - **Behavior**: True local dev uses localhost:5000, Replit/production uses current host with appropriate port
+  - **Impact**: WebSocket connections now work correctly in all environments
+
+### 2025-10-12: Combat Death Dynamic Import Fix
+- **Enemy Death Handling**: Fixed async race condition when player killed by enemies
+  - **Issue**: Game crashed when player died from enemy damage
+  - **Root Cause**: Death handler used dynamic imports `import(...).then()` inside state update, creating async race conditions
+  - **Solution**: Replaced dynamic imports with static imports of useEnemies, useShooting, useGame at top of file
+  - **Impact**: Combat state clears synchronously on death, no more race condition crashes
 
 ### 2025-10-11: Performance Fix - Eliminated Excessive Material Logging
 - **Performance Optimization**: Fixed AtmosphericEffects fog plane material regeneration causing performance issues
