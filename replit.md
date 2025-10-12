@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-12: Player Death Crash Fix - ParrotSettingsPanel State Update After Unmount
+- **Death Screen Crash Fix**: Fixed infinite loop crash when player dies
+  - **Issue**: "Maximum update depth exceeded" error when death screen appears, causing app to freeze/crash
+  - **Root Cause**: ParrotSettingsPanel's voice loading useEffect tried to update state after component was unmounted during death screen transition
+  - **Solution**: Added mounted flag to useEffect with cleanup function to prevent state updates after unmount
+  - **Impact**: Player death now works smoothly without crashes, death screen displays properly
+
 ### 2025-10-12: WebSocket Connection Fix - Proper Environment Handling
 - **WebSocket Environment Fix**: Fixed WebSocket connection failures in Replit production environment
   - **Issue**: Multiple WebSocket connection errors - both Vite HMR and CloudSync failing with undefined ports
