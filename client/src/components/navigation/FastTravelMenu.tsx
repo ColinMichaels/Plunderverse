@@ -15,9 +15,13 @@ interface FastTravelMenuProps {
 
 export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
   const { selectedPlanet, setSelectedPlanet } = useSolarSystem();
-  const { fuel, maxFuel, consumeFuel } = useShipStatus();
-  const { credits, deductCredits } = useCredits();
-  const { equipment } = useEquipment();
+  const { credits, spendCredits } = useCredits();
+  const { equipment, consumeFuel, getEquipment } = useEquipment();
+  
+  // Get fuel from equipment system
+  const fuelTank = getEquipment('fuel-tank');
+  const fuel = fuelTank?.currentDurability || 0;
+  const maxFuel = fuelTank?.maxDurability || 100;
   
   // Find current planet index safely
   const currentPlanetIndex = selectedPlanet 
@@ -27,7 +31,12 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
   // Ensure we have a valid index
   const selectedPlanetIndex = currentPlanetIndex >= 0 ? currentPlanetIndex : 0;
   
-  const hasFastTravelModule = equipment.some(e => e.type === "navigation" && e.name.includes("Fast Travel"));
+  // Check for fast travel module in equipment (e.g., warp drive or advanced navigation)
+  const hasFastTravelModule = equipment.some(e => 
+    e.name.toLowerCase().includes("fast travel") || 
+    e.name.toLowerCase().includes("warp") ||
+    e.name.toLowerCase().includes("quantum")
+  );
   
   const calculateTravelCost = (targetIndex: number) => {
     const distance = Math.abs(targetIndex - selectedPlanetIndex);
@@ -50,7 +59,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     const { fuelCost, creditCost } = calculateTravelCost(targetIndex);
     
     if (fuel < fuelCost) {
-      toast.error(`Not enough fuel! Need ${fuelCost}, have ${fuel}`);
+      toast.error(`Not enough fuel! Need ${fuelCost}, have ${Math.floor(fuel)}`);
       return;
     }
     
@@ -60,8 +69,17 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     }
     
     // Perform the fast travel
-    consumeFuel(fuelCost);
-    deductCredits(creditCost);
+    const fuelConsumed = consumeFuel(fuelCost);
+    if (!fuelConsumed) {
+      toast.error("Failed to consume fuel");
+      return;
+    }
+    
+    const creditsSpent = spendCredits(creditCost);
+    if (!creditsSpent) {
+      toast.error("Failed to spend credits");
+      return;
+    }
     
     // Update selected planet using planet name
     const targetPlanet = planets[targetIndex];
