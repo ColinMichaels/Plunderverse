@@ -15,13 +15,13 @@ Preferred communication style: Simple, everyday language.
   - **Solution**: Added 100ms setTimeout delay before calling `useGame.getState().end()` in death handler, allowing React to complete current render cycle
   - **Impact**: Player death from enemy damage now works smoothly, no more crashes or infinite loops
 
-### 2025-10-12: WebSocket Hostname Detection Fix
-- **WebSocket Connection Fix**: Fixed "wss://localhost:5000" connection failures in Replit preview
-  - **Issue**: WebSocket tried connecting to `wss://localhost:5000` in Replit preview causing connection failures
-  - **Root Cause**: Used `import.meta.env.DEV` for environment detection, but Replit preview has DEV=true with HTTPS protocol, creating invalid `wss://localhost` URL
-  - **Solution**: Changed detection to check actual hostname (`localhost` or `127.0.0.1`) instead of env variable
-  - **Behavior**: True local dev uses localhost:5000, Replit/production uses current host with appropriate port
-  - **Impact**: WebSocket connections now work correctly in all environments
+### 2025-10-12: WebSocket URL Fix - Always Use Current Hostname
+- **WebSocket Connection Fix**: Fixed WebSocket connection failures by always using current application URL
+  - **Issue**: WebSocket tried connecting to `wss://localhost:5000` even though server runs on Replit, causing connection failures
+  - **Root Cause**: Incorrect environment detection assumed localhost for development, but Replit server runs on actual hostname
+  - **Solution**: Removed localhost checks - WebSocket now always uses `window.location.hostname` and `window.location.port`
+  - **Behavior**: Automatically connects to wherever the server is actually running (Replit, production, or any environment)
+  - **Impact**: WebSocket connections work correctly in all environments without hardcoded assumptions
 
 ### 2025-10-12: Combat Death Dynamic Import Fix
 - **Enemy Death Handling**: Fixed async race condition when player killed by enemies

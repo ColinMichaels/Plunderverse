@@ -81,23 +81,15 @@ export class CloudSyncManager {
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const host = window.location.hostname;
+    const port = window.location.port;
     
-    // Construct WebSocket URL based on environment
+    // Always use the current URL where the app is running
+    // This works for Replit, production, and local development
     let wsUrl;
-    // Check if we're in actual local development (localhost) vs Replit preview
-    const isLocalDev = host === 'localhost' || host === '127.0.0.1';
-    
-    if (isLocalDev) {
-      // True local development: use localhost with explicit port
-      wsUrl = `${protocol}//localhost:5000/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
+    if (port && port !== '80' && port !== '443') {
+      wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     } else {
-      // Replit or production: use current host with appropriate port
-      const port = window.location.port;
-      if (port && port !== '80' && port !== '443') {
-        wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
-      } else {
-        wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
-      }
+      wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     }
     
     console.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
