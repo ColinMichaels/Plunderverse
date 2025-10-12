@@ -5,6 +5,7 @@ import { useEquipment } from "./useEquipment";
 import { useEnemies } from "../combat/useEnemies";
 import { useShooting } from "../combat/useShooting";
 import { useGame } from "../ui/useGame";
+import { useUpgrades } from "./useUpgrades";
 
 interface ShipStatusState {
   // Ship resources (0-100) - fuel moved to equipment system
@@ -56,23 +57,37 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
   
   takeDamage: (amount, source) => {
     set(state => {
+      // Get upgrade bonuses for damage reduction (clamped to max 90% to prevent healing)
+      let shieldReduction = 0;
+      let hullReduction = 0;
+      
+      try {
+        const bonuses = useUpgrades.getState().getTotalBonuses();
+        shieldReduction = Math.min(0.9, Math.max(0, (bonuses.shieldBonus || 0) / 100));
+        hullReduction = Math.min(0.9, Math.max(0, (bonuses.hullBonus || 0) / 100));
+      } catch (e) {
+        // Upgrades not available, no reduction
+      }
+      
       let newShield = state.shield;
       let newHull = state.hull;
       let hullDamageAmount = 0;
       
-      // Shield absorbs damage first
-      if (newShield > 0) {
-        newShield = Math.max(0, newShield - amount);
-        // If shield breaks, remaining damage goes to hull
-        if (newShield === 0 && amount > state.shield) {
-          const remainingDamage = amount - state.shield;
-          hullDamageAmount = remainingDamage;
-          newHull = Math.max(0, newHull - remainingDamage);
-        }
-      } else {
-        // No shield, direct hull damage
-        hullDamageAmount = amount;
-        newHull = Math.max(0, newHull - amount);
+      // Split incoming damage into shield and hull portions BEFORE applying reductions
+      const shieldPortion = Math.min(amount, newShield);
+      const hullPortion = Math.max(0, amount - newShield);
+      
+      // Apply shield reduction only to shield portion
+      if (shieldPortion > 0) {
+        const effectiveShieldDamage = shieldPortion * (1 - shieldReduction);
+        newShield = Math.max(0, newShield - effectiveShieldDamage);
+      }
+      
+      // Apply hull reduction only to hull portion
+      if (hullPortion > 0) {
+        const effectiveHullDamage = hullPortion * (1 - hullReduction);
+        hullDamageAmount = effectiveHullDamage;
+        newHull = Math.max(0, newHull - effectiveHullDamage);
       }
       
       // Sync hull damage with equipment system

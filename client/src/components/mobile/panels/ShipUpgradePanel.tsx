@@ -156,15 +156,20 @@ export const ShipUpgradePanel: React.FC<{ onClose?: () => void }> = ({ onClose }
       }
     }
     
-    // Apply hull/shield bonuses directly if needed
-    if (bonuses.hullBonus) {
-      // Hull bonuses would increase max hull capacity
-      console.log(`Applied hull bonus: +${bonuses.hullBonus}%`);
-    }
-    
-    if (bonuses.shieldBonus) {
-      // Shield bonuses would increase max shield capacity
-      console.log(`Applied shield bonus: +${bonuses.shieldBonus}%`);
+    // Hull/shield bonuses are automatically applied via ship's takeDamage calculation
+    // The bonuses reduce incoming damage to their respective systems
+    if (bonuses.hullBonus && bonuses.shieldBonus) {
+      toast.success(`Defensive systems upgraded!`, {
+        description: `Shield: ${bonuses.shieldBonus}% reduction, Hull: ${bonuses.hullBonus}% reduction`
+      });
+    } else if (bonuses.hullBonus) {
+      toast.success(`Hull armor upgraded!`, {
+        description: `${bonuses.hullBonus}% hull damage reduction`
+      });
+    } else if (bonuses.shieldBonus) {
+      toast.success(`Shield systems upgraded!`, {
+        description: `${bonuses.shieldBonus}% shield damage reduction`
+      });
     }
   };
 
