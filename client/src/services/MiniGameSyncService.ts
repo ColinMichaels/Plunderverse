@@ -6,6 +6,7 @@ import { useHeatSystem } from '../lib/stores/player/useHeatSystem';
 import { useCrewManagement } from '../lib/stores/ship/useCrewManagement';
 import { usePlunderverseMissions } from '../lib/stores/economy/usePlunderverseMissions';
 import { useShipStatus } from '../lib/stores/ship/useShipStatus';
+import { useEquipment } from '../lib/stores/ship/useEquipment';
 import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
 import OfflineStorageService, { OfflineGameState, SyncQueueItem } from './OfflineStorageService';
 import { TransactionClient } from './TransactionClient';
@@ -92,8 +93,13 @@ class MiniGameSyncService {
    * Handle incoming messages from CloudSyncManager
    */
   private handleCloudSyncMessage(payload: SyncPayload): void {
-    // Only process messages when mini-game is active
-    if (!this.isMinigameActive) return;
+    // Always process victory_rewards messages even when mini-game is inactive
+    // This allows main game to receive completion rewards from mini-game
+    const isVictoryReward = payload.type === 'state_update' && 
+                           payload.data?.type === 'victory_rewards';
+    
+    // Only process messages when mini-game is active (except victory rewards)
+    if (!this.isMinigameActive && !isVictoryReward) return;
     
     console.log(`[MiniGameSync] Received ${payload.type} via CloudSync`);
     
@@ -396,7 +402,28 @@ class MiniGameSyncService {
     shipStatus.repairHull(rewards.shipRepairs.hull);
     console.log('[MiniGameSync] Applied ship repairs:', rewards.shipRepairs);
     
-    // Note: Fuel is managed by equipment system, not ship status
+    // Apply fuel restoration (free reward, no cost)
+    if (rewards.shipRepairs.fuel) {
+      const equipmentStore = useEquipment.getState();
+      const fuelTank = equipmentStore.getEquipment('fuel-tank');
+      
+      if (fuelTank) {
+        const fuelAmount = (fuelTank.maxDurability * rewards.shipRepairs.fuel) / 100;
+        const newFuelLevel = Math.min(fuelTank.maxDurability, fuelTank.currentDurability + fuelAmount);
+        
+        // Update fuel tank using setState to trigger subscribers and persistence
+        useEquipment.setState({
+          equipment: equipmentStore.equipment.map((eq: any) => 
+            eq.id === 'fuel-tank' 
+              ? { ...eq, currentDurability: newFuelLevel, performanceLevel: newFuelLevel / eq.maxDurability }
+              : eq
+          )
+        });
+        
+        console.log(`[MiniGameSync] Restored ${rewards.shipRepairs.fuel}% fuel (${fuelAmount.toFixed(1)} units)`);
+      }
+    }
+    
     // Items would need proper ResourceData objects to add to inventory
     // For now, just log the items (this would need proper implementation)
     if (rewards.items && rewards.items.length > 0) {
