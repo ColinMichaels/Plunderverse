@@ -8,12 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### 2025-10-12: Player Death Crash Fix - ParrotSettingsPanel State Update After Unmount
+### 2025-10-12: Player Death Crash Fix - Radix UI Component Cleanup During Unmount
 - **Death Screen Crash Fix**: Fixed infinite loop crash when player dies
   - **Issue**: "Maximum update depth exceeded" error when death screen appears, causing app to freeze/crash
-  - **Root Cause**: ParrotSettingsPanel's voice loading useEffect tried to update state after component was unmounted during death screen transition
-  - **Solution**: Added mounted flag to useEffect with cleanup function to prevent state updates after unmount
-  - **Impact**: Player death now works smoothly without crashes, death screen displays properly
+  - **Root Cause**: Radix UI components (Slider in ParrotSettingsPanel, ScrollAreas in various panels) tried to update state during unmount when death screen appeared
+  - **Solution**: Wrapped all UI components containing Radix elements in `phase !== "ended"` conditionals to unmount cleanly before death screen, plus added mounted flag to ParrotSettingsPanel useEffect
+  - **Components Fixed**: NavigationSidebar, ActionBar, OrbitalInterface, MobileHUD, MusicPlayer, MainMenu, SaveGamePanel, BottomControlSidebar
+  - **Impact**: Player death now works smoothly without crashes, death screen displays properly, revival flow intact
 
 ### 2025-10-12: WebSocket Connection Fix - Proper Environment Handling
 - **WebSocket Environment Fix**: Fixed WebSocket connection failures in Replit production environment
