@@ -229,6 +229,7 @@ export function ActionBar() {
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
+            scrollbar-hide
           ">
             <MissionsPanel />
           </div>

@@ -3,7 +3,6 @@ import * as THREE from "three";
 import {PlanetTransitionOverlay} from "../surface/PlanetTransition";
 import {CockpitOverlay} from "../cockpit/CockpitOverlay";
 import {LandingWarning} from "../surface/LandingWarning";
-import {MobileHUD} from "../mobile/MobileHUD";
 import {OrbitalInterface} from "../navigation/OrbitalInterface";
 import {NavigationSidebar} from "../navigation/NavigationSidebar";
 import {MusicPlayer} from "../screens/MusicPlayer";
@@ -183,9 +182,6 @@ export function GameUI() {
         />
       )}
 
-      {/* Takeoff Sequence is handled by PlanetSurfaceScene, not here */}
-      {/* This prevents duplicate PlanetTransitionOverlay components */}
-
       {/* Landing Warning Dialog */}
       <LandingWarning
         isVisible={showLandingWarning}
@@ -203,9 +199,6 @@ export function GameUI() {
           <OrbitalInterface />
           {/* New Icon-Only Action Bar with Sliding Panels */}
           <ActionBar />
-
-          {/* Mobile Controls - New Unified System */}
-          <MobileHUD />
 
           {/* Music Player in bottom right corner */}
           <div className="fixed top-20 left-2 z-30">
