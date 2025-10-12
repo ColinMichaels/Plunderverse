@@ -1,15 +1,14 @@
-import React, { useState } from "react";
+import React, {useState} from "react";
 import * as THREE from "three";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
-import { useCredits } from "../../lib/stores/economy/useCredits";
-import { useEquipment } from "../../lib/stores/ship/useEquipment";
-import { TransactionClient } from "../../services/TransactionClient";
-import { planets } from "../../lib/planetData";
-import { Button } from "../ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
-import { Fuel, Coins, Clock, AlertCircle } from "lucide-react";
-import { toast } from "sonner";
+import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
+import {useCredits} from "../../lib/stores/economy/useCredits";
+import {useEquipment} from "../../lib/stores/ship/useEquipment";
+import {TransactionClient} from "../../services/TransactionClient";
+import {planets} from "../../lib/planetData";
+import {Button} from "../ui/button";
+import {Card, CardContent, CardHeader, CardTitle} from "../ui/card";
+import {Coins, Fuel} from "lucide-react";
+import {toast} from "sonner";
 
 interface FastTravelMenuProps {
   onClose?: () => void;
@@ -52,8 +51,8 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
   
   const calculateTravelCost = (targetIndex: number) => {
     const distance = Math.abs(targetIndex - selectedPlanetIndex);
-    const baseFuel = distance * 15;
-    const baseCredits = distance * 100;
+    const baseFuel = distance * 5;
+    const baseCredits = distance * 10;
     
     // Reduce cost if player has fast travel module
     const fuelCost = hasFastTravelModule ? Math.floor(baseFuel * 0.7) : baseFuel;
@@ -97,9 +96,6 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
       }
-      
-      console.log(`[FAST-TRAVEL] Transaction successful: ${result.transactionId}`);
-      console.log(`[FAST-TRAVEL] New balances - Credits: ${result.newBalances?.credits}, Fuel: ${result.newBalances?.fuel}`);
 
       // Teleport to planet orbit
       const orbitDistance = targetPlanet.size * 3;
@@ -114,7 +110,6 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
       setShipPosition(targetPosition);
       setSelectedPlanet(targetPlanet.name);
 
-      console.log(`[FAST-TRAVEL] Traveled to ${targetPlanet.name} orbit`);
       toast.success(`Fast traveled to ${targetPlanet.name}!`);
       
       setTimeout(() => {
@@ -145,7 +140,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
           <div className="flex items-center gap-4 text-sm">
             <div className="flex items-center gap-2">
               <Fuel className="w-4 h-4 text-orange-400" />
-              <span>Fuel: {fuel}/{maxFuel}</span>
+              <span>Fuel: {fuel.toFixed(1)}%</span>
             </div>
             <div className="flex items-center gap-2">
               <Coins className="w-4 h-4 text-yellow-400" />

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { KeyboardControls, useTexture } from "@react-three/drei";
-import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
-import { Bloom, EffectComposer } from "@react-three/postprocessing";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {Canvas, useFrame, useThree} from "@react-three/fiber";
+import {KeyboardControls, useTexture} from "@react-three/drei";
+import {WebGLCheckWrapper} from "../shared/WebGLCheckWrapper";
+import {Bloom, EffectComposer} from "@react-three/postprocessing";
 import {
     useAudio,
     useDestroyedNodes,
@@ -15,27 +15,22 @@ import {
     useTerrain,
     useWind,
 } from "@/lib/stores";
-import { planets, ResourceData } from "@/lib/planetData.ts";
-import {
-    MiningBeamState,
-    SurfaceMovementController,
-} from "./SurfaceMovementController";
-import { FlashlightSystem } from "./FlashlightSystem";
-import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
-import { MiningLaser } from "./MiningLaser";
-import { ResourceNode } from "./EnhancedResourceNode";
-import { MiningBeamVisual } from "./MiningBeamVisual";
-import { ScreenEffects } from "./ScreenEffects";
-import { CameraShake } from "./CameraShake";
-import { ResourceManager } from "@/lib/utils/ResourceManager.ts";
+import {planets, ResourceData} from "@/lib/planetData.ts";
+import {MiningBeamState, SurfaceMovementController,} from "./SurfaceMovementController";
+import {FlashlightSystem} from "./FlashlightSystem";
+import {MiningLaser} from "./MiningLaser";
+import {ResourceNode} from "./EnhancedResourceNode";
+import {MiningBeamVisual} from "./MiningBeamVisual";
+import {ScreenEffects} from "./ScreenEffects";
+import {ResourceManager} from "@/lib/utils/ResourceManager.ts";
 import * as THREE from "three";
-import { AUDIO_CONFIG } from "@/lib/audioConfig.ts";
-import { SurfaceScatter } from "./SurfaceScatter";
-import { AtmosphericEffects } from "./AtmosphericEffects";
-import { AtmosphericSounds } from "./AtmosphericSounds";
-import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
-import { PlanetTransitionOverlay } from "./PlanetTransition";
-import { SolarSun } from "../space/Sun";
+import {AUDIO_CONFIG} from "@/lib/audioConfig.ts";
+import {SurfaceScatter} from "./SurfaceScatter";
+import {AtmosphericEffects} from "./AtmosphericEffects";
+import {AtmosphericSounds} from "./AtmosphericSounds";
+import {useWeatherUpdates} from "../../hooks/useWeatherUpdates";
+import {PlanetTransitionOverlay} from "./PlanetTransition";
+import {SolarSun} from "../space/Sun";
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
     const meshRef = useRef<THREE.Mesh>(null);
@@ -250,7 +245,7 @@ function terrainHeightAt(x: number, z: number): number {
 }
 
 function SurfaceSky({ planetName }: { planetName: string }) {
-    const { time } = useSolarSystem();
+    const time = useSolarSystem.getState().getUniverseTime();
     const meshRef = useRef<THREE.Mesh>(null);
     const starfieldRef = useRef<THREE.Points>(null);
     const planetsRef = useRef<THREE.Group>(null);

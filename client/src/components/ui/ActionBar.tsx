@@ -222,13 +222,13 @@ export function ActionBar() {
         {panels.get('missions')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
           ">
             <MissionsPanel />
           </div>
@@ -238,13 +238,14 @@ export function ActionBar() {
         {panels.get('inventory')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <InventoryDisplay />
           </div>
@@ -254,13 +255,14 @@ export function ActionBar() {
         {panels.get('trading')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <TradingInterface isVisible={true} onClose={() => togglePanel('trading')} />
           </div>
@@ -270,13 +272,14 @@ export function ActionBar() {
           {panels.get('planet')?.isOpen && (
               <div className="
             absolute inset-0
-            bg-gray-900/95 backdrop-blur-sm
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50
             rounded-l-lg
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
                   <PlanetInfo/>
               </div>
@@ -287,13 +290,14 @@ export function ActionBar() {
         {panels.get('crew')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <CrewManagementPanel 
               onClose={() => togglePanel('crew')}
@@ -308,13 +312,14 @@ export function ActionBar() {
         {panels.get('story')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
             border-l border-cyan-400/50 
-            rounded-l-lg 
+            rounded-l-lg
+            p-2
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <StoryProgressionPanel />
           </div>
@@ -324,13 +329,14 @@ export function ActionBar() {
         {panels.get('crypto')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
+            bg-gray-900
+            p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
               <CryptoMarketplace/>
             <CryptoWallet />
@@ -341,13 +347,11 @@ export function ActionBar() {
         {panels.get('fast-travel')?.isOpen && (
           <div className="
             absolute inset-0 
-            bg-gray-900/95 backdrop-blur-sm 
-            border-l border-cyan-400/50 
-            rounded-l-lg 
+            bg-gray-900/95 
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <FastTravelMenu onClose={() => togglePanel('fast-travel')} />
           </div>
@@ -363,7 +367,7 @@ export function ActionBar() {
             pointer-events-auto
             animate-slide-in-right
             overflow-y-auto
-            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+            scrollbar-hide
           ">
             <ParrotSettingsPanel />
           </div>
