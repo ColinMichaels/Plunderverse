@@ -150,13 +150,18 @@ export function GameUI() {
       {/* Target Lock Notifications - shows when weapons are locking */}
       <TargetLockNotification />
 
-      {/* Navigation Sidebar - Desktop only, left side of screen */}
-      <NavigationSidebar />
+      {/* Only show main UI components when NOT in death screen */}
+      {phase !== "ended" && (
+        <>
+          {/* Navigation Sidebar - Desktop only, left side of screen */}
+          <NavigationSidebar />
 
-      {/* New Contextual HUD System */}
+          {/* New Contextual HUD System */}
 
-      {/* Top Left - Objective Tracker (below ship status) */}
-      {uiZoneVisibility.topLeft && <ObjectiveTracker />}
+          {/* Top Left - Objective Tracker (below ship status) */}
+          {uiZoneVisibility.topLeft && <ObjectiveTracker />}
+        </>
+      )}
 
       {/* Landing Transition - Using unified planet transition component */}
       {isLanding && selectedPlanet && (
@@ -193,64 +198,74 @@ export function GameUI() {
         onAutopilot={handleAutopilot}
       />
 
-      {/* Planet Info Display - shows when a planet (not Sun) is selected */}
-      <PlanetInfo />
+      {/* Only show interactive UI components when NOT in death screen */}
+      {phase !== "ended" && (
+        <>
+          {/* Planet Info Display - shows when a planet (not Sun) is selected */}
+          <PlanetInfo />
 
-      {/* Orbital Interface - when orbiting a planet */}
-      <OrbitalInterface />
+          {/* Orbital Interface - when orbiting a planet */}
+          <OrbitalInterface />
 
-      {/* New Icon-Only Action Bar with Sliding Panels */}
-      <ActionBar />
+          {/* New Icon-Only Action Bar with Sliding Panels */}
+          <ActionBar />
 
-      {/* Marketplace stays separate as it's not part of the action bar */}
-      <CryptoMarketplace />
+          {/* Marketplace stays separate as it's not part of the action bar */}
+          <CryptoMarketplace />
 
-      {/* Mobile Controls - New Unified System */}
-      <MobileHUD />
+          {/* Mobile Controls - New Unified System */}
+          <MobileHUD />
 
-      {/* Music Player in bottom right corner */}
-      <div className="fixed top-20 left-2 z-30">
-        <MusicPlayer />
-      </div>
-
-      {/* Parrot Holographic Popup - Shows when speaking */}
-      <ParrotHolographicPopup />
-
-      {/* Crew Recruitment Interface - Modal overlay */}
-      {showCrewRecruitment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <CrewRecruitmentInterface
-            stationFaction="independents"
-            onClose={() => setShowCrewRecruitment(false)}
-          />
-        </div>
+          {/* Music Player in bottom right corner */}
+          <div className="fixed top-20 left-2 z-30">
+            <MusicPlayer />
+          </div>
+        </>
       )}
 
-      {/* Main Menu - ESC key opens it */}
-      <MainMenu />
+      {/* Additional UI components hidden during death screen */}
+      {phase !== "ended" && (
+        <>
+          {/* Parrot Holographic Popup - Shows when speaking */}
+          <ParrotHolographicPopup />
 
-      {/* Save Game Panel - Ctrl+S or F5 */}
-      <div className="fixed top-24 right-10 z-50">
-        <SaveGamePanel
-          isOpen={showSavePanel}
-          onClose={() => setShowSavePanel(false)}
-          onSaveComplete={() => {
-            setShowSavePanel(false);
-          }}
-        />
+          {/* Crew Recruitment Interface - Modal overlay */}
+          {showCrewRecruitment && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+              <CrewRecruitmentInterface
+                stationFaction="independents"
+                onClose={() => setShowCrewRecruitment(false)}
+              />
+            </div>
+          )}
 
-        {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
-        <AutoSaveIndicator />
-      </div>
+          {/* Main Menu - ESC key opens it */}
+          <MainMenu />
 
-      {/* Crew Bonus Display - Shows active crew bonuses */}
-      <CrewBonusDisplay />
+          {/* Save Game Panel - Ctrl+S or F5 */}
+          <div className="fixed top-24 right-10 z-50">
+            <SaveGamePanel
+              isOpen={showSavePanel}
+              onClose={() => setShowSavePanel(false)}
+              onSaveComplete={() => {
+                setShowSavePanel(false);
+              }}
+            />
 
-      {/* Hint Modal - Shows tutorial hints */}
-      <HintModal />
+            {/* Auto-save Indicator - Small, unobtrusive indicator in top-right */}
+            <AutoSaveIndicator />
+          </div>
 
-      {/* Bottom Control Sidebar - Shows location, flashlight, and takeoff controls */}
-      <BottomControlSidebar />
+          {/* Crew Bonus Display - Shows active crew bonuses */}
+          <CrewBonusDisplay />
+
+          {/* Hint Modal - Shows tutorial hints */}
+          <HintModal />
+
+          {/* Bottom Control Sidebar - Shows location, flashlight, and takeoff controls */}
+          <BottomControlSidebar />
+        </>
+      )}
 
       {/* Death Screen - Shows when player ship is destroyed */}
       {phase === "ended" && <DeathScreen />}

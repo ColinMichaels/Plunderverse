@@ -1,0 +1,446 @@
+(index):91 WebSocket connection to 'wss://localhost:5000/ws/sync?token=nPj-k-KRBQo3' failed: 
+window.WebSocket @ (index):91
+setupWebSocket @ client:536
+fallback @ client:509
+(anonymous) @ client:555Understand this error
+client:512 [vite] failed to connect to websocket.
+your current setup:
+  (browser) 8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/ <--[HTTP]--> localhost:undefined/ (server)
+  (browser) 8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev:/ <--[WebSocket (failing)]--> localhost:undefined/ (server)
+Check out your Vite / network configuration and https://vite.dev/config/server-options.html#server-hmr .
+console.error @ index.tsx:86
+(anonymous) @ client:512
+(anonymous) @ client:555Understand this error
+react-dom.development.js:27331 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (react-dom.development.js:27331:11)
+    at scheduleUpdateOnFiber (react-dom.development.js:25514:3)
+    at dispatchSetState (react-dom.development.js:16708:7)
+    at Slider.tsx:540:66
+    at setRef (composeRefs.tsx:11:5)
+    at composeRefs.tsx:22:45
+    at Array.forEach (<anonymous>)
+    at composeRefs.tsx:22:28
+    at setRef (composeRefs.tsx:11:5)
+    at composeRefs.tsx:22:45
+checkForNestedUpdates @ react-dom.development.js:27331
+scheduleUpdateOnFiber @ react-dom.development.js:25514
+dispatchSetState @ react-dom.development.js:16708
+(anonymous) @ Slider.tsx:540
+setRef @ composeRefs.tsx:11
+(anonymous) @ composeRefs.tsx:22
+(anonymous) @ composeRefs.tsx:22
+setRef @ composeRefs.tsx:11
+(anonymous) @ composeRefs.tsx:22
+(anonymous) @ composeRefs.tsx:22
+setRef @ composeRefs.tsx:11
+(anonymous) @ composeRefs.tsx:22
+(anonymous) @ composeRefs.tsx:22
+safelyDetachRef @ react-dom.development.js:22947
+commitMutationEffectsOnFiber @ react-dom.development.js:24390
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24385
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24615
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24332
+recursivelyTraverseMutationEffects @ react-dom.development.js:24312
+commitMutationEffectsOnFiber @ react-dom.development.js:24471
+commitMutationEffects @ react-dom.development.js:24282
+commitRootImpl @ react-dom.development.js:26849
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558Understand this error
+index.tsx:86 Warning: Maximum update depth exceeded. This can happen when a component calls setState inside useEffect, but useEffect either doesn't have a dependency array, or one of the dependencies changes on every render.
+console.error @ index.tsx:86
+printWarning @ react-dom.development.js:86
+error @ react-dom.development.js:60
+checkForNestedUpdates @ react-dom.development.js:27339
+scheduleUpdateOnFiber @ react-dom.development.js:25514
+dispatchSetState @ react-dom.development.js:16708
+(anonymous) @ ScrollArea.tsx:87
+setRef @ composeRefs.tsx:11
+(anonymous) @ composeRefs.tsx:22
+(anonymous) @ composeRefs.tsx:22
+safelyDetachRef @ react-dom.development.js:22947
+commitDeletionEffectsOnFiber @ react-dom.development.js:24042
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24209
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24057
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24209
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24057
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24057
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24057
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24209
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24057
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24209
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+recursivelyTraverseDeletionEffects @ react-dom.development.js:24028
+commitDeletionEffectsOnFiber @ react-dom.development.js:24157
+commitDeletionEffects @ react-dom.development.js:24015
+recursivelyTraverseMutationEffects @ react-dom.development.js:24298
+commitMutationEffectsOnFiber @ react-dom.development.js:24471
+commitMutationEffects @ react-dom.development.js:24282
+commitRootImpl @ react-dom.development.js:26849
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558Understand this error
+index.tsx:86 The above error occurred in the <span> component:
+
+    at span
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-FQZAHUEQ.js?v=59d5e211:41:13
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6DK6MXGM.js?v=59d5e211:52:11
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6DK6MXGM.js?v=59d5e211:33:11
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZEAIJIPU.js?v=59d5e211:109:15
+    at span
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=59d5e211:427:13
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=59d5e211:415:42
+    at span
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-FQZAHUEQ.js?v=59d5e211:41:13
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=59d5e211:312:7
+    at Provider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BEZBD377.js?v=59d5e211:48:15)
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=59d5e211:178:7
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6DK6MXGM.js?v=59d5e211:52:11
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-6DK6MXGM.js?v=59d5e211:33:11
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZEAIJIPU.js?v=59d5e211:98:15
+    at Provider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZEAIJIPU.js?v=59d5e211:28:15)
+    at CollectionProvider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-ZEAIJIPU.js?v=59d5e211:89:13)
+    at Provider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-BEZBD377.js?v=59d5e211:48:15)
+    at https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-slider.js?v=59d5e211:59:7
+    at _c (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/slider.tsx:21:11)
+    at div
+    at div
+    at ParrotSettingsPanel (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/navigation/ParrotSettingsPanel.tsx:32:89)
+    at div
+    at div
+    at div
+    at ExpandedPanel (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/UILayoutManager.tsx:65:3)
+    at div
+    at UILayoutProvider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/UILayoutManager.tsx:162:36)
+    at GameContent (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/App.tsx?v=m78e0Qk2XjqXieveJ3V8M:52:39)
+    at AuthProvider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/auth/AuthProvider.tsx:21:32)
+    at App
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+console.error @ index.tsx:86
+logCapturedError @ react-dom.development.js:18704
+update.callback @ react-dom.development.js:18737
+callCallback @ react-dom.development.js:15036
+commitUpdateQueue @ react-dom.development.js:15057
+commitLayoutEffectOnFiber @ react-dom.development.js:23430
+commitLayoutMountEffects_complete @ react-dom.development.js:24727
+commitLayoutEffects_begin @ react-dom.development.js:24713
+commitLayoutEffects @ react-dom.development.js:24651
+commitRootImpl @ react-dom.development.js:26862
+commitRoot @ react-dom.development.js:26721
+performSyncWorkOnRoot @ react-dom.development.js:26156
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558Understand this error
+react-dom.development.js:27331 Uncaught Error: Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate. React limits the number of nested updates to prevent infinite loops.
+    at checkForNestedUpdates (react-dom.development.js:27331:11)
+    at scheduleUpdateOnFiber (react-dom.development.js:25514:3)
+    at dispatchSetState (react-dom.development.js:16708:7)
+    at Slider.tsx:540:66
+    at setRef (composeRefs.tsx:11:5)
+    at composeRefs.tsx:22:45
+    at Array.forEach (<anonymous>)
+    at composeRefs.tsx:22:28
+    at setRef (composeRefs.tsx:11:5)
+    at composeRefs.tsx:22:45
