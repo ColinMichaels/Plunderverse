@@ -35,7 +35,10 @@ interface ParrotState {
   setShowText: (showText: boolean) => void;
   setVoice: (voiceName: string | null) => void;
   setSpeaking: (speaking: boolean) => void;
-  setCurrentMessage: (message: string | null) => void;
+    setCurrentMessage: (message: string | {
+        text: string;
+        tone?: 'info' | 'warning' | 'critical' | 'random'
+    } | null) => void;
   clearMessages: () => void;
 
   speak: (text: string) => void;
@@ -126,8 +129,31 @@ export const useParrot = create<ParrotState>((set, get) => ({
     }));
   },
 
-  setCurrentMessage: (message) => {
-    set({ currentMessage: message });
+    setCurrentMessage: (payload) => {
+        const state = get();
+        let text: string | null = null;
+        let tone: 'info' | 'warning' | 'critical' | 'random' = 'info';
+
+        if (payload === null) {
+            text = null;
+        } else if (typeof payload === 'string') {
+            text = payload;
+        } else if (payload && typeof payload === 'object') {
+            text = payload.text ?? null;
+            if (payload.tone) tone = payload.tone;
+        }
+
+        set({currentMessage: text});
+
+        if (state.settings.showText && text) {
+            const msg: ParrotMessage = {
+                id: `msg-${Date.now()}-${Math.random()}`,
+                text,
+                type: tone,
+                timestamp: Date.now(),
+            };
+            set((s) => ({messages: [...s.messages, msg].slice(-10)}));
+        }
   },
 
   clearMessages: () => {
