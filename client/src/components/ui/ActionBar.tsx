@@ -21,7 +21,7 @@ interface ActionButton {
 
 const ACTION_BUTTONS: ActionButton[] = [
     {id: 'fast-travel', icon: '⚡', label: 'Fast Travel', shortcut: 'T'},
-    {id: 'planet', icon: '⚡', label: 'Planet Info', shortcut: 'I'},
+    {id: 'planet', icon: '🪐', label: 'Planet Info', shortcut: 'I'},
   { id: 'missions', icon: '📋', label: 'Missions', shortcut: 'F1' },
   { id: 'inventory', icon: '💼', label: 'Inventory', shortcut: 'F2' },
   { id: 'trading', icon: '💱', label: 'Trading', shortcut: 'F3' },

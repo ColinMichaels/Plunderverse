@@ -1,5 +1,5 @@
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { planets, moonData } from "../../lib/planetData";
+import {useSolarSystem} from "@/lib/stores";
+import {moonData, planets} from "@/lib/planetData.ts";
 
 // need to have a method to collapse the planet into.  the listener for toggling the info panel 
 
@@ -20,7 +20,7 @@ export function PlanetInfo() {
   const isMoon = selectedPlanet === "Moon";
 
   return (
-    <div className="absolute top-4 left-4 bg-black/80 text-white p-6 rounded-lg backdrop-blur-sm max-w-sm">
+      <div className="text-white p-6 rmax-w-sm">
       <h2 className="text-2xl font-bold mb-3 text-blue-400">
         {celestialBody.name}
       </h2>
