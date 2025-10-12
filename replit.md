@@ -8,6 +8,24 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-12: Mini-Game Victory & Objectives Completion
+- **Collection Objectives Room Fix**: Fixed collectibles spawning in non-existent rooms causing creation failures
+  - **Issue**: repair_tools, spare_parts, medical_supplies placed in 'maintenance' and 'medical_bay' rooms that don't exist
+  - **Solution**: Changed to valid rooms (corridor_2, cantina) - all 12 collectibles now spawn correctly
+  - **Impact**: All collection objectives (repair tools, spare parts, fuel cells, medical supplies) fully functional
+- **Door Progression Iterator Fix**: Fixed TypeScript compilation error in door unlocking system
+  - **Issue**: `for (const door of this.doors.values())` caused ES2015 iterator error
+  - **Solution**: Wrapped with `Array.from()` for compatibility
+  - **Impact**: Door progression system compiles and runs without errors
+- **Victory Rewards Cross-Client Sync**: Fixed completion rewards not syncing to main game
+  - **Issue**: MiniGameSyncService dropped all messages when mini-game inactive, preventing desktop from receiving rewards
+  - **Solution**: Whitelisted 'victory_rewards' messages to bypass `isMinigameActive` gate
+  - **Impact**: Main game now receives completion rewards (500 credits, 25% hull, 25% shields, 50% fuel)
+- **Fuel Restoration Implementation**: Completed fuel reward application in victory system
+  - **Issue**: Fuel restoration was logged only, not actually applied
+  - **Solution**: Added fuel tank update via `useEquipment.setState()` to trigger Zustand subscribers and persistence
+  - **Impact**: All victory rewards now fully functional (credits, hull, shields, fuel)
+
 ### 2025-10-12: Final Death Crash Fix - Deferred Phase Transition
 - **Death Screen Crash Resolution**: Fixed persistent Radix UI infinite loop crash when killed by enemies
   - **Issue**: Even with UI components hidden, Radix Slider tried to update state during unmount causing "Maximum update depth exceeded"
