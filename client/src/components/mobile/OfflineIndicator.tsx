@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, CloudUpload, CloudOff, Clock, AlertTriangle } from 'lucide-react';
+import { Wifi, WifiOff, CloudUpload, CloudOff, Clock, AlertTriangle, Minimize2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import MiniGameSyncService from '../../services/MiniGameSyncService';
 import OfflineStorageService from '../../services/OfflineStorageService';
@@ -16,6 +16,7 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ className, c
   const [queueSize, setQueueSize] = useState<number>(0);
   const [storageQuota, setStorageQuota] = useState({ used: 0, total: 0, percentage: 0 });
   const [showDetails, setShowDetails] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
 
   useEffect(() => {
     const syncService = MiniGameSyncService.getInstance();
@@ -140,23 +141,57 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ className, c
     await syncService.forceOfflineSync();
   };
 
+  // Minimized view - compact status indicator optimized for mobile touch
+  if (isMinimized) {
+    return (
+      <div 
+        className={cn(
+          "fixed top-4 right-4 w-10 h-10 rounded-full border-2 cursor-pointer z-50 transition-all duration-300 active:scale-95 flex items-center justify-center shadow-lg",
+          connectionStatus === 'offline' ? 'bg-red-500/90 border-red-400' : 
+          connectionStatus === 'syncing' ? 'bg-yellow-500/90 border-yellow-400 animate-pulse' : 
+          'bg-green-500/90 border-green-400',
+          className
+        )}
+        onClick={() => setIsMinimized(false)}
+        title="Tap to expand sync status"
+      >
+        <div className="w-2 h-2 bg-white/80 rounded-full" />
+      </div>
+    );
+  }
+
   if (compact) {
     return (
       <div 
         className={cn(
-          "fixed top-4 right-4 px-3 py-2 rounded-lg border backdrop-blur-sm transition-all duration-300 cursor-pointer z-50",
+          "fixed top-4 right-4 rounded-lg border backdrop-blur-sm transition-all duration-300 z-50",
           getStatusColor(),
           className
         )}
-        onClick={() => setShowDetails(!showDetails)}
       >
-        <div className="flex items-center gap-2">
-          {getStatusIcon()}
-          {queueSize > 0 && (
-            <span className="text-xs font-mono bg-black/30 px-1.5 py-0.5 rounded">
-              {queueSize} pending
-            </span>
-          )}
+        <div className="flex items-center gap-2 px-3 py-2">
+          <div 
+            className="flex items-center gap-2 cursor-pointer flex-1"
+            onClick={() => setShowDetails(!showDetails)}
+          >
+            {getStatusIcon()}
+            {queueSize > 0 && (
+              <span className="text-xs font-mono bg-black/30 px-1.5 py-0.5 rounded">
+                {queueSize} pending
+              </span>
+            )}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsMinimized(true);
+              setShowDetails(false);
+            }}
+            className="p-1 hover:bg-white/10 rounded transition-colors"
+            title="Minimize"
+          >
+            <Minimize2 className="w-3 h-3" />
+          </button>
         </div>
         
         {showDetails && (
