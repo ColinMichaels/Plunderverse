@@ -1,99 +1,79 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import {useEffect, useRef, useState} from "react";
+import {motion} from "framer-motion";
 import * as THREE from "three";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "../ui/tabs";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "../ui/card";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Slider } from "../ui/slider";
-import { Switch } from "../ui/switch";
-import { ScrollArea } from "../ui/scroll-area";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "../ui/collapsible";
-import { Badge } from "../ui/badge";
-import { Progress } from "../ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
-import { toast } from "sonner";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "../ui/tabs";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle,} from "../ui/card";
+import {Button} from "../ui/button";
+import {Input} from "../ui/input";
+import {Label} from "../ui/label";
+import {Slider} from "../ui/slider";
+import {Switch} from "../ui/switch";
+import {ScrollArea} from "../ui/scroll-area";
+import {Collapsible, CollapsibleContent, CollapsibleTrigger,} from "../ui/collapsible";
+import {Badge} from "../ui/badge";
+import {Progress} from "../ui/progress";
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "../ui/select";
+import {toast} from "sonner";
 
 // Icons
 import {
-  Activity,
-  Cpu,
-  Timer,
-  Camera,
-  Sun,
-  TestTube,
-  Package,
-  X,
-  ChevronDown,
-  ChevronRight,
-  Play,
-  Pause,
-  SkipForward,
-  Trash2,
-  Download,
-  RefreshCw,
-  Zap,
-  Gauge,
-  Database,
-  AlertCircle,
-  CheckCircle,
-  Info,
-  Clock,
-  Globe,
-  Rocket,
-  Shield,
-  DollarSign,
-  User,
-  Skull,
-  Heart,
-  Sunrise,
-  Sunset,
-  Moon,
+    Activity,
+    AlertCircle,
+    Camera,
+    CheckCircle,
+    ChevronDown,
+    ChevronRight,
+    Clock,
+    Cpu,
+    Database,
+    DollarSign,
+    Download,
+    Gauge,
+    Globe,
+    Heart,
+    Info,
+    Moon,
+    Package,
+    Pause,
+    Play,
+    RefreshCw,
+    Rocket,
+    Shield,
+    Skull,
+    Sun,
+    Sunrise,
+    Sunset,
+    TestTube,
+    Timer,
+    Trash2,
+    User,
+    X,
+    Zap,
 } from "lucide-react";
 
 // Store imports
-import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
-import { usePlayer } from "../../lib/stores/player/usePlayer";
-import { useCreditsStore } from "../../domain/economy/credits.store";
-import { gameFacade } from "../../lib/plunderverse/gameFacade";
-import { useObjectiveTriggers } from "../../lib/stores/economy/useObjectiveTriggers";
-import { testObjectiveTriggers } from "../../__tests__/integration/missions/objectiveTriggerTest";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { planets } from "../../lib/planetData";
-import { useCrewManagement } from "../../lib/stores/ship/useCrewManagement";
-import {
-  useSurfaceLighting,
-  TIME_OF_DAY_PRESETS,
-} from "../../lib/stores/surface/useSurfaceLighting";
-import { useDebugTools } from "../../lib/stores/debug/useDebugTools";
-import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
-import { useGame } from "../../lib/stores/ui/useGame";
+import {usePlunderverseMissions} from "../../lib/stores/economy/usePlunderverseMissions";
+import {usePlayer} from "../../lib/stores/player/usePlayer";
+import {useCreditsStore} from "../../domain/economy/credits.store";
+import {gameFacade} from "../../lib/plunderverse/gameFacade";
+import {useObjectiveTriggers} from "../../lib/stores/economy/useObjectiveTriggers";
+import {testObjectiveTriggers} from "../../__tests__/integration/missions/objectiveTriggerTest";
+import {useLandedState} from "../../lib/stores/surface/useLandedState";
+import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
+import {planets} from "../../lib/planetData";
+import {useCrewManagement} from "../../lib/stores/ship/useCrewManagement";
+import {TIME_OF_DAY_PRESETS, useSurfaceLighting,} from "../../lib/stores/surface/useSurfaceLighting";
+import {useDebugTools} from "../../lib/stores/debug/useDebugTools";
+import {useShipStatus} from "../../lib/stores/ship/useShipStatus";
+import {useGame} from "../../lib/stores/ui/useGame";
 
 // Utils
-import { MemoryProfiler } from "../../lib/utils/MemoryProfiler";
-import { ResourceManager } from "../../lib/utils/ResourceManager";
+import {MemoryProfiler} from "../../lib/utils/MemoryProfiler";
+import {ResourceManager} from "../../lib/utils/ResourceManager";
 
 // Test imports
-import { testMissionSystem } from "../../__tests__/integration/missions/testMissionSystem";
-import { PanelTestSuite } from "../../__tests__/unit/components/testPanelFunctionality";
+import {testMissionSystem} from "../../__tests__/integration/missions/testMissionSystem";
+import {PanelTestSuite} from "../../__tests__/unit/components/testPanelFunctionality";
 
 interface TestResult {
   name: string;
@@ -549,27 +529,27 @@ export function MissionDebugPanel() {
     toast.success(`Camera position set to (${x}, ${y}, ${z})`);
   };
 
-  const quickTravelToPlanet = (planetName: string) => {
-    const planet = planets.find((p) => p.name === planetName);
-    if (planet) {
-      const angle = time * planet.orbitalSpeed;
-      const planetPos = new THREE.Vector3(
-        Math.cos(angle) * planet.distance,
-        0,
-        Math.sin(angle) * planet.distance,
-      );
+    const quickTravelToPlanet = (planetName: string) => {
+        const planet = planets.find((p) => p.name === planetName);
+        if (planet) {
+            const angle = time * planet.orbitalSpeed;
+            const planetPos = new THREE.Vector3(
+                Math.cos(angle) * planet.distance,
+                0,
+                Math.sin(angle) * planet.distance,
+            );
 
-      setSelectedPlanet(planetName);
+            setSelectedPlanet(planetName);
 
-      const viewDistance = planet.size * 8;
-      const cameraPos = planetPos
-        .clone()
-        .add(new THREE.Vector3(viewDistance, 5, viewDistance));
+            const viewDistance = planet.size * 8;
+            const cameraPos = planetPos
+                .clone()
+                .add(new THREE.Vector3(viewDistance, 5, viewDistance));
 
-      setCameraPosition(cameraPos);
-      console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
-    }
-  };
+            setCameraPosition(cameraPos);
+            console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
+        }
+    };
 
   const handleTravelToPlanet = () => {
     if (selectedPlanet) {

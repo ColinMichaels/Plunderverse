@@ -59,8 +59,32 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
 
       return {fuelCost, creditCost, distance};
   };
-  
-  const handleFastTravel = async (targetIndex: number) => {
+
+    const quickTravelToPlanet = (planetName: string) => {
+        const planet = planets.find((p) => p.name === planetName);
+        const universalTime = useSolarSystem.getState().getUniverseTime();
+        if (planet) {
+            const angle = universalTime * planet.orbitalSpeed;
+            const planetPos = new THREE.Vector3(
+                Math.cos(angle) * planet.distance,
+                0,
+                Math.sin(angle) * planet.distance,
+            );
+
+            setSelectedPlanet(planetName);
+
+            const viewDistance = planet.size * 8;
+            const cameraPos = planetPos
+                .clone()
+                .add(new THREE.Vector3(viewDistance, 5, viewDistance));
+
+            useSolarSystem.getState().setCameraPosition(cameraPos);
+            console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
+        }
+    };
+
+
+    const handleFastTravel = async (targetIndex: number) => {
     if (targetIndex === selectedPlanetIndex) {
       toast.error("You are already at this planet");
       return;
@@ -92,23 +116,9 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
         fuelCost
       );
         console.warn('transaction', result);
-      
-      if (!result.success) {
-        throw new Error(result.error || 'Transaction failed');
-      }
-
-      // Teleport to planet orbit
-      const orbitDistance = targetPlanet.size * 3;
-      const planetPos = calculatePlanetPosition(targetPlanet);
-      const targetPosition = new THREE.Vector3(
-        planetPos.x + orbitDistance,
-        0,
-        planetPos.z
-      );
-
       await new Promise(resolve => setTimeout(resolve, 500));
-      setShipPosition(targetPosition);
-      setSelectedPlanet(targetPlanet.name);
+        quickTravelToPlanet(targetPlanet.name);
+
 
       toast.success(`Fast traveled to ${targetPlanet.name}!`);
       
