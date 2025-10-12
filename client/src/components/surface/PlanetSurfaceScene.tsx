@@ -1,8 +1,8 @@
-import {useEffect, useMemo, useRef, useState} from "react";
-import {Canvas, useFrame, useThree} from "@react-three/fiber";
-import {KeyboardControls, useTexture} from "@react-three/drei";
-import {WebGLCheckWrapper} from "../shared/WebGLCheckWrapper";
-import {Bloom, EffectComposer} from "@react-three/postprocessing";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { KeyboardControls, useTexture } from "@react-three/drei";
+import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
+import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import {
     useAudio,
     useDestroyedNodes,
@@ -13,31 +13,33 @@ import {
     useSolarSystem,
     useSurfaceLighting,
     useTerrain,
-    useWind
+    useWind,
 } from "@/lib/stores";
-import {planets, ResourceData} from "@/lib/planetData.ts";
-import {MiningBeamState, SurfaceMovementController,} from "./SurfaceMovementController";
-import {FlashlightSystem} from "./FlashlightSystem";
-import {DebugCollisionBoxes} from "../debug/DebugCollisionBoxes";
-import {MiningLaser} from "./MiningLaser";
-import {ResourceNode} from "./EnhancedResourceNode";
-import {MiningBeamVisual} from "./MiningBeamVisual";
-import {ScreenEffects} from "./ScreenEffects";
-import {CameraShake} from "./CameraShake";
-import {ResourceManager} from "@/lib/utils/ResourceManager.ts";
+import { planets, ResourceData } from "@/lib/planetData.ts";
+import {
+    MiningBeamState,
+    SurfaceMovementController,
+} from "./SurfaceMovementController";
+import { FlashlightSystem } from "./FlashlightSystem";
+import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
+import { MiningLaser } from "./MiningLaser";
+import { ResourceNode } from "./EnhancedResourceNode";
+import { MiningBeamVisual } from "./MiningBeamVisual";
+import { ScreenEffects } from "./ScreenEffects";
+import { CameraShake } from "./CameraShake";
+import { ResourceManager } from "@/lib/utils/ResourceManager.ts";
 import * as THREE from "three";
-import {AUDIO_CONFIG} from "@/lib/audioConfig.ts";
-import {SurfaceScatter} from "./SurfaceScatter";
-import {AtmosphericEffects} from "./AtmosphericEffects";
-import {AtmosphericSounds} from "./AtmosphericSounds";
-import {useWeatherUpdates} from "../../hooks/useWeatherUpdates";
-import {PlanetTransitionOverlay} from "./PlanetTransition";
-import {SolarSun} from "../space/Sun";
+import { AUDIO_CONFIG } from "@/lib/audioConfig.ts";
+import { SurfaceScatter } from "./SurfaceScatter";
+import { AtmosphericEffects } from "./AtmosphericEffects";
+import { AtmosphericSounds } from "./AtmosphericSounds";
+import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
+import { PlanetTransitionOverlay } from "./PlanetTransition";
+import { SolarSun } from "../space/Sun";
 
-
-function SurfaceTerrain({planetName}: { planetName: string }) {
+function SurfaceTerrain({ planetName }: { planetName: string }) {
     const meshRef = useRef<THREE.Mesh>(null);
-    const {loadTerrainForPlanet, currentTerrainData} = useTerrain();
+    const { loadTerrainForPlanet, currentTerrainData } = useTerrain();
     const [isLoading, setIsLoading] = useState(true);
     const resourceManager = ResourceManager.getInstance();
 
@@ -132,7 +134,9 @@ function SurfaceTerrain({planetName}: { planetName: string }) {
             "uv",
             new THREE.BufferAttribute(currentTerrainData.uvs, 2),
         );
-        geometry.setIndex(new THREE.BufferAttribute(currentTerrainData.indices, 1));
+        geometry.setIndex(
+            new THREE.BufferAttribute(currentTerrainData.indices, 1),
+        );
 
         geometry.computeBoundingSphere();
         geometry.computeBoundingBox();
@@ -172,10 +176,10 @@ function SurfaceTerrain({planetName}: { planetName: string }) {
                 planetName === "Moon" || planetName === "Mercury"
                     ? 12
                     : planetName === "Mars"
-                        ? 10
-                        : planetName === "Earth"
-                            ? 8
-                            : 6;
+                      ? 10
+                      : planetName === "Earth"
+                        ? 8
+                        : 6;
 
             finalTexture.repeat.set(textureScale, textureScale);
             finalTexture.anisotropy = 16;
@@ -187,13 +191,14 @@ function SurfaceTerrain({planetName}: { planetName: string }) {
 
     return (
         <>
-            <mesh name="SurfaceTerrainMain"
-                  ref={meshRef}
-                  geometry={terrainGeometry}
-                  rotation={[0, 0, 0]}
-                  position={[0, 0, 0]}
-                  receiveShadow={true}
-                  castShadow={true}
+            <mesh
+                name="SurfaceTerrainMain"
+                ref={meshRef}
+                geometry={terrainGeometry}
+                rotation={[0, 0, 0]}
+                position={[0, 0, 0]}
+                receiveShadow={true}
+                castShadow={true}
             >
                 <meshStandardMaterial
                     map={finalTexture}
@@ -202,10 +207,10 @@ function SurfaceTerrain({planetName}: { planetName: string }) {
                         planetName === "Moon" || planetName === "Mercury"
                             ? 0.95
                             : planetName === "Mars"
-                                ? 0.9
-                                : planetName === "Venus"
-                                    ? 0.7
-                                    : 0.8
+                              ? 0.9
+                              : planetName === "Venus"
+                                ? 0.7
+                                : 0.8
                     }
                     metalness={planetName === "Mercury" ? 0.2 : 0.05}
                 />
@@ -244,13 +249,13 @@ function terrainHeightAt(x: number, z: number): number {
     return terrainStore.getHeightAt(x, z);
 }
 
-function SurfaceSky({planetName}: { planetName: string }) {
-    const {time} = useSolarSystem();
+function SurfaceSky({ planetName }: { planetName: string }) {
+    const { time } = useSolarSystem();
     const meshRef = useRef<THREE.Mesh>(null);
     const starfieldRef = useRef<THREE.Points>(null);
     const planetsRef = useRef<THREE.Group>(null);
     const resourceManager = ResourceManager.getInstance();
-    const {camera, scene} = useThree();
+    const { camera, scene } = useThree();
     const raycasterRef = useRef(new THREE.Raycaster());
     const [sunOccluded, setSunOccluded] = useState(false);
 
@@ -277,7 +282,6 @@ function SurfaceSky({planetName}: { planetName: string }) {
     const neptuneTexture = useTexture("/textures/planets/2k_neptune.jpg");
     const moonTexture = useTexture("/textures/planets/2k_moon.jpg");
 
-
     useFrame(() => {
         // Use the actual lighting sun position for occlusion
         const sunPos = getCurrentSunPosition(); // from your globals
@@ -286,8 +290,12 @@ function SurfaceSky({planetName}: { planetName: string }) {
         const dir = sunPos.clone().sub(camPos).normalize();
         raycasterRef.current.set(camPos, dir);
 
-        const terrainMain = scene.getObjectByName("SurfaceTerrainMain") as THREE.Mesh | null;
-        const terrainDetail = scene.getObjectByName("SurfaceTerrainDetail") as THREE.Mesh | null;
+        const terrainMain = scene.getObjectByName(
+            "SurfaceTerrainMain",
+        ) as THREE.Mesh | null;
+        const terrainDetail = scene.getObjectByName(
+            "SurfaceTerrainDetail",
+        ) as THREE.Mesh | null;
 
         const targets: THREE.Object3D[] = [];
         if (terrainMain) targets.push(terrainMain);
@@ -309,18 +317,18 @@ function SurfaceSky({planetName}: { planetName: string }) {
     // Register planet textures with ResourceManager
     useEffect(() => {
         const textures = [
-            {name: "earth", texture: earthTexture},
-            {name: "mars", texture: marsTexture},
-            {name: "venus", texture: venusTexture},
-            {name: "mercury", texture: mercuryTexture},
-            {name: "jupiter", texture: jupiterTexture},
-            {name: "saturn", texture: saturnTexture},
-            {name: "uranus", texture: uranusTexture},
-            {name: "neptune", texture: neptuneTexture},
-            {name: "moon", texture: moonTexture},
+            { name: "earth", texture: earthTexture },
+            { name: "mars", texture: marsTexture },
+            { name: "venus", texture: venusTexture },
+            { name: "mercury", texture: mercuryTexture },
+            { name: "jupiter", texture: jupiterTexture },
+            { name: "saturn", texture: saturnTexture },
+            { name: "uranus", texture: uranusTexture },
+            { name: "neptune", texture: neptuneTexture },
+            { name: "moon", texture: moonTexture },
         ];
 
-        textures.forEach(({name, texture}) => {
+        textures.forEach(({ name, texture }) => {
             if (texture) {
                 const textureId = `sky-planet-texture-${name}-${planetName}`;
                 console.log(
@@ -335,7 +343,7 @@ function SurfaceSky({planetName}: { planetName: string }) {
         });
 
         return () => {
-            textures.forEach(({name}) => {
+            textures.forEach(({ name }) => {
                 const textureId = `sky-planet-texture-${name}-${planetName}`;
                 console.log(
                     `[ResourceManager] Disposing sky planet texture: ${name} for ${planetName}`,
@@ -403,11 +411,14 @@ function SurfaceSky({planetName}: { planetName: string }) {
         // Apparent size varies subtly with (perceived) elevation and intensity
         const sunApparentSize = Math.min(
             40,
-            Math.max(8, 10 + elevationNorm * 10 + (getCurrentSunIntensity() || 0) * 6)
+            Math.max(
+                8,
+                10 + elevationNorm * 10 + (getCurrentSunIntensity() || 0) * 6,
+            ),
         );
 
         visibleObjects.push({
-            planet: {name: "Sun", size: 15, color: "#FDB813"},
+            planet: { name: "Sun", size: 15, color: "#FDB813" },
             skyPosition: sunSkyPosition,
             apparentSize: sunApparentSize,
             distance: 0,
@@ -418,7 +429,9 @@ function SurfaceSky({planetName}: { planetName: string }) {
             if (planet.name === planetName) return;
 
             const planetPosition = calculatePlanetPosition(planet, time);
-            const relativePosition = planetPosition.clone().sub(currentPosition);
+            const relativePosition = planetPosition
+                .clone()
+                .sub(currentPosition);
             const distance = relativePosition.length();
 
             if (distance > 5) {
@@ -428,7 +441,9 @@ function SurfaceSky({planetName}: { planetName: string }) {
                 // Closer planets appear larger and at closer sky dome distance
                 // Farther planets appear smaller and at farther sky dome distance
                 const skyDomeRadius = 350 + Math.min(150, distance * 2);
-                const skyPosition = direction.clone().multiplyScalar(skyDomeRadius);
+                const skyPosition = direction
+                    .clone()
+                    .multiplyScalar(skyDomeRadius);
 
                 // Apparent size based on actual planet size and distance
                 const apparentSize = Math.max(
@@ -553,7 +568,7 @@ function SurfaceSky({planetName}: { planetName: string }) {
             }
         }
 
-        return {positions, colors};
+        return { positions, colors };
     }, []);
 
     // Create atmospheric gradient texture
@@ -564,7 +579,14 @@ function SurfaceSky({planetName}: { planetName: string }) {
         const context = canvas.getContext("2d");
 
         if (context) {
-            const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
+            const gradient = context.createRadialGradient(
+                128,
+                128,
+                0,
+                128,
+                128,
+                128,
+            );
             gradient.addColorStop(0, atmosphericData.zenithColor);
             gradient.addColorStop(0.7, atmosphericData.horizonColor);
             gradient.addColorStop(1, "#000000");
@@ -607,8 +629,10 @@ function SurfaceSky({planetName}: { planetName: string }) {
         if (starfieldRef.current) {
             starfieldRef.current.rotation.y += 0.00005;
 
-            const material = starfieldRef.current.material as THREE.PointsMaterial;
-            material.opacity = 0.6 + Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
+            const material = starfieldRef.current
+                .material as THREE.PointsMaterial;
+            material.opacity =
+                0.6 + Math.sin(state.clock.elapsedTime * 0.3) * 0.1;
         }
     });
 
@@ -616,7 +640,7 @@ function SurfaceSky({planetName}: { planetName: string }) {
         <group>
             {/* Deep space background */}
             <mesh>
-                <sphereGeometry args={[490, 32, 32]}/>
+                <sphereGeometry args={[490, 32, 32]} />
                 <meshBasicMaterial
                     color="#000011"
                     side={THREE.BackSide}
@@ -626,7 +650,7 @@ function SurfaceSky({planetName}: { planetName: string }) {
 
             {/* Atmospheric sky dome with gradient */}
             <mesh ref={meshRef}>
-                <sphereGeometry args={[480, 32, 32]}/>
+                <sphereGeometry args={[480, 32, 32]} />
                 <meshBasicMaterial
                     map={gradientTexture}
                     side={THREE.BackSide}
@@ -669,59 +693,66 @@ function SurfaceSky({planetName}: { planetName: string }) {
                             ? getPlanetTexture(celestialObject.planet.name)
                             : null;
 
-                    return (
-                        celestialObject.planet.name === "Sun" ? (
-                            <group
-                                key={`${celestialObject.planet.name}-${index}`}
-                                position={[
-                                    celestialObject.skyPosition.x,
-                                    celestialObject.skyPosition.y,
-                                    celestialObject.skyPosition.z,
-                                ]}
-                            >
-                                <SolarSun
-                                    radius={celestialObject.apparentSize}
-                                    emitLight={false}
-                                    glowColor={getCurrentSunColor()}
-                                    glowStrength={(() => {
-                                        const yNorm = celestialObject.skyPosition.y / 400; // approx elevation 0..1 above horizon
-                                        // smoothstep(-0.05, 0.15, yNorm) to fade near horizon
-                                        const tRaw = (yNorm - (-0.05)) / (0.15 - (-0.05));
-                                        const t = Math.max(0, Math.min(1, tRaw));
-                                        const smooth = t * t * (3 - 2 * t);
+                    return celestialObject.planet.name === "Sun" ? (
+                        <group
+                            key={`${celestialObject.planet.name}-${index}`}
+                            position={[
+                                celestialObject.skyPosition.x,
+                                celestialObject.skyPosition.y,
+                                celestialObject.skyPosition.z,
+                            ]}
+                        >
+                            <SolarSun
+                                radius={celestialObject.apparentSize}
+                                emitLight={false}
+                                glowColor={getCurrentSunColor()}
+                                glowStrength={(() => {
+                                    const yNorm =
+                                        celestialObject.skyPosition.y / 400; // approx elevation 0..1 above horizon
+                                    // smoothstep(-0.05, 0.15, yNorm) to fade near horizon
+                                    const tRaw =
+                                        (yNorm - -0.05) / (0.15 - -0.05);
+                                    const t = Math.max(0, Math.min(1, tRaw));
+                                    const smooth = t * t * (3 - 2 * t);
 
-                                        const base =
-                                            0.25 +
-                                            Math.max(0, yNorm) * 0.9 +
-                                            (getCurrentSunIntensity() || 0) * 0.2;
+                                    const base =
+                                        0.25 +
+                                        Math.max(0, yNorm) * 0.9 +
+                                        (getCurrentSunIntensity() || 0) * 0.2;
 
-                                        const occlusion = sunOccluded ? 0 : 1; // <— hard stop when blocked by terrain
+                                    const occlusion = sunOccluded ? 0 : 1; // <— hard stop when blocked by terrain
 
-                                        return Math.min(2, Math.max(0, base * smooth * occlusion));
-                                    })()}
+                                    return Math.min(
+                                        2,
+                                        Math.max(0, base * smooth * occlusion),
+                                    );
+                                })()}
+                            />
+                        </group>
+                    ) : (
+                        <mesh
+                            key={`${celestialObject.planet.name}-${index}`}
+                            position={[
+                                celestialObject.skyPosition.x,
+                                celestialObject.skyPosition.y,
+                                celestialObject.skyPosition.z,
+                            ]}
+                        >
+                            <sphereGeometry
+                                args={[celestialObject.apparentSize, 16, 16]}
+                            />
+                            {texture ? (
+                                <meshStandardMaterial
+                                    map={texture}
+                                    metalness={0.1}
+                                    roughness={0.8}
                                 />
-                            </group>
-                        ) : (
-                            <mesh
-                                key={`${celestialObject.planet.name}-${index}`}
-                                position={[
-                                    celestialObject.skyPosition.x,
-                                    celestialObject.skyPosition.y,
-                                    celestialObject.skyPosition.z,
-                                ]}
-                            >
-                                <sphereGeometry args={[celestialObject.apparentSize, 16, 16]}/>
-                                {texture ? (
-                                    <meshStandardMaterial
-                                        map={texture}
-                                        metalness={0.1}
-                                        roughness={0.8}
-                                    />
-                                ) : (
-                                    <meshBasicMaterial color={celestialObject.planet.color}/>
-                                )}
-                            </mesh>
-                        )
+                            ) : (
+                                <meshBasicMaterial
+                                    color={celestialObject.planet.color}
+                                />
+                            )}
+                        </mesh>
                     );
                 })}
             </group>
@@ -739,8 +770,10 @@ function SurfaceSky({planetName}: { planetName: string }) {
                                 const theta = Math.random() * Math.PI * 2;
                                 const phi = Math.random() * Math.PI;
 
-                                positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
-                                positions[i * 3 + 1] = radius * Math.sin(phi) * Math.sin(theta);
+                                positions[i * 3] =
+                                    radius * Math.sin(phi) * Math.cos(theta);
+                                positions[i * 3 + 1] =
+                                    radius * Math.sin(phi) * Math.sin(theta);
                                 positions[i * 3 + 2] = radius * Math.cos(phi);
                             }
                             return positions;
@@ -784,13 +817,16 @@ function getSunSkyPositionForDome(): THREE.Vector3 {
     const dir = currentSunPosition.clone().normalize();
     const baseRadius = 350; // same order as other sky elements
     // allow a bit of parallax based on distance (not physically accurate, just for depth feel)
-    const extra = Math.min(150, Math.max(0, currentSunPosition.length() - 200) * 0.5);
+    const extra = Math.min(
+        150,
+        Math.max(0, currentSunPosition.length() - 200) * 0.5,
+    );
     return dir.multiplyScalar(baseRadius + extra);
 }
 
 function SurfaceLighting() {
-    const {landedPlanet} = useLandedState();
-    const {getUniverseTime, updateUniverseTime} = useSolarSystem();
+    const { landedPlanet } = useLandedState();
+    const { getUniverseTime, updateUniverseTime } = useSolarSystem();
     const surfaceLighting = useSurfaceLighting();
 
     const planet = useMemo(() => {
@@ -850,10 +886,16 @@ function SurfaceLighting() {
             );
         };
 
-        const currentPlanetPosition = calculatePlanetPosition(planet, universeTime);
+        const currentPlanetPosition = calculatePlanetPosition(
+            planet,
+            universeTime,
+        );
         const earthDistance = 75;
         const distanceFromSun = currentPlanetPosition.length();
-        const distanceBasedIntensity = Math.pow(earthDistance / distanceFromSun, 2);
+        const distanceBasedIntensity = Math.pow(
+            earthDistance / distanceFromSun,
+            2,
+        );
 
         if (sunElevation < -0.3) {
             // Deep night - very dim blue light
@@ -896,7 +938,8 @@ function SurfaceLighting() {
 
         // Apply distance-based scaling
         const finalIntensity = sunIntensity * distanceBasedIntensity;
-        const finalAmbient = ambientIntensity * Math.sqrt(distanceBasedIntensity);
+        const finalAmbient =
+            ambientIntensity * Math.sqrt(distanceBasedIntensity);
 
         // Determine time of day for display
         let timeOfDay = "Night";
@@ -922,7 +965,12 @@ function SurfaceLighting() {
     const lightingData = surfaceLighting.getCurrentLightingData(
         automaticLightingData,
     );
-    const {sunPosition, sunIntensity, ambientIntensity = 0.02, sunColor} = lightingData;
+    const {
+        sunPosition,
+        sunIntensity,
+        ambientIntensity = 0.02,
+        sunColor,
+    } = lightingData;
 
     // Store sun position and intensity for lens flare
     currentSunPosition = sunPosition.clone();
@@ -931,8 +979,13 @@ function SurfaceLighting() {
 
     // Update time of day in the lighting store
     useEffect(() => {
-        if (!surfaceLighting.manualOverride && automaticLightingData?.timeOfDay) {
-            surfaceLighting.setCurrentTimeOfDay(automaticLightingData.timeOfDay);
+        if (
+            !surfaceLighting.manualOverride &&
+            automaticLightingData?.timeOfDay
+        ) {
+            surfaceLighting.setCurrentTimeOfDay(
+                automaticLightingData.timeOfDay,
+            );
         }
     }, [automaticLightingData?.timeOfDay, surfaceLighting.manualOverride]);
 
@@ -946,7 +999,10 @@ function SurfaceLighting() {
         ) {
             const elevationDegrees = surfaceLighting.manualOverride
                 ? surfaceLighting.sunElevation.toFixed(1)
-                : ((automaticLightingData.sunElevation * 180) / Math.PI).toFixed(1);
+                : (
+                      (automaticLightingData.sunElevation * 180) /
+                      Math.PI
+                  ).toFixed(1);
             const timeOfDay = surfaceLighting.manualOverride
                 ? surfaceLighting.currentTimeOfDay
                 : automaticLightingData.timeOfDay;
@@ -975,17 +1031,20 @@ function SurfaceLighting() {
         sunElevation < -0.3
             ? "#000814" // Night: very dark blue
             : sunElevation < 0.0
-                ? "#1a2332" // Dawn/Dusk: dark blue-gray
-                : sunElevation < 0.5
-                    ? "#4a7c9e" // Morning: medium blue
-                    : "#87CEEB"; // Midday: sky blue
+              ? "#1a2332" // Dawn/Dusk: dark blue-gray
+              : sunElevation < 0.5
+                ? "#4a7c9e" // Morning: medium blue
+                : "#87CEEB"; // Midday: sky blue
 
     const groundColor = surfaceColor;
 
     return (
         <>
             {/* Dynamic ambient light that changes with time of day */}
-            <ambientLight intensity={ambientIntensity * 0.5} color={surfaceColor}/>
+            <ambientLight
+                intensity={ambientIntensity * 0.5}
+                color={surfaceColor}
+            />
 
             {/* Hemisphere light for natural sky-to-ground gradient */}
             <hemisphereLight
@@ -1015,10 +1074,10 @@ function SurfaceLighting() {
 }
 
 function MiningFragments({
-                             isActive,
-                             color,
-                             position,
-                         }: {
+    isActive,
+    color,
+    position,
+}: {
     isActive: boolean;
     color: string;
     position: [number, number, number];
@@ -1062,7 +1121,10 @@ function MiningFragments({
                 const particle = particles[index];
                 if (particle) {
                     // Update particle progress
-                    particle.progress = Math.min(particle.progress + delta * 2, 1);
+                    particle.progress = Math.min(
+                        particle.progress + delta * 2,
+                        1,
+                    );
 
                     // Move particle outward
                     child.position.copy(particle.initialPosition);
@@ -1096,15 +1158,19 @@ function MiningFragments({
         <group ref={particlesRef}>
             {particles.map((particle) => (
                 <mesh key={particle.id} position={position}>
-                    <boxGeometry args={[0.2, 0.2, 0.2]}/>
-                    <meshStandardMaterial color={color} transparent={true} opacity={1}/>
+                    <boxGeometry args={[0.2, 0.2, 0.2]} />
+                    <meshStandardMaterial
+                        color={color}
+                        transparent={true}
+                        opacity={1}
+                    />
                 </mesh>
             ))}
         </group>
     );
 }
 
-function ResourceNodes({planetName}: { planetName: string }) {
+function ResourceNodes({ planetName }: { planetName: string }) {
     const planet = planets.find((p) => p.name === planetName);
     const {
         startMining,
@@ -1115,7 +1181,7 @@ function ResourceNodes({planetName}: { planetName: string }) {
         clicksRequired,
         currentNodeId,
     } = useMining();
-    const {playHit} = useAudio();
+    const { playHit } = useAudio();
 
     // Use persistent store for destroyed nodes - properly subscribe to avoid infinite re-renders
     // We need to check the nodes directly from the store to avoid creating new Sets
@@ -1144,10 +1210,10 @@ function ResourceNodes({planetName}: { planetName: string }) {
                 resource.rarity === "legendary"
                     ? 1
                     : resource.rarity === "rare"
-                        ? 2
-                        : resource.rarity === "uncommon"
-                            ? 3
-                            : 4;
+                      ? 2
+                      : resource.rarity === "uncommon"
+                        ? 3
+                        : 4;
 
             for (let i = 0; i < nodeCount; i++) {
                 const angle =
@@ -1158,7 +1224,8 @@ function ResourceNodes({planetName}: { planetName: string }) {
                 const z = Math.sin(angle) * distance;
                 const terrainHeight = terrainHeightAt(x, z);
                 const isWater =
-                    resource.type.includes("Water") || resource.type.includes("Ice");
+                    resource.type.includes("Water") ||
+                    resource.type.includes("Ice");
                 const y = isWater
                     ? terrainHeight + 0.2 // Water lies flat on surface, very low
                     : terrainHeight + 0.8 + Math.random() * 1.5; // Other resources sit higher
@@ -1180,7 +1247,7 @@ function ResourceNodes({planetName}: { planetName: string }) {
     ) => {
         try {
             // Check if we're currently mining THIS SPECIFIC node
-            const {currentNodeId: activeNodeId} = useMining.getState();
+            const { currentNodeId: activeNodeId } = useMining.getState();
 
             if (isActive && activeNodeId === nodeId) {
                 // If already mining this specific node, perform a click
@@ -1245,7 +1312,9 @@ function ResourceNodes({planetName}: { planetName: string }) {
                                 nodeId={node.id}
                                 resource={node.resource}
                                 position={node.position}
-                                onInteract={() => handleResourceClick(node.resource, node.id)}
+                                onInteract={() =>
+                                    handleResourceClick(node.resource, node.id)
+                                }
                                 progress={nodeProgress}
                             />
                             <MiningFragments
@@ -1253,7 +1322,10 @@ function ResourceNodes({planetName}: { planetName: string }) {
                                 color={getResourceColor(node.resource.rarity)}
                                 position={node.position}
                             />
-                            <MiningLaser targetPosition={node.position} nodeId={node.id}/>
+                            <MiningLaser
+                                targetPosition={node.position}
+                                nodeId={node.id}
+                            />
                         </group>
                     );
                 })}
@@ -1261,21 +1333,27 @@ function ResourceNodes({planetName}: { planetName: string }) {
     );
 }
 
-function HelmetOverlay({planetName}: { planetName: string }) {
+function HelmetOverlay({ planetName }: { planetName: string }) {
     const needsHelmet = planetName !== "Earth"; // More robust check
-    const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(null);
-    const {isMuted} = useAudio(); // Respect global audio settings
+    const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(
+        null,
+    );
+    const { isMuted } = useAudio(); // Respect global audio settings
 
     // Initialize and manage helmet breathing audio
     useEffect(() => {
         if (needsHelmet) {
-            const {soundEffects} = AUDIO_CONFIG;
+            const { soundEffects } = AUDIO_CONFIG;
             const audio = new Audio(soundEffects.spaceHelmetBreathing.path);
             audio.loop = soundEffects.spaceHelmetBreathing.loop ?? true;
-            audio.volume = isMuted ? 0 : soundEffects.spaceHelmetBreathing.volume;
+            audio.volume = isMuted
+                ? 0
+                : soundEffects.spaceHelmetBreathing.volume;
             audio
                 .play()
-                .catch((e) => console.log("Helmet audio autoplay prevented:", e));
+                .catch((e) =>
+                    console.log("Helmet audio autoplay prevented:", e),
+                );
             setHelmetAudio(audio);
 
             return () => {
@@ -1289,7 +1367,7 @@ function HelmetOverlay({planetName}: { planetName: string }) {
     // Update volume when mute state changes
     useEffect(() => {
         if (helmetAudio) {
-            const {soundEffects} = AUDIO_CONFIG;
+            const { soundEffects } = AUDIO_CONFIG;
             helmetAudio.volume = isMuted
                 ? 0
                 : soundEffects.spaceHelmetBreathing.volume;
@@ -1301,15 +1379,14 @@ function HelmetOverlay({planetName}: { planetName: string }) {
     return (
         <div className="absolute inset-0 pointer-events-none">
             {/* Atmosphere warning */}
-            <div
-                className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-900/70 border border-red-400 rounded px-3 py-1 text-red-400 text-sm">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-red-900/70 border border-red-400 rounded px-3 py-1 text-red-400 text-sm">
                 ⚠️ HOSTILE ATMOSPHERE - EVA SUIT ACTIVE
             </div>
         </div>
     );
 }
 
-function SurfaceControls({planetName}: { planetName: string }) {
+function SurfaceControls({ planetName }: { planetName: string }) {
     const planet = planets.find((p) => p.name === planetName);
     const {
         isActive: isMining,
@@ -1317,11 +1394,10 @@ function SurfaceControls({planetName}: { planetName: string }) {
         clicksCompleted,
         clicksRequired,
     } = useMining();
-    const {isOn, batteryLevel, toggle: toggleFlashlight} = useFlashlight();
+    const { isOn, batteryLevel, toggle: toggleFlashlight } = useFlashlight();
 
     return (
-        <div
-            className="absolute bottom-4 left-1/2 bg-gray-900/50 border border-cyan-400 rounded-lg p-4 max-w-lg flex flex-col hidden">
+        <div className="absolute bottom-4 left-1/2 bg-gray-900/50 border border-cyan-400 rounded-lg p-4 max-w-lg flex flex-col hidden">
             {/* Movement controls */}
             <div className="mb-4">
                 {/* Flashlight control */}
@@ -1333,7 +1409,8 @@ function SurfaceControls({planetName}: { planetName: string }) {
                             : "bg-gray-600 hover:bg-gray-700 text-gray-300"
                     }`}
                 >
-                    💡 Flashlight: {isOn ? "ON" : "OFF"} ({Math.round(batteryLevel)}%)
+                    💡 Flashlight: {isOn ? "ON" : "OFF"} (
+                    {Math.round(batteryLevel)}%)
                 </button>
             </div>
 
@@ -1346,18 +1423,24 @@ function SurfaceControls({planetName}: { planetName: string }) {
                     <div className="w-full bg-gray-700 rounded-full h-2">
                         <div
                             className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
-                            style={{width: `${(clicksCompleted / clicksRequired) * 100}%`}}
+                            style={{
+                                width: `${(clicksCompleted / clicksRequired) * 100}%`,
+                            }}
                         />
                     </div>
                     <div className="text-xs text-gray-400 mt-1">
-                        {clicksCompleted}/{clicksRequired} clicks - Click to mine!
+                        {clicksCompleted}/{clicksRequired} clicks - Click to
+                        mine!
                     </div>
                 </div>
             ) : (
                 <div className="mb-3 p-3 bg-green-900/30 border border-green-400 rounded">
-                    <div className="text-green-400 text-sm mb-1">📍 Ready to mine</div>
+                    <div className="text-green-400 text-sm mb-1">
+                        📍 Ready to mine
+                    </div>
                     <div className="text-xs text-gray-400">
-                        Look for glowing resource nodes and click to start mining
+                        Look for glowing resource nodes and click to start
+                        mining
                     </div>
                 </div>
             )}
@@ -1369,21 +1452,26 @@ function SurfaceControls({planetName}: { planetName: string }) {
                 </h4>
                 <div className="space-y-1">
                     {planet?.resources.map((resource, index) => (
-                        <div key={index} className="flex justify-between text-xs">
-              <span
-                  className={`${
-                      resource.rarity === "legendary"
-                          ? "text-yellow-400"
-                          : resource.rarity === "rare"
-                              ? "text-purple-400"
-                              : resource.rarity === "uncommon"
-                                  ? "text-blue-400"
-                                  : "text-green-400"
-                  }`}
-              >
-                {resource.type}
-              </span>
-                            <span className="text-gray-400">{resource.value}cr</span>
+                        <div
+                            key={index}
+                            className="flex justify-between text-xs"
+                        >
+                            <span
+                                className={`${
+                                    resource.rarity === "legendary"
+                                        ? "text-yellow-400"
+                                        : resource.rarity === "rare"
+                                          ? "text-purple-400"
+                                          : resource.rarity === "uncommon"
+                                            ? "text-blue-400"
+                                            : "text-green-400"
+                                }`}
+                            >
+                                {resource.type}
+                            </span>
+                            <span className="text-gray-400">
+                                {resource.value}cr
+                            </span>
                         </div>
                     ))}
                 </div>
@@ -1394,7 +1482,7 @@ function SurfaceControls({planetName}: { planetName: string }) {
 
 // Post-processing effects component
 function PostProcessingEffects() {
-    const {enableBloom, graphicsQuality} = useSettings();
+    const { enableBloom, graphicsQuality } = useSettings();
     const [sunVisible, setSunVisible] = useState(true);
     const [bloomIntensity, setBloomIntensity] = useState(1.5);
 
@@ -1406,14 +1494,16 @@ function PostProcessingEffects() {
     useFrame(() => {
         if (currentSunPosition) {
             // Check if sun is above horizon (y > 0 means above horizon in our coordinate system)
-            const isVisible = currentSunPosition.y > 0 && currentSunIntensity > 0.1;
+            const isVisible =
+                currentSunPosition.y > 0 && currentSunIntensity > 0.1;
             setSunVisible(isVisible);
 
             // Dynamic bloom intensity based on sun elevation and intensity
             // Higher intensity when sun is visible and bright
             if (isVisible) {
                 const sunElevation = Math.max(0, currentSunPosition.y / 200); // Normalize elevation
-                const dynamicIntensity = 1.0 + sunElevation * currentSunIntensity * 2.0;
+                const dynamicIntensity =
+                    1.0 + sunElevation * currentSunIntensity * 2.0;
                 setBloomIntensity(Math.min(3.5, dynamicIntensity)); // Cap at 3.5
             } else {
                 // Lower bloom for night/twilight ambient lighting
@@ -1443,10 +1533,9 @@ function PostProcessingEffects() {
 }
 
 export function PlanetSurfaceScene() {
-    const {isLanded, landedPlanet, isTakingOff} =
-        useLandedState();
-    const {isOn: isFlashlightOn} = useFlashlight();
-    const {playTakeoff} = useAudio();
+    const { isLanded, landedPlanet, isTakingOff } = useLandedState();
+    const { isOn: isFlashlightOn } = useFlashlight();
+    const { playTakeoff } = useAudio();
     const resourceManager = ResourceManager.getInstance();
 
     // Mining beam state for spacebar mining visual feedback
@@ -1461,16 +1550,17 @@ export function PlanetSurfaceScene() {
     // Cleanup all planet surface resources when component unmounts or planet changes
     useEffect(() => {
         return () => {
-
             // Clean up surface-related stores
             useWind.getState().cleanup();
 
             // Dispose all resources tagged with 'planet-surface'
-            const disposedCount = resourceManager.disposeByTag("planet-surface");
+            const disposedCount =
+                resourceManager.disposeByTag("planet-surface");
 
             // Also dispose resources specific to this planet
             if (landedPlanet) {
-                const planetDisposedCount = resourceManager.disposeByTag(landedPlanet);
+                const planetDisposedCount =
+                    resourceManager.disposeByTag(landedPlanet);
             }
         };
     }, [landedPlanet]);
@@ -1479,31 +1569,34 @@ export function PlanetSurfaceScene() {
 
     // Surface movement controls
     const surfaceControls = [
-        {name: "forward", keys: ["KeyW", "ArrowUp"]},
-        {name: "backward", keys: ["KeyS", "ArrowDown"]},
-        {name: "left", keys: ["KeyA", "ArrowLeft"]},
-        {name: "right", keys: ["KeyD", "ArrowRight"]},
-        {name: "turnLeft", keys: ["KeyQ"]},
-        {name: "turnRight", keys: ["KeyE"]},
-        {name: "flashlight", keys: ["KeyF"]},
-        {name: "charge", keys: ["KeyC"]},
-        {name: "shoot", keys: [" "]}, // Spacebar for mining/shooting
+        { name: "forward", keys: ["KeyW", "ArrowUp"] },
+        { name: "backward", keys: ["KeyS", "ArrowDown"] },
+        { name: "left", keys: ["KeyA", "ArrowLeft"] },
+        { name: "right", keys: ["KeyD", "ArrowRight"] },
+        { name: "turnLeft", keys: ["KeyQ"] },
+        { name: "turnRight", keys: ["KeyE"] },
+        { name: "flashlight", keys: ["KeyF"] },
+        { name: "charge", keys: ["KeyC"] },
+        { name: "shoot", keys: [" "] }, // Spacebar for mining/shooting
     ];
 
     return (
         <div className="fixed inset-0 z-20">
             <KeyboardControls map={surfaceControls}>
                 <WebGLCheckWrapper fallbackMessage="WebGL is required to render the planet surface environment.">
-                    <Canvas camera={{position: [0, 1.8, 5], fov: 75}}>
-                        <SurfaceLighting/>
-                        <FlashlightSystem/>
-                        <SurfaceSky planetName={landedPlanet}/>
-                        <SurfaceTerrain planetName={landedPlanet}/>
+                    <Canvas camera={{ position: [0, 1.8, 5], fov: 75 }}>
+                        <SurfaceLighting />
+                        <FlashlightSystem />
+                        <SurfaceSky planetName={landedPlanet} />
+                        <SurfaceTerrain planetName={landedPlanet} />
                         <SurfaceScatter
                             planetName={landedPlanet}
-                            planetColor={planets.find((p) => p.name === landedPlanet)?.color}
+                            planetColor={
+                                planets.find((p) => p.name === landedPlanet)
+                                    ?.color
+                            }
                         />
-                        <ResourceNodes planetName={landedPlanet}/>
+                        <ResourceNodes planetName={landedPlanet} />
                         <SurfaceMovementController
                             onMiningBeamChange={setMiningBeamState}
                         />
@@ -1515,22 +1608,22 @@ export function PlanetSurfaceScene() {
                             planetName={landedPlanet}
                             flashlightOn={isFlashlightOn}
                         />
-                        <DebugCollisionBoxes/>
+
                         {/* Camera shake effect for mining feedback */}
-                        <CameraShake/>
-                        <PostProcessingEffects/>
+                        {/* <CameraShake/>
+                        <PostProcessingEffects/> */}
                     </Canvas>
                 </WebGLCheckWrapper>
             </KeyboardControls>
 
             {/* Screen effects overlay for mining feedback */}
-            <ScreenEffects/>
+            <ScreenEffects />
 
             {/* Helmet overlay for non-breathable atmospheres */}
-            <HelmetOverlay planetName={landedPlanet}/>
+            <HelmetOverlay planetName={landedPlanet} />
 
             {/* Atmospheric sounds */}
-            <AtmosphericSounds planetName={landedPlanet} stormActive={false}/>
+            <AtmosphericSounds planetName={landedPlanet} stormActive={false} />
 
             {/* Takeoff transition overlay - renders on top when taking off */}
             {isTakingOff && (
@@ -1542,7 +1635,11 @@ export function PlanetSurfaceScene() {
                         playTakeoff();
                     }}
                     onComplete={() => {
-                        console.log("[TAKEOFF] Transition complete, switching to space");
+                        console.log(
+                            "[TAKEOFF] Transition complete, switching to space",
+                        );
+                        useLandedState.getState().setNotLanded();
+                        useLandedState.getState().completeTakeoff();
                     }}
                 />
             )}
