@@ -1,42 +1,50 @@
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { planets, moonData } from "../../lib/planetData";
 
+// need to have a method to collapse the planet into.  the listener for toggling the info panel 
+
 export function PlanetInfo() {
   const { selectedPlanet } = useSolarSystem();
-  
+
   if (!selectedPlanet) return null;
-  
+
   // Explicitly exclude Sun from showing info
   if (selectedPlanet === "Sun") return null;
 
   // Check both planets and moon data
   const planet = planets.find((p: any) => p.name === selectedPlanet);
   const celestialBody = planet || (selectedPlanet === "Moon" ? moonData : null);
-  
+
   if (!celestialBody) return null;
 
   const isMoon = selectedPlanet === "Moon";
 
   return (
     <div className="absolute top-4 left-4 bg-black/80 text-white p-6 rounded-lg backdrop-blur-sm max-w-sm">
-      <h2 className="text-2xl font-bold mb-3 text-blue-400">{celestialBody.name}</h2>
-      
+      <h2 className="text-2xl font-bold mb-3 text-blue-400">
+        {celestialBody.name}
+      </h2>
+
       <div className="space-y-2 text-sm">
         <div className="flex justify-between">
-          <span className="text-gray-300">{isMoon ? "Distance from Earth:" : "Distance from Sun:"}</span>
-          <span className="text-white">{celestialBody.realDistance} {isMoon ? "" : "AU"}</span>
+          <span className="text-gray-300">
+            {isMoon ? "Distance from Earth:" : "Distance from Sun:"}
+          </span>
+          <span className="text-white">
+            {celestialBody.realDistance} {isMoon ? "" : "AU"}
+          </span>
         </div>
-        
+
         <div className="flex justify-between">
           <span className="text-gray-300">Diameter:</span>
           <span className="text-white">{celestialBody.diameter} km</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span className="text-gray-300">Orbital Period:</span>
           <span className="text-white">{celestialBody.orbitalPeriod}</span>
         </div>
-        
+
         <div className="flex justify-between">
           <span className="text-gray-300">Day Length:</span>
           <span className="text-white">{celestialBody.dayLength}</span>
