@@ -272,7 +272,7 @@ export class DoorProgressionSystem {
   
   canPassThroughDoor(roomFrom: string, roomTo: string): boolean {
     // Check all doors between these rooms
-    for (const door of this.doors.values()) {
+    for (const door of Array.from(this.doors.values())) {
       if ((door.roomFrom === roomFrom && door.roomTo === roomTo) ||
           (door.roomFrom === roomTo && door.roomTo === roomFrom)) {
         return !door.isLocked;
