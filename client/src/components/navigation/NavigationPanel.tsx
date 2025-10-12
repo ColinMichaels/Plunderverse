@@ -76,7 +76,7 @@ export const NavigationPanel: React.FC = () => {
   const { equipment, updateEquipment, getEquipment } = useEquipment();
   const audio = useAudio();
   const shipStatus = useShipStatus();
-  const { credits, spendCredits, addCredits } = useCreditsStore();
+  const { credits, spendCredits, earnCredits } = useCreditsStore();
   
   // Get fuel equipment
   const fuelTank = getEquipment('fuel-tank');
@@ -291,7 +291,7 @@ export const NavigationPanel: React.FC = () => {
       );
 
       await new Promise(resolve => setTimeout(resolve, 500));
-      setShipPosition(targetPosition.x, targetPosition.y, targetPosition.z);
+      setShipPosition(targetPosition);
 
       console.log(`[FAST-TRAVEL] Traveled to ${selectedDestination} orbit`);
       
