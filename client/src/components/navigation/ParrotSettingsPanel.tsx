@@ -16,9 +16,17 @@ export function ParrotSettingsPanel() {
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
   useEffect(() => {
+    let isMounted = true;
+    
     parrotSpeechService.ensureVoicesLoaded(() => {
-      setAvailableVoices(parrotSpeechService.getAvailableVoices());
+      if (isMounted) {
+        setAvailableVoices(parrotSpeechService.getAvailableVoices());
+      }
     });
+    
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
