@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export type PanelId = 'missions' | 'inventory' | 'trading' | 'crew' | 'story' | 'controls' | 'settings' | 'crypto' | 'navigation' | 'systems' | 'upgrades' | 'repair';
+export type PanelId = 'missions' | 'inventory' | 'trading' | 'crew' | 'story' | 'controls' | 'settings' | 'crypto' | 'navigation' | 'systems' | 'upgrades' | 'repair' | 'fast-travel' | 'parrot-settings';
 
 export interface Panel {
   id: PanelId;
@@ -44,7 +44,7 @@ const loadPanelStates = (): Partial<Record<PanelId, boolean>> => {
 // Save panel states to localStorage
 const savePanelStates = (panels: Map<PanelId, Panel>) => {
   try {
-    const states: Record<PanelId, boolean> = {};
+    const states: Partial<Record<PanelId, boolean>> = {};
     panels.forEach((panel, id) => {
       states[id] = panel.isOpen;
     });
@@ -68,6 +68,8 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'systems', label: 'Ship Systems', icon: '⚡', isOpen: false, wasManuallyToggled: false, priority: 9 },
   { id: 'upgrades', label: 'Upgrades', icon: '🚀', isOpen: false, wasManuallyToggled: false, priority: 10 },
   { id: 'repair', label: 'Quick Repair', icon: '🔧', isOpen: false, wasManuallyToggled: false, priority: 11 },
+  { id: 'fast-travel', label: 'Fast Travel', icon: '🚀', isOpen: false, wasManuallyToggled: false, priority: 12 },
+  { id: 'parrot-settings', label: 'Parrot', icon: '🦜', isOpen: false, wasManuallyToggled: false, priority: 13 },
 ];
 
 // Initialize panels with saved states
