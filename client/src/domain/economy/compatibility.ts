@@ -2,17 +2,10 @@
 // Compatibility utilities for smooth migration from legacy stores to domain stores
 // This file helps bridge the gap during the transition period
 
-import { useCreditsStore } from './credits.store';
-import { useInventoryStore } from './inventory.store';
-import { economyService } from './economy.service';
+import {useCreditsStore, useInventoryStore} from '@/domain';
 
 // Re-export domain stores with legacy-compatible names for easier migration
 export {
-  // New domain stores (preferred)
-  useCreditsStore,
-  useInventoryStore,
-  economyService,
-  
   // Selectors
   useEconomySelectors,
   useCreditsData,
