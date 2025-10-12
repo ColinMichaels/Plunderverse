@@ -21,6 +21,20 @@
   background: rgba(251, 146, 60, 0.7);
 }
 
+@layer utilities {
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -38,7 +52,7 @@
 
 /* Stars background animation for game transition */
 .stars-bg {
-  background-image: 
+  background-image:
     radial-gradient(2px 2px at 20px 30px, white, transparent),
     radial-gradient(2px 2px at 40px 70px, white, transparent),
     radial-gradient(1px 1px at 50px 50px, white, transparent),
@@ -56,6 +70,7 @@
   from {
     transform: translateX(0) translateY(0);
   }
+
   to {
     transform: translateX(-200px) translateY(-200px);
   }
@@ -67,6 +82,7 @@
     transform: translateX(100%);
     opacity: 0;
   }
+
   to {
     transform: translateX(0);
     opacity: 1;
@@ -82,6 +98,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -96,6 +113,7 @@
   0% {
     transform: translateY(0);
   }
+
   100% {
     transform: translateY(100vh);
   }
@@ -105,6 +123,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -114,6 +133,7 @@
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(50px);
   }
@@ -123,6 +143,7 @@
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -145,13 +166,11 @@
 }
 
 .bg-repeating-linear-gradient-45 {
-  background: repeating-linear-gradient(
-    -45deg,
-    transparent,
-    transparent 10px,
-    rgba(255,255,255,0.1) 10px,
-    rgba(255,255,255,0.1) 20px
-  );
+  background: repeating-linear-gradient(-45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.1) 10px,
+      rgba(255, 255, 255, 0.1) 20px);
 }
 
 /* Button press animation */
@@ -159,10 +178,12 @@
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.15);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
   }
+
   100% {
     transform: scale(1);
   }
@@ -170,9 +191,12 @@
 
 /* Panel glow animation */
 @keyframes panel-glow {
-  0%, 100% {
+
+  0%,
+  100% {
     box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
   }
+
   50% {
     box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
   }
@@ -202,17 +226,20 @@ canvas {
 @media (max-width: 768px) {
   .cockpit-panel {
     @apply w-full max-w-xs p-2 text-sm;
-    max-height: 35vh !important; /* Reduced from 40vh */
+    max-height: 35vh !important;
+    /* Reduced from 40vh */
     left: 50% !important;
     transform: translateX(-50%) !important;
     right: auto !important;
-    font-size: 0.875rem !important; /* Increased from 0.65rem */
+    font-size: 0.875rem !important;
+    /* Increased from 0.65rem */
   }
 
   .status-bar {
     @apply flex-wrap gap-1 p-2 text-sm;
     bottom: 60px !important;
-    font-size: 0.8rem !important; /* Increased from 0.6rem */
+    font-size: 0.8rem !important;
+    /* Increased from 0.6rem */
   }
 
   .status-item {
@@ -228,7 +255,8 @@ canvas {
 
   .flight-controls {
     @apply text-sm p-2;
-    font-size: 0.8rem !important; /* Increased from 0.6rem */
+    font-size: 0.8rem !important;
+    /* Increased from 0.6rem */
   }
 
   /* Mobile navigation buttons - better sizing */
@@ -248,29 +276,34 @@ canvas {
   .mobile-nav-left button,
   .mobile-nav-right button {
     @apply w-10 h-10 text-sm !important;
-    font-size: 0.875rem !important; /* Increased from 0.7rem */
+    font-size: 0.875rem !important;
+    /* Increased from 0.7rem */
   }
 
   /* Better sized mobile panels */
   .mobile-nav-left .cockpit-panel,
   .mobile-nav-right .cockpit-panel {
     @apply w-72 max-h-80 p-3 text-sm !important;
-    font-size: 0.8rem !important; /* Increased from 0.65rem */
+    font-size: 0.8rem !important;
+    /* Increased from 0.65rem */
   }
 }
 
 @media (max-width: 480px) {
   .cockpit-panel {
     @apply max-w-xs text-sm;
-    max-height: 30vh !important; /* Reduced from 35vh */
+    max-height: 30vh !important;
+    /* Reduced from 35vh */
     padding: 8px !important;
-    font-size: 0.75rem !important; /* Minimum readable - increased from 0.6rem */
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.6rem */
   }
 
   .status-bar {
     @apply text-sm;
     bottom: 50px !important;
-    font-size: 0.75rem !important; /* Increased from 0.55rem */
+    font-size: 0.75rem !important;
+    /* Increased from 0.55rem */
     padding: 6px !important;
   }
 
@@ -285,14 +318,16 @@ canvas {
   .mobile-nav-left button,
   .mobile-nav-right button {
     @apply w-8 h-8 text-sm !important;
-    font-size: 0.75rem !important; /* Minimum readable - increased from 0.6rem */
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.6rem */
   }
 
   /* Readable panels for small phones */
   .mobile-nav-left .cockpit-panel,
   .mobile-nav-right .cockpit-panel {
     @apply w-64 max-h-64 p-2 text-sm !important;
-    font-size: 0.75rem !important; /* Minimum readable - increased from 0.55rem */
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.55rem */
   }
 
   /* No conflicting transform overrides */
@@ -420,33 +455,38 @@ canvas {
 
 /* HUD Animations */
 @keyframes fadeIn {
-  from { 
-    opacity: 0; 
-    transform: translateY(10px); 
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
-  to { 
-    opacity: 1; 
-    transform: translateY(0); 
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
 @keyframes damageFloat {
-  0% { 
-    opacity: 1; 
+  0% {
+    opacity: 1;
     transform: translateY(0);
   }
-  100% { 
-    opacity: 0; 
+
+  100% {
+    opacity: 0;
     transform: translateY(-30px);
   }
 }
 
 @keyframes pulse {
-  0%, 100% { 
-    opacity: 1; 
+
+  0%,
+  100% {
+    opacity: 1;
   }
-  50% { 
-    opacity: 0.5; 
+
+  50% {
+    opacity: 0.5;
   }
 }
 
@@ -578,7 +618,8 @@ canvas {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 40; /* Lowered from 200 to allow modals (z-50+) to appear above */
+  z-index: 40;
+  /* Lowered from 200 to allow modals (z-50+) to appear above */
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(2px);
   display: flex;
@@ -674,6 +715,7 @@ canvas {
 
 /* Desktop layout optimizations */
 @media (min-width: 1440px) {
+
   /* Limit panel widths on wide screens */
   .cockpit-panel,
   .space-panel {
@@ -700,6 +742,7 @@ canvas {
 }
 
 @media (min-width: 1920px) {
+
   /* Ultra-wide screen optimizations */
   .cockpit-panel,
   .space-panel {

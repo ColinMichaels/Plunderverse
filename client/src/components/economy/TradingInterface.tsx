@@ -192,10 +192,10 @@ export function TradingInterface({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[150] animate-fadeIn">
-      <div className="bg-gray-900 border border-yellow-400 rounded-lg p-6 w-fit max-h-[80vh] h-full overflow-y-auto animate-slide-in-right">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[150] animate-fadeIn w-full">
+      <div className="bg-gray-900 border border-yellow-400 rounded-lg p-2 w-full max-h-[80vh] h-full overflow-y-auto animate-slide-in-right scrollbar-hide">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-yellow-400">
+          <h2 className="text-base font-bold text-yellow-400">
             🚀 Trading Station
           </h2>
           <button
@@ -207,27 +207,25 @@ export function TradingInterface({
         </div>
 
         {/* Credits Display */}
-        <div className="mb-6 p-3 bg-green-900/30 border border-green-400 rounded">
+        <div className="mb-2 p-2">
           <div className="flex justify-between items-center">
-            <span className="text-green-400 font-semibold">
-              Available Credits:
-            </span>
-            <span className="text-green-400 font-mono text-lg">{credits}</span>
+            <span className="text-green-400">Available Credits:</span>
+            <span className="text-green-400 font-mono">{credits}</span>
           </div>
         </div>
 
         {/* Tab Navigation */}
         <div className="flex mb-6 border-b border-gray-700">
           {[
-            { id: "sell", label: "💰 Sell Resources" },
-            { id: "fuel", label: "⛽ Buy Fuel" },
-            { id: "repairs", label: "🔧 Repairs" },
-            { id: "upgrades", label: "⚡ Upgrades" },
+            { id: "fuel", label: "Buy" },
+            { id: "sell", label: "Sell" },
+            { id: "repairs", label: "Repairs" },
+            { id: "upgrades", label: "Upgrades" },
           ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`px-4 py-2 font-semibold transition-colors ${
+              className={`px-4 py-2 font-semibold transition-colors text-sm ${
                 activeTab === tab.id
                   ? "text-yellow-400 border-b-2 border-yellow-400"
                   : "text-gray-400 hover:text-white"
@@ -501,7 +499,8 @@ export function TradingInterface({
                               {condition.toUpperCase()}
                             </span>
                             <span className="text-gray-400 text-sm">
-                              {item.currentDurability}/{item.maxDurability}
+                              {item.currentDurability.toFixed(1)}/
+                              {item.maxDurability.toFixed(1)}
                             </span>
                           </div>
                         </div>
@@ -520,7 +519,7 @@ export function TradingInterface({
                             </button>
                           ) : (
                             <span className="text-green-400 font-semibold">
-                              No repair needed
+                              <check-icon />
                             </span>
                           )}
                         </div>
