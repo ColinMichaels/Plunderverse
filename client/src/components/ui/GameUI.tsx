@@ -7,7 +7,6 @@ import {MobileHUD} from "../mobile/MobileHUD";
 import {OrbitalInterface} from "../navigation/OrbitalInterface";
 import {NavigationSidebar} from "../navigation/NavigationSidebar";
 import {MusicPlayer} from "../screens/MusicPlayer";
-import {CryptoMarketplace} from "../economy/crypto/CryptoMarketplace";
 import {CrewRecruitmentInterface} from "../ship/CrewRecruitmentInterface";
 import {ParrotHolographicPopup} from "../ParrotHolographicPopup";
 
@@ -36,7 +35,6 @@ import {planets} from "@/lib/planetData.ts";
 import {BottomControlSidebar} from "./BottomControlSidebar";
 import {PauseOverlay} from "./PauseOverlay";
 import {PauseMenu} from "./PauseMenu";
-import {PlanetInfo} from "../shared/PlanetInfo";
 import {TargetLockNotification} from "../combat/TargetLockNotification";
 import {Parrot} from "@/services/ParrotPersonality";
 
@@ -62,11 +60,11 @@ export function GameUI() {
       Parrot.comment("Systems online. Cockpit HUD linked.", "info");
   }, [initializeParrot]);
 
-  // Update crew task progress every second
+    // Update crew task progress every 10 second
   useEffect(() => {
     const interval = setInterval(() => {
       crewManagement.updateTaskProgress();
-    }, 1000);
+    }, 10000);
 
     return () => clearInterval(interval);
   }, [crewManagement]);
@@ -201,17 +199,10 @@ export function GameUI() {
       {/* Only show interactive UI components when NOT in death screen */}
       {phase !== "ended" && (
         <>
-          {/* Planet Info Display - shows when a planet (not Sun) is selected */}
-          <PlanetInfo />
-
           {/* Orbital Interface - when orbiting a planet */}
           <OrbitalInterface />
-
           {/* New Icon-Only Action Bar with Sliding Panels */}
           <ActionBar />
-
-          {/* Marketplace stays separate as it's not part of the action bar */}
-          <CryptoMarketplace />
 
           {/* Mobile Controls - New Unified System */}
           <MobileHUD />

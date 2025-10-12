@@ -10,6 +10,7 @@ import {CryptoWallet} from '../economy/crypto/CryptoWallet';
 import {FastTravelMenu} from '../navigation/FastTravelMenu';
 import {ParrotSettingsPanel} from '../navigation/ParrotSettingsPanel';
 import {PlanetInfo} from "@/components/shared/PlanetInfo.tsx";
+import {CryptoMarketplace} from "@/components/economy/crypto/CryptoMarketplace.tsx";
 
 interface ActionButton {
   id: PanelId;
@@ -331,6 +332,7 @@ export function ActionBar() {
             overflow-y-auto
             scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
           ">
+              <CryptoMarketplace/>
             <CryptoWallet />
           </div>
         )}
