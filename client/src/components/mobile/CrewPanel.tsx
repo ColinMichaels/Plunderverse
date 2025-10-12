@@ -3,6 +3,7 @@ import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
 import { useAutoScroll } from '../../hooks/useAutoScroll';
 import { Button } from '../ui/button';
 import { X, Users, Briefcase, Wrench, Shield, Heart, TrendingUp, TrendingDown, Activity, Zap, Clock, CheckCircle2, XCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CrewPanelProps {
   onClose: () => void;
@@ -68,12 +69,32 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
 
   const handleHire = (crewId: string) => {
     const result = crew.hireCrew(crewId);
-    console.log('[CrewPanel] Hire result:', result);
+    if (result.success) {
+      toast.success(result.message, {
+        description: 'Crew member added to active roster',
+        duration: 3000
+      });
+    } else {
+      toast.error('Cannot hire crew member', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleFire = (crewId: string) => {
     const result = crew.fireCrew(crewId);
-    console.log('[CrewPanel] Fire result:', result);
+    if (result.success) {
+      toast.success(result.message, {
+        description: 'Crew member removed from active roster',
+        duration: 3000
+      });
+    } else {
+      toast.error('Cannot fire crew member', {
+        description: result.message,
+        duration: 3000
+      });
+    }
   };
 
   const handleAssignTask = (crewId: string, taskId: string) => {
@@ -86,12 +107,32 @@ export const CrewPanel: React.FC<CrewPanelProps> = ({ onClose }) => {
         task.duration, 
         task.skill
       );
-      console.log('[CrewPanel] Assign task result:', result);
+      
+      if (result.success) {
+        toast.success(result.message, {
+          description: `Estimated completion: ${task.displayDuration}`,
+          duration: 3000
+        });
+      } else {
+        toast.error('Cannot assign task', {
+          description: result.message,
+          duration: 3000
+        });
+      }
     }
   };
 
   const handleCancelTask = (crewId: string) => {
+    const member = crew.activeCrew.find(c => c.id === crewId);
+    const taskName = member?.currentTask?.name;
     crew.cancelTask(crewId);
+    
+    if (taskName) {
+      toast.info('Task cancelled', {
+        description: `${member.name} stopped working on ${taskName}`,
+        duration: 2000
+      });
+    }
   };
 
   const toggleExpanded = (crewId: string) => {
