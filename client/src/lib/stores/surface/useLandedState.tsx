@@ -1,10 +1,8 @@
-import { create } from "zustand";
-import { useObjectiveTriggers } from "../economy/useObjectiveTriggers";
-import { memoryProfiler } from "../../utils/MemoryProfiler";
-import { useSolarSystem } from "../space/useSolarSystem";
-import { planets } from "../../planetData";
+import {create} from "zustand";
+import {useMusicPlayer, useObjectiveTriggers, useSolarSystem} from "@/lib/stores";
+import {memoryProfiler} from "../../utils/MemoryProfiler";
+import {planets} from "../../planetData";
 import * as THREE from "three";
-import { useMusicPlayer } from "../ui/useMusicPlayer";
 
 interface LandedState {
   isLanded: boolean;
@@ -38,7 +36,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     const state = get();
     if (state.takeoffTimeoutId) {
       clearTimeout(state.takeoffTimeoutId);
-      console.log(`[TAKEOFF-TIMEOUT] Cancelled pending takeoff timeout due to new landing on ${planetName}`);
     }
     
     // Memory profiling: Before landing
@@ -56,7 +53,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
       landingUniverseTime: universeTime,
       takeoffTimeoutId: null // Clear timeout ID
     });
-    console.log(`Successfully landed on ${planetName} at universe time ${universeTime}`);
     
     // Memory profiling: After landing
     if (import.meta.env.DEV) {
@@ -71,7 +67,7 @@ export const useLandedState = create<LandedState>((set, get) => ({
       const triggers = useObjectiveTriggers.getState();
       triggers.reportProgress('location', { planet: planetName });
       triggers.reportLocationProgress(undefined, undefined, planetName);
-      console.log(`[OBJECTIVE-TRIGGER] Reported landing on ${planetName} for mission objectives`);
+
     } catch (error) {
       console.error('[OBJECTIVE-TRIGGER] Error reporting landing:', error);
     }
@@ -80,7 +76,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     try {
       const musicPlayer = useMusicPlayer.getState();
       musicPlayer.resetTimerOnLocationChange('planet');
-      console.log(`[MUSIC] Triggered planet entry music schedule for ${planetName}`);
     } catch (error) {
       console.error('[MUSIC] Error triggering planet music:', error);
     }
@@ -90,8 +85,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     const state = get();
     if (state.isLanded && state.landedPlanet) {
       const duration = state.getLandedDuration();
-      console.log(`Took off from ${state.landedPlanet} after ${Math.round(duration / 1000)} seconds`);
-      
       // Memory profiling: Before takeoff
       if (import.meta.env.DEV) {
         memoryProfiler.logCurrentStatus(`Before takeoff from ${state.landedPlanet}`);
@@ -121,7 +114,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     try {
       const musicPlayer = useMusicPlayer.getState();
       musicPlayer.resetTimerOnLocationChange('space');
-      console.log(`[MUSIC] Triggered space entry music schedule after takeoff`);
     } catch (error) {
       console.error('[MUSIC] Error triggering space music:', error);
     }
@@ -138,31 +130,20 @@ export const useLandedState = create<LandedState>((set, get) => ({
     const state = get();
     if (state.takeoffTimeoutId) {
       clearTimeout(state.takeoffTimeoutId);
-      console.log(`[TAKEOFF-TIMEOUT] Cancelled pending takeoff timeout due to new takeoff state: ${takingOff}`);
     }
     
     set({ 
       isTakingOff: takingOff,
       takeoffTimeoutId: null // Clear timeout ID
     });
-    if (takingOff) {
-      console.log(`Initiating takeoff sequence from ${get().landedPlanet}`);
-    }
   },
   
   completeTakeoff: () => {
     const state = get();
     const previousPlanet = state.landedPlanet;
-    console.log(`[TAKEOFF-COMPLETE] Starting completion from ${previousPlanet}`, {
-      isLanded: state.isLanded,
-      isTakingOff: state.isTakingOff,
-      landedPlanet: state.landedPlanet
-    });
-    
     // Cancel any existing timeout to prevent race conditions
     if (state.takeoffTimeoutId) {
       clearTimeout(state.takeoffTimeoutId);
-      console.log(`[TAKEOFF-TIMEOUT] Cancelled existing timeout before creating new one`);
     }
     
     // Store expected state values before creating timeout
@@ -170,7 +151,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     const expectedIsTakingOff = false; // We expect isTakingOff to be false after we set it
     
     // First set isTakingOff to false to unmount the transition overlay
-    console.log(`[TAKEOFF-COMPLETE] Setting isTakingOff to false to unmount transition...`);
     set({ 
       isTakingOff: false,
       takeoffPlanetName: previousPlanet // Store for positioning
@@ -182,23 +162,14 @@ export const useLandedState = create<LandedState>((set, get) => ({
       const currentState = get();
       
       // Verify we're still in the expected state
-      if (currentState.isTakingOff !== expectedIsTakingOff) {
-        console.log(`[TAKEOFF-TIMEOUT] State guard failed: isTakingOff changed from ${expectedIsTakingOff} to ${currentState.isTakingOff}, skipping delayed update`);
-        return;
-      }
-      
-      if (currentState.landedPlanet !== expectedPlanet) {
-        console.log(`[TAKEOFF-TIMEOUT] State guard failed: landedPlanet changed from ${expectedPlanet} to ${currentState.landedPlanet}, skipping delayed update`);
+        if (currentState.isTakingOff !== expectedIsTakingOff || currentState.landedPlanet !== expectedPlanet) {
         return;
       }
       
       // Additional guard: Check if we've already completed the takeoff
       if (!currentState.isLanded) {
-        console.log(`[TAKEOFF-TIMEOUT] State guard: Already in space (isLanded=false), skipping redundant update`);
         return;
       }
-      
-      console.log(`[TAKEOFF-COMPLETE] State guards passed, now setting isLanded to false to switch to space scene...`);
       set({ 
         isLanded: false,
         landedPlanet: null,
@@ -207,12 +178,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
       
       // Log the new state
       const newState = get();
-      console.log(`[TAKEOFF-COMPLETE] State after delayed update:`, {
-        isLanded: newState.isLanded,
-        isTakingOff: newState.isTakingOff,
-        landedPlanet: newState.landedPlanet,
-        takeoffPlanetName: newState.takeoffPlanetName
-      });
     }, 100); // 100ms delay to ensure clean transition
     
     // Store the timeout ID for potential cancellation
@@ -228,7 +193,6 @@ export const useLandedState = create<LandedState>((set, get) => ({
     try {
       const triggers = useObjectiveTriggers.getState();
       triggers.reportProgress('location', { planet: 'space' });
-      console.log(`[OBJECTIVE-TRIGGER] Reported return to space after takeoff`);
     } catch (error) {
       console.error('[OBJECTIVE-TRIGGER] Error reporting takeoff:', error);
     }
@@ -237,12 +201,9 @@ export const useLandedState = create<LandedState>((set, get) => ({
     try {
       const musicPlayer = useMusicPlayer.getState();
       musicPlayer.resetTimerOnLocationChange('space');
-      console.log(`[MUSIC] Triggered space entry music schedule after takeoff`);
     } catch (error) {
       console.error('[MUSIC] Error triggering space music:', error);
     }
-    
-    console.log(`[TAKEOFF-COMPLETE] Takeoff sequence FULLY COMPLETE!`);
   },
   
   // Calculate orbital position for takeoff based on current universe time
@@ -280,10 +241,8 @@ export const useLandedState = create<LandedState>((set, get) => ({
       0,
       Math.cos(angle + Math.PI / 4) * tangentialSpeed
     );
-    
-    console.log(`[TAKEOFF] Positioning ship at orbit around ${takeoffPlanetName} at position:`, shipPosition, 'with velocity:', velocity);
-    
-    // Clear takeoff planet after calculating position
+
+      // Clear takeoff planet after calculating position
     set({ takeoffPlanetName: null });
     
     return { position: shipPosition, velocity };

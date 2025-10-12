@@ -80,7 +80,6 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
 
             useSolarSystem.getState().setCameraPosition(cameraPos);
             useLandedState.getState().setLanded(planetName);
-            console.log(`[MISSION-DEBUG] Quick traveled to ${planetName}`);
         }
     };
 
@@ -116,7 +115,6 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
         creditCost,
         fuelCost
       );
-        console.warn('transaction', result);
       await new Promise(resolve => setTimeout(resolve, 500));
         quickTravelToPlanet(targetPlanet.name);
 

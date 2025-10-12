@@ -1,52 +1,47 @@
-import { useState, useEffect, useRef, Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import {Suspense, useEffect, useRef, useState} from "react";
+import {Canvas} from "@react-three/fiber";
+import {Bloom, DepthOfField, EffectComposer, Vignette,} from "@react-three/postprocessing";
+import {WebGLCheckWrapper} from "../shared/WebGLCheckWrapper";
+import {useGame} from "../../lib/stores/ui/useGame";
+import {useAuthStore} from "../../lib/stores/auth/useAuthStore";
+import {usePlayer} from "../../lib/stores/player/usePlayer";
+import {useCredits} from "../../lib/stores/economy/useCredits";
+import {usePlunderverseMissions} from "../../lib/stores/economy/usePlunderverseMissions";
+import {useAudio} from "../../lib/stores/ui/useAudio";
+import {useMusicPlayer} from "../../lib/stores/ui/useMusicPlayer";
+import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
+import {useLandedState} from "../../lib/stores/surface/useLandedState";
+import {MusicPlayer} from "./MusicPlayer";
+import {VideoModal} from "../shared/VideoModal";
+import {GalleryImage, ImageGallery} from "../shared/ImageGallery";
+import {AuthScreen} from "../auth/AuthScreen";
+import {GameTransitionOverlay} from "./GameTransitionOverlay";
+import {HandbookContent} from "./HandbookContent";
+import {gameApi} from "../../services/gameApi";
+import {restoreGameState} from "../../utils/saveGame";
+import {AUDIO_CONFIG} from "../../lib/audioConfig";
+import {SolarSystemBackground} from "../space/SolarSystemBackground";
+import {SplashSolarSystem} from "../space/SplashSolarSystem";
 import {
-  EffectComposer,
-  Bloom,
-  DepthOfField,
-  Vignette,
-} from "@react-three/postprocessing";
-import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
-import { useGame } from "../../lib/stores/ui/useGame";
-import { useAuthStore } from "../../lib/stores/auth/useAuthStore";
-import { usePlayer } from "../../lib/stores/player/usePlayer";
-import { useCredits } from "../../lib/stores/economy/useCredits";
-import { usePlunderverseMissions } from "../../lib/stores/economy/usePlunderverseMissions";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { useMusicPlayer } from "../../lib/stores/ui/useMusicPlayer";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { MusicPlayer } from "./MusicPlayer";
-import { VideoModal } from "../shared/VideoModal";
-import { ImageGallery, GalleryImage } from "../shared/ImageGallery";
-import { AuthScreen } from "../auth/AuthScreen";
-import { GameTransitionOverlay } from "./GameTransitionOverlay";
-import { HandbookContent } from "./HandbookContent";
-import { gameApi } from "../../services/gameApi";
-import { restoreGameState } from "../../utils/saveGame";
-import { AUDIO_CONFIG } from "../../lib/audioConfig";
-import { SolarSystemBackground } from "../space/SolarSystemBackground";
-import { SplashSolarSystem } from "../space/SplashSolarSystem";
-import {
-  Play,
-  Image,
-  Video,
-  LogIn,
-  UserPlus,
-  Gamepad2,
-  Star,
-  User,
-  Coins,
-  MapPin,
-  Sparkles,
-  Award,
-  Target,
-  ChevronDown,
-  ChevronUp,
-  Github,
-  AlertCircle,
-  Camera,
-  X,
+    AlertCircle,
+    Award,
+    Camera,
+    ChevronDown,
+    ChevronUp,
+    Coins,
+    Gamepad2,
+    Github,
+    Image,
+    LogIn,
+    MapPin,
+    Play,
+    Sparkles,
+    Star,
+    Target,
+    User,
+    UserPlus,
+    Video,
+    X,
 } from "lucide-react";
 
 export function EnhancedSplashScreen() {
@@ -1031,8 +1026,7 @@ export function EnhancedSplashScreen() {
 
             {/* Modal Header */}
             <h2 className="text-2xl font-bold text-amber-400 mb-4 flex items-center">
-              <Gamepad2 className="w-6 h-6 mr-2" />
-              Plunderverse Handbook
+                Plunderverse Handbook
             </h2>
 
             {/* Scrollable Content Container */}
