@@ -1,42 +1,42 @@
-import { useRef, useMemo, useState, useEffect } from "react";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { KeyboardControls, useTexture } from "@react-three/drei";
-import { WebGLCheckWrapper } from "../shared/WebGLCheckWrapper";
-import { EffectComposer, Bloom } from "@react-three/postprocessing";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
-import { useMining } from "../../lib/stores/economy/useMining";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { useEquipment } from "../../lib/stores/ship/useEquipment";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { planets, ResourceData } from "../../lib/planetData";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {Canvas, useFrame} from "@react-three/fiber";
+import {KeyboardControls, useTexture} from "@react-three/drei";
+import {WebGLCheckWrapper} from "../shared/WebGLCheckWrapper";
+import {Bloom, EffectComposer} from "@react-three/postprocessing";
 import {
-  SurfaceMovementController,
-  MiningBeamState,
-} from "./SurfaceMovementController";
-import { FlashlightSystem } from "./FlashlightSystem";
-import { DebugCollisionBoxes } from "../debug/DebugCollisionBoxes";
-import { MiningLaser } from "./MiningLaser";
-import { ResourceNode } from "./EnhancedResourceNode";
-import { MiningBeamVisual } from "./MiningBeamVisual";
-import { ScreenEffects } from "./ScreenEffects";
-import { CameraShake } from "./CameraShake";
-import { ResourceManager } from "../../lib/utils/ResourceManager";
+    useAudio,
+    useDestroyedNodes,
+    useFlashlight,
+    useLandedState,
+    useMining,
+    useSettings,
+    useSolarSystem,
+    useSurfaceLighting,
+    useTerrain,
+    useWind
+} from "@/lib/stores";
+import {planets, ResourceData} from "@/lib/planetData.ts";
+import {MiningBeamState, SurfaceMovementController,} from "./SurfaceMovementController";
+import {FlashlightSystem} from "./FlashlightSystem";
+import {DebugCollisionBoxes} from "../debug/DebugCollisionBoxes";
+import {MiningLaser} from "./MiningLaser";
+import {ResourceNode} from "./EnhancedResourceNode";
+import {MiningBeamVisual} from "./MiningBeamVisual";
+import {ScreenEffects} from "./ScreenEffects";
+import {CameraShake} from "./CameraShake";
+import {ResourceManager} from "@/lib/utils/ResourceManager.ts";
 import * as THREE from "three";
+import {AUDIO_CONFIG} from "@/lib/audioConfig.ts";
+import {SurfaceScatter} from "./SurfaceScatter";
+import {AtmosphericEffects} from "./AtmosphericEffects";
+import {AtmosphericSounds} from "./AtmosphericSounds";
+import {useWeatherUpdates} from "../../hooks/useWeatherUpdates";
+import {PlanetTransitionOverlay} from "./PlanetTransition";
 
-import { usePlayer } from "../../lib/stores/player/usePlayer";
-import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
-import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
-import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
-import { useSurfaceLighting } from "../../lib/stores/surface/useSurfaceLighting";
-import { useSettings } from "../../lib/stores/ui/useSettings";
-import { AUDIO_CONFIG } from "../../lib/audioConfig";
-import { useTerrain } from "../../lib/stores/surface/useTerrain";
-import { useWind } from "../../lib/stores/surface/useWind";
-import { SurfaceScatter } from "./SurfaceScatter";
-import { AtmosphericEffects } from "./AtmosphericEffects";
-import { AtmosphericSounds } from "./AtmosphericSounds";
-import { useWeatherUpdates } from "../../hooks/useWeatherUpdates";
-import { PlanetTransitionOverlay } from "./PlanetTransition";
+// TODO: When the Solar System Sun component is available, import it and render it at the Sun anchor in SurfaceSky.
+// Example:
+import {SolarSun} from "../space/Sun";
+
 
 function SurfaceTerrain({ planetName }: { planetName: string }) {
   const meshRef = useRef<THREE.Mesh>(null);
@@ -267,6 +267,7 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 
   // Load all planet textures for sky rendering
   // we should have these in the planet store
+    // Textures and planet data are sourced from planetData; SurfaceSky reuses them for consistency.
   const earthTexture = useTexture("/textures/planets/2k_earth_daymap.jpg");
   const marsTexture = useTexture("/textures/planets/2k_mars.jpg");
   const venusTexture = useTexture("/textures/planets/2k_venus_surface.jpg");
@@ -368,21 +369,20 @@ function SurfaceSky({ planetName }: { planetName: string }) {
       distance: number;
     }> = [];
 
-    // Add the Sun as a visible object
-    const sunDistance = currentPosition.length();
-    const sunDirection = currentPosition.clone().negate().normalize();
-    // Sun at fixed distance on sky dome
-    // the sun position is calculated based on the current planet's position
-    // and the sun's position relative to the solar system origin and time of day
-
-    const sunSkyPosition = sunDirection.clone().multiplyScalar(350);
-    const sunApparentSize = Math.min(40, Math.max(8, 15 * (30 / sunDistance)));
+      // Add the Sun as a visible object using live lighting position (time-of-day)
+      const sunSkyPosition = getSunSkyPositionForDome();
+      const elevationNorm = Math.max(0, Math.min(1, sunSkyPosition.y / 400));
+      // Apparent size varies subtly with (perceived) elevation and intensity
+      const sunApparentSize = Math.min(
+          40,
+          Math.max(8, 10 + elevationNorm * 10 + (getCurrentSunIntensity() || 0) * 6)
+      );
 
     visibleObjects.push({
       planet: { name: "Sun", size: 15, color: "#FDB813" },
       skyPosition: sunSkyPosition,
       apparentSize: sunApparentSize,
-      distance: sunDistance,
+        distance: 0,
     });
 
     // Add other planets
@@ -642,31 +642,56 @@ function SurfaceSky({ planetName }: { planetName: string }) {
               : null;
 
           return (
-            <mesh
-              key={`${celestialObject.planet.name}-${index}`}
-              position={[
-                celestialObject.skyPosition.x,
-                celestialObject.skyPosition.y,
-                celestialObject.skyPosition.z,
-              ]}
-            >
-              <sphereGeometry args={[celestialObject.apparentSize, 16, 16]} />
-              {celestialObject.planet.name === "Sun" ? (
-                <meshStandardMaterial
-                  color={celestialObject.planet.color}
-                  emissive={celestialObject.planet.color}
-                  emissiveIntensity={0.8}
-                />
-              ) : texture ? (
-                <meshStandardMaterial
-                  map={texture}
-                  metalness={0.1}
-                  roughness={0.8}
-                />
+              celestialObject.planet.name === "Sun" ? (
+                  <group
+                      key={`${celestialObject.planet.name}-${index}`}
+                      position={[
+                          celestialObject.skyPosition.x,
+                          celestialObject.skyPosition.y,
+                          celestialObject.skyPosition.z,
+                      ]}
+                  >
+                      <SolarSun
+                          radius={celestialObject.apparentSize}
+                          emitLight={false}
+                          glowColor={getCurrentSunColor()}
+                          glowStrength={(() => {
+                              const yNorm = celestialObject.skyPosition.y / 400; // -... to ~1
+                              // smoothstep(-0.05, 0.15, yNorm)
+                              const tRaw = (yNorm - (-0.05)) / (0.15 - (-0.05));
+                              const t = Math.max(0, Math.min(1, tRaw));
+                              const smooth = t * t * (3 - 2 * t);
+                              return Math.min(
+                                  2,
+                                  Math.max(
+                                      0,
+                                      (0.25 + Math.max(0, yNorm) * 0.9 + (getCurrentSunIntensity() || 0) * 0.2) * smooth
+                                  )
+                              );
+                          })()}
+                      />
+                  </group>
               ) : (
-                <meshBasicMaterial color={celestialObject.planet.color} />
-              )}
-            </mesh>
+                  <mesh
+                      key={`${celestialObject.planet.name}-${index}`}
+                      position={[
+                          celestialObject.skyPosition.x,
+                          celestialObject.skyPosition.y,
+                          celestialObject.skyPosition.z,
+                      ]}
+                  >
+                      <sphereGeometry args={[celestialObject.apparentSize, 16, 16]}/>
+                      {texture ? (
+                          <meshStandardMaterial
+                              map={texture}
+                              metalness={0.1}
+                              roughness={0.8}
+                          />
+                      ) : (
+                          <meshBasicMaterial color={celestialObject.planet.color}/>
+                      )}
+                  </mesh>
+              )
           );
         })}
       </group>
@@ -708,6 +733,30 @@ function SurfaceSky({ planetName }: { planetName: string }) {
 // Store for sun position to be used by lens flare
 let currentSunPosition = new THREE.Vector3(50, 200, 50);
 let currentSunIntensity = 0.9;
+let currentSunColor = "#FFFFFF";
+
+// Helpers so other scenes/components (e.g., the Solar System Sun) can reuse the live sun data
+export function getCurrentSunPosition() {
+    return currentSunPosition.clone();
+}
+
+export function getCurrentSunColor() {
+    return currentSunColor;
+}
+
+export function getCurrentSunIntensity() {
+    return currentSunIntensity;
+}
+
+// Map the live (directional) sun position to a sky-dome position for surface rendering
+function getSunSkyPositionForDome(): THREE.Vector3 {
+    // Normalize the current sun direction and project it onto the sky dome radius
+    const dir = currentSunPosition.clone().normalize();
+    const baseRadius = 350; // same order as other sky elements
+    // allow a bit of parallax based on distance (not physically accurate, just for depth feel)
+    const extra = Math.min(150, Math.max(0, currentSunPosition.length() - 200) * 0.5);
+    return dir.multiplyScalar(baseRadius + extra);
+}
 
 function SurfaceLighting() {
   const { landedPlanet } = useLandedState();
@@ -843,11 +892,12 @@ function SurfaceLighting() {
   const lightingData = surfaceLighting.getCurrentLightingData(
     automaticLightingData,
   );
-  const { sunPosition, sunIntensity, ambientIntensity = 0.02 } = lightingData;
+    const {sunPosition, sunIntensity, ambientIntensity = 0.02, sunColor} = lightingData;
 
   // Store sun position and intensity for lens flare
   currentSunPosition = sunPosition.clone();
   currentSunIntensity = sunIntensity;
+    currentSunColor = sunColor;
 
   // Update time of day in the lighting store
   useEffect(() => {
@@ -862,7 +912,7 @@ function SurfaceLighting() {
       planet &&
       automaticLightingData &&
       typeof automaticLightingData.sunElevation === "number" &&
-      typeof ambientIntensity === "number"
+        true
     ) {
       const elevationDegrees = surfaceLighting.manualOverride
         ? surfaceLighting.sunElevation.toFixed(1)
@@ -1361,7 +1411,7 @@ function PostProcessingEffects() {
 }
 
 export function PlanetSurfaceScene() {
-  const { isLanded, landedPlanet, isTakingOff, completeTakeoff } =
+    const {isLanded, landedPlanet, isTakingOff} =
     useLandedState();
   const { isOn: isFlashlightOn } = useFlashlight();
   const { playTakeoff } = useAudio();
@@ -1378,31 +1428,17 @@ export function PlanetSurfaceScene() {
 
   // Cleanup all planet surface resources when component unmounts or planet changes
   useEffect(() => {
-    console.log(
-      `[ResourceManager] PlanetSurfaceScene mounted for planet: ${landedPlanet}`,
-    );
-
     return () => {
-      console.log(
-        `[ResourceManager] PlanetSurfaceScene unmounting - disposing all planet-surface resources and stores`,
-      );
 
       // Clean up surface-related stores
       useWind.getState().cleanup();
-      console.log("[PlanetSurfaceScene] Wind store cleanup complete");
 
       // Dispose all resources tagged with 'planet-surface'
       const disposedCount = resourceManager.disposeByTag("planet-surface");
-      console.log(
-        `[ResourceManager] Disposed ${disposedCount} planet-surface resources`,
-      );
 
       // Also dispose resources specific to this planet
       if (landedPlanet) {
         const planetDisposedCount = resourceManager.disposeByTag(landedPlanet);
-        console.log(
-          `[ResourceManager] Disposed ${planetDisposedCount} resources specific to ${landedPlanet}`,
-        );
       }
     };
   }, [landedPlanet]);
@@ -1475,7 +1511,6 @@ export function PlanetSurfaceScene() {
           }}
           onComplete={() => {
             console.log("[TAKEOFF] Transition complete, switching to space");
-            completeTakeoff();
           }}
         />
       )}

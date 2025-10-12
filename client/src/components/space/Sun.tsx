@@ -1,14 +1,33 @@
-import { useRef, useMemo, useEffect } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Sphere, Billboard, useTexture } from "@react-three/drei";
+import {useEffect, useMemo, useRef} from "react";
+import {useFrame} from "@react-three/fiber";
+import {Billboard, useTexture} from "@react-three/drei";
 import * as THREE from "three";
 
 type SunProps = {
-  radius?: number;
-  disableCoronaSprites?: boolean;
+    radius?: number;
+    disableCoronaSprites?: boolean;
+    /** When true, adds a local point light at the Sun's center (useful in the Solar System scene). */
+    emitLight?: boolean;
+    /** Intensity for the optional point light. */
+    lightIntensity?: number;
+    /** Color for the optional point light. */
+    lightColor?: string;
+
+    /** Multiplier (0..2) for visual glow/corona strength across scenes. */
+    glowStrength?: number;
+    /** Override color used for the additive glow shell (defaults to lightColor). */
+    glowColor?: string;
 };
 
-export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
+export function Sun({
+                        radius = 5,
+                        disableCoronaSprites = false,
+                        emitLight = true,
+                        lightIntensity = 120,
+                        lightColor = "#FFD77A",
+                        glowStrength = 1.0,
+                        glowColor,
+                    }: SunProps) {
   const coreRef = useRef<THREE.Mesh>(null);
   const innerGlowRef = useRef<THREE.Mesh>(null);
   const outerGlowRef = useRef<THREE.Mesh>(null);
@@ -117,7 +136,7 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       }
     `;
 
-    const mat = new THREE.ShaderMaterial({
+      return new THREE.ShaderMaterial({
       uniforms,
       vertexShader: vert,
       fragmentShader: frag,
@@ -126,7 +145,6 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
       depthTest: true,
       side: THREE.FrontSide,
     });
-    return mat;
   }, [sunTex, noiseTex]);
 
   // Fresnel glow shells (cheap)
@@ -221,16 +239,29 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
 
   return (
     <group>
-      {/* Sunlight for planets - strong directional light from sun's center */}
-      <pointLight
-        position={[0, 0, 0]}
-        intensity={120}  // Slightly increased for better day/night contrast
-        distance={5000}
-        decay={1}
-        color={"#FFD77A"}
-        castShadow={false}  // Shadows are expensive, rely on shading
-      />
+        {/* Optional local light. Enable in Solar System scene; disable when embedding in sky-dome. */}
+        {emitLight && (
+            <pointLight
+                position={[0, 0, 0]}
+                intensity={lightIntensity}
+                distance={5000}
+                decay={1}
+                color={lightColor}
+                castShadow={false}
+            />
+        )}
 
+        {/* Additive outer glow shell; scales with glowStrength and radius */}
+        <mesh>
+            <sphereGeometry args={[radius * 1.18, 32, 32]}/>
+            <meshBasicMaterial
+                color={glowColor || lightColor}
+                transparent
+                opacity={Math.max(0, Math.min(1, 0.35 * glowStrength))}
+                blending={THREE.AdditiveBlending}
+                depthWrite={false}
+            />
+        </mesh>
       {/* Core */}
       <mesh ref={coreRef}>
         <sphereGeometry args={[radius, 64, 64]} />
@@ -299,3 +330,5 @@ export function Sun({ radius = 5, disableCoronaSprites = false }: SunProps) {
     </group>
   );
 }
+
+export {Sun as SolarSun};
