@@ -50,8 +50,14 @@ export interface MobileLayoutState {
     right: number;
   };
   
+  // Clean view mode - hides non-essential UI
+  isCleanViewMode: boolean;
+  
   // Update safe areas (for notches, home indicators, etc.)
   setSafeAreas: (areas: Partial<MobileLayoutState['safeAreas']>) => void;
+  
+  // Toggle clean view mode
+  setCleanViewMode: (enabled: boolean) => void;
 }
 
 export const useMobileLayout = create<MobileLayoutState>((set) => ({
@@ -73,8 +79,11 @@ export const useMobileLayout = create<MobileLayoutState>((set) => ({
   },
   
   safeAreas: { top: 0, bottom: 0, left: 0, right: 0 },
+  isCleanViewMode: false,
   
   setSafeAreas: (areas) => set((state) => ({
     safeAreas: { ...state.safeAreas, ...areas }
   })),
+  
+  setCleanViewMode: (enabled) => set({ isCleanViewMode: enabled }),
 }));

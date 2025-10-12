@@ -3,6 +3,7 @@ import { Wifi, WifiOff, CloudUpload, CloudOff, Clock, AlertTriangle, Minimize2 }
 import { formatDistanceToNow } from 'date-fns';
 import MiniGameSyncService from '../../services/MiniGameSyncService';
 import OfflineStorageService from '../../services/OfflineStorageService';
+import { useMobileLayout } from '../../stores/useMobileLayout';
 import { cn } from '../../lib/utils';
 
 interface OfflineIndicatorProps {
@@ -11,6 +12,7 @@ interface OfflineIndicatorProps {
 }
 
 export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ className, compact = false }) => {
+  const { isCleanViewMode } = useMobileLayout();
   const [connectionStatus, setConnectionStatus] = useState<'online' | 'offline' | 'syncing'>('online');
   const [lastSyncTime, setLastSyncTime] = useState<number>(0);
   const [queueSize, setQueueSize] = useState<number>(0);
@@ -140,6 +142,9 @@ export const OfflineIndicator: React.FC<OfflineIndicatorProps> = ({ className, c
     const syncService = MiniGameSyncService.getInstance();
     await syncService.forceOfflineSync();
   };
+
+  // Hide in clean view mode
+  if (isCleanViewMode) return null;
 
   // Minimized view - compact status indicator optimized for mobile touch
   if (isMinimized) {
