@@ -1,14 +1,13 @@
-import React, { useEffect } from 'react';
-import { useLandedState } from '../../lib/stores/surface/useLandedState';
-import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
-import { useUILayout } from '../ui/UILayoutManager';
-import { SpaceUIPanel } from '../ui/SpaceUIPanel';
-import { NavigationPanel } from './NavigationPanel';
-import { MinimapPanel } from './MinimapPanel';
-import { ShipSystemsPanel } from '../../components/ship/ShipSystemsPanel';
-import { ShipUpgradesPanel } from '../../components/ship/ShipUpgradesPanel';
-import { QuickRepairPanel } from '../../components/ship/QuickRepairPanel';
-import { ParrotSettingsPanel } from './ParrotSettingsPanel';
+import React, {useEffect} from 'react';
+import {useLandedState} from '@/lib/stores';
+import {useHUDContext} from '../../lib/stores/ui/useHUDContext';
+import {useUILayout} from '../ui/UILayoutManager';
+import {SpaceUIPanel} from '../ui/SpaceUIPanel';
+import {NavigationPanel} from './NavigationPanel';
+import {MinimapPanel} from './MinimapPanel';
+import {ShipSystemsPanel} from '../../components/ship/ShipSystemsPanel';
+import {ShipUpgradesPanel} from '../../components/ship/ShipUpgradesPanel';
+import {QuickRepairPanel} from '../../components/ship/QuickRepairPanel';
 
 export const NavigationSidebar: React.FC = () => {
   const { isLanded } = useLandedState();
@@ -149,19 +148,6 @@ export const NavigationSidebar: React.FC = () => {
           <QuickRepairPanel />
         </SpaceUIPanel>
       )}
-
-      {/* Parrot Settings - Always available in right sidebar */}
-      <SpaceUIPanel
-        id="parrot-settings"
-        title="PARROT SETTINGS"
-        icon="🦜"
-        zone="right-sidebar"
-        priority={1}
-        defaultExpanded={false}
-        canCollapse={true}
-      >
-        <ParrotSettingsPanel />
-      </SpaceUIPanel>
     </>
   );
 };

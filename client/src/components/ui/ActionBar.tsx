@@ -256,7 +256,7 @@ export function ActionBar() {
           <div className="
             absolute inset-0 
             bg-gray-900
-            p-2
+             p-2
             border-l border-cyan-400/50 
             rounded-l-lg 
             pointer-events-auto
