@@ -104,7 +104,7 @@ export const MobileSlidePanel: React.FC<MobileSlidePanelProps> = ({
             className={`fixed inset-x-0 bottom-0 z-[70] ${getHeightClass()}
                       bg-gradient-to-b from-slate-900 to-slate-800 
                       border-t-2 border-orange-600/30 rounded-t-2xl
-                      shadow-2xl ${isDragging ? 'cursor-grabbing' : ''}`}
+                      shadow-2xl flex flex-col ${isDragging ? 'cursor-grabbing' : ''}`}
           >
             {/* Drag Handle */}
             {showHandle && (
@@ -130,7 +130,7 @@ export const MobileSlidePanel: React.FC<MobileSlidePanelProps> = ({
             </div>
             
             {/* Content */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-4">
               {children}
             </div>
           </motion.div>
