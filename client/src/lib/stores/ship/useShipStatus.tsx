@@ -127,12 +127,15 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
         }
         
         // Trigger game over state (death screen will be shown)
-        try {
-          console.log(`[DEBUG-DEATH] Setting game state to ended`);
-          useGame.getState().end();
-        } catch (error) {
-          console.error(`[DEBUG-DEATH] Error triggering game over:`, error);
-        }
+        // Use setTimeout to allow React to finish current render cycle before unmounting UI
+        setTimeout(() => {
+          try {
+            console.log(`[DEBUG-DEATH] Setting game state to ended`);
+            useGame.getState().end();
+          } catch (error) {
+            console.error(`[DEBUG-DEATH] Error triggering game over:`, error);
+          }
+        }, 100);
       }
       
       // Show damage notifications

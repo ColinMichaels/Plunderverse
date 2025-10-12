@@ -84,12 +84,14 @@ export class CloudSyncManager {
     
     // Construct WebSocket URL based on environment
     let wsUrl;
-    if (import.meta.env.DEV) {
-      // Development: use localhost with explicit port
+    // Check if we're in actual local development (localhost) vs Replit preview
+    const isLocalDev = host === 'localhost' || host === '127.0.0.1';
+    
+    if (isLocalDev) {
+      // True local development: use localhost with explicit port
       wsUrl = `${protocol}//localhost:5000/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     } else {
-      // Production: use current host with appropriate port
-      // In Replit production, WebSocket uses standard ports (443 for wss, 80 for ws)
+      // Replit or production: use current host with appropriate port
       const port = window.location.port;
       if (port && port !== '80' && port !== '443') {
         wsUrl = `${protocol}//${host}:${port}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
