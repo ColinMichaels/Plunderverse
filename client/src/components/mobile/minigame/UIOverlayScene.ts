@@ -52,6 +52,14 @@ export class UIOverlayScene extends Phaser.Scene {
   private currentCredits: number = 0;
   private miniMapGraphics?: Phaser.GameObjects.Graphics;
   private playerIndicator?: Phaser.GameObjects.Graphics;
+  
+  // Collapsible UI state
+  private healthBarCollapsed: boolean = false;
+  private creditsCollapsed: boolean = false;
+  private miniMapCollapsed: boolean = false;
+  private healthBarContainer?: Phaser.GameObjects.Container;
+  private creditsContainer?: Phaser.GameObjects.Container;
+  private miniMapContainer?: Phaser.GameObjects.Container;
 
   constructor() {
     super({ key: 'UIOverlayScene' });
@@ -193,8 +201,10 @@ export class UIOverlayScene extends Phaser.Scene {
     const width = 200;
     const height = 20;
     
+    this.healthBarContainer = this.add.container(0, 0);
+    
     // Health bar background
-    this.add.rectangle(x, y, width + 4, height + 4, 0x000000, 0.7)
+    const bg = this.add.rectangle(x, y, width + 4, height + 4, 0x000000, 0.7)
       .setOrigin(0, 0)
       .setStrokeStyle(2, 0x00ffff);
     
@@ -210,9 +220,44 @@ export class UIOverlayScene extends Phaser.Scene {
     }).setOrigin(0.5);
     
     // Health icon
-    this.add.text(x - 5, y + height / 2, '❤️', {
+    const healthIcon = this.add.text(x - 5, y + height / 2, '❤️', {
       fontSize: '16px'
     }).setOrigin(1, 0.5);
+    
+    // Minimize button
+    const minimizeBtn = this.add.text(x + width + 10, y + height / 2, '−', {
+      fontSize: '20px',
+      color: '#00ffff',
+      fontFamily: 'Arial'
+    }).setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.toggleHealthBar());
+    
+    this.healthBarContainer.add([bg, this.healthBar, this.healthText, healthIcon, minimizeBtn]);
+  }
+  
+  private toggleHealthBar(): void {
+    this.healthBarCollapsed = !this.healthBarCollapsed;
+    
+    if (this.healthBarCollapsed) {
+      // Show only icon when collapsed
+      this.healthBarContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 3) return; // Keep health icon visible
+        if (index === 4) { // Update minimize button to expand
+          obj.setText('+');
+          return;
+        }
+        obj.setVisible(false);
+      });
+    } else {
+      // Show all elements
+      this.healthBarContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 4) { // Update minimize button
+          obj.setText('−');
+        }
+        obj.setVisible(true);
+      });
+    }
   }
 
   private updateHealthBar(): void {
@@ -249,13 +294,15 @@ export class UIOverlayScene extends Phaser.Scene {
     const x = this.cameras.main.width - 20;
     const y = 20;
     
+    this.creditsContainer = this.add.container(0, 0);
+    
     // Credits background
-    this.add.rectangle(x - 100, y, 180, 30, 0x000000, 0.7)
+    const bg = this.add.rectangle(x - 100, y, 180, 30, 0x000000, 0.7)
       .setOrigin(0.5, 0)
       .setStrokeStyle(2, 0xffaa00);
     
     // Credits icon
-    this.add.text(x - 170, y + 15, '💰', {
+    const creditsIcon = this.add.text(x - 170, y + 15, '💰', {
       fontSize: '16px'
     }).setOrigin(0.5);
     
@@ -265,6 +312,41 @@ export class UIOverlayScene extends Phaser.Scene {
       color: '#ffaa00',
       fontFamily: 'Arial'
     }).setOrigin(0.5);
+    
+    // Minimize button
+    const minimizeBtn = this.add.text(x - 20, y + 15, '−', {
+      fontSize: '20px',
+      color: '#ffaa00',
+      fontFamily: 'Arial'
+    }).setOrigin(0, 0.5)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.toggleCredits());
+    
+    this.creditsContainer.add([bg, creditsIcon, this.creditsText, minimizeBtn]);
+  }
+  
+  private toggleCredits(): void {
+    this.creditsCollapsed = !this.creditsCollapsed;
+    
+    if (this.creditsCollapsed) {
+      // Show only icon when collapsed
+      this.creditsContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 1) return; // Keep credits icon visible
+        if (index === 3) { // Update minimize button to expand
+          obj.setText('+');
+          return;
+        }
+        obj.setVisible(false);
+      });
+    } else {
+      // Show all elements
+      this.creditsContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 3) { // Update minimize button
+          obj.setText('−');
+        }
+        obj.setVisible(true);
+      });
+    }
   }
 
   private updateCreditsDisplay(): void {
@@ -662,6 +744,8 @@ export class UIOverlayScene extends Phaser.Scene {
     const x = this.cameras.main.width - 20;
     const y = this.cameras.main.height - 20;
     
+    this.miniMapContainer = this.add.container(0, 0);
+    
     // Mini-map background
     const mapBg = this.add.rectangle(x - mapSize, y - mapSize, mapSize, mapSize, 0x000000, 0.8)
       .setOrigin(0, 0)
@@ -686,10 +770,24 @@ export class UIOverlayScene extends Phaser.Scene {
     this.playerIndicator = this.add.graphics();
     this.playerIndicator.setDepth(93);
     
+    // Minimize button
+    const minimizeBtn = this.add.text(x - 10, y - mapSize - 5, '−', {
+      fontSize: '20px',
+      color: '#ffaa00',
+      fontFamily: 'Arial',
+      stroke: '#000000',
+      strokeThickness: 2
+    }).setOrigin(0, 1)
+      .setInteractive({ useHandCursor: true })
+      .on('pointerdown', () => this.toggleMiniMap());
+    minimizeBtn.setDepth(94);
+    
     // Store map position for updates
     this.mapX = x - mapSize;
     this.mapY = y - mapSize;
     this.mapSize = mapSize;
+    
+    this.miniMapContainer.add([mapBg, mapTitle, this.miniMapGraphics, this.playerIndicator, minimizeBtn]);
     
     // Listen for map updates from MainGameScene
     const mainScene = this.scene.get('MainGameScene');
@@ -704,6 +802,33 @@ export class UIOverlayScene extends Phaser.Scene {
     mainScene.events.on('showNotification', (data: { message: string, color: number }) => {
       this.showNotification(data.message, data.color);
     });
+  }
+  
+  private toggleMiniMap(): void {
+    this.miniMapCollapsed = !this.miniMapCollapsed;
+    
+    if (this.miniMapCollapsed) {
+      // Show only a small collapsed indicator
+      this.miniMapContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 1) { // Keep title visible but update text
+          obj.setText('MAP');
+        } else if (index === 4) { // Update minimize button to expand
+          obj.setText('+');
+        } else {
+          obj.setVisible(false);
+        }
+      });
+    } else {
+      // Show all elements
+      this.miniMapContainer?.list.forEach((obj: any, index: number) => {
+        if (index === 1) { // Restore title
+          obj.setText('STATION MAP');
+        } else if (index === 4) { // Update minimize button
+          obj.setText('−');
+        }
+        obj.setVisible(true);
+      });
+    }
   }
   
   private mapX: number = 0;
