@@ -41,6 +41,7 @@ interface EquipmentState {
   getConditionStatus: (equipmentId: string) => 'excellent' | 'good' | 'fair' | 'poor' | 'critical' | 'broken';
   calculateStressFactor: (resource: ResourceData, planetName: string) => StressFactors;
   applyShipDegradation: (operationType: 'autopilot' | 'mining' | 'repair', intensity: number, duration: number) => void;
+  updateEquipment: (equipmentId: string, updates: Partial<EquipmentItem>) => void;
 }
 
 export const useEquipment = create<EquipmentState>((set, get) => ({
@@ -575,6 +576,21 @@ export const useEquipment = create<EquipmentState>((set, get) => ({
     }
     
     return engineEfficiency * fuelEfficiency;
+  },
+  
+  updateEquipment: (equipmentId, updates) => {
+    set(state => {
+      const updatedEquipment = state.equipment.map(eq => {
+        if (eq.id === equipmentId) {
+          return { ...eq, ...updates };
+        }
+        return eq;
+      });
+      
+      return { equipment: updatedEquipment };
+    });
+    
+    console.log(`Updated equipment ${equipmentId}:`, updates);
   }
 }));
 

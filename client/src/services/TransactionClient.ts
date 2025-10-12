@@ -299,7 +299,7 @@ export class TransactionClient {
    */
   dispose(): void {
     // Clear all pending transactions
-    for (const [id, pending] of this.pendingTransactions) {
+    for (const [id, pending] of Array.from(this.pendingTransactions)) {
       clearTimeout(pending.timeout);
       pending.reject(new Error('TransactionClient disposed'));
     }

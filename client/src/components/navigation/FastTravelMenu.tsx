@@ -1,8 +1,10 @@
-import React from "react";
+import React, { useState } from "react";
+import * as THREE from "three";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 import { useCredits } from "../../lib/stores/economy/useCredits";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
+import { TransactionClient } from "../../services/TransactionClient";
 import { planets } from "../../lib/planetData";
 import { Button } from "../ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
@@ -14,9 +16,10 @@ interface FastTravelMenuProps {
 }
 
 export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
-  const { selectedPlanet, setSelectedPlanet } = useSolarSystem();
-  const { credits, spendCredits } = useCredits();
-  const { equipment, consumeFuel, getEquipment } = useEquipment();
+  const { selectedPlanet, setSelectedPlanet, setShipPosition, shipPosition } = useSolarSystem();
+  const { credits } = useCredits();
+  const { equipment, getEquipment } = useEquipment();
+  const [isTraveling, setIsTraveling] = useState(false);
   
   // Get fuel from equipment system
   const fuelTank = getEquipment('fuel-tank');
@@ -38,6 +41,15 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     e.name.toLowerCase().includes("quantum")
   );
   
+  // Calculate planet position based on time
+  const calculatePlanetPosition = (planet: any) => {
+    const time = Date.now() * 0.001;
+    const angle = time * planet.orbitalSpeed;
+    const x = Math.cos(angle) * planet.distance;
+    const z = Math.sin(angle) * planet.distance;
+    return new THREE.Vector3(x, 0, z);
+  };
+  
   const calculateTravelCost = (targetIndex: number) => {
     const distance = Math.abs(targetIndex - selectedPlanetIndex);
     const baseFuel = distance * 15;
@@ -50,11 +62,14 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     return { fuelCost, creditCost };
   };
   
-  const handleFastTravel = (targetIndex: number) => {
+  const handleFastTravel = async (targetIndex: number) => {
     if (targetIndex === selectedPlanetIndex) {
       toast.error("You are already at this planet");
       return;
     }
+    
+    const targetPlanet = planets[targetIndex];
+    if (!targetPlanet) return;
     
     const { fuelCost, creditCost } = calculateTravelCost(targetIndex);
     
@@ -68,27 +83,49 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
       return;
     }
     
-    // Perform the fast travel
-    const fuelConsumed = consumeFuel(fuelCost);
-    if (!fuelConsumed) {
-      toast.error("Failed to consume fuel");
-      return;
-    }
+    setIsTraveling(true);
     
-    const creditsSpent = spendCredits(creditCost);
-    if (!creditsSpent) {
-      toast.error("Failed to spend credits");
-      return;
-    }
-    
-    // Update selected planet using planet name
-    const targetPlanet = planets[targetIndex];
-    if (targetPlanet) {
+    try {
+      // Use TransactionClient for server-authoritative transaction
+      const transactionClient = TransactionClient.getInstance();
+      const result = await transactionClient.fastTravel(
+        targetPlanet.name,
+        creditCost,
+        fuelCost
+      );
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Transaction failed');
+      }
+      
+      console.log(`[FAST-TRAVEL] Transaction successful: ${result.transactionId}`);
+      console.log(`[FAST-TRAVEL] New balances - Credits: ${result.newBalances?.credits}, Fuel: ${result.newBalances?.fuel}`);
+
+      // Teleport to planet orbit
+      const orbitDistance = targetPlanet.size * 3;
+      const planetPos = calculatePlanetPosition(targetPlanet);
+      const targetPosition = new THREE.Vector3(
+        planetPos.x + orbitDistance,
+        0,
+        planetPos.z
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      setShipPosition(targetPosition);
       setSelectedPlanet(targetPlanet.name);
+
+      console.log(`[FAST-TRAVEL] Traveled to ${targetPlanet.name} orbit`);
       toast.success(`Fast traveled to ${targetPlanet.name}!`);
+      
+      setTimeout(() => {
+        setIsTraveling(false);
+        if (onClose) onClose();
+      }, 1000);
+    } catch (error) {
+      console.error('[FAST-TRAVEL] Failed:', error);
+      setIsTraveling(false);
+      toast.error(`Fast travel failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    
-    if (onClose) onClose();
   };
   
   return (
@@ -126,7 +163,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
                 <Button
                   key={planet.name}
                   variant={isCurrent ? "default" : "outline"}
-                  disabled={isCurrent || !canAfford}
+                  disabled={isCurrent || !canAfford || isTraveling}
                   onClick={() => handleFastTravel(index)}
                   className={`
                     h-auto p-3 flex flex-col items-start gap-1
@@ -154,6 +191,12 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
               );
             })}
           </div>
+          
+          {isTraveling && (
+            <div className="text-center text-cyan-400 text-sm animate-pulse">
+              Initiating fast travel...
+            </div>
+          )}
           
           {onClose && (
             <Button

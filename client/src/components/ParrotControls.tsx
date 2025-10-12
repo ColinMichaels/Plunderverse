@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Volume2, VolumeX, MessageSquare, Briefcase, Eye, EyeOff, Type, Settings } from 'lucide-react';
 import { useParrot } from '@/lib/stores/useParrot';
+import { usePlatform } from '@/lib/stores/ui/usePlatform';
 import { parrotSpeechService } from '@/services/ParrotSpeechService';
 import { Slider } from '@/components/ui/slider';
 import {
@@ -13,6 +14,7 @@ import {
 
 export function ParrotControls() {
   const { settings, setMuted, setMode, setVisible, setVolume, setShowText, setVoice } = useParrot();
+  const { isMobile } = usePlatform();
   const [isExpanded, setIsExpanded] = useState(false);
   const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
 
@@ -21,6 +23,11 @@ export function ParrotControls() {
       setAvailableVoices(parrotSpeechService.getAvailableVoices());
     });
   }, []);
+
+  // Only render on mobile devices
+  if (!isMobile) {
+    return null;
+  }
 
   return (
     <div className="fixed top-20 right-4 flex flex-col gap-2 z-50">
