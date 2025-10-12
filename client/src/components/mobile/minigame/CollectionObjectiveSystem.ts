@@ -106,7 +106,7 @@ export class CollectionObjectiveSystem {
         itemType: 'repair_tools',
         x: 0, // Will be set when creating sprites
         y: 0,
-        room: i === 0 ? 'engineering' : i === 1 ? 'maintenance' : 'cargo_hold',
+        room: i === 0 ? 'engineering' : i === 1 ? 'corridor_2' : 'cargo_hold',
         isCollected: false
       });
     }
@@ -118,7 +118,7 @@ export class CollectionObjectiveSystem {
         itemType: 'spare_parts',
         x: 0,
         y: 0,
-        room: i === 0 ? 'engineering' : i === 1 ? 'cargo_hold' : i === 2 ? 'docking_bay' : 'maintenance',
+        room: i === 0 ? 'engineering' : i === 1 ? 'cargo_hold' : i === 2 ? 'docking_bay' : 'corridor_2',
         isCollected: false
       });
     }
@@ -142,7 +142,7 @@ export class CollectionObjectiveSystem {
         itemType: 'medical_supplies',
         x: 0,
         y: 0,
-        room: i === 0 ? 'crew_quarters' : 'medical_bay',
+        room: i === 0 ? 'crew_quarters' : 'cantina',
         isCollected: false
       });
     }
