@@ -8,6 +8,15 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-12: WebSocket Connection Fix - Proper Environment Handling
+- **WebSocket Environment Fix**: Fixed WebSocket connection failures in Replit production environment
+  - **Issue**: Multiple WebSocket connection errors - both Vite HMR and CloudSync failing with undefined ports
+  - **Root Cause**: CloudSync using localhost in production, HMR patch not detecting Replit environment properly
+  - **Solution**: Updated CloudSyncWebSocket to properly detect dev vs production, improved HMR detection in websocketPatch
+  - **Dev Behavior**: Uses `ws://localhost:5000/ws/sync` for CloudSync, patches HMR to use port 5000
+  - **Production Behavior**: Uses current hostname with appropriate port (443 for wss, 80 for ws), HMR gets proper Replit URL
+  - **Impact**: Eliminated all WebSocket connection errors, both Vite HMR and CloudSync working properly
+
 ### 2025-10-11: Performance Fix - Eliminated Excessive Material Logging
 - **Performance Optimization**: Fixed AtmosphericEffects fog plane material regeneration causing performance issues
   - **Issue**: Fog plane materials used `Date.now()` in IDs, creating new materials every render, causing console spam and performance degradation
