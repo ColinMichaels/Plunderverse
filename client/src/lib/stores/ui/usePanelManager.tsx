@@ -85,6 +85,7 @@ const DEFAULT_PANELS: Panel[] = [
   { id: 'repair', label: 'Quick Repair', icon: '🔧', isOpen: false, wasManuallyToggled: false, priority: 11 },
   { id: 'fast-travel', label: 'Fast Travel', icon: '🚀', isOpen: false, wasManuallyToggled: false, priority: 12 },
   { id: 'parrot-settings', label: 'Parrot', icon: '🦜', isOpen: false, wasManuallyToggled: false, priority: 13 },
+    {id: 'planet', label: 'Planet Info', icon: '🪐', isOpen: false, wasManuallyToggled: false, priority: 14}
 ];
 
 // Initialize panels with saved states
