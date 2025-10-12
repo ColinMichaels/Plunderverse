@@ -68,9 +68,9 @@ export function Enemy({ enemy, onHit }: EnemyProps) {
       </mesh>
       
       {/* Engine glow effect */}
-      <mesh position={[0, 0, -visualScale * 0.8]} scale={visualScale * 0.3}>
+      <mesh position={[0, 0, -visualScale * 0.8]} scale={visualScale * 0.4}>
         <sphereGeometry args={[0.5, 8, 8]} />
-        <meshBasicMaterial color="#00ffff" transparent opacity={0.6} />
+        <meshBasicMaterial color="#00ffff" transparent opacity={0.8} />
       </mesh>
     </group>
   );

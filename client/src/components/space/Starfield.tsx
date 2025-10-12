@@ -52,15 +52,19 @@ export function Starfield() {
 
   // Register resources with ResourceManager
   useEffect(() => {
-    console.log("[Starfield] Registering particle resources with ResourceManager");
-    
+    console.log(
+      "[Starfield] Registering particle resources with ResourceManager",
+    );
+
     // Note: Buffer geometries and materials created by drei components are managed automatically
     // We just tag the component for tracking
     resourceManager.addTag("starfield-particles-main", "space-scene");
     resourceManager.addTag("starfield-particles-background", "space-scene");
-    
+
     return () => {
-      console.log("[Starfield] Component unmounting, resources will be cleaned automatically");
+      console.log(
+        "[Starfield] Component unmounting, resources will be cleaned automatically",
+      );
     };
   }, []);
 

@@ -2,6 +2,9 @@ import { create } from "zustand";
 import { toast } from "sonner";
 import { useCredits } from "../economy/useCredits";
 import { useEquipment } from "./useEquipment";
+import { useEnemies } from "../combat/useEnemies";
+import { useShooting } from "../combat/useShooting";
+import { useGame } from "../ui/useGame";
 
 interface ShipStatusState {
   // Ship resources (0-100) - fuel moved to equipment system
@@ -114,25 +117,19 @@ export const useShipStatus = create<ShipStatusState>((set, get) => ({
         
         // Clear combat state before showing death screen
         try {
-          import('../combat/useEnemies').then(({ useEnemies }) => {
-            useEnemies.getState().clearEnemies();
-            console.log('[DEBUG-DEATH] Cleared enemies');
-          });
+          useEnemies.getState().clearEnemies();
+          console.log('[DEBUG-DEATH] Cleared enemies');
           
-          import('../combat/useShooting').then(({ useShooting }) => {
-            useShooting.setState({ projectiles: [] });
-            console.log('[DEBUG-DEATH] Cleared projectiles');
-          });
+          useShooting.setState({ projectiles: [] });
+          console.log('[DEBUG-DEATH] Cleared projectiles');
         } catch (error) {
           console.error('[DEBUG-DEATH] Error clearing combat state:', error);
         }
         
         // Trigger game over state (death screen will be shown)
         try {
-          import('../ui/useGame').then(({ useGame }) => {
-            console.log(`[DEBUG-DEATH] Setting game state to ended`);
-            useGame.getState().end();
-          });
+          console.log(`[DEBUG-DEATH] Setting game state to ended`);
+          useGame.getState().end();
         } catch (error) {
           console.error(`[DEBUG-DEATH] Error triggering game over:`, error);
         }

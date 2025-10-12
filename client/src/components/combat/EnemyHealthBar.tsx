@@ -20,7 +20,7 @@ export function EnemyHealthBar({ enemy }: EnemyHealthBarProps) {
 
   return (
     <Html
-      position={[0, 1.5, 0]} // Position above enemy
+      position={[0, 1.15, 0]} // Position above enemy
       center
       distanceFactor={10}
       occlude={false}
@@ -32,9 +32,9 @@ export function EnemyHealthBar({ enemy }: EnemyHealthBarProps) {
       <div className="flex flex-col gap-1">
         {/* Shield bar (if has shield) */}
         {enemy.maxShield > 0 && (
-          <div 
-            className="h-3 bg-gray-800 rounded-full overflow-hidden border-2 border-blue-500/50"
-            style={{ width: '220px' }}
+          <div
+            className="h-16 bg-gray-800 rounded-full overflow-hidden border-2 border-blue-500/50"
+            style={{ width: "320px" }}
           >
             <div
               className="h-full bg-blue-400 transition-all duration-100"
@@ -44,9 +44,9 @@ export function EnemyHealthBar({ enemy }: EnemyHealthBarProps) {
         )}
 
         {/* Health bar */}
-        <div 
-          className="h-4 bg-gray-800 rounded-full overflow-hidden border-2 border-gray-600"
-          style={{ width: '220px' }}
+        <div
+          className="h-20 bg-gray-800 rounded-full overflow-hidden border-2 border-gray-600"
+          style={{ width: "320px" }}
         >
           <div
             className="h-full transition-all duration-100"
