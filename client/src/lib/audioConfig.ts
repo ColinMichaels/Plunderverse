@@ -274,15 +274,15 @@ export const AUDIO_CONFIG: AudioConfig = {
       environment: EnvironmentType.SPACE,
     },
     {
-      filename: "Space SOnnet #6 (0.67x).mp3",
+      filename: "Space_sonnet_6.mp3",
       name: "Space SOnnet #6 (0.67x)",
       categories: ["atmospheric", "ambient", "space"],
       priority: MusicPriority.AMBIENT,
       environment: EnvironmentType.SPACE,
     },
     {
-      filename: "Space SOnnet #7 (0.67x).mp3",
-      name: "Space SOnnet #6 (0.67x)",
+      filename: "Space_sonnet_7.mp3",
+      name: "Space SOnnet #7 (0.67x)",
       categories: ["atmospheric", "ambient", "space"],
       priority: MusicPriority.AMBIENT,
       environment: EnvironmentType.SPACE,
