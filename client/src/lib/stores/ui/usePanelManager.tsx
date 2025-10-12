@@ -1,6 +1,21 @@
-import { create } from 'zustand';
+import {create} from 'zustand';
 
-export type PanelId = 'missions' | 'inventory' | 'trading' | 'crew' | 'story' | 'controls' | 'settings' | 'crypto' | 'navigation' | 'systems' | 'upgrades' | 'repair' | 'fast-travel' | 'parrot-settings';
+export type PanelId =
+    'planet'
+    | 'missions'
+    | 'inventory'
+    | 'trading'
+    | 'crew'
+    | 'story'
+    | 'controls'
+    | 'settings'
+    | 'crypto'
+    | 'navigation'
+    | 'systems'
+    | 'upgrades'
+    | 'repair'
+    | 'fast-travel'
+    | 'parrot-settings';
 
 export interface Panel {
   id: PanelId;

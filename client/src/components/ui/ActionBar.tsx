@@ -1,14 +1,15 @@
-import { useEffect, useState } from 'react';
-import { usePanelManager, PanelId } from '../../lib/stores/ui/usePanelManager';
-import { useHUDContext } from '../../lib/stores/ui/useHUDContext';
-import { MissionsPanel } from '../economy/MissionsPanel';
-import { InventoryDisplay } from '../economy/InventoryDisplay';
-import { TradingInterface } from '../economy/TradingInterface';
-import { CrewManagementPanel } from '../ship/CrewManagementPanel';
-import { StoryProgressionPanel } from './StoryProgressionPanel';
-import { CryptoWallet } from '../economy/crypto/CryptoWallet';
-import { FastTravelMenu } from '../navigation/FastTravelMenu';
-import { ParrotSettingsPanel } from '../navigation/ParrotSettingsPanel';
+import {useEffect, useState} from 'react';
+import {PanelId, usePanelManager} from '../../lib/stores/ui/usePanelManager';
+import {useHUDContext} from '../../lib/stores/ui/useHUDContext';
+import {MissionsPanel} from '../economy/MissionsPanel';
+import {InventoryDisplay} from '../economy/InventoryDisplay';
+import {TradingInterface} from '../economy/TradingInterface';
+import {CrewManagementPanel} from '../ship/CrewManagementPanel';
+import {StoryProgressionPanel} from './StoryProgressionPanel';
+import {CryptoWallet} from '../economy/crypto/CryptoWallet';
+import {FastTravelMenu} from '../navigation/FastTravelMenu';
+import {ParrotSettingsPanel} from '../navigation/ParrotSettingsPanel';
+import {PlanetInfo} from "@/components/shared/PlanetInfo.tsx";
 
 interface ActionButton {
   id: PanelId;
@@ -18,23 +19,24 @@ interface ActionButton {
 }
 
 const ACTION_BUTTONS: ActionButton[] = [
+    {id: 'fast-travel', icon: '⚡', label: 'Fast Travel', shortcut: 'T'},
+    {id: 'planet', icon: '⚡', label: 'Planet Info', shortcut: 'I'},
   { id: 'missions', icon: '📋', label: 'Missions', shortcut: 'F1' },
   { id: 'inventory', icon: '💼', label: 'Inventory', shortcut: 'F2' },
   { id: 'trading', icon: '💱', label: 'Trading', shortcut: 'F3' },
   { id: 'crew', icon: '👥', label: 'Crew', shortcut: 'F4' },
   { id: 'story', icon: '📖', label: 'Story', shortcut: 'F5' },
+    {id: 'parrot-settings', icon: '🦜', label: 'Parrot', shortcut: 'P'},
   { id: 'crypto', icon: '💰', label: 'Crypto', shortcut: 'F6' },
-  { id: 'fast-travel', icon: '⚡', label: 'Fast Travel', shortcut: 'T' },
-  { id: 'parrot-settings', icon: '🦜', label: 'Parrot', shortcut: 'P' },
+
+
 ];
 
 export function ActionBar() {
   const { 
-    panels, 
-    togglePanel, 
-    openPanel,
+    panels,
+      togglePanel,
     closeAllPanels,
-    setManualOverride 
   } = usePanelManager();
   
   const { 
@@ -103,6 +105,16 @@ export function ActionBar() {
         refreshPanelOverrideTimeout();
         return;
       }
+        // I key for Planet Info
+        if (event.key.toLowerCase() === 'i' && !event.ctrlKey && !event.altKey && !event.metaKey) {
+            event.preventDefault();
+            setPressedButton('planet');
+            setTimeout(() => setPressedButton(null), 300);
+            togglePanel('planet');
+            setManualPanelOverride(true);
+            refreshPanelOverrideTimeout();
+            return;
+        }
 
       // ESC key to close all panels - only handle if panels are open
       if (event.key === 'Escape') {
@@ -252,6 +264,23 @@ export function ActionBar() {
             <TradingInterface isVisible={true} onClose={() => togglePanel('trading')} />
           </div>
         )}
+
+          {/* Planet Info Panel */}
+          {panels.get('planet')?.isOpen && (
+              <div className="
+            absolute inset-0
+            bg-gray-900/95 backdrop-blur-sm
+            border-l border-cyan-400/50
+            rounded-l-lg
+            pointer-events-auto
+            animate-slide-in-right
+            overflow-y-auto
+            scrollbar-thin scrollbar-thumb-cyan-600 scrollbar-track-gray-800
+          ">
+                  <PlanetInfo/>
+              </div>
+          )}
+
         
         {/* Crew Panel */}
         {panels.get('crew')?.isOpen && (
