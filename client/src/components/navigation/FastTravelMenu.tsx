@@ -1,10 +1,8 @@
 import React, {useState} from "react";
 import * as THREE from "three";
-import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
-import {useCredits} from "../../lib/stores/economy/useCredits";
-import {useEquipment} from "../../lib/stores/ship/useEquipment";
-import {TransactionClient} from "../../services/TransactionClient";
-import {planets} from "../../lib/planetData";
+import {useCredits, useEquipment, useSolarSystem} from "@/lib/stores";
+import {TransactionClient} from "@/services/TransactionClient.ts";
+import {planets} from "@/lib/planetData.ts";
 import {Button} from "../ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "../ui/card";
 import {Coins, Fuel} from "lucide-react";
@@ -48,6 +46,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     const z = Math.sin(angle) * planet.distance;
     return new THREE.Vector3(x, 0, z);
   };
+
   
   const calculateTravelCost = (targetIndex: number) => {
     const distance = Math.abs(targetIndex - selectedPlanetIndex);
@@ -57,8 +56,8 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     // Reduce cost if player has fast travel module
     const fuelCost = hasFastTravelModule ? Math.floor(baseFuel * 0.7) : baseFuel;
     const creditCost = hasFastTravelModule ? Math.floor(baseCredits * 0.7) : baseCredits;
-    
-    return { fuelCost, creditCost };
+
+      return {fuelCost, creditCost, distance};
   };
   
   const handleFastTravel = async (targetIndex: number) => {
@@ -69,7 +68,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
     
     const targetPlanet = planets[targetIndex];
     if (!targetPlanet) return;
-    
+
     const { fuelCost, creditCost } = calculateTravelCost(targetIndex);
     
     if (fuel < fuelCost) {
@@ -92,6 +91,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
         creditCost,
         fuelCost
       );
+        console.warn('transaction', result);
       
       if (!result.success) {
         throw new Error(result.error || 'Transaction failed');
@@ -137,7 +137,7 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-2">
               <Fuel className="w-4 h-4 text-orange-400" />
               <span>Fuel: {fuel.toFixed(1)}%</span>
@@ -146,6 +146,10 @@ export function FastTravelMenu({ onClose }: FastTravelMenuProps) {
               <Coins className="w-4 h-4 text-yellow-400" />
               <span>Credits: {credits}</span>
             </div>
+                <div className="flex items-center gap-2">
+                    <Coins className="w-4 h-4 text-yellow-400"/>
+                    <span>Distance: {}</span>
+                </div>
           </div>
           
           <div className="grid grid-cols-2 gap-3">
