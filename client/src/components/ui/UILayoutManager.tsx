@@ -1,12 +1,10 @@
-import React, {
-  useState,
-  createContext,
-  useContext,
-  ReactNode,
-  useCallback,
-  useEffect,
-} from "react";
-import { useUIInteraction } from "@/hooks/useUIInteraction";
+import React, {createContext, ReactNode, useCallback, useContext, useEffect, useState,} from "react";
+import {useUIInteraction} from "@/hooks/useUIInteraction";
+import {INPUT_KEY_EVENT, InputRouter} from "@/lib/InputRouter";
+
+if (typeof window !== 'undefined') {
+    InputRouter.instance().attach();
+}
 
 export type UIZone = "left-sidebar" | "right-sidebar";
 
@@ -71,7 +69,7 @@ function ExpandedPanel({
 }) {
   // Track hover state for this panel
   const panelRef = useUIInteraction(`panel-${panel.id}`, panel.isExpanded);
-  
+
   return (
     <div className="expanded-panel-overlay">
       <div
@@ -147,30 +145,30 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     setPanels((prev) => {
       const existing = prev.find((p) => p.id === panel.id);
       const savedStates = loadPanelStates();
-      
+
       if (existing) {
-        const hasMetadataChanges = 
+          const hasMetadataChanges =
           existing.title !== panel.title ||
           existing.icon !== panel.icon ||
           existing.zone !== panel.zone ||
           existing.priority !== panel.priority ||
           existing.canCollapse !== panel.canCollapse;
-        
+
         if (!hasMetadataChanges) {
           return prev;
         }
-        
+
         return prev.map((p) =>
           p.id === panel.id ? { ...p, ...panel, isExpanded: p.isExpanded } : p,
         );
       }
-      
+
       // Use saved state if available and panel is collapsible
-      const isExpanded = (panel.canCollapse !== false && savedStates[panel.id] !== undefined) 
-        ? savedStates[panel.id] 
+        const isExpanded = (panel.canCollapse !== false && savedStates[panel.id] !== undefined)
+            ? savedStates[panel.id]
         : panel.isExpanded;
-      
-      const newPanel = { ...panel, isExpanded };
+
+        const newPanel = { ...panel, isExpanded };
       return [...prev, newPanel].sort((a, b) => a.priority - b.priority);
     });
   }, [loadPanelStates]);
@@ -203,7 +201,7 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
   // Add function to collapse all panels
   const collapseAllPanels = useCallback(() => {
     setPanels((prev) => {
-      const updated = prev.map((p) => 
+        const updated = prev.map((p) =>
         p.canCollapse !== false ? { ...p, isExpanded: false } : p
       );
       savePanelStates(updated);
@@ -211,22 +209,24 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
     });
   }, [savePanelStates]);
 
-  // Add ESC key handler to collapse all panels
+    // Add ESC key handler to collapse all panels via global input router
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      // Check if ESC key is pressed and any panels are expanded
-      if (event.key === 'Escape') {
-        const hasExpandedPanels = panels.some(p => p.isExpanded && p.canCollapse !== false);
-        if (hasExpandedPanels) {
-          event.preventDefault();
-          event.stopPropagation();
+      const handleKey = (evt: Event) => {
+          const ce = evt as CustomEvent<{ key: string; code: string; domEvent: KeyboardEvent }>;
+          const key = ce?.detail?.key;
+          if (key !== 'Escape') return;
+
+          // Check if any panels are expanded and collapsible
+          const hasExpandedPanels = panels.some(p => p.isExpanded && p.canCollapse !== false);
+          if (!hasExpandedPanels) return;
+
+          // Consume globally and collapse panels
+          evt.preventDefault();
           collapseAllPanels();
-        }
-      }
     };
 
-    window.addEventListener('keydown', handleKeyDown, true);
-    return () => window.removeEventListener('keydown', handleKeyDown, true);
+      window.addEventListener(INPUT_KEY_EVENT, handleKey as EventListener, {capture: true});
+      return () => window.removeEventListener(INPUT_KEY_EVENT, handleKey as EventListener, {capture: true} as any);
   }, [panels, collapseAllPanels]);
 
   const leftSidebarPanels = panels.filter((p) => p.zone === "left-sidebar");
@@ -265,7 +265,7 @@ export function UILayoutProvider({ children }: { children: ReactNode }) {
       </div>
 
       {panels.map((panel) => (
-        <div 
+          <div
           key={panel.id}
           style={{ display: panel.isExpanded ? 'block' : 'none' }}
         >

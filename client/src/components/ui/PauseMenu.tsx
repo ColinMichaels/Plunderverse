@@ -1,27 +1,20 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { useFocusState } from "@/lib/stores/ui/useFocusState";
-import { useGame } from "@/lib/stores/ui/useGame";
-import { useSettings } from "@/lib/stores/ui/useSettings";
-import { useLandedState } from "@/lib/stores/surface/useLandedState";
-import { useShipStatus } from "@/lib/stores/ship/useShipStatus";
-import { useShooting } from "@/lib/stores/combat/useShooting";
-import { useEnemies } from "@/lib/stores/combat/useEnemies";
-import { useAutopilot } from "@/lib/stores/navigation/useAutopilot";
-import { useSolarSystem } from "@/lib/stores/space/useSolarSystem";
-import {
-  Play,
-  Home,
-  Settings,
-  Power,
-  Volume2,
-  VolumeX,
-  Monitor,
-  Gamepad2,
-  HelpCircle,
-} from "lucide-react";
-import { SettingsContent } from "../screens/SettingsContent";
-import { Vector3 } from "three";
+import {useEffect, useRef, useState} from "react";
+import {AnimatePresence, motion} from "framer-motion";
+import {useFocusState} from "@/lib/stores/ui/useFocusState";
+import {useGame} from "@/lib/stores/ui/useGame";
+import {useSettings} from "@/lib/stores/ui/useSettings";
+import {useLandedState} from "@/lib/stores/surface/useLandedState";
+import {useShooting} from "@/lib/stores/combat/useShooting";
+import {useEnemies} from "@/lib/stores/combat/useEnemies";
+import {useAutopilot} from "@/lib/stores/navigation/useAutopilot";
+import {INPUT_KEY_EVENT, InputRouter} from "@/lib/InputRouter";
+import {HelpCircle, Home, Play, Power, Settings,} from "lucide-react";
+import {SettingsContent} from "../screens/SettingsContent";
+
+// Ensure router is attached once this module is imported
+if (typeof window !== 'undefined') {
+    InputRouter.instance().attach();
+}
 
 export function PauseMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -37,31 +30,35 @@ export function PauseMenu() {
   const { deactivate: deactivateAutopilot } = useAutopilot();
   const { keybinds, updateKeybind, resetToDefaults } = useSettings();
 
-  // Open/close the pause menu with ESC key
+    // Open/close the pause menu with ESC via global input router
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Only handle ESC when in playing phase
-      if (e.key === "Escape" && phase === "playing") {
-        e.preventDefault();
-        e.stopPropagation();
+      const onKey = (e: Event) => {
+          const ce = e as CustomEvent<{ key: string; code: string; domEvent: KeyboardEvent }>;
+          const {key} = ce.detail || ({} as any);
 
-        // If editing keybind, cancel that instead
+          // Only handle ESC when in playing phase and if nobody else already consumed this key
+          if (key === 'Escape' && phase === 'playing') {
+              // If a different UI (e.g., ActionBar) wants to consume ESC first, they should call e.preventDefault().
+              if (e.defaultPrevented) return;
+
+              // If editing keybind, consume ESC to cancel editing only
         if (editingKeybind) {
+            e.preventDefault();
           setEditingKeybind(null);
           return;
         }
 
-        // Toggle pause menu
+              // Toggle pause
+              e.preventDefault();
         const newOpenState = !isOpen;
         setIsOpen(newOpenState);
         setPaused(newOpenState);
-        setActivePanel("main"); // Reset to main panel when opening
+              setActivePanel('main');
       }
     };
 
-    // Higher priority to intercept ESC before other components
-    window.addEventListener("keydown", handleKeyDown, true);
-    return () => window.removeEventListener("keydown", handleKeyDown, true);
+      window.addEventListener(INPUT_KEY_EVENT, onKey as EventListener, {capture: true});
+      return () => window.removeEventListener(INPUT_KEY_EVENT, onKey as EventListener, {capture: true} as any);
   }, [isOpen, phase, setPaused, editingKeybind]);
 
   // Handle keybind editing
@@ -114,7 +111,7 @@ export function PauseMenu() {
   };
 
   const handleExitGame = () => {
-    handleReturnToHome;
+      handleReturnToHome();
   };
 
   const handleKeybindClick = (action: string) => {

@@ -9,8 +9,13 @@ import {StoryProgressionPanel} from './StoryProgressionPanel';
 import {CryptoWallet} from '../economy/crypto/CryptoWallet';
 import {FastTravelMenu} from '../navigation/FastTravelMenu';
 import {ParrotSettingsPanel} from '../navigation/ParrotSettingsPanel';
+import {INPUT_KEY_EVENT, InputRouter} from '@/lib/InputRouter';
 import {PlanetInfo} from "@/components/shared/PlanetInfo.tsx";
 import {CryptoMarketplace} from "@/components/economy/crypto/CryptoMarketplace.tsx";
+
+if (typeof window !== 'undefined') {
+    InputRouter.instance().attach();
+}
 
 interface ActionButton {
   id: PanelId;
@@ -34,60 +39,66 @@ const ACTION_BUTTONS: ActionButton[] = [
 ];
 
 export function ActionBar() {
-  const { 
+    const {
     panels,
       togglePanel,
     closeAllPanels,
   } = usePanelManager();
-  
-  const { 
-    uiZoneVisibility, 
+
+    const {
+        uiZoneVisibility,
     currentContext,
     setManualPanelOverride,
     refreshPanelOverrideTimeout
   } = useHUDContext();
-  
+
   // State to track which button was recently pressed for visual feedback
   const [pressedButton, setPressedButton] = useState<PanelId | null>(null);
 
-  // Set up keyboard shortcuts with proper keydown handling
+    // Set up keyboard shortcuts using the global InputRouter (high priority)
   useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
+      const handleKeyEvent = (evt: Event) => {
+          const ce = evt as CustomEvent<{
+              key: string;
+              code: string;
+              altKey?: boolean;
+              ctrlKey?: boolean;
+              metaKey?: boolean
+          }>;
+          const detail = ce.detail || ({} as any);
+          const key: string = detail.key || '';
+
       // Don't process shortcuts in minigame context
       if (currentContext === 'minigame') {
         return;
       }
 
       // Check for F1-F6 keys (matching ACTION_BUTTONS array length)
-      const fKeyMatch = event.key.match(/^F(\d+)$/);
+          const fKeyMatch = key.match(/^F(\d+)$/);
       if (fKeyMatch) {
         const fNumber = parseInt(fKeyMatch[1]);
-        // Only process keys that have corresponding buttons
         if (fNumber >= 1 && fNumber <= ACTION_BUTTONS.length) {
-          // Only prevent default for F-keys, don't stop propagation to allow game controls
-          event.preventDefault();
-          
-          // Find the corresponding button
+            // Consume globally to prevent other handlers (e.g., PauseMenu) from reacting
+            evt.preventDefault();
+
           const button = ACTION_BUTTONS[fNumber - 1];
           if (button) {
-            
-            // Add visual feedback - highlight the button briefly
             setPressedButton(button.id);
             setTimeout(() => setPressedButton(null), 300);
-            
-            // Toggle the panel
+
             togglePanel(button.id);
             setManualPanelOverride(true);
             refreshPanelOverrideTimeout();
           }
-          // Return early for F-keys
           return;
         }
       }
 
+          const lower = key.toLowerCase();
+
       // T key for Fast Travel
-      if (event.key.toLowerCase() === 't' && !event.ctrlKey && !event.altKey && !event.metaKey) {
-        event.preventDefault();
+          if (lower === 't' && !detail.ctrlKey && !detail.altKey && !detail.metaKey) {
+              evt.preventDefault();
         setPressedButton('fast-travel');
         setTimeout(() => setPressedButton(null), 300);
         togglePanel('fast-travel');
@@ -97,8 +108,8 @@ export function ActionBar() {
       }
 
       // P key for Parrot Settings
-      if (event.key.toLowerCase() === 'p' && !event.ctrlKey && !event.altKey && !event.metaKey) {
-        event.preventDefault();
+          if (lower === 'p' && !detail.ctrlKey && !detail.altKey && !detail.metaKey) {
+              evt.preventDefault();
         setPressedButton('parrot-settings');
         setTimeout(() => setPressedButton(null), 300);
         togglePanel('parrot-settings');
@@ -106,49 +117,41 @@ export function ActionBar() {
         refreshPanelOverrideTimeout();
         return;
       }
-        // I key for Planet Info
-        if (event.key.toLowerCase() === 'i' && !event.ctrlKey && !event.altKey && !event.metaKey) {
-            event.preventDefault();
-            setPressedButton('planet');
-            setTimeout(() => setPressedButton(null), 300);
-            togglePanel('planet');
-            setManualPanelOverride(true);
-            refreshPanelOverrideTimeout();
-            return;
-        }
+
+          // I key for Planet Info
+          if (lower === 'i' && !detail.ctrlKey && !detail.altKey && !detail.metaKey) {
+              evt.preventDefault();
+              setPressedButton('planet');
+              setTimeout(() => setPressedButton(null), 300);
+              togglePanel('planet');
+              setManualPanelOverride(true);
+              refreshPanelOverrideTimeout();
+              return;
+          }
 
       // ESC key to close all panels - only handle if panels are open
-      if (event.key === 'Escape') {
-        // Check if any panels are open
+          if (key === 'Escape') {
         let anyPanelOpen = false;
         panels.forEach(panel => {
           if (panel.isOpen) anyPanelOpen = true;
         });
-        
+
         if (anyPanelOpen) {
-          // Only prevent default and handle if panels are open
-          event.preventDefault();
-          
-          
-          // Visual feedback - flash all buttons briefly
+            evt.preventDefault(); // consume so PauseMenu won't also toggle
           setPressedButton('all' as PanelId);
           setTimeout(() => setPressedButton(null), 200);
-          
           closeAllPanels();
           setManualPanelOverride(false);
         }
-        // Let ESC propagate to game if no panels are open
       }
     };
 
-    // Don't use capture phase to allow game controls to work
-    window.addEventListener('keydown', handleKeyDown);
-    
-    
+      // Register with high priority (capture true) on the global bus
+      window.addEventListener(INPUT_KEY_EVENT, handleKeyEvent as EventListener, {capture: true});
     return () => {
-      window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener(INPUT_KEY_EVENT, handleKeyEvent as EventListener, {capture: true} as any);
     };
-  }, [currentContext, togglePanel, closeAllPanels, setManualPanelOverride, refreshPanelOverrideTimeout]);
+  }, [currentContext, panels, togglePanel, closeAllPanels, setManualPanelOverride, refreshPanelOverrideTimeout]);
 
   // Don't show action bar if rightSidebar is hidden and no manual override
   if (!uiZoneVisibility.rightSidebar) {
