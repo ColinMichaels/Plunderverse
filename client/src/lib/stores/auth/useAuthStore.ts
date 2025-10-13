@@ -1,9 +1,8 @@
 // Authentication Store
 // Handles JWT tokens, user session, and authentication state
 
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { gameApi } from '../../../services/gameApi';
+import {create} from 'zustand';
+import {persist} from 'zustand/middleware';
 
 interface User {
   id: string;
@@ -53,68 +52,41 @@ function parseJWT(token: string): { exp?: number } {
 }
 
 export const useAuthStore = create<AuthState>()(
-  persist(
-    (set, get) => ({
-      // Initial state
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-      isRefreshing: false,
-      isGuest: false,
-      isAuthReady: false, // Not ready until initial check completes
-      rememberMe: false,
-      
-      // Login action
-      login: async (email: string, password: string, remember: boolean) => {
-        set({ isLoading: true });
-        
-        try {
-          const response = await fetch('/api/auth/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password }),
-            credentials: 'include',
-          });
-          
-          const data = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(data.message || 'Login failed');
-          }
-          
-          if (data.success && data.user && data.accessToken) {
-            // Store tokens based on remember me preference
-            if (remember) {
-              localStorage.setItem('accessToken', data.accessToken);
-              localStorage.setItem('refreshToken', data.refreshToken);
-            } else {
-              sessionStorage.setItem('accessToken', data.accessToken);
-              sessionStorage.setItem('refreshToken', data.refreshToken);
-            }
-            
-            set({
-              user: data.user,
-              accessToken: data.accessToken,
-              refreshToken: data.refreshToken,
-              isAuthenticated: true,
-              isGuest: false,
-              isAuthReady: true,
-              rememberMe: remember,
-              isLoading: false,
-            });
-            
-            // Schedule token refresh
-            get().scheduleTokenRefresh();
-          } else {
-            throw new Error('Invalid response from server');
-          }
-        } catch (error: any) {
-          set({ isLoading: false });
-          throw error;
-        }
-      },
+    persist(
+        (set, get) => ({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            isLoading: false,
+            isRefreshing: false,
+            isGuest: false,
+            isAuthReady: false,
+            rememberMe: false,
+
+            async login(email, password, remember) {
+                set({isLoading: true});
+                try {
+                    const res = await fetch('/api/auth/login', {/*...*/});
+                    const data = await res.json();
+                    // store tokens and user
+                    storeTokens(data.accessToken, data.refreshToken, remember);
+                    set({
+                        user: data.user,
+                        accessToken: data.accessToken,
+                        refreshToken: data.refreshToken,
+                        isAuthenticated: true,
+                        isGuest: false,
+                        rememberMe: remember,
+                        isLoading: false,
+                        isAuthReady: true,
+                    });
+                    get().scheduleTokenRefresh();
+                } catch (err) {
+                    set({isLoading: false});
+                    throw err;
+                }
+            },
       
       // Signup action
       signup: async (email: string, password: string, username?: string) => {
@@ -389,11 +361,30 @@ export const useAuthStore = create<AuthState>()(
     {
       name: 'auth-storage',
       partialize: (state) => ({
-        rememberMe: state.rememberMe,
+          accessToken: state.accessToken,
+          refreshToken: state.refreshToken,
+          rememberMe: state.rememberMe,
       }),
     }
   )
 );
+
+function storeTokens(access: string, refresh: string, remember: boolean) {
+    if (remember) {
+        localStorage.setItem('accessToken', access);
+        localStorage.setItem('refreshToken', refresh);
+    } else {
+        sessionStorage.setItem('accessToken', access);
+        sessionStorage.setItem('refreshToken', refresh);
+    }
+}
+
+function clearTokens() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
+    sessionStorage.removeItem('accessToken');
+    sessionStorage.removeItem('refreshToken');
+}
 
 // Initialize auth on app start
 export const initializeAuth = async () => {
