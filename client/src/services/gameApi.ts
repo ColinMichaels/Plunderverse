@@ -32,6 +32,9 @@ export interface GameStateData {
     
     // World state
     solarSystem?: any;
+      landedState: {
+          isLanded: boolean
+      };
     destroyedNodes?: any;
     heat?: any;
     rewards?: any;

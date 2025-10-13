@@ -1,13 +1,8 @@
-import { create } from "zustand";
-import { InventoryItem, InventoryState } from './types';
-import { ResourceData } from '../../lib/planetData';
-import { economyEvents } from './events';
-import {
-  validateStorageConsistency,
-  checkpoint,
-  assert,
-  DEBUG_PREFIXES
-} from './debug';
+import {create} from "zustand";
+import {InventoryItem, InventoryState} from './types';
+import {ResourceData} from '../../lib/planetData';
+import {economyEvents} from './events';
+import {assert, checkpoint, DEBUG_PREFIXES, validateStorageConsistency} from './debug';
 
 interface InventoryActions {
   addResource: (resource: ResourceData, quantity: number, planetSource: string) => boolean;
@@ -16,6 +11,7 @@ interface InventoryActions {
   getTotalValue: () => number;
   getStorageUsed: () => number;
   upgradeStorage: (additionalCapacity: number) => void;
+    setStorageItems: (items: InventoryItem[]) => void;
 }
 
 type InventoryStore = InventoryState & InventoryActions;
@@ -318,7 +314,16 @@ export const useInventoryStore = create<InventoryStore>((set, get) => ({
     const state = get();
     return state.items.reduce((total, item) => total + item.quantity, 0);
   },
-  
+    setStorageItems: (items: any[]) => {
+        // Optional: if you want to grow capacity to fit the saved items:
+        const capacityNeeded = items.reduce((sum, it) => sum + it.quantity, 0);
+        set(state => ({
+            ...state,
+            // ensure capacity can accommodate all loaded items
+            storageCapacity: Math.max(state.storageCapacity, capacityNeeded),
+            items: [...items],
+        }));
+    },
   upgradeStorage: (additionalCapacity) => {
     set(state => ({
       storageCapacity: state.storageCapacity + additionalCapacity
