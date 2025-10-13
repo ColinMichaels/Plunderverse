@@ -1,7 +1,7 @@
-import { create } from "zustand";
-import { useAudio } from "./useAudio";
-import { useLandedState } from "../surface/useLandedState";
-import { AUDIO_CONFIG, AudioCategory, MusicContext } from "../../audioConfig";
+import {create} from "zustand";
+import {useAudio} from "./useAudio";
+import {useLandedState} from "@/lib/stores";
+import {AUDIO_CONFIG, AudioCategory, MusicContext} from "../../audioConfig";
 
 // Priority levels for music
 export enum MusicPriority {
@@ -103,14 +103,14 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   tracks: [],
   currentTrackIndex: 0,
   isPlaying: false,
-  volume: 0.1, // Lower volume for first auto-play
+    volume: 0.2, // Lower volume for first auto-play
   isLoaded: false,
   isLoading: false,
   nextPlayTime: null,
   showPlaylist: false,
   crossfadeTimeout: null,
   fadeIntervals: new Set(),
-  playbackMode: "random",
+    playbackMode: 'random',
   lastPlayedTracks: [],
   hasPlayedInitialTrack: false,
   
@@ -314,34 +314,40 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
     console.log(`Playback mode set to: ${mode}`);
   },
 
-  scheduleNextTrack: () => {
-    const { crossfadeTimeout, hasPlayedInitialTrack, fadeIntervals } = get();
+    scheduleNextTrack: () => {
+        const {crossfadeTimeout} = get();
+        if (crossfadeTimeout) {
+            clearTimeout(crossfadeTimeout);
+        }
 
-    // Clear existing timeout
-    if (crossfadeTimeout) {
-      clearTimeout(crossfadeTimeout);
-    }
+        const {currentPriority, tracks, currentTrackIndex, hasPlayedInitialTrack} = get();
+        const currentTrack = tracks[currentTrackIndex];
 
-    // For first track: 30 seconds of inactivity, then longer delays
-    const delay = hasPlayedInitialTrack ? getRandomDelay() : 30000; // 30 seconds for first track
-    const nextPlayTime = Date.now() + delay;
+        // If the current track is ambient, schedule the next track only after it finishes
+        if (
+            currentPriority === MusicPriority.AMBIENT &&
+            currentTrack?.audio
+        ) {
+            currentTrack.audio.onended = () => {
+                const {isLanded} = useLandedState.getState();
+                const nextIndex = get().getRandomTrackIndex(isLanded);
+                get().crossfadeToTrack(nextIndex);
+            };
+        }
+        const delay = hasPlayedInitialTrack ? getRandomDelay() : 30000;
 
-    const timeout = setTimeout(() => {
-      // Check if player is on a planet surface
-      const { isLanded } = useLandedState.getState();
-      const nextIndex = get().getRandomTrackIndex(isLanded);
-      get().crossfadeToTrack(nextIndex);
-    }, delay);
+        const timeout = setTimeout(() => {
+            // for ambient mode, choose another ambient track; otherwise use existing logic
+            const {isLanded} = useLandedState.getState();
+            const nextIndex = get().getRandomTrackIndex(isLanded);
+            get().crossfadeToTrack(nextIndex);
+        }, delay);
 
-    set({
-      crossfadeTimeout: timeout,
-      nextPlayTime,
-    });
+        set({
+            crossfadeTimeout: timeout,
+            nextPlayTime: Date.now() + delay,
+        });
 
-    const timeDesc = hasPlayedInitialTrack 
-      ? `${Math.round(delay / 1000)} seconds (random)` 
-      : "30 seconds (initial auto-play)";
-    console.log(`[MusicPlayer] Next track scheduled in ${timeDesc}`);
   },
 
   crossfadeToTrack: (trackIndex: number, priority?: MusicPriority) => {

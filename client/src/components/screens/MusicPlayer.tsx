@@ -1,27 +1,24 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {
-  Play,
-  Pause,
-  SkipForward,
-  SkipBack,
-  Volume2,
-  VolumeX,
-  List,
-  Shuffle,
-  RotateCcw,
-  Minimize2,
-  Maximize2,
-  Minus,
-  Plus,
+    List,
+    Maximize2,
+    Minimize2,
+    Minus,
+    Pause,
+    Play,
+    Plus,
+    RotateCcw,
+    Shuffle,
+    SkipBack,
+    SkipForward,
+    Volume2,
+    VolumeX,
 } from "lucide-react";
-import { Button } from "../ui/button";
-import { Slider } from "../ui/slider";
-import {
-  useMusicPlayer,
-  initializeMusicPlayer,
-} from "../../lib/stores/ui/useMusicPlayer";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { cn } from "../../lib/utils";
+import {Button} from "../ui/button";
+import {Slider} from "../ui/slider";
+import {initializeMusicPlayer, useMusicPlayer,} from "../../lib/stores/ui/useMusicPlayer";
+import {useAudio} from "@/lib/stores";
+import {cn} from "@/lib/utils.ts";
 
 interface MusicPlayerProps {
   className?: string;
