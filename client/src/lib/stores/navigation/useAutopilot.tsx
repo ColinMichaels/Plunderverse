@@ -1,175 +1,265 @@
-import { create } from "zustand";
+import {create} from "zustand";
 import * as THREE from "three";
-import { useLandedState } from "../surface/useLandedState";
+import {useLandedState} from "@/lib/stores";
 
-// Easing functions for smooth orbital mechanics
+/** Easing for smooth speed curves */
 const easeInOutCubic = (t: number): number => {
-  return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    return t < 0.5
+        ? 4 * t * t * t
+        : 1 - Math.pow(-2 * t + 2, 3) / 2;
 };
 
-const easeOutCubic = (t: number): number => {
-  return 1 - Math.pow(1 - t, 3);
-};
+/** Autopilot modes */
+enum AutopilotMode {
+    IDLE = "idle",
+    CINEMATIC = "cinematic",
+    // (You can add APPROACH, ORBIT, etc. later)
+}
+
+/** The simple plan for cinematic path + speed profile */
+interface CinematicPlan {
+    path: THREE.Vector3[];
+    speedProfile: number[];   // normalized: 0 → 1 → 0
+    totalLength: number;
+}
+
+/** Ship / environment / input types (adapt as needed) */
+interface ShipState {
+    position: THREE.Vector3;
+    velocity: THREE.Vector3;
+    orientation: THREE.Quaternion;
+    angularVelocity: THREE.Vector3;
+}
+
+interface EnvironmentState {
+    getGravityAt: (pos: THREE.Vector3) => THREE.Vector3;
+}
+
+interface PlayerInput {
+    thrustInput: number;         // e.g. 0 .. 1 or -1 .. 1
+    torqueInput: THREE.Vector3;  // directional control input (if override)
+}
 
 interface AutopilotState {
-  isActive: boolean;
-  target: THREE.Vector3 | null;
-  isOrbiting: boolean;
-  orbitRadius: number;
-  orbitAngle: number;
-  approachProgress: number; // Track approach progress for easing
-  orbitSway: number; // Camera sway for realism during orbit
-  orbitSpeed: number; // Variable orbit speed for cinematic effect
-  
-  // Actions
-  activate: (target: THREE.Vector3) => void;
-  deactivate: () => void;
-  setTarget: (target: THREE.Vector3 | null) => void;
-  enterOrbit: (radius: number) => void;
-  updateThrusterVolume: () => void;
-  updateApproachProgress: (progress: number) => void;
-  updateOrbitSway: (delta: number) => void;
-  getEasedSpeed: (baseSpeed: number, distance: number, targetDistance: number) => number;
+    isActive: boolean;
+    mode: AutopilotMode;
+    target: THREE.Vector3 | null;
+
+    cinematicPlan: CinematicPlan | null;
+    traveledDistance: number;
+
+    activateCinematic: (target: THREE.Vector3) => void;
+    deactivate: () => void;
+    tick: (
+        dt: number,
+        ship: ShipState,
+        env: EnvironmentState,
+        playerInput: PlayerInput
+    ) => void;
+
+    makeCinematicPlan: (
+        start: THREE.Vector3,
+        target: THREE.Vector3
+    ) => CinematicPlan;
 }
 
 export const useAutopilot = create<AutopilotState>((set, get) => ({
-  isActive: false,
-  target: null,
-  isOrbiting: false,
-  orbitRadius: 50,
-  orbitAngle: 0,
-  approachProgress: 0,
-  orbitSway: 0,
-  orbitSpeed: 0.15,
-  
-  activate: (target) => {
-    // Check if landed before allowing activation
-    const landedState = useLandedState.getState();
-    if (landedState.isLanded) {
-      console.log(`[AUTOPILOT] Cannot activate while landed on ${landedState.landedPlanet}`);
-      return;
-    }
-    
-    set({
-      isActive: true,
-      target: target.clone(),
-      isOrbiting: false,
-      orbitAngle: 0,
-      approachProgress: 0,
-      orbitSway: 0,
-      orbitSpeed: 0.15
-    });
-    console.log("Autopilot activated!");
-    
-    // Start thruster sound with current fuel level
-    import('../ui/useAudio').then(({ useAudio }) => {
-      import('../ship/useEquipment').then(({ useEquipment }) => {
-        const fuelTank = useEquipment.getState().getEquipment('fuel-tank');
-        const fuelLevel = fuelTank?.currentDurability || 0;
-        useAudio.getState().playThruster(fuelLevel);
-      });
-    });
-  },
-  
-  deactivate: () => {
-    set({
-      isActive: false,
-      target: null,
-      isOrbiting: false,
-      orbitAngle: 0,
-      approachProgress: 0,
-      orbitSway: 0
-    });
-    console.log("Autopilot deactivated!");
-    
-    // Stop thruster sound
-    import('../ui/useAudio').then(({ useAudio }) => {
-      useAudio.getState().stopThruster();
-    });
-  },
-  
-  setTarget: (target) => {
-    set({ target });
-  },
-  
-  enterOrbit: (radius) => {
-    set({
-      isOrbiting: true,
-      orbitRadius: radius
-    });
-    console.log(`Entering stable orbit at ${radius} units`);
-  },
+    isActive: false,
+    mode: AutopilotMode.IDLE,
+    target: null,
+    cinematicPlan: null,
+    traveledDistance: 0,
 
-  updateThrusterVolume: () => {
-    const state = get();
-    if (!state.isActive) return;
-    
-    // Update thruster volume based on current fuel level
-    import('../ui/useAudio').then(({ useAudio }) => {
-      import('../ship/useEquipment').then(({ useEquipment }) => {
-        const fuelTank = useEquipment.getState().getEquipment('fuel-tank');
-        const fuelLevel = fuelTank?.currentDurability || 0;
-        
-        // Only update if thruster sound is loaded
-        const audioState = useAudio.getState();
-        if (audioState.thrusterSound && audioState.thrusterSound.volume !== undefined) {
-          const baseVolume = 0.15;
-          const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100));
-          const newVolume = baseVolume * fuelRatio;
-          
-          audioState.thrusterSound.volume = newVolume;
-          console.log(`[THRUSTER] Volume updated: ${newVolume.toFixed(3)} (Fuel: ${fuelLevel}%)`);
+    activateCinematic: (target) => {
+        const landed = useLandedState.getState();
+        if (landed.isLanded) {
+            console.warn("Cannot activate autopilot while landed");
+            return;
         }
-      });
-    });
-  },
-  
-  updateApproachProgress: (progress) => {
-    set({ approachProgress: progress });
-  },
-  
-  updateOrbitSway: (delta) => {
-    const state = get();
-    // Add subtle camera sway during orbit for realism
-    const swayAmount = Math.sin(Date.now() * 0.001) * 0.05;
-    set({ orbitSway: swayAmount });
-  },
-  
-  getEasedSpeed: (baseSpeed, distance, targetDistance) => {
-    // Calculate progress (0 to 1) as we approach target
-    const progress = 1 - Math.min(distance / targetDistance, 1);
-    
-    // Use cubic easing for smooth deceleration
-    const easedProgress = easeOutCubic(progress);
-    
-    // Apply crew pilot bonus to navigation speed
-    let speedMultiplier = 1.0;
-    try {
-      const crewState = (window as any).useCrewManagement?.getState?.();
-      if (crewState?.currentBonuses?.navigationSpeed) {
-        speedMultiplier = 1 + crewState.currentBonuses.navigationSpeed;
-        console.log(`[AUTOPILOT] Applying pilot bonus: +${(crewState.currentBonuses.navigationSpeed * 100).toFixed(0)}% navigation speed`);
-      }
-    } catch (e) {
-      // Crew management might not be initialized yet
-    }
-    
-    // Apply easing to speed (slow down as we get closer)
-    const minSpeed = baseSpeed * 0.2 * speedMultiplier; // Minimum 20% of base speed
-    const speed = (baseSpeed * (1 - easedProgress * 0.8) + minSpeed) * speedMultiplier;
-    
-    return speed;
-  }
+        set({
+            isActive: true,
+            mode: AutopilotMode.CINEMATIC,
+            target: target.clone(),
+            cinematicPlan: null,
+            traveledDistance: 0,
+        });
+        console.log("Autopilot: entering cinematic mode");
+    },
+
+    deactivate: () => {
+        set({
+            isActive: false,
+            mode: AutopilotMode.IDLE,
+            target: null,
+            cinematicPlan: null,
+            traveledDistance: 0,
+        });
+        console.log("Autopilot deactivated");
+    },
+
+    makeCinematicPlan: (start, target) => {
+        const numSegments = 50;
+        const path: THREE.Vector3[] = [];
+        for (let i = 0; i <= numSegments; i++) {
+            const t = i / numSegments;
+            const p = new THREE.Vector3().lerpVectors(start, target, t);
+            path.push(p);
+        }
+        // compute total length
+        let total = 0;
+        for (let i = 1; i < path.length; i++) {
+            total += path[i].distanceTo(path[i - 1]);
+        }
+        const speedProfile: number[] = [];
+        for (let i = 0; i <= numSegments; i++) {
+            const t = i / numSegments;
+            speedProfile.push(easeInOutCubic(t));
+        }
+        return {path, speedProfile, totalLength: total};
+    },
+
+    tick: (dt, ship, env, playerInput) => {
+        const state = get();
+
+        if (
+            !state.isActive ||
+            state.mode !== AutopilotMode.CINEMATIC ||
+            !state.target
+        ) {
+            return;
+        }
+
+        let plan = state.cinematicPlan;
+        if (!plan) {
+            plan = get().makeCinematicPlan(ship.position, state.target);
+            set({cinematicPlan: plan});
+        }
+
+        const {desiredDir, desiredSpeedNorm} = sampleCinematic(
+            plan,
+            state.traveledDistance
+        );
+
+        const maxSpeed = 10; // tune per your ship
+        const desiredSpeed = desiredSpeedNorm * maxSpeed;
+
+        const velErr = desiredDir
+            .clone()
+            .multiplyScalar(desiredSpeed)
+            .sub(ship.velocity);
+
+        // Thrust command (proportional)
+        const Kp_thrust = 1.0;
+        const thrustCmd = velErr.length() * Kp_thrust;
+
+        // Orientation: face direction
+        const desiredOri = orientationFromDirection(desiredDir);
+        const torqueCmd = computeRotationTorque(
+            ship.orientation,
+            ship.angularVelocity,
+            desiredOri
+        );
+
+        // Apply torque & thrust (hook into your physics / ship system)
+        applyTorqueToShip(torqueCmd);
+        applyThrustToShip(thrustCmd);
+
+        // Advance traveled distance
+        const deltaDist = ship.velocity.length() * dt;
+        const newTraveled = state.traveledDistance + deltaDist;
+        set({traveledDistance: newTraveled});
+
+        // Check for arrival
+        if (newTraveled >= plan.totalLength) {
+            console.log("Autopilot: reached destination");
+            get().deactivate();
+        }
+    },
 }));
 
-// Subscribe to landing state changes to automatically deactivate autopilot when landing
-useLandedState.subscribe((state, prevState) => {
-  // If we just landed, deactivate autopilot
-  if (state.isLanded && !prevState?.isLanded) {
-    const autopilotState = useAutopilot.getState();
-    if (autopilotState.isActive) {
-      console.log('[AUTOPILOT] Auto-deactivating due to landing on', state.landedPlanet);
-      autopilotState.deactivate();
+
+/** Sample the cinematic plan at a given traveled distance */
+function sampleCinematic(
+    plan: CinematicPlan,
+    traveled: number
+): { desiredDir: THREE.Vector3; desiredSpeedNorm: number } {
+    const pts = plan.path;
+    const prof = plan.speedProfile;
+
+    let accum = 0;
+    let segIndex = 0;
+    for (let i = 1; i < pts.length; i++) {
+        const d = pts[i].distanceTo(pts[i - 1]);
+        if (accum + d >= traveled) {
+            segIndex = i - 1;
+            break;
+        }
+        accum += d;
     }
-  }
-});
+
+    const start = pts[segIndex];
+    const end = pts[segIndex + 1];
+    const segLen = start.distanceTo(end);
+    const rem = traveled - accum;
+    const t = segLen > 0 ? rem / segLen : 0;
+
+    const dir = end.clone().sub(start).normalize();
+    const speedNorm = THREE.MathUtils.lerp(
+        prof[segIndex],
+        prof[segIndex + 1],
+        t
+    );
+
+    return {desiredDir: dir, desiredSpeedNorm: speedNorm};
+}
+
+/** Compute orientation quaternion from a direction vector */
+function orientationFromDirection(dir: THREE.Vector3): THREE.Quaternion {
+    const q = new THREE.Quaternion();
+    const forward = new THREE.Vector3(0, 0, 1);
+    if (dir.lengthSq() < 1e-6) {
+        return q.identity();
+    }
+    q.setFromUnitVectors(forward, dir.clone().normalize());
+    return q;
+}
+
+/** PD torque to rotate from current orientation toward desired orientation */
+function computeRotationTorque(
+    currentOri: THREE.Quaternion,
+    angularVel: THREE.Vector3,
+    desiredOri: THREE.Quaternion
+): THREE.Vector3 {
+    // Quaternion error → axis-angle
+    const qErr = desiredOri.clone().multiply(currentOri.clone().invert());
+    let angle = 2 * Math.acos(
+        THREE.MathUtils.clamp(qErr.w, -1, 1)
+    );
+    const axis = new THREE.Vector3(qErr.x, qErr.y, qErr.z);
+    if (axis.lengthSq() < 1e-6) {
+        return new THREE.Vector3(0, 0, 0);
+    }
+    axis.normalize();
+
+    if (angle > Math.PI) {
+        angle = 2 * Math.PI - angle;
+        axis.negate();
+    }
+
+    const Kp_rot = 10;
+    const Kd_rot = 5;
+
+    const torqueP = axis.clone().multiplyScalar(Kp_rot * angle);
+    const torqueD = angularVel.clone().multiplyScalar(-Kd_rot);
+    return torqueP.add(torqueD);
+}
+
+/** Hook these into your ship / physics system below */
+
+function applyTorqueToShip(torque: THREE.Vector3) {
+    // TODO: integrate with your physics / ship control interface
+}
+
+function applyThrustToShip(thrust: number) {
+    // TODO: integrate with your engine’s thrust control / force application
+}

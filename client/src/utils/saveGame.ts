@@ -2,12 +2,9 @@
 // Collects and restores state from all Zustand stores
 
 import * as THREE from 'three';
-import {usePlayer} from '../lib/stores/player/usePlayer';
-import {useShipStatus} from '../lib/stores/ship/useShipStatus';
-import {useEquipment} from '../lib/stores/ship/useEquipment';
-import {useUpgrades} from '../lib/stores/ship/useUpgrades';
+import {useEquipment, usePlayer, useShipStatus, useUpgrades} from '@/lib/stores';
 import {useCrewManagement} from '../lib/stores/ship/useCrewManagement';
-import {useCreditsStore} from '../domain/economy/credits.store';
+import {useCreditsStore} from '@/domain';
 import {useInventoryStore} from '../domain/economy/inventory.store';
 import {usePlunderverseEconomy} from '../lib/stores/economy/usePlunderverseEconomy';
 import {usePlunderverseMissions} from '../lib/stores/economy/usePlunderverseMissions';
