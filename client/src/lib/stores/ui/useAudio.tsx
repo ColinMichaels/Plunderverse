@@ -360,15 +360,13 @@ export const useAudio = create<AudioState>((set, get) => ({
       isMuted: newMutedState, // Keep legacy flag in sync
     });
 
-    // Stop all audio immediately when master mute is activated
-    if (newMutedState) {
-      state.stopAllAudio();
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Audio continues playing silently when muted, and resumes at current level when unmuted
 
     // Save to localStorage
     saveAudioSettings(newMutedState, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
-    console.log(`Master audio ${newMutedState ? "muted" : "unmuted"}`);
+    console.log(`Master audio ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   toggleMusicMute: () => {
@@ -377,39 +375,13 @@ export const useAudio = create<AudioState>((set, get) => ({
 
     set({ musicMute: newMutedState });
 
-    // Stop music immediately if muted
-    if (newMutedState) {
-      const { backgroundMusic, ambientMusic } = state;
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-      }
-      if (ambientMusic) {
-        ambientMusic.pause();
-      }
-
-      // Stop music player
-      try {
-        const musicPlayer = useMusicPlayer.getState();
-        if (musicPlayer.isPlaying) {
-          musicPlayer.pause();
-        }
-      } catch (e) {
-        // Music player may not be loaded yet
-      }
-
-      // Stop enhanced music player
-      try {
-        const enhancedPlayer = useEnhancedMusicPlayer.getState();
-        enhancedPlayer.cleanup();
-      } catch (e) {
-        // Enhanced player may not be loaded yet
-      }
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Music continues playing silently when muted, and resumes at current level when unmuted
 
     // Save to localStorage
     saveAudioSettings(state.masterMute, newMutedState, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
-    console.log(`Music ${newMutedState ? "muted" : "unmuted"}`);
+    console.log(`Music ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   toggleSfxMute: () => {
@@ -418,24 +390,13 @@ export const useAudio = create<AudioState>((set, get) => ({
 
     set({ sfxMute: newMutedState });
 
-    // Stop sound effects immediately if muted
-    if (newMutedState) {
-      const { thrusterSound } = state;
-      if (thrusterSound) {
-        thrusterSound.pause();
-        thrusterSound.currentTime = 0;
-      }
-
-      // Stop all atmospheric sounds
-      state.stopWind();
-      state.stopRain();
-      state.stopThruster();
-    }
+    // Volume is controlled by SFX playback functions
+    // Continuous sounds (thruster, wind, rain) will continue playing silently when muted
 
     // Save to localStorage
     saveAudioSettings(state.masterMute, state.musicMute, newMutedState, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
-    console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"}`);
+    console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   setMasterMute: (muted: boolean) => {
@@ -446,9 +407,8 @@ export const useAudio = create<AudioState>((set, get) => ({
       isMuted: muted, // Keep legacy flag in sync
     });
 
-    if (muted) {
-      state.stopAllAudio();
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Audio continues playing silently when muted, and resumes at current level when unmuted
 
     // Save to localStorage
     saveAudioSettings(muted, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
@@ -459,33 +419,8 @@ export const useAudio = create<AudioState>((set, get) => ({
     
     set({ musicMute: muted });
 
-    if (muted) {
-      const { backgroundMusic, ambientMusic } = state;
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-      }
-      if (ambientMusic) {
-        ambientMusic.pause();
-      }
-
-      // Stop music player
-      try {
-        const musicPlayer = useMusicPlayer.getState();
-        if (musicPlayer.isPlaying) {
-          musicPlayer.pause();
-        }
-      } catch (e) {
-        // Music player may not be loaded yet
-      }
-
-      // Stop enhanced music player
-      try {
-        const enhancedPlayer = useEnhancedMusicPlayer.getState();
-        enhancedPlayer.cleanup();
-      } catch (e) {
-        // Enhanced player may not be loaded yet
-      }
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Music continues playing silently when muted, and resumes at current level when unmuted
 
     // Save to localStorage
     saveAudioSettings(state.masterMute, muted, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
@@ -496,18 +431,8 @@ export const useAudio = create<AudioState>((set, get) => ({
     
     set({ sfxMute: muted });
 
-    if (muted) {
-      const { thrusterSound } = state;
-      if (thrusterSound) {
-        thrusterSound.pause();
-        thrusterSound.currentTime = 0;
-      }
-
-      // Stop all atmospheric sounds
-      state.stopWind();
-      state.stopRain();
-      state.stopThruster();
-    }
+    // Volume is controlled by SFX playback functions
+    // Continuous sounds (thruster, wind, rain) will continue playing silently when muted
 
     // Save to localStorage
     saveAudioSettings(state.masterMute, state.musicMute, muted, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
