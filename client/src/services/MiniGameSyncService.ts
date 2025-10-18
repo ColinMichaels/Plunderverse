@@ -11,6 +11,7 @@ import { useSolarSystem } from '../lib/stores/space/useSolarSystem';
 import OfflineStorageService, { OfflineGameState, SyncQueueItem } from './OfflineStorageService';
 import { TransactionClient } from './TransactionClient';
 import { CloudSyncManager, SyncPayload, SyncMessageType } from './CloudSyncWebSocket';
+import Logger from './Logger';
 
 // State change event
 export interface StateChangeEvent {
@@ -101,7 +102,7 @@ class MiniGameSyncService {
     // Only process messages when mini-game is active (except victory rewards)
     if (!this.isMinigameActive && !isVictoryReward) return;
     
-    console.log(`[MiniGameSync] Received ${payload.type} via CloudSync`);
+    Logger.log(`[MiniGameSync] Received ${payload.type} via CloudSync`);
     
     switch (payload.type) {
       case 'state_update':
@@ -133,7 +134,7 @@ class MiniGameSyncService {
   private initializeSync(): void {
     if (!this.messageHandler) return;
     
-    console.log('[MiniGameSync] Initializing WebSocket connection via CloudSyncManager...');
+    Logger.log('[MiniGameSync] Initializing WebSocket connection via CloudSyncManager...');
     
     // Register message handler with CloudSync (only if not already registered)
     if (!this.messageHandlerRegistered) {
@@ -158,7 +159,7 @@ class MiniGameSyncService {
   private cleanupSync(): void {
     if (!this.messageHandler || !this.messageHandlerRegistered) return;
     
-    console.log('[MiniGameSync] Cleaning up WebSocket connection...');
+    Logger.log('[MiniGameSync] Cleaning up WebSocket connection...');
     
     // Unregister message handler from CloudSync
     this.cloudSync.removeMessageHandler(this.messageHandler);
@@ -313,7 +314,7 @@ class MiniGameSyncService {
         this.setSyncStatus('offline');
       }
     } catch (error) {
-      console.error('[MiniGameSync] Failed to send message:', error);
+      Logger.error('[MiniGameSync] Failed to send message:', error);
       this.setSyncStatus('error');
     }
   }
@@ -380,7 +381,7 @@ class MiniGameSyncService {
 
     // Handle specific update types
     if (data.type === 'victory_rewards' && data.rewards) {
-      console.log('[MiniGameSync] Received victory rewards from another client');
+      Logger.log('[MiniGameSync] Received victory rewards from another client');
       this.applyVictoryRewards(data.rewards);
     }
     // Apply general store updates
@@ -394,13 +395,13 @@ class MiniGameSyncService {
   private applyVictoryRewards(rewards: any): void {
     // Apply credits
     useCreditsStore.getState().earnCredits(rewards.credits);
-    console.log(`[MiniGameSync] Received ${rewards.credits} credits from victory`);
+    Logger.log(`[MiniGameSync] Received ${rewards.credits} credits from victory`);
     
     // Apply ship repairs using the proper methods
     const shipStatus = useShipStatus.getState();
     shipStatus.rechargeShield(rewards.shipRepairs.shields);
     shipStatus.repairHull(rewards.shipRepairs.hull);
-    console.log('[MiniGameSync] Applied ship repairs:', rewards.shipRepairs);
+    Logger.log('[MiniGameSync] Applied ship repairs:', rewards.shipRepairs);
     
     // Apply fuel restoration (free reward, no cost)
     if (rewards.shipRepairs.fuel) {
@@ -420,14 +421,14 @@ class MiniGameSyncService {
           )
         });
         
-        console.log(`[MiniGameSync] Restored ${rewards.shipRepairs.fuel}% fuel (${fuelAmount.toFixed(1)} units)`);
+        Logger.log(`[MiniGameSync] Restored ${rewards.shipRepairs.fuel}% fuel (${fuelAmount.toFixed(1)} units)`);
       }
     }
     
     // Items would need proper ResourceData objects to add to inventory
     // For now, just log the items (this would need proper implementation)
     if (rewards.items && rewards.items.length > 0) {
-      console.log('[MiniGameSync] Victory items received (inventory integration needed):', rewards.items);
+      Logger.log('[MiniGameSync] Victory items received (inventory integration needed):', rewards.items);
     }
     
     // Notify listeners
@@ -561,7 +562,7 @@ class MiniGameSyncService {
 
   private handleCustomConflict(data: any): void {
     // Implement custom conflict resolution based on specific rules
-    console.log('[MiniGameSync] Custom conflict resolution:', data);
+    Logger.log('[MiniGameSync] Custom conflict resolution:', data);
   }
 
   private notifyListeners(event: string, data: any): void {
@@ -571,7 +572,7 @@ class MiniGameSyncService {
 
   // Public API
   public setMinigameActive(active: boolean): void {
-    console.log(`[MiniGameSync] Mini-game ${active ? 'activated' : 'deactivated'}`);
+    Logger.log(`[MiniGameSync] Mini-game ${active ? 'activated' : 'deactivated'}`);
     
     this.isMinigameActive = active;
     
@@ -675,7 +676,7 @@ class MiniGameSyncService {
     };
     items: Array<{ id: string; quantity: number }>;
   }): void {
-    console.log('[MiniGameSync] Syncing victory rewards to other clients:', rewards);
+    Logger.log('[MiniGameSync] Syncing victory rewards to other clients:', rewards);
     
     const payload: SyncPayload = {
       type: 'state_update',

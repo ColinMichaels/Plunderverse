@@ -1,6 +1,8 @@
 // WebSocket-based Cloud Sync Manager for real-time sync
 // This handles the WebSocket connection and message routing
 
+import Logger from './Logger';
+
 export type SyncMessageType = 
   | 'state_update'
   | 'state_delta'
@@ -52,13 +54,13 @@ export class CloudSyncManager {
   
   private constructor() {
     this.deviceId = this.generateDeviceId();
-    console.log('[CloudSyncManager] Initialized with device ID:', this.deviceId);
+    Logger.log('[CloudSyncManager] Initialized with device ID:', this.deviceId);
   }
   
   static getInstance(): CloudSyncManager {
     if (!CloudSyncManager.instance) {
       CloudSyncManager.instance = new CloudSyncManager();
-      console.log('[CloudSyncWebSocket] Instance created with token support');
+      Logger.log('[CloudSyncWebSocket] Instance created with token support');
     }
     return CloudSyncManager.instance;
   }
@@ -68,13 +70,13 @@ export class CloudSyncManager {
    */
   async connect(): Promise<void> {
     if (this.ws && this.connected) {
-      console.log('[CloudSyncManager] Already connected');
+      Logger.log('[CloudSyncManager] Already connected');
       return;
     }
     
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) {
-      console.log('[CloudSyncManager] No auth token, skipping connection');
+      Logger.log('[CloudSyncManager] No auth token, skipping connection');
       this.authenticated = false;
       return;
     }
@@ -92,13 +94,13 @@ export class CloudSyncManager {
       wsUrl = `${protocol}//${host}/ws/sync?deviceId=${this.deviceId}&token=${encodeURIComponent(token)}`;
     }
     
-    console.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
+    Logger.log('[CloudSyncManager] Connecting to:', wsUrl.replace(/token=[^&]+/, 'token=***')); // Mask token in logs
     
     try {
       this.ws = new WebSocket(wsUrl);
       this.setupEventHandlers();
     } catch (error) {
-      console.error('[CloudSyncManager] Failed to create WebSocket:', error);
+      Logger.error('[CloudSyncManager] Failed to create WebSocket:', error);
       this.scheduleReconnect();
     }
   }
@@ -107,7 +109,7 @@ export class CloudSyncManager {
     if (!this.ws) return;
     
     this.ws.onopen = () => {
-      console.log('[CloudSyncManager] WebSocket connected');
+      Logger.log('[CloudSyncManager] WebSocket connected');
       this.connected = true;
       this.reconnectAttempts = 0;
       
@@ -123,16 +125,16 @@ export class CloudSyncManager {
         const payload = JSON.parse(event.data) as SyncPayload;
         this.handleMessage(payload);
       } catch (error) {
-        console.error('[CloudSyncManager] Failed to parse message:', error);
+        Logger.error('[CloudSyncManager] Failed to parse message:', error);
       }
     };
     
     this.ws.onerror = (error) => {
-      console.error('[CloudSyncManager] WebSocket error:', error);
+      Logger.error('[CloudSyncManager] WebSocket error:', error);
     };
     
     this.ws.onclose = () => {
-      console.log('[CloudSyncManager] WebSocket disconnected');
+      Logger.log('[CloudSyncManager] WebSocket disconnected');
       this.connected = false;
       this.authenticated = false;
       
@@ -147,14 +149,14 @@ export class CloudSyncManager {
     // This method is just for setting the authenticated state after connection
     const token = localStorage.getItem('accessToken') || sessionStorage.getItem('accessToken');
     if (!token) {
-      console.log('[CloudSyncManager] No auth token');
+      Logger.log('[CloudSyncManager] No auth token');
       return;
     }
     
     // Mark as authenticated and extract user ID
     this.authenticated = true;
     this.userId = this.getUserIdFromToken(token);
-    console.log('[CloudSyncManager] Authenticated as user:', this.userId);
+    Logger.log('[CloudSyncManager] Authenticated as user:', this.userId);
     
     // Request initial state sync
     this.sendMessage({
@@ -169,7 +171,7 @@ export class CloudSyncManager {
   }
   
   private handleMessage(payload: SyncPayload): void {
-    console.log(`[CloudSyncManager] Received ${payload.type}`);
+    Logger.log(`[CloudSyncManager] Received ${payload.type}`);
     
     // Update version tracking
     if (payload.version) {
@@ -181,7 +183,7 @@ export class CloudSyncManager {
       try {
         handler(payload);
       } catch (error) {
-        console.error('[CloudSyncManager] Handler error:', error);
+        Logger.error('[CloudSyncManager] Handler error:', error);
       }
     });
     
@@ -194,7 +196,7 @@ export class CloudSyncManager {
         // Transaction results are handled by registered handlers
         break;
       case 'sync_complete':
-        console.log('[CloudSyncManager] Sync completed');
+        Logger.log('[CloudSyncManager] Sync completed');
         break;
     }
   }
@@ -209,31 +211,31 @@ export class CloudSyncManager {
     if (data.credits !== undefined) {
       import('../domain/economy/credits.store').then(({ useCreditsStore }) => {
         useCreditsStore.getState().setAmount(data.credits);
-        console.log(`[CloudSyncManager] Credits updated to ${data.credits}`);
+        Logger.log(`[CloudSyncManager] Credits updated to ${data.credits}`);
       });
     }
     
     // Update fuel if present (fuel system not yet implemented)
     if (data.fuel !== undefined) {
-      console.log(`[CloudSyncManager] Fuel update received: ${data.fuel} (fuel store not yet implemented)`);
+      Logger.log(`[CloudSyncManager] Fuel update received: ${data.fuel} (fuel store not yet implemented)`);
       // TODO: Add fuel store when implemented
     }
     
     // Update inventory if present (inventory system not yet implemented)
     if (data.inventory) {
-      console.log(`[CloudSyncManager] Inventory update received (inventory store not yet implemented)`);
+      Logger.log(`[CloudSyncManager] Inventory update received (inventory store not yet implemented)`);
       // TODO: Add inventory store when implemented
     }
     
     // Update location if present (player store not yet implemented)
     if (data.location) {
-      console.log(`[CloudSyncManager] Location update received: ${data.location} (player store not yet implemented)`);
+      Logger.log(`[CloudSyncManager] Location update received: ${data.location} (player store not yet implemented)`);
       // TODO: Add player store when implemented
     }
     
     // Update ship stats if present (ship store not yet implemented)
     if (data.shipHull !== undefined || data.shipShield !== undefined) {
-      console.log('[CloudSyncManager] Ship stats update received (ship store not yet implemented)');
+      Logger.log('[CloudSyncManager] Ship stats update received (ship store not yet implemented)');
       // TODO: Add ship store when implemented
     }
   }
@@ -243,7 +245,7 @@ export class CloudSyncManager {
    */
   sendMessage(message: SyncPayload): void {
     if (!this.ws || !this.connected) {
-      console.log('[CloudSyncManager] Queueing message (not connected)');
+      Logger.log('[CloudSyncManager] Queueing message (not connected)');
       this.messageQueue.push(message);
       
       // Try to reconnect
@@ -257,7 +259,7 @@ export class CloudSyncManager {
       this.ws.send(JSON.stringify(message));
       this.localVersion++;
     } catch (error) {
-      console.error('[CloudSyncManager] Failed to send message:', error);
+      Logger.error('[CloudSyncManager] Failed to send message:', error);
       this.messageQueue.push(message);
     }
   }
@@ -267,7 +269,7 @@ export class CloudSyncManager {
    */
   addMessageHandler(handler: (data: any) => void): void {
     this.messageHandlers.add(handler);
-    console.log('[CloudSyncManager] Added message handler');
+    Logger.log('[CloudSyncManager] Added message handler');
   }
   
   /**
@@ -275,7 +277,7 @@ export class CloudSyncManager {
    */
   removeMessageHandler(handler: (data: any) => void): void {
     this.messageHandlers.delete(handler);
-    console.log('[CloudSyncManager] Removed message handler');
+    Logger.log('[CloudSyncManager] Removed message handler');
   }
   
   /**
@@ -295,7 +297,7 @@ export class CloudSyncManager {
   private flushMessageQueue(): void {
     if (!this.connected || this.messageQueue.length === 0) return;
     
-    console.log(`[CloudSyncManager] Flushing ${this.messageQueue.length} queued messages`);
+    Logger.log(`[CloudSyncManager] Flushing ${this.messageQueue.length} queued messages`);
     const queue = [...this.messageQueue];
     this.messageQueue = [];
     
@@ -310,7 +312,7 @@ export class CloudSyncManager {
     this.reconnectAttempts++;
     const delay = Math.min(this.reconnectDelay * this.reconnectAttempts, 30000);
     
-    console.log(`[CloudSyncManager] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
+    Logger.log(`[CloudSyncManager] Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
     
     this.reconnectTimeout = setTimeout(() => {
       this.reconnectTimeout = null;
@@ -347,7 +349,7 @@ export class CloudSyncManager {
    * Reconnect with new token (call after token refresh)
    */
   async reconnectWithNewToken(): Promise<void> {
-    console.log('[CloudSyncManager] Reconnecting with new token...');
+    Logger.log('[CloudSyncManager] Reconnecting with new token...');
     
     // Disconnect current connection
     if (this.ws) {
@@ -384,6 +386,6 @@ export class CloudSyncManager {
     this.messageHandlers.clear();
     this.messageQueue = [];
     
-    console.log('[CloudSyncManager] Disconnected and cleaned up');
+    Logger.log('[CloudSyncManager] Disconnected and cleaned up');
   }
 }
