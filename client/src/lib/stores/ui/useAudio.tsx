@@ -638,10 +638,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (get().masterMute || get().sfxMute) return;
         try {
             const cfg = AUDIO_CONFIG.soundEffects.explosion;
-            const h = await (get() as any).soundEffectsCache.getSound(
-                "explosion",
-                cfg
-            );
+            const h = new Howl({
+                src: [cfg.path],
+                volume: cfg.volume ?? 1,
+            });
             const baseVol = cfg.volume ?? 1;
             await audioManager.playHowl(h, "sfx", baseVol, {
                 fadeInMs: 50,
@@ -657,10 +657,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (get().masterMute || get().sfxMute) return;
         try {
             const cfg = AUDIO_CONFIG.soundEffects.takeoff;
-            const h = await (get() as any).soundEffectsCache.getSound(
-                "takeoff",
-                cfg
-            );
+            const h = new Howl({
+                src: [cfg.path],
+                volume: cfg.volume ?? 1,
+            });
             const baseVol = cfg.volume ?? 1;
             await audioManager.playHowl(h, "sfx", baseVol, {
                 fadeInMs: 50,
@@ -676,7 +676,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (get().masterMute || get().sfxMute) return;
         try {
             const cfg = AUDIO_CONFIG.soundEffects.hit;
-            const h = await (get() as any).soundEffectsCache.getSound("hit", cfg);
+            const h = new Howl({
+                src: [cfg.path],
+                volume: cfg.volume ?? 1,
+            });
             const baseVol = cfg.volume ?? 1;
             await audioManager.playHowl(h, "sfx", baseVol, {
                 fadeInMs: 20,
@@ -692,10 +695,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (get().masterMute || get().sfxMute) return;
         try {
             const cfg = AUDIO_CONFIG.soundEffects.success;
-            const h = await (get() as any).soundEffectsCache.getSound(
-                "success",
-                cfg
-            );
+            const h = new Howl({
+                src: [cfg.path],
+                volume: cfg.volume ?? 1,
+            });
             const baseVol = cfg.volume ?? 1;
             await audioManager.playHowl(h, "sfx", baseVol, {
                 fadeInMs: 30,
@@ -711,7 +714,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (get().masterMute || get().sfxMute) return;
         try {
             const cfg = AUDIO_CONFIG.soundEffects.laser;
-            const h = await (get() as any).soundEffectsCache.getSound("laser", cfg);
+            const h = new Howl({
+                src: [cfg.path],
+                volume: cfg.volume ?? 1,
+            });
             const baseVol = cfg.volume ?? 1;
             await audioManager.playHowl(h, "sfx", baseVol, {
                 fadeInMs: 40,
@@ -738,10 +744,11 @@ export const useAudio = create<AudioState>((set, get) => ({
         const cfg = AUDIO_CONFIG.soundEffects.thruster;
         (async () => {
             try {
-                const h = await (get() as any).soundEffectsCache.getSound(
-                    "thruster",
-                    cfg
-                );
+                const h = new Howl({
+                    src: [cfg.path],
+                    volume: cfg.volume ?? 1,
+                    loop: true,
+                });
                 const baseVol = cfg.volume ?? 1;
                 await audioManager.playHowl(h, "sfx", baseVol, {
                     fadeInMs,

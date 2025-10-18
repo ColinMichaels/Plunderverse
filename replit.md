@@ -31,11 +31,14 @@ Preferred communication style: Simple, everyday language.
 - **Settings Access**: Added settings gear button to mobile dashboard header for easy access to game settings
 - **Music Player Optimization**: Hidden music player during arcade gameplay to keep the screen clean, while preserving it in status/station views
 
-### 2025-10-18: Circular Dependency Fixes
-- **Audio System**: Fixed "Cannot access 'useAudio' before initialization" error by replacing static imports with dynamic imports in stopAllAudio() method
-- **Autopilot System**: Fixed "Cannot access 'useLandedState' before initialization" error by deferring subscription initialization with setTimeout pattern
+### 2025-10-18: Audio System Complete Refactor
+- **AudioManager Class**: Centralized all audio management with category-based volume/mute controls (music, sfx, parrot, ambient)
+- **Sound Effect Functions**: All play functions (playExplosion, playTakeoff, playHit, playSuccess, playLaser, playThruster) now use Howl directly instead of deprecated soundEffectsCache
+- **Atmospheric Sounds**: Added playWind(), stopWind(), playRain(), stopRain() with dynamic intensity control and lifecycle management
+- **Targeted Stopping**: Changed stop functions from stopAll() to stopSoundByKey() to prevent unintended sound interruption
+- **Cleanup**: Removed duplicate AtmosphericSounds.tsx sound management (now handled by AtmosphericEffects.tsx)
+- **Circular Dependencies**: Fixed initialization errors in audio and autopilot systems
 - **Click-Outside-to-Close**: Added click-away detection to sidebar panels for better UX
-- **Documentation**: Created README.md file for GitHub presentation
 
 ## System Architecture
 The project employs a client-server architecture. The frontend utilizes React, Three.js (React Three Fiber), and Zustand for state management. The backend is built with Express, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite and TypeScript, with styling managed by TailwindCSS and Radix UI components.
