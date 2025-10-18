@@ -15,16 +15,15 @@ export function AtmosphericSounds({
   planetName,
   stormActive = false,
 }: AtmosphericSoundsProps) {
-  // Get the sound effects cache from the audio store
-  const { soundEffectsCache } = useAudio();
+  // Get the sound effects cache and volume from the audio store
+  const { soundEffectsCache, sfxVolume, masterVolume } = useAudio();
   
-  // TODO: Add soundVolume to Settings when audio settings are implemented
-  let rawSoundVolume = 0.5; // Default volume for now
   const { intensity: windIntensity } = useWind();
   const { time } = useSolarSystem();
 
-  // Ensure soundVolume is always a valid finite number
-  const soundVolume = isFinite(rawSoundVolume) ? rawSoundVolume : 0.5;
+  // Apply volume multiplication: sfxVolume × masterVolume with validation
+  const rawSoundVolume = sfxVolume * masterVolume;
+  const soundVolume = isFinite(rawSoundVolume) ? Math.max(0, Math.min(1, rawSoundVolume)) : 0;
 
   // Store references to active sounds
   const activeWindSoundRef = useRef<Howl | null>(null);
