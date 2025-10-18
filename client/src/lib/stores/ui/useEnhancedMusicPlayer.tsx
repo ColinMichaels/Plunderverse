@@ -295,7 +295,7 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
   // Play music with priority
   playWithPriority: async (track: MusicTrack, priority: MusicPriority, returnAfter = false) => {
     const { layers, activeLayer, fadeDurations, masterVolume } = get();
-    const { masterMute, musicMute } = useAudio.getState();
+    const { masterMute, musicMute, musicVolume: audioMusicVolume, masterVolume: audioMasterVolume } = useAudio.getState();
     
     // Check if audio is muted
     if (masterMute || musicMute) {
@@ -354,7 +354,9 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
     track.audio.currentTime = 0;
     track.audio.volume = 0;
     track.audio.play().then(() => {
-      fadeIn(track.audio!, layer.volume * masterVolume, fadeDuration);
+      // Apply volume multiplication: layer.volume × musicVolume × masterVolume
+      const targetVolume = layer.volume * audioMusicVolume * audioMasterVolume;
+      fadeIn(track.audio!, targetVolume, fadeDuration);
       
       set({
         layers: [...layers],

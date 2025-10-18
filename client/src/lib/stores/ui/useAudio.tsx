@@ -299,7 +299,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
     playExplosion: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
     
     if (masterMute || sfxMute) {
       console.log("Explosion sound skipped (muted)");
@@ -312,7 +312,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         AUDIO_CONFIG.soundEffects.explosion
       );
       
-      // Optional: Add 3D positioning logic here if position is provided
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.explosion.volume || 1.0) * sfxVolume * masterVolume;
+      explosionSound.volume(actualVolume);
       explosionSound.play();
       console.log("Explosion sound played");
     } catch (error) {
@@ -321,7 +323,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
   
   playTakeoff: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
     
     if (masterMute || sfxMute) {
       console.log("Takeoff sound skipped (muted)");
@@ -334,10 +336,11 @@ export const useAudio = create<AudioState>((set, get) => ({
         AUDIO_CONFIG.soundEffects.takeoff
       );
       
-      // Play at full volume for prominent effect
-      takeoffSound.volume(AUDIO_CONFIG.soundEffects.takeoff.volume);
+      // Apply volume multiplication for prominent effect: sfxVolume × masterVolume
+      const actualVolume = AUDIO_CONFIG.soundEffects.takeoff.volume * sfxVolume * masterVolume;
+      takeoffSound.volume(actualVolume);
       takeoffSound.play();
-      console.log("[AUDIO] Takeoff sound played prominently at full volume");
+      console.log("[AUDIO] Takeoff sound played with volume:", actualVolume.toFixed(2));
     } catch (error) {
       console.error("Failed to play takeoff sound:", error);
     }
@@ -592,7 +595,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playHit: async () => {
-    const { masterMute, sfxMute, soundEffectsCache, lastPlayTimes } = get();
+    const { masterMute, sfxMute, soundEffectsCache, lastPlayTimes, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -617,6 +620,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "hit",
         AUDIO_CONFIG.soundEffects.hit,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.hit.volume || 1.0) * sfxVolume * masterVolume;
+      hitSound.volume(actualVolume);
       hitSound.play();
     } catch (error) {
       console.error("Failed to play hit sound:", error);
@@ -624,7 +630,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playSuccess: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -637,6 +643,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "success",
         AUDIO_CONFIG.soundEffects.success,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.success.volume || 1.0) * sfxVolume * masterVolume;
+      successSound.volume(actualVolume);
       successSound.play();
     } catch (error) {
       console.error("Failed to play success sound:", error);
@@ -644,7 +653,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playLaser: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -657,6 +666,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "laser",
         AUDIO_CONFIG.soundEffects.laser,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.laser.volume || 1.0) * sfxVolume * masterVolume;
+      laserSound.volume(actualVolume);
       laserSound.play();
     } catch (error) {
       console.error("Failed to play laser sound:", error);
@@ -664,9 +676,10 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playAmbientMusic: () => {
-    const { ambientMusic, masterMute, musicMute } = get();
+    const { ambientMusic, masterMute, musicMute, masterVolume, musicVolume } = get();
     if (ambientMusic && !masterMute && !musicMute) {
-      ambientMusic.volume = 0.4; // Low volume for background ambience
+      // Apply volume multiplication: musicVolume × masterVolume
+      ambientMusic.volume = 0.4 * musicVolume * masterVolume; // Low base volume for background ambience
       ambientMusic.loop = true;
       ambientMusic.play().catch((error) => {
         console.log("Ambient music play prevented:", error);
@@ -683,7 +696,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playThruster: async (fuelLevel) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeThrusterSound } =
+    const { masterMute, sfxMute, soundEffectsCache, activeThrusterSound, masterVolume, sfxVolume } =
       get();
 
     if (masterMute || sfxMute) {
@@ -702,10 +715,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         thrusterSound.stop(activeThrusterSound);
       }
 
-      // Calculate volume based on fuel level
+      // Calculate volume based on fuel level with volume multiplication
       const baseVolume = 0.15;
       const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100));
-      const volume = baseVolume * fuelRatio;
+      const volume = baseVolume * fuelRatio * sfxVolume * masterVolume;
 
       thrusterSound.volume(volume);
       const soundId = thrusterSound.play();
@@ -730,7 +743,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playWind: async (intensity = 0.5) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeWindSound } = get();
+    const { masterMute, sfxMute, soundEffectsCache, activeWindSound, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -749,9 +762,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         windSound.stop(activeWindSound);
       }
 
-      // Set volume based on intensity (0 to 1)
+      // Set volume based on intensity with volume multiplication
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
-      const volume = clampedIntensity * 0.4; // Max volume 0.4 for wind
+      const volume = clampedIntensity * 0.4 * sfxVolume * masterVolume; // Max base volume 0.4 for wind
 
         windSound.volume(volume);
       const soundId = windSound.play();
@@ -774,7 +787,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playRain: async (intensity = 0.5) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeRainSound } = get();
+    const { masterMute, sfxMute, soundEffectsCache, activeRainSound, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -793,9 +806,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         rainSound.stop(activeRainSound);
       }
 
-      // Set volume based on intensity (0 to 1)
+      // Set volume based on intensity with volume multiplication
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
-      const volume = clampedIntensity * 0.5; // Max volume 0.5 for rain
+      const volume = clampedIntensity * 0.5 * sfxVolume * masterVolume; // Max base volume 0.5 for rain
 
         rainSound.volume(volume);
       const soundId = rainSound.play();

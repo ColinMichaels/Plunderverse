@@ -96,6 +96,14 @@ interface ParrotState {
 
 const savedSettings = loadParrotSettings();
 
+// Helper function to update parrot speech service volume with master volume multiplication
+function updateParrotSpeechVolume() {
+  const parrotState = useParrot.getState();
+  const { masterVolume } = useAudio.getState();
+  const actualVolume = parrotState.settings.volume * masterVolume;
+  parrotSpeechService.updateSettings({ volume: actualVolume });
+}
+
 export const useParrot = create<ParrotState>((set, get) => ({
   settings: {
     mode: 'chatty',
@@ -115,7 +123,15 @@ export const useParrot = create<ParrotState>((set, get) => ({
   initialize: () => {
     const state = get();
     parrotSpeechService.setMuted(state.settings.isMuted);
-    parrotSpeechService.updateSettings({ volume: state.settings.volume });
+    updateParrotSpeechVolume();
+    
+    // Subscribe to master volume changes to keep parrot speech volume in sync
+    useAudio.subscribe(
+      (state) => state.masterVolume,
+      () => {
+        updateParrotSpeechVolume();
+      }
+    );
     
     parrotSpeechService.ensureVoicesLoaded(() => {
       console.log('[Parrot] Voice synthesis initialized');
@@ -158,7 +174,7 @@ export const useParrot = create<ParrotState>((set, get) => ({
     set((state) => ({
       settings: { ...state.settings, volume },
     }));
-    parrotSpeechService.updateSettings({ volume });
+    updateParrotSpeechVolume();
     const state = get();
     saveParrotSettings(state.settings.isMuted, volume);
   },
