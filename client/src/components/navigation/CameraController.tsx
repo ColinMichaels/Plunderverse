@@ -43,7 +43,7 @@ export function CameraController() {
   const { selectedPlanet, isLanding, setIsLanding, setCameraPosition, setShipPosition, setShipRotation, setShipVelocity, hasRestoredState, setHasRestoredState } =
     useSolarSystem();
   const { addProjectile } = useShooting();
-  const { playLaser } = useAudio();
+  const { playLaser, stopThruster } = useAudio();
   const { setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
   const { setGyroEnabled, setDragging, isMouseSteering, setMouseSteering } = useInput();
@@ -1130,6 +1130,7 @@ export function CameraController() {
           // Check if we've reached landing distance - trigger landing
           if (distanceToTarget <= landingDistance + 5) {
             deactivateAutopilot();
+            stopThruster(); // Stop thruster sound when autopilot completes
             setIsLanding(true);
             console.log(
               `Autopilot reached ${selectedPlanet} - initiating landing sequence`,
@@ -1240,6 +1241,7 @@ export function CameraController() {
 
         if (!consumeShipFuel(finalAutopilotConsumption)) {
           console.warn("Out of fuel! Autopilot deactivated.");
+          stopThruster(); // Stop thruster sound when autopilot runs out of fuel
           deactivateAutopilot();
         }
 
