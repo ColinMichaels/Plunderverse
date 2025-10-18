@@ -1,0 +1,117 @@
+playSuccess error: TypeError: Cannot read properties of undefined (reading 'getSound')
+    at playSuccess (useAudio.tsx:695:44)
+    at performClick (useMining.tsx:220:7)
+    at handleResourceClick (PlanetSurfaceScene.tsx:1250:38)
+    at onInteract (PlanetSurfaceScene.tsx:1311:37)
+    at onIntersect (events-776716bd.esm.js:1218:15)
+    at handleIntersects (events-776716bd.esm.js:1070:9)
+    at HTMLDivElement.handleEvent (events-776716bd.esm.js:1228:7)
+console.error @ index.tsx:86
+playSuccess @ useAudio.tsx:706
+performClick @ useMining.tsx:220
+handleResourceClick @ PlanetSurfaceScene.tsx:1250
+onInteract @ PlanetSurfaceScene.tsx:1311
+onIntersect @ events-776716bd.esm.js:1218
+handleIntersects @ events-776716bd.esm.js:1070
+handleEvent @ events-776716bd.esm.js:1228Understand this error
+useAudio.tsx:706 playSuccess error: TypeError: Cannot read properties of undefined (reading 'getSound')
+    at Object.playSuccess (useAudio.tsx:695:44)
+    at EconomyService.applyMiningYield (economy.service.ts:616:13)
+    at performClick (useMining.tsx:235:43)
+    at handleResourceClick (PlanetSurfaceScene.tsx:1250:38)
+    at onInteract (PlanetSurfaceScene.tsx:1311:37)
+    at onIntersect (events-776716bd.esm.js:1218:15)
+    at handleIntersects (events-776716bd.esm.js:1070:9)
+    at HTMLDivElement.handleEvent (events-776716bd.esm.js:1228:7)
+console.error @ index.tsx:86
+playSuccess @ useAudio.tsx:706
+applyMiningYield @ economy.service.ts:616
+performClick @ useMining.tsx:235
+handleResourceClick @ PlanetSurfaceScene.tsx:1250
+onInteract @ PlanetSurfaceScene.tsx:1311
+onIntersect @ events-776716bd.esm.js:1218
+handleIntersects @ events-776716bd.esm.js:1070
+handleEvent @ events-776716bd.esm.js:1228Understand this error
+useAudio.tsx:671 playTakeoff error: TypeError: Cannot read properties of undefined (reading 'getSound')
+    at playTakeoff (useAudio.tsx:660:44)
+    at onThrustStart (PlanetSurfaceScene.tsx:1630:25)
+    at Object.current (PlanetTransition.tsx:608:7)
+    at render$1 (events-776716bd.esm.js:1543:22)
+    at loop (events-776716bd.esm.js:1572:19)
+console.error @ index.tsx:86
+playTakeoff @ useAudio.tsx:671
+onThrustStart @ PlanetSurfaceScene.tsx:1630
+(anonymous) @ PlanetTransition.tsx:608
+render$1 @ events-776716bd.esm.js:1543
+loop @ events-776716bd.esm.js:1572
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558Understand this error
+6useAudio.tsx:687 playHit error: TypeError: Cannot read properties of undefined (reading 'getSound')
+    at playHit (useAudio.tsx:679:44)
+    at EnemyField.tsx:135:11
+    at Array.forEach (<anonymous>)
+    at Object.current (EnemyField.tsx:79:17)
+    at render$1 (events-776716bd.esm.js:1543:22)
+    at loop (events-776716bd.esm.js:1572:19)
