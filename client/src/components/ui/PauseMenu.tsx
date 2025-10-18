@@ -7,10 +7,12 @@ import {useLandedState} from "@/lib/stores/surface/useLandedState";
 import {useShooting} from "@/lib/stores/combat/useShooting";
 import {useEnemies} from "@/lib/stores/combat/useEnemies";
 import {useAutopilot} from "@/lib/stores/navigation/useAutopilot";
+import {useAudio} from "@/lib/stores";
 import {INPUT_KEY_EVENT, InputRouter} from "@/lib/InputRouter";
-import {HelpCircle, Home, Play, Power, Settings, Save} from "lucide-react";
+import {HelpCircle, Home, Play, Power, Save, Settings} from "lucide-react";
 import {SettingsContent} from "../screens/SettingsContent";
 import {useAutoSave} from "@/hooks/useAutoSave";
+import {Logger} from "@/services/Logger";
 
 // Ensure router is attached once this module is imported
 if (typeof window !== 'undefined') {
@@ -31,6 +33,11 @@ export function PauseMenu() {
   const { deactivate: deactivateAutopilot } = useAutopilot();
   const { keybinds, updateKeybind, resetToDefaults } = useSettings();
   const { manualSave, isSaving } = useAutoSave();
+    const {toggleMasterMute} = useAudio();
+
+    useEffect(() => {
+        toggleMasterMute();
+    }, []);
 
     // Open/close the pause menu with ESC via global input router
   useEffect(() => {
@@ -109,7 +116,7 @@ export function PauseMenu() {
     setPaused(true);
     setActivePanel("main");
 
-    console.log("[PAUSE-MENU] Returned to home screen");
+      Logger.log("[PAUSE-MENU] Returned to home screen");
   };
 
   const handleExitGame = () => {

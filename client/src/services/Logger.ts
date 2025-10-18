@@ -1,9 +1,9 @@
 /**
  * Custom Logger Service
- * 
+ *
  * A flexible, environment-aware logging service that can be configured
  * for different environments and output destinations.
- * 
+ *
  * Features:
  * - Environment detection (development/production)
  * - Configurable log levels
@@ -50,7 +50,7 @@ class LoggerService {
   constructor(config?: Partial<LoggerConfig>) {
     // Default configuration
     const isDev = import.meta.env.DEV || import.meta.env.MODE === 'development';
-    
+
     this.config = {
       minLevel: isDev ? LogLevel.DEBUG : LogLevel.LOG,
       enableConsole: true,
@@ -234,6 +234,12 @@ class LoggerService {
     const entry = this.createEntry(LogLevel.LOG, message, data);
     this.write(entry);
   }
+
+    info(message: string, ...data: any[]): void {
+        if (!this.shouldLog(LogLevel.LOG)) return;
+        const entry = this.createEntry(LogLevel.LOG, message, data);
+        this.write(entry);
+    }
 
   warn(message: string, ...data: any[]): void {
     if (!this.shouldLog(LogLevel.WARN)) return;

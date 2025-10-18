@@ -1,16 +1,24 @@
-import { useRef, useEffect, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { useKeyboardControls } from "@react-three/drei";
+import {useEffect, useRef, useState} from "react";
+import {useFrame, useThree} from "@react-three/fiber";
+import {INPUT_KEY_EVENT, InputRouter} from "@/lib/InputRouter";
 import * as THREE from "three";
-import { useFlashlight } from "../../lib/stores/surface/useFlashlight";
-import { useSurfaceCollision } from "../../lib/stores/surface/useSurfaceCollision";
-import { useSurfacePlayer } from "../../lib/stores/surface/useSurfacePlayer";
-import { useMining } from "../../lib/stores/economy/useMining";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { useTerrain } from "../../lib/stores/surface/useTerrain";
-import { useSettings } from "../../lib/stores/ui/useSettings";
-import { useDestroyedNodes } from "../../lib/stores/surface/useDestroyedNodes";
-import { useLandedState } from "../../lib/stores/surface/useLandedState";
+import {Logger} from "@/services/Logger";
+import {
+    useAudio,
+    useDestroyedNodes,
+    useFlashlight,
+    useLandedState,
+    useMining,
+    useSettings,
+    useSurfaceCollision,
+    useSurfacePlayer,
+    useTerrain
+} from "@/lib/stores";
+
+// Ensure global input router is attached once on the client
+if (typeof window !== 'undefined') {
+    InputRouter.instance().attach();
+}
 
 enum SurfaceControls {
   forward = "forward",
@@ -41,18 +49,19 @@ interface SurfaceMovementControllerProps {
 
 export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovementControllerProps = {}) {
   const { camera, gl, scene } = useThree();
-  const [subscribe, get] = useKeyboardControls<SurfaceControls>();
   const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
   const rotationRef = useRef(0); // Yaw (left/right)
   const pitchRef = useRef(0); // Pitch (up/down)
   const velocityRef = useRef(new THREE.Vector3());
   const { sensitivity } = useSettings();
-  
+    const {keybinds} = useSettings();
+    const pressedCodesRef = useRef<Set<string>>(new Set());
+
   // Target values for smooth interpolation (initialize to current values)
   const targetRotationRef = useRef(0); // Target yaw for smooth rotation
   const targetPitchRef = useRef(0); // Target pitch for smooth rotation
   const smoothingFactor = 0.12; // Lower = smoother but less responsive (0.12 = smooth cinematic feel)
-  
+
   // Initialize target values to match current values on mount
   useEffect(() => {
     targetRotationRef.current = rotationRef.current;
@@ -88,7 +97,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
   } = useFlashlight();
   const lastFlashlightPressRef = useRef(0);
   const lastChargePressRef = useRef(0);
-  
+
   // Spacebar mining system
   const lastShootPressRef = useRef(0);
   const [miningBeamActive, setMiningBeamActive] = useState(false);
@@ -97,78 +106,101 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
   const currentMiningNodeRef = useRef<any>(null); // Track the node we're actively mining
   const lastSoundPlayRef = useRef(0); // Track when we last played the laser sound
 
-  // Debug logging for controls
+    // Listen to global InputRouter key events and track pressed codes
   useEffect(() => {
-    const unsubscribeForward = subscribe((state) => state.forward);
-    const unsubscribeBack = subscribe((state) => state.backward);
-    const unsubscribeLeft = subscribe((state) => state.left);
-    const unsubscribeRight = subscribe((state) => state.right);
-    const unsubscribeTurnLeft = subscribe((state) => state.turnLeft);
-    const unsubscribeTurnRight = subscribe((state) => state.turnRight);
+      const onKey = (e: Event) => {
+          const ce = e as CustomEvent<{ key: string; code: string; domEvent: KeyboardEvent }>;
+          const detail = ce.detail as any;
+          if (!detail) return;
+          const {code, domEvent} = detail;
+          if (!code || !domEvent) return;
+          // Avoid repeats from keydown auto-repeat
+          if (domEvent.type === 'keydown' && domEvent.repeat) return;
+          const set = pressedCodesRef.current;
+          if (domEvent.type === 'keydown') {
+              set.add(code);
+          } else if (domEvent.type === 'keyup') {
+              set.delete(code);
+          }
+    };
+
+      window.addEventListener(INPUT_KEY_EVENT, onKey as EventListener, {capture: true});
+      return () => window.removeEventListener(INPUT_KEY_EVENT, onKey as EventListener);
+  }, []);
+
+    // Mouse look controls while holding primary mouse button (no pointer lock)
+  useEffect(() => {
+      const canvas = gl.domElement as HTMLCanvasElement;
+
+      let isHeld = false;
+      let activePointerId: number | null = null;
+
+      const handlePointerDown = (ev: PointerEvent) => {
+          if (ev.button !== 0) return; // Only primary (LMB)
+          activePointerId = ev.pointerId;
+          try {
+              canvas.setPointerCapture(ev.pointerId);
+          } catch {
+          }
+          isHeld = true;
+          Logger.info('[Surface] Mouse look engaged (hold LMB)');
+      };
+
+      const handlePointerUp = (ev: PointerEvent) => {
+          if (ev.button !== 0) return;
+          if (activePointerId === ev.pointerId) {
+              try {
+                  canvas.releasePointerCapture(ev.pointerId);
+              } catch {
+              }
+              activePointerId = null;
+          }
+          isHeld = false;
+          Logger.info('[Surface] Mouse look released');
+      };
+
+      const handlePointerMove = (ev: PointerEvent) => {
+          if (!isHeld) return;
+          const mouseSensitivity = sensitivity * 3.5;
+          targetRotationRef.current -= ev.movementX * mouseSensitivity;
+          targetPitchRef.current -= ev.movementY * mouseSensitivity;
+          const maxPitch = Math.PI / 2.1;
+          targetPitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, targetPitchRef.current));
+    };
+
+      canvas.addEventListener('pointerdown', handlePointerDown);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('pointermove', handlePointerMove);
 
     return () => {
-      unsubscribeForward();
-      unsubscribeBack();
-      unsubscribeLeft();
-      unsubscribeRight();
-      unsubscribeTurnLeft();
-      unsubscribeTurnRight();
-    };
-  }, [subscribe]);
-
-  // Mouse look controls with pointer lock
-  useEffect(() => {
-    const canvas = gl.domElement;
-    
-    // Mouse movement handler for first-person camera
-    const handleMouseMove = (event: MouseEvent) => {
-      if (document.pointerLockElement === canvas) {
-        // Reduced sensitivity for better control (3.5x instead of 10x)
-        const mouseSensitivity = sensitivity * 3.5;
-        
-        // Update target yaw (left/right) - inverted for natural feel
-        targetRotationRef.current -= event.movementX * mouseSensitivity;
-        
-        // Update target pitch (up/down) with clamping to prevent over-rotation
-        targetPitchRef.current -= event.movementY * mouseSensitivity;
-        
-        // Clamp target pitch to prevent looking too far up or down (roughly -85 to +85 degrees)
-        const maxPitch = Math.PI / 2.1;
-        targetPitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, targetPitchRef.current));
-      }
-    };
-
-    // Request pointer lock on click
-    const handleClick = () => {
-      if (document.pointerLockElement !== canvas) {
-        canvas.requestPointerLock();
-        console.log('[Surface] Pointer lock requested - mouse will control camera');
-      }
-    };
-
-    // Log pointer lock changes
-    const handlePointerLockChange = () => {
-      if (document.pointerLockElement === canvas) {
-        console.log('[Surface] Pointer lock active - use ESC to release mouse');
-      } else {
-        console.log('[Surface] Pointer lock released - click to recapture mouse');
-      }
-    };
-
-    // Add event listeners
-    canvas.addEventListener('click', handleClick);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('pointerlockchange', handlePointerLockChange);
-
-    return () => {
-      canvas.removeEventListener('click', handleClick);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('pointerlockchange', handlePointerLockChange);
+        canvas.removeEventListener('pointerdown', handlePointerDown);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('pointermove', handlePointerMove);
     };
   }, [gl, sensitivity]);
 
   useFrame((state, delta) => {
-    const controls = get();
+      // Helper to check if any of the key codes bound to an action are currently pressed
+      const isActionDown = (action: string) => {
+          const codes: string[] = (keybinds as any)?.[action] || [];
+          const set = pressedCodesRef.current;
+          for (let i = 0; i < codes.length; i++) {
+              if (set.has(codes[i])) return true;
+          }
+          return false;
+      };
+
+      const controls = {
+          forward: isActionDown('forward'),
+          backward: isActionDown('backward'),
+          left: isActionDown('left'),
+          right: isActionDown('right'),
+          turnLeft: isActionDown('turnLeft'),
+          turnRight: isActionDown('turnRight'),
+          flashlight: isActionDown('flashlight'),
+          charge: isActionDown('charge'),
+          shoot: isActionDown('shoot'),
+      };
     const position = positionRef.current;
     const rotation = rotationRef.current;
     const velocity = velocityRef.current;
@@ -215,8 +247,8 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
     if (controls.turnRight) {
       targetRotationRef.current -= turnSpeed * delta;
     }
-    
-    // Smooth interpolation for camera rotation (lerp)
+
+      // Smooth interpolation for camera rotation (lerp)
     // Apply easing to both mouse and keyboard rotation
     const lerpFactor = 1 - Math.pow(1 - smoothingFactor, delta * 60); // Frame-rate independent smoothing
     rotationRef.current += (targetRotationRef.current - rotationRef.current) * lerpFactor;
@@ -244,8 +276,8 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
 
     // Update flashlight battery (drain/charge based on state)
     updateBattery(delta);
-    
-    // Spacebar mining - handle both starting new mining and continuing existing mining
+
+      // Spacebar mining - handle both starting new mining and continuing existing mining
     if (controls.shoot) {
       // If we're already mining, continuously call performClick to progress
       if (isMining && currentMiningNodeRef.current && landedPlanet) {
@@ -253,8 +285,8 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         if (!isNodeDestroyed(landedPlanet, currentMiningNodeRef.current.id)) {
           // Call performClick every frame to progress mining
           performClick();
-          
-          // Keep the mining beam active
+
+            // Keep the mining beam active
           if (!miningBeamActive) {
             setMiningBeamActive(true);
             setMiningBeamTarget(new THREE.Vector3(...currentMiningNodeRef.current.position));
@@ -267,47 +299,47 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
           currentMiningNodeRef.current = null;
         }
       }
-      
-      // Check for new targets (with debounce to prevent rapid switching)
+
+        // Check for new targets (with debounce to prevent rapid switching)
       if (currentTime - lastShootPressRef.current > 200) {
         lastShootPressRef.current = currentTime;
-        
-        // Get all resource nodes from the collision system
+
+          // Get all resource nodes from the collision system
         const resourceNodes = getResourceNodes ? getResourceNodes() : [];
-        
-        // Find the nearest mineral within range
+
+          // Find the nearest mineral within range
         let nearestNode: any = null;
         let nearestDistance = Infinity;
-        
-        resourceNodes.forEach((node: any) => {
+
+          resourceNodes.forEach((node: any) => {
           // Skip destroyed nodes
           if (landedPlanet && isNodeDestroyed(landedPlanet, node.id)) {
             return;
           }
-          
-          const nodePosition = new THREE.Vector3(...node.position);
+
+              const nodePosition = new THREE.Vector3(...node.position);
           const distance = position.distanceTo(nodePosition);
-          
-          // Check if within mining range and if it's closer than previous
+
+              // Check if within mining range and if it's closer than previous
           if (distance <= miningRange && distance < nearestDistance) {
             // Check if we have line of sight (simple angle check)
             const toNode = nodePosition.clone().sub(position).normalize();
             const cameraDir = new THREE.Vector3(0, 0, -1);
             cameraDir.applyQuaternion(camera.quaternion);
-            
-            const angle = cameraDir.angleTo(toNode);
+
+              const angle = cameraDir.angleTo(toNode);
             if (angle < Math.PI / 4) { // 45 degree cone
               nearestNode = node;
               nearestDistance = distance;
             }
           }
         });
-        
-        // If we found a mineral and it's different from what we're mining
+
+          // If we found a mineral and it's different from what we're mining
         if (nearestNode && landedPlanet) {
           // Check if the node has resource data (safety check)
           if (!nearestNode.resource) {
-            console.warn(`[Mining] Node ${nearestNode.id} is missing resource data. Skipping.`);
+              Logger.warn(`[Mining] Node ${nearestNode.id} is missing resource data. Skipping.`);
           } else if (!isMining || currentNodeId !== nearestNode.id) {
             // Start mining new node
             startMining(landedPlanet, nearestNode.resource, nearestNode.id);
