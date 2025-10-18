@@ -55,6 +55,21 @@ export function AudioSettingsPanel() {
     parrot.setVolume(volume);
   };
 
+  const handleMasterVolumeChange = (value: number[]) => {
+    const volume = value[0] / 100;
+    audio.setMasterVolume(volume);
+  };
+
+  const handleMusicVolumeChange = (value: number[]) => {
+    const volume = value[0] / 100;
+    audio.setMusicVolume(volume);
+  };
+
+  const handleSfxVolumeChange = (value: number[]) => {
+    const volume = value[0] / 100;
+    audio.setSfxVolume(volume);
+  };
+
   return (
     <div className="space-y-6 p-4">
       <div className="space-y-4">
@@ -65,24 +80,47 @@ export function AudioSettingsPanel() {
           </div>
         </div>
 
-        {/* Master Mute */}
-        <div className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-cyan-400/30">
-          <div className="flex items-center gap-3">
-            {audio.masterMute ? (
-              <VolumeX className="w-5 h-5 text-red-400" />
-            ) : (
-              <Volume2 className="w-5 h-5 text-cyan-400" />
-            )}
-            <div>
-              <Label className="text-white font-medium">Master Audio</Label>
-              <p className="text-xs text-gray-400">Mute all game sounds</p>
+        {/* Master Controls */}
+        <div className="space-y-3 p-3 bg-gray-800/50 rounded-lg border border-cyan-400/30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {audio.masterMute ? (
+                <VolumeX className="w-5 h-5 text-red-400" />
+              ) : (
+                <Volume2 className="w-5 h-5 text-cyan-400" />
+              )}
+              <div>
+                <Label className="text-white font-medium">Master Audio</Label>
+                <p className="text-xs text-gray-400">Mute all game sounds</p>
+              </div>
             </div>
+            <Switch
+              checked={!audio.masterMute}
+              onCheckedChange={handleMasterMuteToggle}
+              className="data-[state=checked]:bg-cyan-500"
+            />
           </div>
-          <Switch
-            checked={!audio.masterMute}
-            onCheckedChange={handleMasterMuteToggle}
-            className="data-[state=checked]:bg-cyan-500"
-          />
+          
+          {!audio.masterMute && (
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-cyan-400 text-xs">Master Volume</Label>
+                <span className="text-cyan-400 text-xs font-mono">
+                  {Math.round(audio.masterVolume * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[audio.masterVolume * 100]}
+                onValueChange={handleMasterVolumeChange}
+                max={100}
+                step={5}
+                className="[&_.bg-primary]:bg-cyan-400 [&_.border-primary]:border-cyan-400"
+              />
+              <p className="text-xs text-gray-400 italic">
+                Controls overall volume - multiplies with category volumes
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Music Controls */}
@@ -102,6 +140,24 @@ export function AudioSettingsPanel() {
               className="data-[state=checked]:bg-cyan-500"
             />
           </div>
+          
+          {!audio.masterMute && !audio.musicMute && (
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-cyan-400 text-xs">Music Volume</Label>
+                <span className="text-cyan-400 text-xs font-mono">
+                  {Math.round(audio.musicVolume * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[audio.musicVolume * 100]}
+                onValueChange={handleMusicVolumeChange}
+                max={100}
+                step={5}
+                className="[&_.bg-primary]:bg-cyan-400 [&_.border-primary]:border-cyan-400"
+              />
+            </div>
+          )}
         </div>
 
         {/* Sound Effects Controls */}
@@ -121,6 +177,24 @@ export function AudioSettingsPanel() {
               className="data-[state=checked]:bg-cyan-500"
             />
           </div>
+          
+          {!audio.masterMute && !audio.sfxMute && (
+            <div className="space-y-2 pt-2">
+              <div className="flex items-center justify-between">
+                <Label className="text-cyan-400 text-xs">SFX Volume</Label>
+                <span className="text-cyan-400 text-xs font-mono">
+                  {Math.round(audio.sfxVolume * 100)}%
+                </span>
+              </div>
+              <Slider
+                value={[audio.sfxVolume * 100]}
+                onValueChange={handleSfxVolumeChange}
+                max={100}
+                step={5}
+                className="[&_.bg-primary]:bg-cyan-400 [&_.border-primary]:border-cyan-400"
+              />
+            </div>
+          )}
         </div>
 
         {/* Parrot Speech Controls */}
@@ -145,7 +219,7 @@ export function AudioSettingsPanel() {
             <>
               <div className="space-y-2 pt-2">
                 <div className="flex items-center justify-between">
-                  <Label className="text-cyan-400 text-xs">Volume</Label>
+                  <Label className="text-cyan-400 text-xs">Parrot Volume</Label>
                   <span className="text-cyan-400 text-xs font-mono">
                     {Math.round(parrot.settings.volume * 100)}%
                   </span>
