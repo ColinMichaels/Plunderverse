@@ -1,8 +1,17 @@
 import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { OrbitControls, Sphere, Torus } from '@react-three/drei';
+import { OrbitControls, Sphere, Torus, KeyboardControls, useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { X, Trophy, RotateCcw } from 'lucide-react';
+
+enum Controls {
+  forward = 'forward',
+  back = 'back',
+  left = 'left',
+  right = 'right',
+  up = 'up',
+  down = 'down',
+}
 
 interface ZeroGravityRacingProps {
   onComplete: (time: number) => void;
@@ -48,6 +57,7 @@ function CheckpointRing({ position, isActive, isPassed }: { position: [number, n
 function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onCheckpoint: (index: number) => void }) {
   const shipRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
+  const [, getKeys] = useKeyboardControls<Controls>();
   const [checkpoints] = useState([
     new THREE.Vector3(0, 0, -20),
     new THREE.Vector3(15, 5, -40),
@@ -64,34 +74,8 @@ function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onChe
   useFrame((state, delta) => {
     if (!shipRef.current) return;
 
-    const keys = {
-      forward: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.('w') ||
-        state.get().events.connected.keyPressed?.('W') ||
-        state.get().events.connected.keyPressed?.('ArrowUp')
-      ),
-      back: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.('s') ||
-        state.get().events.connected.keyPressed?.('S') ||
-        state.get().events.connected.keyPressed?.('ArrowDown')
-      ),
-      left: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.('a') ||
-        state.get().events.connected.keyPressed?.('A') ||
-        state.get().events.connected.keyPressed?.('ArrowLeft')
-      ),
-      right: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.('d') ||
-        state.get().events.connected.keyPressed?.('D') ||
-        state.get().events.connected.keyPressed?.('ArrowRight')
-      ),
-      up: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.(' ')
-      ),
-      down: state.get().events.connected && (
-        state.get().events.connected.keyPressed?.('Shift')
-      ),
-    };
+    // Get current key states without causing re-renders
+    const keys = getKeys();
 
     // Apply thrust
     const thrust = 20;
@@ -255,15 +239,26 @@ export const ZeroGravityRacing: React.FC<ZeroGravityRacingProps> = ({ onComplete
     cameraPosition.current.set(0, 5, 10);
   };
 
+  const keyMap = [
+    { name: Controls.forward, keys: ['ArrowUp', 'KeyW'] },
+    { name: Controls.back, keys: ['ArrowDown', 'KeyS'] },
+    { name: Controls.left, keys: ['ArrowLeft', 'KeyA'] },
+    { name: Controls.right, keys: ['ArrowRight', 'KeyD'] },
+    { name: Controls.up, keys: ['Space'] },
+    { name: Controls.down, keys: ['ShiftLeft', 'ShiftRight'] },
+  ];
+
   return (
     <div className="fixed inset-0 bg-black z-50">
       {/* 3D Canvas */}
-      <Canvas
-        camera={{ position: [0, 5, 10], fov: 75 }}
-        className="w-full h-full"
-      >
-        <RaceScene onCheckpoint={handleCheckpoint} cameraPosition={cameraPosition.current} />
-      </Canvas>
+      <KeyboardControls map={keyMap}>
+        <Canvas
+          camera={{ position: [0, 5, 10], fov: 75 }}
+          className="w-full h-full"
+        >
+          <RaceScene onCheckpoint={handleCheckpoint} cameraPosition={cameraPosition.current} />
+        </Canvas>
+      </KeyboardControls>
 
       {/* HUD Overlay */}
       <div className="absolute inset-0 pointer-events-none">
