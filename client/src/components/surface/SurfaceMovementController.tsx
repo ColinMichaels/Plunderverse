@@ -221,13 +221,13 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         };
 
         // Flashlight toggle only on transition false→true
-        if (controls.flashlight && !prevControlsRef.current.flashlight) {
+        if (controls.flashlight) {
             toggleFlashlight();
             Logger.info('[Surface] Flashlight toggle triggered');
         }
 
         // Charge toggle only on transition false→true
-        if (controls.charge && !prevControlsRef.current.charge) {
+        if (controls.charge) {
             if (isCharging) {
                 stopCharging();
                 Logger.info('[Surface] Charging stopped');
@@ -282,7 +282,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
 
         const moving = controls.forward || controls.backward || controls.left || controls.right;
         if (moving && !motorPlayingRef.current) {
-            playMotor(0.2);
+            playMotor(0.05);
             motorPlayingRef.current = true;
         } else if (!moving && motorPlayingRef.current) {
             stopMotor();
@@ -386,6 +386,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
 
         const collision = checkCollision(newPosition, playerCollisionRadius);
         if (collision) {
+
             const miningCurrentNode = isMining && collision.type === "resource" && collision.id === currentNodeId;
             if (!miningCurrentNode) {
                 const velocityMagnitude = velocity.length();

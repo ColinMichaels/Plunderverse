@@ -852,7 +852,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 const motorHowl = new Howl({
                     src: ["/sounds/motor.mp3"],
                     loop: true,
-                    volume: intensity ?? 0.2,
+                    volume: intensity ?? 0.1,
                 });
                 await audioManager.playHowl(motorHowl, "ambient", 1, {
                     fadeInMs: 800,
