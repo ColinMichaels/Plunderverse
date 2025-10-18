@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
@@ -39,7 +39,7 @@ export const QuickRepairPanel: React.FC = () => {
   const equipment = useEquipment();
   const { credits, spendCredits } = useCredits();
   
-  const repairOptions: RepairOption[] = [
+  const repairOptions: RepairOption[] = useMemo(() => [
     {
       id: 'hull-emergency',
       name: 'Emergency Hull Repair',
@@ -131,7 +131,7 @@ export const QuickRepairPanel: React.FC = () => {
         }
       }
     }
-  ];
+  ], [hull, shield, credits, equipment, spendCredits, repairHull, rechargeShield]);
   
   const handleQuickRepair = async (option: RepairOption) => {
     if (!option.available) {
