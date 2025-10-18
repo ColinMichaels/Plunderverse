@@ -6,6 +6,14 @@
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### 2025-10-18: Circular Dependency Fixes
+- **Audio System**: Fixed "Cannot access 'useAudio' before initialization" error by replacing static imports with dynamic imports in stopAllAudio() method
+- **Autopilot System**: Fixed "Cannot access 'useLandedState' before initialization" error by deferring subscription initialization with setTimeout pattern
+- **Click-Outside-to-Close**: Added click-away detection to sidebar panels for better UX
+- **Documentation**: Created README.md file for GitHub presentation
+
 ## System Architecture
 The project employs a client-server architecture. The frontend utilizes React, Three.js (React Three Fiber), and Zustand for state management. The backend is built with Express, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite and TypeScript, with styling managed by TailwindCSS and Radix UI components.
 
