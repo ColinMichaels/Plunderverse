@@ -22,6 +22,10 @@ function loadAudioSettings() {
       masterMute: false,
       musicMute: false,
       sfxMute: false,
+      masterVolume: 1.0,
+      musicVolume: 1.0,
+      sfxVolume: 1.0,
+      parrotVolume: 1.0,
     };
   }
   
@@ -33,6 +37,10 @@ function loadAudioSettings() {
         masterMute: settings.masterMute ?? false,
         musicMute: settings.musicMute ?? false,
         sfxMute: settings.sfxMute ?? false,
+        masterVolume: settings.masterVolume ?? 1.0,
+        musicVolume: settings.musicVolume ?? 1.0,
+        sfxVolume: settings.sfxVolume ?? 1.0,
+        parrotVolume: settings.parrotVolume ?? 1.0,
       };
     }
   } catch (error) {
@@ -42,16 +50,37 @@ function loadAudioSettings() {
     masterMute: false,
     musicMute: false,
     sfxMute: false,
+    masterVolume: 1.0,
+    musicVolume: 1.0,
+    sfxVolume: 1.0,
+    parrotVolume: 1.0,
   };
 }
 
-function saveAudioSettings(masterMute: boolean, musicMute: boolean, sfxMute: boolean) {
+function saveAudioSettings(
+  masterMute: boolean,
+  musicMute: boolean,
+  sfxMute: boolean,
+  masterVolume: number,
+  musicVolume: number,
+  sfxVolume: number,
+  parrotVolume: number
+) {
   if (!hasLocalStorage()) return;
   
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     const current = stored ? JSON.parse(stored) : {};
-    const updated = { ...current, masterMute, musicMute, sfxMute };
+    const updated = {
+      ...current,
+      masterMute,
+      musicMute,
+      sfxMute,
+      masterVolume,
+      musicVolume,
+      sfxVolume,
+      parrotVolume,
+    };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
   } catch (error) {
     console.error('[AudioStore] Failed to save settings:', error);
@@ -138,6 +167,12 @@ interface AudioState {
   musicMute: boolean; // Controls only music
   sfxMute: boolean; // Controls only sound effects
 
+  // Volume controls (0.0 to 1.0)
+  masterVolume: number; // Controls overall volume - multiplies with category volumes
+  musicVolume: number; // Music volume (actual = musicVolume × masterVolume)
+  sfxVolume: number; // SFX volume (actual = sfxVolume × masterVolume)
+  parrotVolume: number; // Parrot speech volume (actual = parrotVolume × masterVolume)
+
   // Setter functions (legacy support)
   setBackgroundMusic: (music: HTMLAudioElement) => void;
   setAmbientMusic: (music: HTMLAudioElement) => void;
@@ -156,6 +191,10 @@ interface AudioState {
   setMasterMute: (muted: boolean) => void;
   setMusicMute: (muted: boolean) => void;
   setSfxMute: (muted: boolean) => void;
+  setMasterVolume: (volume: number) => void;
+  setMusicVolume: (volume: number) => void;
+  setSfxVolume: (volume: number) => void;
+  setParrotVolume: (volume: number) => void;
   stopAllAudio: () => void;
   playHit: () => void;
   playSuccess: () => void;
@@ -197,6 +236,12 @@ export const useAudio = create<AudioState>((set, get) => ({
   masterMute: savedAudioSettings.masterMute, // Controls everything
   musicMute: savedAudioSettings.musicMute, // Controls only music
   sfxMute: savedAudioSettings.sfxMute, // Controls only sound effects
+
+  // Volume controls - initialized from localStorage (0.0 to 1.0)
+  masterVolume: savedAudioSettings.masterVolume,
+  musicVolume: savedAudioSettings.musicVolume,
+  sfxVolume: savedAudioSettings.sfxVolume,
+  parrotVolume: savedAudioSettings.parrotVolume,
 
   setBackgroundMusic: (music) => {
     set({ backgroundMusic: music });
@@ -318,7 +363,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(newMutedState, state.musicMute, state.sfxMute);
+    saveAudioSettings(newMutedState, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
     console.log(`Master audio ${newMutedState ? "muted" : "unmuted"}`);
   },
@@ -359,7 +404,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(state.masterMute, newMutedState, state.sfxMute);
+    saveAudioSettings(state.masterMute, newMutedState, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
     console.log(`Music ${newMutedState ? "muted" : "unmuted"}`);
   },
@@ -385,7 +430,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(state.masterMute, state.musicMute, newMutedState);
+    saveAudioSettings(state.masterMute, state.musicMute, newMutedState, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
     console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"}`);
   },
@@ -403,7 +448,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(muted, state.musicMute, state.sfxMute);
+    saveAudioSettings(muted, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
   },
 
   setMusicMute: (muted: boolean) => {
@@ -440,7 +485,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(state.masterMute, muted, state.sfxMute);
+    saveAudioSettings(state.masterMute, muted, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
   },
 
   setSfxMute: (muted: boolean) => {
@@ -462,7 +507,39 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
 
     // Save to localStorage
-    saveAudioSettings(state.masterMute, state.musicMute, muted);
+    saveAudioSettings(state.masterMute, state.musicMute, muted, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+  },
+
+  setMasterVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ masterVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, clampedVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+    console.log(`Master volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setMusicVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ musicVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, clampedVolume, state.sfxVolume, state.parrotVolume);
+    console.log(`Music volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setSfxVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ sfxVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, clampedVolume, state.parrotVolume);
+    console.log(`SFX volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setParrotVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ parrotVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, clampedVolume);
+    console.log(`Parrot volume set to ${Math.round(clampedVolume * 100)}%`);
   },
 
   stopAllAudio: () => {
