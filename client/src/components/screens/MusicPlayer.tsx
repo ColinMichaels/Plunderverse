@@ -46,7 +46,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
     getCurrentTrack,
   } = useMusicPlayer();
 
-  const { isMuted, toggleMute } = useAudio();
+  const { musicMute, toggleMusicMute } = useAudio();
 
   const [timeUntilNext, setTimeUntilNext] = useState<string>("");
   const [isMinimized, setIsMinimized] = useState(true);
@@ -169,12 +169,12 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               onClick={() => setShowVolPanel((s) => !s)}
               className={cn(
                 "h-6 w-6 hover:text-cyan-300",
-                isMuted ? "text-red-400" : "text-cyan-400",
+                musicMute ? "text-red-400" : "text-cyan-400",
               )}
-              title={isMuted ? "Unmute" : "Volume"}
+              title={musicMute ? "Unmute" : "Volume"}
               onDoubleClick={() => safeSetVolume(1)}
             >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              {musicMute ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </Button>
             <span className="text-cyan-300 text-xs tabular-nums w-10 text-right">
               {volPct}%
@@ -205,13 +205,13 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
                 <div className="text-white text-sm font-medium truncate">
                   {currentTrack ? currentTrack.name : "No track selected"}
                 </div>
-                {!isPlaying && !isMuted && timeUntilNext && (
+                {!isPlaying && !musicMute && timeUntilNext && (
                   <div className="text-cyan-300 text-xs mt-1">
                     {timeUntilNext}
                   </div>
                 )}
-                {isMuted && (
-                  <div className="text-red-400 text-xs mt-1">Audio muted</div>
+                {musicMute && (
+                  <div className="text-red-400 text-xs mt-1">Music muted</div>
                 )}
               </div>
 
@@ -232,7 +232,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
                   variant="ghost"
                   size="icon"
                   onClick={togglePlayPause}
-                  disabled={tracks.length === 0 || isMuted}
+                  disabled={tracks.length === 0 || musicMute}
                   className="h-9 w-9 text-cyan-400 hover:text-cyan-300 disabled:opacity-50"
                   title={isPlaying ? "Pause" : "Play"}
                 >
@@ -286,14 +286,14 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={toggleMute}
+                  onClick={toggleMusicMute}
                   className={cn(
                     "h-7 w-7 hover:text-cyan-300",
-                    isMuted ? "text-red-400" : "text-cyan-400",
+                    musicMute ? "text-red-400" : "text-cyan-400",
                   )}
-                  title={isMuted ? "Unmute" : "Mute"}
+                  title={musicMute ? "Unmute" : "Mute"}
                 >
-                  {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+                  {musicMute ? <VolumeX size={16} /> : <Volume2 size={16} />}
                 </Button>
 
                 <Button
@@ -383,7 +383,7 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               variant="ghost"
               size="icon"
               onClick={togglePlayPause}
-              disabled={tracks.length === 0 || isMuted}
+              disabled={tracks.length === 0 || musicMute}
               className="h-5 w-5 text-cyan-400 hover:text-cyan-300 disabled:opacity-50 p-0"
               title={isPlaying ? "Pause" : "Play"}
             >
@@ -399,22 +399,22 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
               ref={volBtnRef}
               variant="ghost"
               size="icon"
-              onClick={toggleMute}
+              onClick={toggleMusicMute}
               onContextMenu={(e) => {
                 e.preventDefault();
                 setShowVolPanel((s) => !s);
               }}
               className={cn(
                 "h-5 w-5 hover:text-cyan-300 p-0",
-                isMuted ? "text-red-400" : "text-cyan-400",
+                musicMute ? "text-red-400" : "text-cyan-400",
               )}
               title={
-                isMuted
+                musicMute
                   ? "Unmute (right-click for volume)"
                   : "Mute (right-click for volume)"
               }
             >
-              {isMuted ? <VolumeX size={10} /> : <Volume2 size={10} />}
+              {musicMute ? <VolumeX size={10} /> : <Volume2 size={10} />}
             </Button>
             <Button
               variant="ghost"
@@ -441,14 +441,14 @@ export function MusicPlayer({ className }: MusicPlayerProps) {
             <Button
               variant="ghost"
               size="icon"
-              onClick={toggleMute}
+              onClick={toggleMusicMute}
               className={cn(
                 "h-7 w-7 hover:text-cyan-300",
-                isMuted ? "text-red-400" : "text-cyan-400",
+                musicMute ? "text-red-400" : "text-cyan-400",
               )}
-              title={isMuted ? "Unmute" : "Mute"}
+              title={musicMute ? "Unmute" : "Mute"}
             >
-              {isMuted ? <VolumeX size={16} /> : <Volume2 size={16} />}
+              {musicMute ? <VolumeX size={16} /> : <Volume2 size={16} />}
             </Button>
             <Button
               variant="ghost"
