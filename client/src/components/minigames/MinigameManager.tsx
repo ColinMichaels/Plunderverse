@@ -138,14 +138,14 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
 
   // Main menu
   return (
-    <div className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-4xl bg-gray-900 border-2 border-cyan-400 rounded-lg p-6">
+    <div className={`fixed inset-0 bg-black/95 z-50 flex items-center justify-center ${isMobile ? 'p-0' : 'p-4'}`}>
+      <div className={`${isMobile ? 'w-full h-full' : 'w-full max-w-4xl'} bg-gray-900 ${isMobile ? '' : 'border-2 border-cyan-400 rounded-lg'} ${isMobile ? 'p-4' : 'p-6'} flex flex-col`}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6 pb-4 border-b border-cyan-400/30">
+        <div className={`flex items-center justify-between ${isMobile ? 'mb-4 pb-3' : 'mb-6 pb-4'} border-b border-cyan-400/30 flex-shrink-0`}>
           <div className="flex items-center gap-3">
-            <Gamepad2 className="w-8 h-8 text-cyan-400" />
+            <Gamepad2 className={`${isMobile ? 'w-6 h-6' : 'w-8 h-8'} text-cyan-400`} />
             <div>
-              <h2 className="text-2xl font-bold text-cyan-400">Station Arcade</h2>
+              <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-bold text-cyan-400`}>Station Arcade</h2>
               <p className="text-sm text-gray-400">Entertainment & Credits Await</p>
             </div>
           </div>
@@ -153,17 +153,18 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
             onClick={onClose}
             className="p-2 hover:bg-cyan-400/10 rounded-lg transition-colors"
           >
-            <X className="w-6 h-6 text-gray-400 hover:text-white" />
+            <X className={`${isMobile ? 'w-5 h-5' : 'w-6 h-6'} text-gray-400 hover:text-white`} />
           </button>
         </div>
 
-        {/* Game Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-          {/* Zero-Gravity Racing */}
-          <button
-            onClick={() => setActiveGame('racing')}
-            className="group bg-gradient-to-br from-purple-900/50 to-blue-900/50 border-2 border-purple-400/50 hover:border-purple-400 rounded-lg p-6 transition-all hover:scale-105"
-          >
+        {/* Game Selection - Scrollable on mobile */}
+        <div className={`${isMobile ? 'overflow-y-auto flex-1' : ''} mb-6`}>
+          <div className={`grid grid-cols-1 ${isMobile ? 'gap-3' : 'md:grid-cols-2 lg:grid-cols-3 gap-4'}`}>
+            {/* Zero-Gravity Racing */}
+            <button
+              onClick={() => setActiveGame('racing')}
+              className={`group bg-gradient-to-br from-purple-900/50 to-blue-900/50 border-2 border-purple-400/50 hover:border-purple-400 rounded-lg ${isMobile ? 'p-4' : 'p-6'} transition-all hover:scale-105`}
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-purple-500/20 rounded-lg">
                 <Zap className="w-8 h-8 text-purple-400" />
@@ -194,11 +195,11 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
             )}
           </button>
 
-          {/* Asteroid Shooting Gallery */}
-          <button
-            onClick={() => setActiveGame('shooting')}
-            className="group bg-gradient-to-br from-orange-900/50 to-red-900/50 border-2 border-orange-400/50 hover:border-orange-400 rounded-lg p-6 transition-all hover:scale-105"
-          >
+            {/* Asteroid Shooting Gallery */}
+            <button
+              onClick={() => setActiveGame('shooting')}
+              className={`group bg-gradient-to-br from-orange-900/50 to-red-900/50 border-2 border-orange-400/50 hover:border-orange-400 rounded-lg ${isMobile ? 'p-4' : 'p-6'} transition-all hover:scale-105`}
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-orange-500/20 rounded-lg">
                 <Target className="w-8 h-8 text-orange-400" />
@@ -229,11 +230,11 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
             )}
           </button>
 
-          {/* Asteroids */}
-          <button
-            onClick={() => setActiveGame('asteroids')}
-            className="group bg-gradient-to-br from-gray-900/50 to-slate-800/50 border-2 border-gray-400/50 hover:border-gray-300 rounded-lg p-6 transition-all hover:scale-105"
-          >
+            {/* Asteroids */}
+            <button
+              onClick={() => setActiveGame('asteroids')}
+              className={`group bg-gradient-to-br from-gray-900/50 to-slate-800/50 border-2 border-gray-400/50 hover:border-gray-300 rounded-lg ${isMobile ? 'p-4' : 'p-6'} transition-all hover:scale-105`}
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-gray-500/20 rounded-lg">
                 <Sparkles className="w-8 h-8 text-gray-300" />
@@ -264,11 +265,11 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
             )}
           </button>
 
-          {/* Space Shooter */}
-          <button
-            onClick={() => setActiveGame('spaceshooter')}
-            className="group bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border-2 border-cyan-400/50 hover:border-cyan-400 rounded-lg p-6 transition-all hover:scale-105"
-          >
+            {/* Space Shooter */}
+            <button
+              onClick={() => setActiveGame('spaceshooter')}
+              className={`group bg-gradient-to-br from-cyan-900/50 to-blue-900/50 border-2 border-cyan-400/50 hover:border-cyan-400 rounded-lg ${isMobile ? 'p-4' : 'p-6'} transition-all hover:scale-105`}
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-cyan-500/20 rounded-lg">
                 <Zap className="w-8 h-8 text-cyan-400" />
@@ -299,11 +300,11 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
             )}
           </button>
 
-          {/* Pong */}
-          <button
-            onClick={() => setActiveGame('pong')}
-            className="group bg-gradient-to-br from-green-900/50 to-emerald-900/50 border-2 border-green-400/50 hover:border-green-400 rounded-lg p-6 transition-all hover:scale-105"
-          >
+            {/* Pong */}
+            <button
+              onClick={() => setActiveGame('pong')}
+              className={`group bg-gradient-to-br from-green-900/50 to-emerald-900/50 border-2 border-green-400/50 hover:border-green-400 rounded-lg ${isMobile ? 'p-4' : 'p-6'} transition-all hover:scale-105`}
+            >
             <div className="flex items-start justify-between mb-4">
               <div className="p-3 bg-green-500/20 rounded-lg">
                 <Circle className="w-8 h-8 text-green-400" />
@@ -332,11 +333,12 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
                 Total earned: {highScores.pong.credits}₡
               </div>
             )}
-          </button>
+            </button>
+          </div>
         </div>
 
         {/* Stats Footer */}
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-cyan-400/30">
+        <div className={`bg-gray-800/50 rounded-lg ${isMobile ? 'p-3' : 'p-4'} border border-cyan-400/30 flex-shrink-0`}>
           <div className="flex items-center gap-2 mb-3">
             <Trophy className="w-5 h-5 text-yellow-400" />
             <h3 className="text-sm font-bold text-white">Your Stats</h3>

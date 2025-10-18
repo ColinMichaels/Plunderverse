@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Trophy, RotateCcw } from 'lucide-react';
-import { useMinigameSettings, getPhaserThemeColors } from './minigameUtils';
+import { useMinigameSettings, getPhaserThemeColors, getGameDimensions } from './minigameUtils';
 import { useMobileLayout } from '@/stores/useMobileLayout';
 
 interface PongProps {
@@ -23,6 +23,7 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
     if (gameState !== 'playing' || !gameRef.current) return;
 
     const colors = getPhaserThemeColors(theme);
+    const { width, height } = getGameDimensions(isMobile);
 
     class PongScene extends Phaser.Scene {
       private playerPaddle!: Phaser.GameObjects.Rectangle;
@@ -32,9 +33,9 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
       private playerScore = 0;
       private aiScore = 0;
       private scoreText!: Phaser.GameObjects.Text;
-      private ballVelocity = { x: 200, y: 200 };
+      private ballVelocity = { x: width * 0.25, y: height * 0.33 };
       private winScore = 11;
-      private targetPaddleY = 300;
+      private targetPaddleY = height * 0.5;
       private touchControlsText?: Phaser.GameObjects.Text;
 
       constructor() {
@@ -46,31 +47,31 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
         const graphics = this.add.graphics();
         graphics.lineStyle(2, colors.border, 1);
         graphics.beginPath();
-        for (let y = 0; y < 600; y += 30) {
-          graphics.moveTo(400, y);
-          graphics.lineTo(400, y + 15);
+        for (let y = 0; y < height; y += height * 0.05) {
+          graphics.moveTo(width * 0.5, y);
+          graphics.lineTo(width * 0.5, y + height * 0.025);
         }
         graphics.strokePath();
 
         // Player paddle (right)
-        this.playerPaddle = this.add.rectangle(770, 300, 15, 80, colors.primary);
+        this.playerPaddle = this.add.rectangle(width * 0.9625, height * 0.5, width * 0.01875, height * 0.133, colors.primary);
         this.physics.add.existing(this.playerPaddle);
         const playerBody = this.playerPaddle.body as Phaser.Physics.Arcade.Body;
         playerBody.setImmovable(true);
         playerBody.setCollideWorldBounds(true);
 
         // AI paddle (left)
-        this.aiPaddle = this.add.rectangle(30, 300, 15, 80, colors.danger);
+        this.aiPaddle = this.add.rectangle(width * 0.0375, height * 0.5, width * 0.01875, height * 0.133, colors.danger);
         this.physics.add.existing(this.aiPaddle);
         const aiBody = this.aiPaddle.body as Phaser.Physics.Arcade.Body;
         aiBody.setImmovable(true);
         aiBody.setCollideWorldBounds(true);
 
         // Ball
-        this.ball = this.add.circle(400, 300, 8, colors.text);
+        this.ball = this.add.circle(width * 0.5, height * 0.5, width * 0.01, colors.text);
         this.physics.add.existing(this.ball);
         const ballBody = this.ball.body as Phaser.Physics.Arcade.Body;
-        ballBody.setCircle(8);
+        ballBody.setCircle(width * 0.01);
         ballBody.setBounce(1, 1);
         ballBody.setCollideWorldBounds(true);
         ballBody.setVelocity(this.ballVelocity.x, this.ballVelocity.y);
@@ -85,8 +86,8 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
 
         // Touch controls hint
         if (isTouch) {
-          this.touchControlsText = this.add.text(400, 580, 'Touch to move paddle', {
-            fontSize: '14px',
+          this.touchControlsText = this.add.text(width * 0.5, height * 0.967, 'Touch to move paddle', {
+            fontSize: `${Math.floor(height * 0.023)}px`,
             color: '#888888'
           }).setOrigin(0.5);
         }
@@ -96,8 +97,8 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
         this.physics.add.collider(this.ball, this.aiPaddle, this.paddleHit as any, undefined, this);
 
         // Score text
-        this.scoreText = this.add.text(400, 40, '0 - 0', {
-          fontSize: '48px',
+        this.scoreText = this.add.text(width * 0.5, height * 0.067, '0 - 0', {
+          fontSize: `${Math.floor(height * 0.08)}px`,
           color: `#${colors.text.toString(16).padStart(6, '0')}`
         }).setOrigin(0.5);
       }
@@ -108,9 +109,9 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
         
         // Keyboard controls
         if (this.cursors.up?.isDown) {
-          playerBody.setVelocityY(-400);
+          playerBody.setVelocityY(-height * 0.667);
         } else if (this.cursors.down?.isDown) {
-          playerBody.setVelocityY(400);
+          playerBody.setVelocityY(height * 0.667);
         } else {
           // Touch/mouse controls - smooth movement to target
           const diff = this.targetPaddleY - this.playerPaddle.y;
@@ -126,7 +127,7 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
         const diff = this.ball.y - this.aiPaddle.y;
         
         if (Math.abs(diff) > 10) {
-          const aiSpeed = 250;
+          const aiSpeed = height * 0.417;
           aiBody.setVelocityY(diff > 0 ? aiSpeed : -aiSpeed);
         } else {
           aiBody.setVelocityY(0);
@@ -135,7 +136,7 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
         // Check for scoring
         if (this.ball.x < 0) {
           this.playerScored();
-        } else if (this.ball.x > 800) {
+        } else if (this.ball.x > width) {
           this.aiScored();
         }
       }
@@ -179,11 +180,11 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
       }
 
       private resetBall(direction: number) {
-        this.ball.setPosition(400, 300);
+        this.ball.setPosition(width * 0.5, height * 0.5);
         const ballBody = this.ball.body as Phaser.Physics.Arcade.Body;
         
         const angle = Phaser.Math.FloatBetween(-0.3, 0.3);
-        const speed = 200;
+        const speed = height * 0.333;
         ballBody.setVelocity(
           Math.cos(angle) * speed * direction,
           Math.sin(angle) * speed
@@ -200,8 +201,8 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width,
+      height,
       parent: gameRef.current,
       physics: {
         default: 'arcade',
@@ -238,7 +239,7 @@ export const Pong: React.FC<PongProps> = ({ onComplete, onExit }) => {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-      <div ref={gameRef} className="relative" />
+      <div ref={gameRef} className={isMobile ? "fixed inset-0" : "relative"} />
 
       {/* Start Screen */}
       {gameState === 'ready' && (

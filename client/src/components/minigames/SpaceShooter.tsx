@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Trophy, RotateCcw } from 'lucide-react';
-import { useMinigameSettings, getPhaserThemeColors } from './minigameUtils';
+import { useMinigameSettings, getPhaserThemeColors, getGameDimensions } from './minigameUtils';
 
 interface SpaceShooterProps {
   onComplete: (score: number) => void;
@@ -21,6 +21,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
     if (gameState !== 'playing' || !gameRef.current) return;
 
     const colors = getPhaserThemeColors(theme);
+    const { width, height } = getGameDimensions(isMobile);
 
     class ShooterScene extends Phaser.Scene {
       private player!: Phaser.GameObjects.Rectangle;
@@ -33,8 +34,8 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
       private waveText!: Phaser.GameObjects.Text;
       private lastFired = 0;
       private spaceKey!: Phaser.Input.Keyboard.Key;
-      private targetX = 400;
-      private targetY = 550;
+      private targetX = width * 0.5;
+      private targetY = height * 0.917;
       private touchControlsText?: Phaser.GameObjects.Text;
 
       constructor() {
@@ -45,15 +46,15 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         // Starfield background (using theme colors)
         const graphics = this.add.graphics();
         for (let i = 0; i < 200; i++) {
-          const x = Phaser.Math.Between(0, 800);
-          const y = Phaser.Math.Between(0, 600);
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
           const size = Phaser.Math.Between(1, 2);
           graphics.fillStyle(colors.text, Phaser.Math.FloatBetween(0.3, 1));
           graphics.fillCircle(x, y, size);
         }
 
         // Player ship (using theme primary color)
-        this.player = this.add.rectangle(400, 550, 20, 30, colors.primary);
+        this.player = this.add.rectangle(width * 0.5, height * 0.917, width * 0.025, height * 0.05, colors.primary);
         this.physics.add.existing(this.player);
         const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
         playerBody.setCollideWorldBounds(true);
@@ -75,8 +76,8 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
 
         // Touch controls hint
         if (isTouch) {
-          this.touchControlsText = this.add.text(400, 580, 'Touch to move', {
-            fontSize: '14px',
+          this.touchControlsText = this.add.text(width * 0.5, height * 0.967, 'Touch to move', {
+            fontSize: `${Math.floor(height * 0.023)}px`,
             color: '#888888'
           }).setOrigin(0.5);
         }
@@ -96,12 +97,12 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         this.physics.add.overlap(this.player, this.enemies, this.playerHitEnemy as any, undefined, this);
 
         // UI (using theme colors)
-        this.scoreText = this.add.text(16, 16, 'Score: 0', {
-          fontSize: '24px',
+        this.scoreText = this.add.text(width * 0.02, height * 0.027, 'Score: 0', {
+          fontSize: `${Math.floor(height * 0.04)}px`,
           color: `#${colors.primary.toString(16).padStart(6, '0')}`
         });
-        this.waveText = this.add.text(16, 50, 'Wave: 1', {
-          fontSize: '24px',
+        this.waveText = this.add.text(width * 0.02, height * 0.083, 'Wave: 1', {
+          fontSize: `${Math.floor(height * 0.04)}px`,
           color: `#${colors.accent.toString(16).padStart(6, '0')}`
         });
       }
@@ -112,9 +113,9 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         
         // Keyboard controls
         if (this.cursors.left?.isDown) {
-          playerBody.setVelocityX(-300);
+          playerBody.setVelocityX(-width * 0.375);
         } else if (this.cursors.right?.isDown) {
-          playerBody.setVelocityX(300);
+          playerBody.setVelocityX(width * 0.375);
         } else {
           // Touch/mouse controls - smooth movement to target
           const diffX = this.targetX - this.player.x;
@@ -126,9 +127,9 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         }
 
         if (this.cursors.up?.isDown) {
-          playerBody.setVelocityY(-300);
+          playerBody.setVelocityY(-height * 0.5);
         } else if (this.cursors.down?.isDown) {
-          playerBody.setVelocityY(300);
+          playerBody.setVelocityY(height * 0.5);
         } else {
           // Touch/mouse controls - smooth movement to target
           const diffY = this.targetY - this.player.y;
@@ -147,7 +148,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
 
         // Clean up bullets that are off-screen (bullet recycling)
         this.bullets.children.entries.forEach((bullet) => {
-          if (bullet.active && (bullet.y < -10 || bullet.y > 610)) {
+          if (bullet.active && (bullet.y < -10 || bullet.y > height + 10)) {
             bullet.setActive(false);
             bullet.setVisible(false);
           }
@@ -163,7 +164,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
       }
 
       private fireBullet() {
-        const bullet = this.bullets.get(this.player.x, this.player.y - 20);
+        const bullet = this.bullets.get(this.player.x, this.player.y - height * 0.033);
         if (!bullet) return;
 
         bullet.setActive(true);
@@ -173,15 +174,15 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         if (!this.textures.exists('bullet')) {
           const graphics = this.add.graphics();
           graphics.fillStyle(colors.secondary, 1);
-          graphics.fillRect(0, 0, 4, 10);
-          graphics.generateTexture('bullet', 4, 10);
+          graphics.fillRect(0, 0, width * 0.005, height * 0.0167);
+          graphics.generateTexture('bullet', width * 0.005, height * 0.0167);
           graphics.destroy();
         }
 
         bullet.setTexture('bullet');
         
         const bulletBody = bullet.body as Phaser.Physics.Arcade.Body;
-        bulletBody.setVelocity(0, -400);
+        bulletBody.setVelocity(0, -height * 0.667);
       }
 
       private spawnWave() {
@@ -192,17 +193,17 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
           for (let col = 0; col < Math.ceil(enemiesPerWave / rows); col++) {
             // Enemy using theme danger color
             const enemy = this.add.rectangle(
-              100 + col * 80,
-              50 + row * 60,
-              30,
-              20,
+              width * 0.125 + col * width * 0.1,
+              height * 0.083 + row * height * 0.1,
+              width * 0.0375,
+              height * 0.033,
               colors.danger
             );
             this.physics.add.existing(enemy);
             this.enemies.add(enemy);
             
             const enemyBody = enemy.body as Phaser.Physics.Arcade.Body;
-            const speed = 50 + this.wave * 10;
+            const speed = height * 0.083 + this.wave * height * 0.0167;
             enemyBody.setVelocity(Phaser.Math.Between(-speed, speed), speed);
             enemyBody.setBounce(1, 1);
             enemyBody.setCollideWorldBounds(true);
@@ -221,7 +222,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         this.scoreText.setText(`Score: ${this.score}`);
 
         // Explosion effect (using theme secondary color)
-        const explosion = this.add.circle(enemy.x, enemy.y, 20, colors.secondary, 0.8);
+        const explosion = this.add.circle(enemy.x, enemy.y, width * 0.025, colors.secondary, 0.8);
         this.tweens.add({
           targets: explosion,
           scale: 2,
@@ -246,8 +247,8 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width,
+      height,
       parent: gameRef.current,
       physics: {
         default: 'arcade',
@@ -282,7 +283,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-      <div ref={gameRef} className="relative" />
+      <div ref={gameRef} className={isMobile ? "fixed inset-0" : "relative"} />
 
       {/* Start Screen */}
       {gameState === 'ready' && (

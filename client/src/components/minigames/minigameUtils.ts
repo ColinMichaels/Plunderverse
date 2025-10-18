@@ -56,6 +56,17 @@ export function getPhaserThemeColors(theme: 'classic' | 'monochrome') {
   };
 }
 
+export function getGameDimensions(isMobile: boolean) {
+  if (isMobile) {
+    // Use full viewport dimensions for mobile (9:16 aspect ratio)
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    return { width, height };
+  }
+  // Desktop uses standard 800x600
+  return { width: 800, height: 600 };
+}
+
 export function useMinigameSettings() {
   const settings = useSettings();
   const audio = useAudio();

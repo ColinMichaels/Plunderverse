@@ -19,7 +19,11 @@ Preferred communication style: Simple, everyday language.
   * Zero-Gravity Racing: Touch control buttons for 6-DOF movement
 - **Theme System**: All games respect Classic/Monochrome theme from settings with dynamic colors
 - **Audio Integration**: Games respect master/sfx volume settings from main audio controls
-- **Mobile Optimization**: Responsive UI with platform-specific hints (touch vs keyboard)
+- **Mobile Optimization**: Full-screen 9:16 aspect ratio layout for mobile, scrollable game list
+  * Phaser games dynamically scale all coordinates, sizes, and velocities using getGameDimensions()
+  * Desktop: 800x600 centered layout  
+  * Mobile: Edge-to-edge full-screen with responsive dimensions
+  * Touch controls properly positioned at all screen sizes
 - **Station Integration**: Arcade tab shows all 5 games with individual cards and stats
 
 ### 2025-10-18: Circular Dependency Fixes

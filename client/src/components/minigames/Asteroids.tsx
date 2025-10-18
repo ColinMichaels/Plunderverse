@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Trophy, RotateCcw } from 'lucide-react';
-import { useMinigameSettings, getPhaserThemeColors, createTouchButton } from './minigameUtils';
+import { useMinigameSettings, getPhaserThemeColors, createTouchButton, getGameDimensions } from './minigameUtils';
 
 interface AsteroidsProps {
   onComplete: (score: number) => void;
@@ -21,6 +21,7 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
     if (gameState !== 'playing' || !gameRef.current) return;
 
     const colors = getPhaserThemeColors(theme);
+    const { width, height } = getGameDimensions(isMobile);
 
     class AsteroidsScene extends Phaser.Scene {
       private ship!: Phaser.GameObjects.Triangle;
@@ -54,18 +55,18 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
       create() {
         const graphics = this.add.graphics();
         for (let i = 0; i < 200; i++) {
-          const x = Phaser.Math.Between(0, 800);
-          const y = Phaser.Math.Between(0, 600);
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
           const size = Phaser.Math.Between(1, 2);
           graphics.fillStyle(colors.text, Phaser.Math.FloatBetween(0.3, 1));
           graphics.fillCircle(x, y, size);
         }
 
-        this.ship = this.add.triangle(400, 300, 0, -15, -10, 10, 10, 10, colors.primary);
+        this.ship = this.add.triangle(width * 0.5, height * 0.5, 0, -height * 0.025, -width * 0.0125, height * 0.0167, width * 0.0125, height * 0.0167, colors.primary);
         this.physics.add.existing(this.ship);
         const shipBody = this.ship.body as Phaser.Physics.Arcade.Body;
         shipBody.setDrag(0.99);
-        shipBody.setMaxVelocity(300);
+        shipBody.setMaxVelocity(height * 0.5);
         shipBody.setCollideWorldBounds(true, 1, 1);
 
         this.cursors = this.input.keyboard!.createCursorKeys();
@@ -86,27 +87,27 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         this.physics.add.overlap(this.bullets, this.asteroids, this.bulletHitAsteroid as any, undefined, this);
         this.physics.add.overlap(this.ship, this.asteroids, this.shipHitAsteroid as any, undefined, this);
 
-        this.scoreText = this.add.text(16, 16, 'Score: 0', {
-          fontSize: '24px',
+        this.scoreText = this.add.text(width * 0.02, height * 0.027, 'Score: 0', {
+          fontSize: `${Math.floor(height * 0.04)}px`,
           color: `#${colors.primary.toString(16).padStart(6, '0')}`
         });
-        this.livesText = this.add.text(16, 50, 'Lives: 3', {
-          fontSize: '24px',
+        this.livesText = this.add.text(width * 0.02, height * 0.083, 'Lives: 3', {
+          fontSize: `${Math.floor(height * 0.04)}px`,
           color: `#${colors.danger.toString(16).padStart(6, '0')}`
         });
 
-        this.physics.world.setBounds(0, 0, 800, 600);
+        this.physics.world.setBounds(0, 0, width, height);
       }
 
       private createTouchControls() {
-        const buttonSize = 60;
-        const margin = 20;
+        const buttonSize = Math.min(width * 0.075, height * 0.1);
+        const margin = width * 0.025;
 
         this.leftButton = createTouchButton(
           this,
           {
             x: margin + buttonSize / 2,
-            y: 600 - margin - buttonSize / 2,
+            y: height - margin - buttonSize / 2,
             width: buttonSize,
             height: buttonSize,
             label: '◄',
@@ -119,8 +120,8 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         this.rightButton = createTouchButton(
           this,
           {
-            x: margin + buttonSize * 1.5 + 10,
-            y: 600 - margin - buttonSize / 2,
+            x: margin + buttonSize * 1.5 + margin,
+            y: height - margin - buttonSize / 2,
             width: buttonSize,
             height: buttonSize,
             label: '►',
@@ -133,8 +134,8 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         this.thrustButton = createTouchButton(
           this,
           {
-            x: 800 - margin - buttonSize / 2,
-            y: 600 - margin - buttonSize / 2,
+            x: width - margin - buttonSize / 2,
+            y: height - margin - buttonSize / 2,
             width: buttonSize,
             height: buttonSize,
             label: '▲',
@@ -147,8 +148,8 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         this.fireButton = createTouchButton(
           this,
           {
-            x: 800 - margin - buttonSize / 2,
-            y: 600 - margin - buttonSize * 1.5 - 10,
+            x: width - margin - buttonSize / 2,
+            y: height - margin - buttonSize * 1.5 - margin,
             width: buttonSize,
             height: buttonSize,
             label: '●',
@@ -194,14 +195,14 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
           const shipBody = this.ship.body as Phaser.Physics.Arcade.Body;
           this.physics.velocityFromRotation(
             this.ship.rotation - Math.PI / 2,
-            200,
+            height * 0.333,
             shipBody.acceleration
           );
           
           if (time % 100 < 50) {
-            const thrustX = this.ship.x - Math.cos(this.ship.rotation - Math.PI / 2) * 15;
-            const thrustY = this.ship.y - Math.sin(this.ship.rotation - Math.PI / 2) * 15;
-            const particle = this.add.circle(thrustX, thrustY, 3, colors.secondary, 0.8);
+            const thrustX = this.ship.x - Math.cos(this.ship.rotation - Math.PI / 2) * height * 0.025;
+            const thrustY = this.ship.y - Math.sin(this.ship.rotation - Math.PI / 2) * height * 0.025;
+            const particle = this.add.circle(thrustX, thrustY, width * 0.00375, colors.secondary, 0.8);
             this.tweens.add({
               targets: particle,
               alpha: 0,
@@ -244,8 +245,8 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         if (!this.textures.exists('bullet')) {
           const graphics = this.add.graphics();
           graphics.fillStyle(colors.secondary, 1);
-          graphics.fillCircle(0, 0, 3);
-          graphics.generateTexture('bullet', 6, 6);
+          graphics.fillCircle(0, 0, width * 0.00375);
+          graphics.generateTexture('bullet', width * 0.0075, width * 0.0075);
           graphics.destroy();
         }
 
@@ -254,7 +255,7 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         const bulletBody = bullet.body as Phaser.Physics.Arcade.Body;
         this.physics.velocityFromRotation(
           this.ship.rotation - Math.PI / 2,
-          400,
+          height * 0.667,
           bulletBody.velocity
         );
 
@@ -266,21 +267,21 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
 
       private spawnAsteroids(count: number) {
         for (let i = 0; i < count; i++) {
-          const x = Phaser.Math.Between(0, 800);
-          const y = Phaser.Math.Between(0, 600);
+          const x = Phaser.Math.Between(0, width);
+          const y = Phaser.Math.Between(0, height);
           const asteroid = this.createAsteroid(x, y, 3);
         }
       }
 
       private createAsteroid(x: number, y: number, size: number): Phaser.GameObjects.Arc {
-        const asteroid = this.add.circle(x, y, size * 15, colors.accent);
+        const asteroid = this.add.circle(x, y, size * height * 0.025, colors.accent);
         this.physics.add.existing(asteroid);
         this.asteroids.add(asteroid);
         
         const asteroidBody = asteroid.body as Phaser.Physics.Arcade.Body;
-        asteroidBody.setCircle(size * 15);
+        asteroidBody.setCircle(size * height * 0.025);
         
-        const speed = Phaser.Math.Between(50, 150);
+        const speed = Phaser.Math.Between(height * 0.083, height * 0.25);
         const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
         asteroidBody.setVelocity(
           Math.cos(angle) * speed,
@@ -301,7 +302,7 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
         
         setScore(this.score);
 
-        const explosion = this.add.circle(asteroid.x, asteroid.y, size * 15, colors.secondary, 0.8);
+        const explosion = this.add.circle(asteroid.x, asteroid.y, size * height * 0.025, colors.secondary, 0.8);
         this.tweens.add({
           targets: explosion,
           scale: 2,
@@ -331,7 +332,7 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
           return;
         }
 
-        this.ship.setPosition(400, 300);
+        this.ship.setPosition(width * 0.5, height * 0.5);
         const shipBody = this.ship.body as Phaser.Physics.Arcade.Body;
         shipBody.setVelocity(0, 0);
         
@@ -352,17 +353,17 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
 
       private wrapPosition(gameObject: Phaser.GameObjects.GameObject) {
         const obj = gameObject as any;
-        if (obj.x < 0) obj.x = 800;
-        if (obj.x > 800) obj.x = 0;
-        if (obj.y < 0) obj.y = 600;
-        if (obj.y > 600) obj.y = 0;
+        if (obj.x < 0) obj.x = width;
+        if (obj.x > width) obj.x = 0;
+        if (obj.y < 0) obj.y = height;
+        if (obj.y > height) obj.y = 0;
       }
     }
 
     const config: Phaser.Types.Core.GameConfig = {
       type: Phaser.AUTO,
-      width: 800,
-      height: 600,
+      width,
+      height,
       parent: gameRef.current,
       physics: {
         default: 'arcade',
@@ -397,7 +398,7 @@ export const Asteroids: React.FC<AsteroidsProps> = ({ onComplete, onExit }) => {
 
   return (
     <div className="fixed inset-0 bg-black z-50 flex flex-col items-center justify-center">
-      <div ref={gameRef} className="relative" />
+      <div ref={gameRef} className={isMobile ? "fixed inset-0" : "relative"} />
 
       {gameState === 'ready' && (
         <div className="absolute inset-0 bg-black/90 flex items-center justify-center pointer-events-auto">
