@@ -669,28 +669,35 @@ export const useEnhancedMusicPlayer = create<EnhancedMusicPlayerState>((set, get
   },
 }));
 
-// Subscribe to volume changes from useAudio and update all active layers
-useAudio.subscribe((audioState) => {
-  const { masterVolume, musicVolume, masterMute, musicMute } = audioState;
-  const enhancedPlayerState = useEnhancedMusicPlayer.getState();
-  const { layers, isPlaying } = enhancedPlayerState;
+// Lazy subscription setup to avoid circular dependency
+let volumeSubscriptionInitialized = false;
+function initializeVolumeSubscription() {
+  if (volumeSubscriptionInitialized) return;
+  volumeSubscriptionInitialized = true;
   
-  // Update volume of all currently playing layers in real-time
-  if (isPlaying) {
-    layers.forEach(layer => {
-      if (layer.isPlaying && layer.track?.audio) {
-        // Check mute state
-        if (masterMute || musicMute) {
-          layer.track.audio.volume = 0;
-        } else {
-          // Apply volume multiplication: layer.volume × musicVolume × masterVolume
-          const actualVolume = layer.volume * musicVolume * masterVolume;
-          layer.track.audio.volume = actualVolume;
+  // Subscribe to volume changes from useAudio and update all active layers
+  useAudio.subscribe((audioState) => {
+    const { masterVolume, musicVolume, masterMute, musicMute } = audioState;
+    const enhancedPlayerState = useEnhancedMusicPlayer.getState();
+    const { layers, isPlaying } = enhancedPlayerState;
+    
+    // Update volume of all currently playing layers in real-time
+    if (isPlaying) {
+      layers.forEach(layer => {
+        if (layer.isPlaying && layer.track?.audio) {
+          // Check mute state
+          if (masterMute || musicMute) {
+            layer.track.audio.volume = 0;
+          } else {
+            // Apply volume multiplication: layer.volume × musicVolume × masterVolume
+            const actualVolume = layer.volume * musicVolume * masterVolume;
+            layer.track.audio.volume = actualVolume;
+          }
         }
-      }
-    });
-  }
-});
+      });
+    }
+  });
+}
 
 // Helper functions for smooth fading
 function fadeIn(audio: HTMLAudioElement, getTargetVolume: () => number, duration: number) {
@@ -738,6 +745,10 @@ let isAutoInitializing = false;
 export const initializeEnhancedMusicPlayer = () => {
   if (!isAutoInitializing) {
     isAutoInitializing = true;
+    
+    // Initialize volume subscription
+    initializeVolumeSubscription();
+    
     setTimeout(() => {
       useEnhancedMusicPlayer.getState().initialize();
     }, 1000); // Delay to ensure audio context is ready

@@ -848,28 +848,35 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   }
 }));
 
-// Subscribe to volume changes from useAudio and update currently playing track
-useAudio.subscribe((audioState) => {
-  const { masterVolume, musicVolume, masterMute, musicMute } = audioState;
-  const musicPlayerState = useMusicPlayer.getState();
-  const { tracks, currentTrackIndex, isPlaying } = musicPlayerState;
+// Lazy subscription setup to avoid circular dependency
+let volumeSubscriptionInitialized = false;
+function initializeVolumeSubscription() {
+  if (volumeSubscriptionInitialized) return;
+  volumeSubscriptionInitialized = true;
   
-  // Update volume of currently playing track in real-time
-  if (isPlaying && tracks.length > 0) {
-    const currentTrack = tracks[currentTrackIndex];
-    if (currentTrack?.audio) {
-      // Check mute state
-      if (masterMute || musicMute) {
-        currentTrack.audio.volume = 0;
-      } else {
-        // Apply volume multiplication: musicVolume × masterVolume
-        const baseVolume = musicPlayerState.volume || 0.2;
-        const actualVolume = baseVolume * musicVolume * masterVolume;
-        currentTrack.audio.volume = actualVolume;
+  // Subscribe to volume changes from useAudio and update currently playing track
+  useAudio.subscribe((audioState) => {
+    const { masterVolume, musicVolume, masterMute, musicMute } = audioState;
+    const musicPlayerState = useMusicPlayer.getState();
+    const { tracks, currentTrackIndex, isPlaying } = musicPlayerState;
+    
+    // Update volume of currently playing track in real-time
+    if (isPlaying && tracks.length > 0) {
+      const currentTrack = tracks[currentTrackIndex];
+      if (currentTrack?.audio) {
+        // Check mute state
+        if (masterMute || musicMute) {
+          currentTrack.audio.volume = 0;
+        } else {
+          // Apply volume multiplication: musicVolume × masterVolume
+          const baseVolume = musicPlayerState.volume || 0.2;
+          const actualVolume = baseVolume * musicVolume * masterVolume;
+          currentTrack.audio.volume = actualVolume;
+        }
       }
     }
-  }
-});
+  });
+}
 
 // Track initialization state globally to prevent multiple initializations
 let isInitialized = false;
@@ -879,6 +886,10 @@ export const initializeMusicPlayer = () => {
   if (!isAutoLoading && !isInitialized) {
     isAutoLoading = true;
     console.log('[MusicPlayer] Initializing music player (singleton)');
+    
+    // Initialize volume subscription
+    initializeVolumeSubscription();
+    
     setTimeout(() => {
       const state = useMusicPlayer.getState();
       if (!state.isLoaded && !state.isLoading) {
