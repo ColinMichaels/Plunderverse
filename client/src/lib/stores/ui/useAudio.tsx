@@ -476,7 +476,7 @@ interface AudioState {
     stopThruster: () => void;
     playWind: (intensity: number) => void;
     stopWind: () => void;
-    playRain: () => void;
+    playRain: (intensity: number) => void;
     stopRain: () => void;
     playMotor: (intensity: number) => void;
     stopMotor: () => void;
@@ -809,7 +809,7 @@ export const useAudio = create<AudioState>((set, get) => ({
         audioManager.stopSoundByKey("wind");
     },
 
-    playRain: () => {
+    playRain: (intensity?: number) => {
         if (get().masterMute) return;
         
         // Check if rain is already playing
@@ -823,7 +823,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 const rainHowl = new Howl({
                     src: ["/sounds/rain.mp3"],
                     loop: true,
-                    volume: 0.4,
+                    volume: intensity ?? 0.4,
                 });
                 await audioManager.playHowl(rainHowl, "ambient", 1, {
                     fadeInMs: 800,
@@ -839,7 +839,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     stopRain: () => {
         audioManager.stopSoundByKey("rain");
     },
-    playMotor: (intensity: number) => {
+    playMotor: (intensity?: number) => {
         if (get().masterMute) return;
 
         // Check if rain is already playing
@@ -852,7 +852,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 const motorHowl = new Howl({
                     src: ["/sounds/motor.mp3"],
                     loop: true,
-                    volume: 0.4,
+                    volume: intensity ?? 0.2,
                 });
                 await audioManager.playHowl(motorHowl, "ambient", 1, {
                     fadeInMs: 800,

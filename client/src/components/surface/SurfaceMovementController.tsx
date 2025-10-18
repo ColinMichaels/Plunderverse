@@ -282,7 +282,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
 
         const moving = controls.forward || controls.backward || controls.left || controls.right;
         if (moving && !motorPlayingRef.current) {
-            playMotor(0.5);
+            playMotor(0.2);
             motorPlayingRef.current = true;
         } else if (!moving && motorPlayingRef.current) {
             stopMotor();

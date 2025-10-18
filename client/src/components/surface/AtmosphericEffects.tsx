@@ -1,18 +1,14 @@
-import { useRef, useMemo, useEffect, useState } from "react";
-import { useFrame, useThree } from "@react-three/fiber";
-import { shaderMaterial } from "@react-three/drei";
-import { extend } from "@react-three/fiber";
+import {useEffect, useMemo, useRef, useState} from "react";
+import {extend, useFrame, useThree} from "@react-three/fiber";
+import {shaderMaterial} from "@react-three/drei";
 import * as THREE from "three";
-import {
-  heatShimmerVertexShader,
-  heatShimmerFragmentShader,
-} from "../../shaders/heatShimmer";
-import { useWind } from "../../lib/stores/surface/useWind";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
-import { useSettings } from "../../lib/stores/ui/useSettings";
-import { useTerrain } from "../../lib/stores/surface/useTerrain";
-import { useAudio } from "../../lib/stores/ui/useAudio";
-import { ResourceManager } from "../../lib/utils/ResourceManager";
+import {heatShimmerFragmentShader, heatShimmerVertexShader,} from "../../shaders/heatShimmer";
+import {useWind} from "../../lib/stores/surface/useWind";
+import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
+import {useSettings} from "../../lib/stores/ui/useSettings";
+import {useTerrain} from "../../lib/stores/surface/useTerrain";
+import {useAudio} from "../../lib/stores/ui/useAudio";
+import {ResourceManager} from "../../lib/utils/ResourceManager";
 
 // Create custom heat shimmer material
 const HeatShimmerMaterial = shaderMaterial(
@@ -466,7 +462,7 @@ export function AtmosphericEffects({
 
     // Play or update rain sound (Earth only for now)
     if (rainIntensity > 0) {
-      playRain();
+        playRain(rainIntensity);
     } else {
       stopRain();
     }
