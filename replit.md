@@ -8,6 +8,26 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-18: Audio System Real-Time Volume Control Fix
+- **Master Bus Volume Mixing**: Fixed individual sound levels not adjusting in real-time when sliders changed
+  - **Issue**: Music players and SFX set volume only when tracks started playing, didn't respond to slider changes during playback
+  - **Root Cause**: No subscription to useAudio volume state changes - volume multiplication (categoryVolume × masterVolume) applied once at playback start
+  - **Solution**: Added Zustand subscriptions in both music players that watch masterVolume/musicVolume/sfxVolume changes and update all active audio elements in real-time
+  - **Architecture**: 
+    - useAudio is the single source of truth for all volume state (masterVolume, musicVolume, sfxVolume, parrotVolume, mute states)
+    - useMusicPlayer subscribes to volume changes, applies multiplication to currently playing track: `baseVolume × musicVolume × masterVolume`
+    - useEnhancedMusicPlayer subscribes to volume changes, updates all active layers: `layer.volume × musicVolume × masterVolume`
+    - All SFX in useAudio directly multiply at play time: `configVolume × sfxVolume × masterVolume`
+  - **Impact**: Volume sliders now immediately affect all playing audio (music, SFX, parrot speech) without requiring track restart
+- **Theme System Implementation**: Built complete UI theme system with persistent theme selection
+  - **Themes**: Classic (cyberpunk orange/cyan) and Monochrome (black/white/gray)
+  - **Architecture**: CSS variables (`--theme-*`) with `data-theme` attribute on document root, theme state in useSettings store
+  - **Components**: PauseMenu fully converted to theme variables, SettingsContent has visual theme selector with preview cards
+  - **Impact**: Users can switch themes instantly, preference persists across sessions
+- **Pause Menu Centering Fix**: Fixed pause menu viewport cutoff on smaller screens
+  - **Solution**: Changed from absolute positioning to flexbox centering with `max-h-[90vh]` constraint and scroll support
+  - **Impact**: Pause menu always visible and accessible regardless of screen size
+
 ### 2025-10-12: Mini-Game Victory & Objectives Completion
 - **Collection Objectives Room Fix**: Fixed collectibles spawning in non-existent rooms causing creation failures
   - **Issue**: repair_tools, spare_parts, medical_supplies placed in 'maintenance' and 'medical_bay' rooms that don't exist
