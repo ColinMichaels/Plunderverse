@@ -365,12 +365,16 @@ export function SurfaceMovementController({
         }
 
         // === MOTOR SOUND ===
-        if (moving && !motorPlayingRef.current) {
-            playMotor(0.07);
-            motorPlayingRef.current = true;
-        } else if (!moving && motorPlayingRef.current) {
-            stopMotor();
-            motorPlayingRef.current = false;
+        if (moving) {
+            if (!motorPlayingRef.current) {
+                playMotor(0.07);
+                motorPlayingRef.current = true;
+            }
+        } else {
+            if (motorPlayingRef.current) {
+                stopMotor();
+                motorPlayingRef.current = false;
+            }
         }
 
         // === SMOOTH CAMERA ROTATION ===

@@ -741,6 +741,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     },
 
     playAmbientMusic: (fadeInMs = 500) => {
+        if (get().masterMute || get().musicMute) return;
         const ambient = (get() as any).ambientMusic as HTMLAudioElement | null;
         if (!ambient) return;
         audioManager.playHtml(ambient, "ambient", 1, {fadeInMs, key: "ambient-music"});
@@ -777,7 +778,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     },
 
     playWind: (intensity: number) => {
-        if (get().masterMute) return;
+        if (get().masterMute || get().sfxMute) return;
         
         const baseVol = Math.max(0, Math.min(1, intensity));
         
@@ -810,7 +811,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     },
 
     playRain: (intensity?: number) => {
-        if (get().masterMute) return;
+        if (get().masterMute || get().sfxMute) return;
         
         // Check if rain is already playing
         if (audioManager.findSoundByKey("rain")) {
@@ -840,7 +841,7 @@ export const useAudio = create<AudioState>((set, get) => ({
         audioManager.stopSoundByKey("rain");
     },
     playMotor: (intensity?: number) => {
-        if (get().masterMute) return;
+        if (get().masterMute || get().sfxMute) return;
 
         // Check if rain is already playing
         if (audioManager.findSoundByKey("motor")) {
