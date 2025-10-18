@@ -78,7 +78,7 @@ export function GameUI() {
     requiredDistance,
     hideWarning,
   } = useLandingWarning();
-  const { activate: activateAutopilot } = useAutopilot();
+  const { activateCinematic: activateAutopilot } = useAutopilot();
   const { currentContext, uiZoneVisibility, isDocked } = useHUDContext();
 
   // Keyboard shortcut for save panel (F5 or Ctrl+S)

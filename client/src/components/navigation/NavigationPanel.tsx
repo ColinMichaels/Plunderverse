@@ -64,11 +64,8 @@ export const NavigationPanel: React.FC = () => {
   const { 
     isActive, 
     target, 
-    isOrbiting, 
-    approachProgress, 
-    activate, 
-    deactivate,
-    orbitRadius 
+    activateCinematic: activate, 
+    deactivate
   } = useAutopilot();
   
   const { cameraPosition, shipPosition, setShipPosition, selectedPlanet: currentPlanet } = useSolarSystem();

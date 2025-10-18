@@ -39,7 +39,7 @@ export function CockpitHUD() {
   const { missions, bounties } = useMissions();
   const audio = useAudio();
   const { showSplash } = useGame();
-  const { activate: activateAutopilot, isActive: isAutopilotActive } =
+  const { activateCinematic: activateAutopilot, isActive: isAutopilotActive } =
     useAutopilot();
   const { isLanded } = useLandedState();
   const { currentHeat, wantedLevel } = useHeatSystem();

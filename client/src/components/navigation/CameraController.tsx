@@ -275,13 +275,8 @@ export function CameraController() {
   const {
     isActive: isAutopilotActive,
     target: autopilotTarget,
-    activate: activateAutopilot,
+    activateCinematic: activateAutopilot,
     deactivate: deactivateAutopilot,
-    isOrbiting,
-    orbitRadius,
-    orbitAngle,
-    enterOrbit,
-    updateThrusterVolume,
   } = useAutopilot();
 
   // Equipment system for ship degradation and fuel
