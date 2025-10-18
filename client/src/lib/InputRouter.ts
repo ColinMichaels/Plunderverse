@@ -460,7 +460,7 @@ export function createDefaultBindings(): ActionBinding[] {
         {action: 'shoot', keys: ['Space'], description: 'Shoot/Mine'},
         {action: 'flashlight', keys: ['KeyL'], description: 'Toggle flashlight'},
         {action: 'charge', keys: ['KeyC'], description: 'Charge flashlight'},
-        {action: 'menu', keys: ['Escape'], description: 'Open menu'},
+        {action: 'menu', keys: ['Escape'], description: 'Open/Close menu'},
         {action: 'inventory', keys: ['KeyI', 'Tab'], description: 'Open inventory'},
         {action: 'map', keys: ['KeyM'], description: 'Open map'},
     ];

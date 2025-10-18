@@ -1,227 +1,351 @@
-import {useSettings} from "../../lib/stores/ui/useSettings";
-import {Slider} from "../ui/slider";
-import {Switch} from "../ui/switch";
-import {Button} from "../ui/button";
-import {Label} from "../ui/label";
-import {Palette} from "lucide-react";
-import {KeybindingEditor} from "@/lib/utils/KeyBindingEditor.tsx";
+import {useEffect, useState} from 'react';
+import {AnimatePresence, motion} from 'framer-motion';
+import {ActionBinding, createDefaultBindings, InputRouter} from '@/lib/InputRouter';
+import {
+    ThemedButton,
+    ThemedDivider,
+    ThemedKeyDisplay,
+    ThemedPanel,
+    ThemedPanelContent,
+    ThemedPanelHeader,
+    ThemedSectionHeading,
+} from '@/components/ui/ThemedPanel';
+import {AlertCircle, Keyboard, RotateCcw, Save} from 'lucide-react';
 
-const CONTROL_LABELS: Record<string, string> = {
-  forward: "Move Forward",
-  backward: "Move Backward",
-  left: "Move Left",
-  right: "Move Right",
-  up: "Move Up",
-  down: "Move Down",
-  shoot: "Fire Lasers",
-  land: "Land on Planet",
-  info: "Planet Info",
-  menu: "Menu",
-  center: "Center Camera",
-};
-
-interface SettingsContentProps {
-  editingKeybind: string | null;
-  setEditingKeybind: (key: string | null) => void;
-  onKeybindClick: (action: string) => void;
-  onRemoveKey: (action: string, keyToRemove: string) => void;
-  onReset: () => void;
+interface KeybindingEditorProps {
+    onSave?: (bindings: ActionBinding[]) => void;
+    onClose?: () => void;
 }
 
-export function SettingsContent({
-  editingKeybind,
-  setEditingKeybind,
-  onKeybindClick,
-  onRemoveKey,
-  onReset,
-}: SettingsContentProps) {
-  const {
-    sensitivity,
-    invertY,
-    keybinds,
-    setSensitivity,
-    setInvertY,
-    miningEffectsIntensity,
-    enableScreenShake,
-    enableVisualEffects,
-    setMiningEffectsIntensity,
-    setEnableScreenShake,
-    setEnableVisualEffects,
-    uiTheme,
-    setUITheme,
-  } = useSettings();
+export function KeybindingEditor({onSave, onClose}: KeybindingEditorProps) {
+    const [bindings, setBindings] = useState<ActionBinding[]>(createDefaultBindings());
+    const [editingAction, setEditingAction] = useState<string | null>(null);
+    const [listeningForKey, setListeningForKey] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
-  return (
-    <div className="space-y-6 py-4">
-      {/* Mouse Sensitivity */}
-      <div className="space-y-2">
-        <Label htmlFor="sensitivity" className="text-cyan-300 font-semibold">
-          Mouse Sensitivity: {(sensitivity * 1000).toFixed(1)}
-        </Label>
-        <Slider
-          id="sensitivity"
-          min={0.0002}
-          max={0.005}
-          step={0.0001}
-          value={[sensitivity]}
-          onValueChange={([value]) => setSensitivity(value)}
-          className="w-full h-4 bg-gray-700 rounded-full"
-        />
-        <p className="text-xs text-gray-400">
-          Adjust how quickly the camera responds to mouse movement
-        </p>
-      </div>
+    // Load current bindings from InputRouter
+    useEffect(() => {
+        const router = InputRouter.instance();
+        const currentBindings = createDefaultBindings().map(binding => ({
+            ...binding,
+            keys: router.getActionBindings(binding.action) || binding.keys,
+        }));
+        setBindings(currentBindings);
+    }, []);
 
-      {/* Invert Y-Axis */}
-      <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
-        <div className="space-y-0.5">
-          <Label htmlFor="invert-y" className="text-cyan-300 font-semibold">
-            Invert Y-Axis
-          </Label>
-          <p className="text-xs text-gray-400">
-            Reverse vertical mouse look direction
-          </p>
-        </div>
-        <Switch id="invert-y" checked={invertY} onCheckedChange={setInvertY} />
-      </div>
+    // Listen for key presses when editing
+    useEffect(() => {
+        if (!listeningForKey || !editingAction) return;
 
-      {/* UI Theme Section */}
-      <div className="space-y-3 border-t border-cyan-700 pt-4">
-        <h3 className="text-cyan-300 font-semibold text-sm uppercase pb-1 flex items-center gap-2">
-          <Palette className="w-4 h-4" />
-          UI Theme
-        </h3>
+        const handleKeyDown = (e: KeyboardEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
 
-        <div className="space-y-2">
-          <Label className="text-cyan-300 font-semibold">
-            Choose your UI style
-          </Label>
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => setUITheme('classic')}
-              className={`p-4 rounded border-2 transition-all ${
-                uiTheme === 'classic'
-                  ? 'border-cyan-400 bg-cyan-900/30'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
+            // Cancel on Escape
+            if (e.code === 'Escape') {
+                setListeningForKey(false);
+                setEditingAction(null);
+                return;
+            }
+
+            // Update the binding
+            setBindings(prev =>
+                prev.map(binding => {
+                    if (binding.action === editingAction) {
+                        return {
+                            ...binding,
+                            keys: [e.code], // Replace with new key
+                        };
+                    }
+                    return binding;
+                })
+            );
+
+            setListeningForKey(false);
+            setEditingAction(null);
+            setHasChanges(true);
+        };
+
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, [listeningForKey, editingAction]);
+
+    const handleEdit = (action: string) => {
+        setEditingAction(action);
+        setListeningForKey(true);
+    };
+
+    const handleRemoveKey = (action: string, keyToRemove: string) => {
+        setBindings(prev =>
+            prev.map(binding => {
+                if (binding.action === action) {
+                    const newKeys = binding.keys.filter(k => k !== keyToRemove);
+                    return {
+                        ...binding,
+                        keys: newKeys.length > 0 ? newKeys : binding.keys, // Don't allow empty
+                    };
+                }
+                return binding;
+            })
+        );
+        setHasChanges(true);
+    };
+
+    const handleAddKey = (action: string) => {
+        setEditingAction(action);
+        setListeningForKey(true);
+    };
+
+    const handleSave = () => {
+        const router = InputRouter.instance();
+        bindings.forEach(binding => {
+            router.registerAction(binding.action, binding.keys);
+        });
+        setHasChanges(false);
+        onSave?.(bindings);
+    };
+
+    const handleReset = () => {
+        const defaults = createDefaultBindings();
+        setBindings(defaults);
+        const router = InputRouter.instance();
+        defaults.forEach(binding => {
+            router.registerAction(binding.action, binding.keys);
+        });
+        setHasChanges(true);
+    };
+
+    // Group bindings by category
+    const movementBindings = bindings.filter(b =>
+        ['forward', 'backward', 'left', 'right', 'turnLeft', 'turnRight'].includes(b.action)
+    );
+    const actionBindings = bindings.filter(b =>
+        ['shoot', 'interact', 'jump', 'flashlight', 'charge'].includes(b.action)
+    );
+    const uiBindings = bindings.filter(b =>
+        ['menu', 'inventory', 'map'].includes(b.action)
+    );
+
+    return (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4">
+            <ThemedPanel
+                initial={{opacity: 0, scale: 0.9, y: -20}}
+                animate={{opacity: 1, scale: 1, y: 0}}
+                exit={{opacity: 0, scale: 0.9, y: -20}}
+                transition={{type: 'spring', damping: 25, stiffness: 400}}
+                className="w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col"
             >
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-full h-16 rounded bg-gradient-to-br from-slate-700 to-slate-800 border border-cyan-500/50 flex items-center justify-center">
-                  <div className="text-cyan-400 font-mono text-xs">CLASSIC</div>
+                {/* Header */}
+                <ThemedPanelHeader subtitle="[ CUSTOMIZE CONTROL SCHEME ]">
+                    // KEY BINDINGS
+                </ThemedPanelHeader>
+
+                {/* Listening Indicator */}
+                <AnimatePresence>
+                    {listeningForKey && (
+                        <motion.div
+                            initial={{opacity: 0, y: -10}}
+                            animate={{opacity: 1, y: 0}}
+                            exit={{opacity: 0, y: -10}}
+                            className="relative px-8 py-4 bg-[var(--theme-text-accent)]/20 border-b border-[var(--theme-border-accent)]"
+                        >
+                            <div className="flex items-center gap-3 justify-center">
+                                <Keyboard className="w-5 h-5 text-[var(--theme-text-accent)] animate-pulse"/>
+                                <span className="font-mono text-sm text-[var(--theme-text-primary)] tracking-wider">
+                  PRESS ANY KEY TO BIND TO "{editingAction?.toUpperCase()}"
+                </span>
+                            </div>
+                            <p className="text-center text-xs text-[var(--theme-text-secondary)] mt-1 font-mono">
+                                ESC TO CANCEL
+                            </p>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
+                {/* Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                    <ThemedPanelContent>
+                        <motion.div
+                            initial={{opacity: 0, y: 10}}
+                            animate={{opacity: 1, y: 0}}
+                            transition={{delay: 0.15}}
+                            className="space-y-6"
+                        >
+                            {/* Movement Section */}
+                            <div>
+                                <ThemedSectionHeading>// MOVEMENT</ThemedSectionHeading>
+                                <div className="space-y-2">
+                                    {movementBindings.map(binding => (
+                                        <KeybindingRow
+                                            key={binding.action}
+                                            binding={binding}
+                                            isEditing={editingAction === binding.action && listeningForKey}
+                                            onEdit={() => handleEdit(binding.action)}
+                                            onRemoveKey={handleRemoveKey}
+                                            onAddKey={() => handleAddKey(binding.action)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <ThemedDivider/>
+
+                            {/* Actions Section */}
+                            <div>
+                                <ThemedSectionHeading>// ACTIONS</ThemedSectionHeading>
+                                <div className="space-y-2">
+                                    {actionBindings.map(binding => (
+                                        <KeybindingRow
+                                            key={binding.action}
+                                            binding={binding}
+                                            isEditing={editingAction === binding.action && listeningForKey}
+                                            onEdit={() => handleEdit(binding.action)}
+                                            onRemoveKey={handleRemoveKey}
+                                            onAddKey={() => handleAddKey(binding.action)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            <ThemedDivider/>
+
+                            {/* UI Section */}
+                            <div>
+                                <ThemedSectionHeading>// INTERFACE</ThemedSectionHeading>
+                                <div className="space-y-2">
+                                    {uiBindings.map(binding => (
+                                        <KeybindingRow
+                                            key={binding.action}
+                                            binding={binding}
+                                            isEditing={editingAction === binding.action && listeningForKey}
+                                            onEdit={() => handleEdit(binding.action)}
+                                            onRemoveKey={handleRemoveKey}
+                                            onAddKey={() => handleAddKey(binding.action)}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Changes Warning */}
+                            {hasChanges && (
+                                <motion.div
+                                    initial={{opacity: 0}}
+                                    animate={{opacity: 1}}
+                                    className="flex items-center gap-2 p-3 border border-[var(--theme-border-accent)] bg-[var(--theme-bg-secondary)]"
+                                >
+                                    <AlertCircle className="w-4 h-4 text-[var(--theme-text-accent)]"/>
+                                    <span className="text-xs font-mono text-[var(--theme-text-secondary)]">
+                    UNSAVED CHANGES DETECTED
+                  </span>
+                                </motion.div>
+                            )}
+                        </motion.div>
+                    </ThemedPanelContent>
                 </div>
-                <div className="text-xs text-gray-300">
-                  Cyberpunk Orange/Cyan
+
+                {/* Footer Actions */}
+                <div
+                    className="relative px-8 py-6 bg-[var(--theme-bg-secondary)] border-t border-[var(--theme-border-primary)]">
+                    <div className="grid grid-cols-3 gap-3">
+                        <ThemedButton
+                            icon={<Save className="w-5 h-5"/>}
+                            onClick={handleSave}
+                            disabled={!hasChanges || listeningForKey}
+                        >
+                            SAVE
+                        </ThemedButton>
+                        <ThemedButton
+                            icon={<RotateCcw className="w-5 h-5"/>}
+                            onClick={handleReset}
+                            variant="secondary"
+                            disabled={listeningForKey}
+                        >
+                            RESET
+                        </ThemedButton>
+                        <ThemedButton
+                            onClick={onClose}
+                            variant="secondary"
+                            disabled={listeningForKey}
+                            shortcut="ESC"
+                        >
+                            CLOSE
+                        </ThemedButton>
+                    </div>
                 </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => setUITheme('monochrome')}
-              className={`p-4 rounded border-2 transition-all ${
-                uiTheme === 'monochrome'
-                  ? 'border-white bg-gray-700/30'
-                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
-              }`}
-            >
-              <div className="flex flex-col items-center gap-2">
-                <div className="w-full h-16 rounded bg-gradient-to-br from-black to-gray-900 border border-white/50 flex items-center justify-center">
-                  <div className="text-white font-mono text-xs">MONOCHROME</div>
-                </div>
-                <div className="text-xs text-gray-300">
-                  Black/White/Gray
-                </div>
-              </div>
-            </button>
-          </div>
-          <p className="text-xs text-gray-400">
-            Theme changes apply instantly to all UI elements
-          </p>
+            </ThemedPanel>
         </div>
-      </div>
+    );
+}
 
-      {/* Mining Effects Section */}
-      <div className="space-y-3 border-t border-cyan-700 pt-4">
-        <h3 className="text-cyan-300 font-semibold text-sm uppercase pb-1">
-          ⛏️ Mining Effects
-        </h3>
+/**
+ * Individual keybinding row component
+ */
+interface KeybindingRowProps {
+    binding: ActionBinding;
+    isEditing: boolean;
+    onEdit: () => void;
+    onRemoveKey: (action: string, key: string) => void;
+    onAddKey: () => void;
+}
 
-        {/* Effects Intensity */}
-        <div className="space-y-2">
-          <Label
-            htmlFor="mining-intensity"
-            className="text-cyan-300 font-semibold"
-          >
-            Mining Effects Intensity:{" "}
-            {Math.round((miningEffectsIntensity ?? 1) * 100)}%
-          </Label>
-          <Slider
-            id="mining-intensity"
-            min={0}
-            max={1}
-            step={0.1}
-            value={[miningEffectsIntensity ?? 1]}
-            onValueChange={([value]) => setMiningEffectsIntensity?.(value)}
-            className="w-full"
-          />
-          <p className="text-xs text-gray-400">
-            Adjust the overall intensity of mining feedback effects
-          </p>
-        </div>
-
-        {/* Screen Shake */}
-        <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
-          <div className="space-y-0.5">
-            <Label
-              htmlFor="screen-shake"
-              className="text-cyan-300 font-semibold"
-            >
-              Screen Shake
-            </Label>
-            <p className="text-xs text-gray-400">
-              Camera shake when mining resources
-            </p>
-          </div>
-          <Switch
-            id="screen-shake"
-            checked={enableScreenShake ?? true}
-            onCheckedChange={setEnableScreenShake}
-          />
-        </div>
-
-        {/* Visual Effects */}
-        <div className="flex items-center justify-between bg-gray-800/50 p-3 rounded">
-          <div className="space-y-0.5">
-            <Label
-              htmlFor="visual-effects"
-              className="text-cyan-300 font-semibold"
-            >
-              Visual Effects
-            </Label>
-            <p className="text-xs text-gray-400">
-              Flash, vignette, and color effects during mining
-            </p>
-          </div>
-          <Switch
-            id="visual-effects"
-            checked={enableVisualEffects ?? true}
-            onCheckedChange={setEnableVisualEffects}
-          />
-        </div>
-      </div>
-
-      {/* Keybindings */}
-        <KeybindingEditor/>
-
-      {/* Reset Button */}
-      <div className="flex justify-end pt-4 border-t border-gray-700">
-        <Button
-          onClick={onReset}
-          variant="outline"
-          className="bg-red-600/20 hover:bg-red-600/30 text-red-400 border-red-600"
+function KeybindingRow({binding, isEditing, onEdit, onRemoveKey, onAddKey}: KeybindingRowProps) {
+    return (
+        <div
+            className={`
+        flex items-center justify-between p-3
+        border border-[var(--theme-border-primary)]
+        hover:border-[var(--theme-border-hover)]
+        hover:bg-[var(--theme-bg-secondary)]
+        transition-all duration-200
+        ${isEditing ? 'bg-[var(--theme-text-accent)]/10 border-[var(--theme-border-accent)]' : ''}
+      `}
         >
-          Reset to Defaults
-        </Button>
-      </div>
-    </div>
-  );
+            <div className="flex-1">
+                <div
+                    className="font-mono font-medium text-[var(--theme-text-primary)] text-sm tracking-wider uppercase">
+                    {binding.action.replace(/([A-Z])/g, ' $1').trim()}
+                </div>
+                {binding.description && (
+                    <div className="text-xs text-[var(--theme-text-secondary)] font-mono mt-0.5">
+                        {binding.description}
+                    </div>
+                )}
+            </div>
+
+            <div className="flex items-center gap-2">
+                <div className="flex flex-wrap gap-2">
+                    {binding.keys.length > 0 ? (
+                        binding.keys.map(key => (
+                            <ThemedKeyDisplay
+                                key={key}
+                                keyCode={key}
+                                onRemove={() => onRemoveKey(binding.action, key)}
+                            />
+                        ))
+                    ) : (
+                        <span className="text-xs text-[var(--theme-text-secondary)] font-mono">
+              UNBOUND
+            </span>
+                    )}
+                </div>
+
+                <button
+                    onClick={onEdit}
+                    disabled={isEditing}
+                    className={`
+            px-3 py-1.5 font-mono text-xs
+            border border-[var(--theme-border-primary)]
+            hover:border-[var(--theme-border-hover)]
+            hover:bg-[var(--theme-bg-secondary)]
+            text-[var(--theme-text-primary)]
+            transition-all duration-200
+            disabled:opacity-50 disabled:cursor-not-allowed
+            tracking-wider
+          `}
+                >
+                    {isEditing ? 'LISTENING...' : 'REBIND'}
+                </button>
+            </div>
+        </div>
+    );
 }
