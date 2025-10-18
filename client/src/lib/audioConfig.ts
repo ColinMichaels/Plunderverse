@@ -30,6 +30,7 @@ export enum MusicEventType {
   DANGER = "danger",
   VICTORY = "victory",
   DISCOVERY = "discovery",
+  MOTOR = "motor",
 }
 
 // Environment types for ambient music
@@ -112,6 +113,7 @@ export interface AudioConfig {
     rain: SoundEffectConfig;
     explosion: SoundEffectConfig;
     takeoff: SoundEffectConfig;
+    motor: SoundEffectConfig;
   };
   musicTracks: MusicTrackConfig[];
   musicBasePath: string;
@@ -184,6 +186,11 @@ export const AUDIO_CONFIG: AudioConfig = {
     rain: {
       path: "/sounds/rain.mp3",
       volume: 1.0,
+      loop: true,
+    },
+    motor: {
+      path: "/sounds/motor.mp3",
+      volume: 0.5,
       loop: true,
     },
   },
