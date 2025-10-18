@@ -202,26 +202,27 @@ export const MobileGame: React.FC = () => {
   // Show comprehensive status screen when not at a station
   if (!isLanded) {
     return (
-      <div className="fixed inset-0 bg-black flex flex-col">
-        {/* Header */}
-        <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-orange-600/30 px-4 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-orange-600/20 border border-orange-600 
-                            flex items-center justify-center">
-                <span className="text-orange-400 font-bold text-sm">{player.level}</span>
+      <>
+        <div className="fixed inset-0 bg-black flex flex-col">
+          {/* Header */}
+          <div className="bg-gradient-to-b from-slate-900 to-slate-800 border-b border-orange-600/30 px-4 py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-orange-600/20 border border-orange-600 
+                              flex items-center justify-center">
+                  <span className="text-orange-400 font-bold text-sm">{player.level}</span>
+                </div>
+                <div>
+                  <h2 className="text-white font-semibold">Commander</h2>
+                  <p className="text-xs text-orange-400">{player.rankTitle}</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-white font-semibold">Commander</h2>
-                <p className="text-xs text-orange-400">{player.rankTitle}</p>
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Credits</p>
+                <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}</p>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Credits</p>
-              <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}</p>
             </div>
           </div>
-        </div>
 
         {/* Main content - Ship Status Dashboard */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
@@ -434,13 +435,17 @@ export const MobileGame: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom info */}
-        <div className="bg-slate-900 border-t border-slate-700 px-4 py-3">
-          <p className="text-xs text-center text-cyan-400">
-            Land at any station to access trading and upgrade features
-          </p>
+          {/* Bottom info */}
+          <div className="bg-slate-900 border-t border-slate-700 px-4 py-3">
+            <p className="text-xs text-center text-cyan-400">
+              Land at any station to access trading and upgrade features
+            </p>
+          </div>
         </div>
-      </div>
+        <div className="fixed bottom-20 left-2 z-30">
+          <MusicPlayer />
+        </div>
+      </>
     );
   }
 
@@ -453,9 +458,6 @@ export const MobileGame: React.FC = () => {
         />
         <ParrotControls />
         <ParrotTextDisplay />
-        <div className="fixed bottom-20 left-2 z-30">
-          <MusicPlayer />
-        </div>
       </>
     );
   }

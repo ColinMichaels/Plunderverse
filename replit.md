@@ -26,6 +26,11 @@ Preferred communication style: Simple, everyday language.
   * Touch controls properly positioned at all screen sizes
 - **Station Integration**: Arcade tab shows all 5 games with individual cards and stats
 
+### 2025-10-18: Mobile UI Cleanup
+- **Removed Deprecated Panel**: Deleted unused ParrotSettingsPanel component (settings now consolidated in AudioSettingsPanel)
+- **Settings Access**: Added settings gear button to mobile dashboard header for easy access to game settings
+- **Music Player Optimization**: Hidden music player during arcade gameplay to keep the screen clean, while preserving it in status/station views
+
 ### 2025-10-18: Circular Dependency Fixes
 - **Audio System**: Fixed "Cannot access 'useAudio' before initialization" error by replacing static imports with dynamic imports in stopAllAudio() method
 - **Autopilot System**: Fixed "Cannot access 'useLandedState' before initialization" error by deferring subscription initialization with setTimeout pattern

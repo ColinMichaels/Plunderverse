@@ -46,6 +46,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MinigameManager } from '../minigames/MinigameManager';
+import { AudioSettingsPanel } from '../settings/AudioSettingsPanel';
 
 type TabType = 'overview' | 'trade' | 'crew' | 'missions' | 'ship' | 'arcade';
 type ResourcePanelType = 'fuel' | 'cargo' | 'hull' | 'heat' | null;
@@ -80,6 +81,7 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
   const [showTradeHistoryPanel, setShowTradeHistoryPanel] = useState(false);
   const [showMissionsPanel, setShowMissionsPanel] = useState(false);
   const [showMinigames, setShowMinigames] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   
   // Fuel management state
   const [fuelAmount, setFuelAmount] = useState(10);
@@ -441,9 +443,23 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
                 <p className="text-xs text-orange-400">{player.rankTitle}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-400">Credits</p>
-              <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}</p>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-xs text-gray-400">Credits</p>
+                <p className="text-lg font-mono text-cyan-400">{credits.toLocaleString()}</p>
+              </div>
+              <button
+                onClick={() => {
+                  triggerHaptic();
+                  setShowSettingsPanel(true);
+                }}
+                className="w-10 h-10 rounded-lg bg-slate-700/50 border border-slate-600 
+                         hover:bg-slate-600/50 hover:border-cyan-400/50 
+                         flex items-center justify-center transition-all active:scale-95"
+                title="Settings"
+              >
+                <Settings className="w-5 h-5 text-gray-400" />
+              </button>
             </div>
           </div>
           
@@ -1449,6 +1465,16 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
         isOpen={showMinigames}
         onClose={() => setShowMinigames(false)}
       />
+
+      {/* Settings Panel */}
+      <MobileSlidePanel
+        isOpen={showSettingsPanel}
+        onClose={() => setShowSettingsPanel(false)}
+        title="Game Settings"
+        height="full"
+      >
+        <AudioSettingsPanel />
+      </MobileSlidePanel>
     </div>
   );
 };
