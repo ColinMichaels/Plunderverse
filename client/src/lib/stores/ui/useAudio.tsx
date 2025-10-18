@@ -797,6 +797,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 });
                 await audioManager.playHowl(windHowl, "ambient", baseVol, {
                     fadeInMs: 500,
+                    fadeOutMs: 600,
                     key: "wind",
                     loop: true,
                 });
@@ -828,6 +829,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 });
                 await audioManager.playHowl(rainHowl, "ambient", 1, {
                     fadeInMs: 800,
+                    fadeOutMs: 800,
                     key: "rain",
                     loop: true,
                 });
@@ -858,6 +860,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 });
                 await audioManager.playHowl(motorHowl, "sfx", 0.2, {
                     fadeInMs: 800,
+                    fadeOutMs: 800,
                     key: "motor",
                     loop: true,
                 });
