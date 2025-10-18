@@ -146,7 +146,7 @@ export function PauseMenu() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4"
         onClick={(e) => {
           // Close if clicking outside the menu
           if (e.target === e.currentTarget) {
@@ -161,30 +161,30 @@ export function PauseMenu() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ type: "spring", damping: 25, stiffness: 400 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg"
+          className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
         >
-          {/* Monochrome Futuristic Glassmorphism Card */}
-          <div className="relative bg-black/95 backdrop-blur-xl border border-white/20 rounded-none shadow-2xl overflow-hidden">
+          {/* Themed Glassmorphism Card */}
+          <div className="relative bg-[var(--theme-bg-primary)] backdrop-blur-xl border border-[var(--theme-border-primary)] rounded-none shadow-2xl overflow-hidden">
             {/* Subtle scan line effect */}
             <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white/5 pointer-events-none" />
 
-            {/* Minimalist corner decorations */}
-            <div className="absolute top-0 left-0 w-12 h-12 border-l border-t border-white/40 pointer-events-none" />
-            <div className="absolute top-0 right-0 w-12 h-12 border-r border-t border-white/40 pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-12 h-12 border-l border-b border-white/40 pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-12 h-12 border-r border-b border-white/40 pointer-events-none" />
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-12 h-12 border-l border-t border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-12 h-12 border-r border-t border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-12 h-12 border-l border-b border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 border-r border-b border-[var(--theme-border-accent)] pointer-events-none" />
 
             {/* Header */}
-            <div className="relative px-8 py-6 bg-gradient-to-r from-white/5 via-white/10 to-white/5 border-b border-white/20">
+            <div className="relative px-8 py-6 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-primary)]">
               <motion.h1
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl font-bold text-center text-white tracking-widest font-mono"
+                className="text-3xl font-bold text-center text-[var(--theme-text-primary)] tracking-widest font-mono"
               >
                 // SYSTEM PAUSED
               </motion.h1>
-              <p className="text-center text-gray-500 mt-2 text-xs font-mono tracking-wider">
+              <p className="text-center text-[var(--theme-text-secondary)] mt-2 text-xs font-mono tracking-wider">
                 {isLanded
                   ? "[ SURFACE OPS SUSPENDED ]"
                   : "[ SPACE FLIGHT SUSPENDED ]"}
@@ -203,15 +203,15 @@ export function PauseMenu() {
                   {/* Resume Button */}
                   <button
                     onClick={handleResume}
-                    className="w-full group relative overflow-hidden border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
                     <div className="relative flex items-center justify-center gap-3">
-                      <Play className="w-5 h-5 text-white" />
-                      <span className="text-base font-mono font-medium text-white tracking-wide">
+                      <Play className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
                         RESUME
                       </span>
                     </div>
-                    <p className="relative text-[10px] text-gray-500 mt-1 font-mono">
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
                       ESC
                     </p>
                   </button>
@@ -220,15 +220,15 @@ export function PauseMenu() {
                   <button
                     onClick={handleQuickSave}
                     disabled={isSaving}
-                    className="w-full group relative overflow-hidden border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200 p-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <div className="relative flex items-center justify-center gap-3">
-                      <Save className="w-5 h-5 text-white" />
-                      <span className="text-base font-mono font-medium text-white tracking-wide">
+                      <Save className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
                         {isSaving ? "SAVING..." : "QUICK SAVE"}
                       </span>
                     </div>
-                    <p className="relative text-[10px] text-gray-500 mt-1 font-mono">
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
                       F5
                     </p>
                   </button>
@@ -236,15 +236,15 @@ export function PauseMenu() {
                   {/* Settings */}
                   <button
                     onClick={() => setActivePanel("settings")}
-                    className="w-full group relative overflow-hidden border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
                     <div className="relative flex items-center justify-center gap-3">
-                      <Settings className="w-5 h-5 text-white" />
-                      <span className="text-base font-mono font-medium text-white tracking-wide">
+                      <Settings className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
                         SETTINGS
                       </span>
                     </div>
-                    <p className="relative text-[10px] text-gray-500 mt-1 font-mono">
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
                       OPTIONS & CONTROLS
                     </p>
                   </button>
@@ -252,15 +252,15 @@ export function PauseMenu() {
                   {/* Return to Home */}
                   <button
                     onClick={handleReturnToHome}
-                    className="w-full group relative overflow-hidden border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
                     <div className="relative flex items-center justify-center gap-3">
-                      <Home className="w-5 h-5 text-white" />
-                      <span className="text-base font-mono font-medium text-white tracking-wide">
+                      <Home className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
                         MAIN MENU
                       </span>
                     </div>
-                    <p className="relative text-[10px] text-gray-500 mt-1 font-mono">
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
                       RETURN TO HOME
                     </p>
                   </button>
@@ -268,15 +268,15 @@ export function PauseMenu() {
                   {/* Exit Game */}
                   <button
                     onClick={handleExitGame}
-                    className="w-full group relative overflow-hidden border border-white/30 hover:border-white/60 hover:bg-white/10 transition-all duration-200 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
                     <div className="relative flex items-center justify-center gap-3">
-                      <Power className="w-5 h-5 text-white" />
-                      <span className="text-base font-mono font-medium text-white tracking-wide">
+                      <Power className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
                         EXIT
                       </span>
                     </div>
-                    <p className="relative text-[10px] text-gray-500 mt-1 font-mono">
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
                       DESKTOP ONLY
                     </p>
                   </button>
@@ -292,7 +292,7 @@ export function PauseMenu() {
                   {/* Back button */}
                   <button
                     onClick={() => setActivePanel("main")}
-                    className="text-white hover:text-gray-300 flex items-center gap-2 mb-4 font-mono text-sm"
+                    className="text-[var(--theme-text-accent)] hover:text-[var(--theme-text-highlight)] flex items-center gap-2 mb-4 font-mono text-sm"
                   >
                     ← BACK
                   </button>
@@ -312,8 +312,8 @@ export function PauseMenu() {
             </div>
 
             {/* Footer with tips */}
-            <div className="px-8 py-4 bg-black/50 border-t border-white/10">
-              <div className="flex items-center justify-center gap-2 text-[10px] text-gray-600 font-mono">
+            <div className="px-8 py-4 bg-[var(--theme-bg-secondary)] border-t border-[var(--theme-border-primary)]">
+              <div className="flex items-center justify-center gap-2 text-[10px] text-[var(--theme-text-secondary)] font-mono">
                 <HelpCircle className="w-3 h-3" />
                 <span>ESC TO CLOSE</span>
               </div>

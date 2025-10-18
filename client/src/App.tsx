@@ -38,6 +38,15 @@ function GameContent() {
   const { phase } = useGame();
   const { isLanded } = useLandedState();
     const {platformType, updatePlatform} = usePlatform();
+  const { uiTheme } = useSettings();
+  
+  // Initialize theme on mount
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', uiTheme);
+      console.log(`[THEME] Initialized with theme: ${uiTheme}`);
+    }
+  }, [uiTheme]);
   
   // Log scene switches when isLanded changes
   useEffect(() => {

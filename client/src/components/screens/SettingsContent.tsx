@@ -1,9 +1,10 @@
-import { useSettings } from "../../lib/stores/ui/useSettings";
+import { useSettings, UITheme } from "../../lib/stores/ui/useSettings";
 import { Controls } from "../../lib/controls";
 import { Slider } from "../ui/slider";
 import { Switch } from "../ui/switch";
 import { Button } from "../ui/button";
 import { Label } from "../ui/label";
+import { Palette } from "lucide-react";
 
 const CONTROL_LABELS: Record<string, string> = {
   forward: "Move Forward",
@@ -46,6 +47,8 @@ export function SettingsContent({
     setMiningEffectsIntensity,
     setEnableScreenShake,
     setEnableVisualEffects,
+    uiTheme,
+    setUITheme,
   } = useSettings();
 
   return (
@@ -80,6 +83,60 @@ export function SettingsContent({
           </p>
         </div>
         <Switch id="invert-y" checked={invertY} onCheckedChange={setInvertY} />
+      </div>
+
+      {/* UI Theme Section */}
+      <div className="space-y-3 border-t border-cyan-700 pt-4">
+        <h3 className="text-cyan-300 font-semibold text-sm uppercase pb-1 flex items-center gap-2">
+          <Palette className="w-4 h-4" />
+          UI Theme
+        </h3>
+
+        <div className="space-y-2">
+          <Label className="text-cyan-300 font-semibold">
+            Choose your UI style
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              onClick={() => setUITheme('classic')}
+              className={`p-4 rounded border-2 transition-all ${
+                uiTheme === 'classic'
+                  ? 'border-cyan-400 bg-cyan-900/30'
+                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-full h-16 rounded bg-gradient-to-br from-slate-700 to-slate-800 border border-cyan-500/50 flex items-center justify-center">
+                  <div className="text-cyan-400 font-mono text-xs">CLASSIC</div>
+                </div>
+                <div className="text-xs text-gray-300">
+                  Cyberpunk Orange/Cyan
+                </div>
+              </div>
+            </button>
+
+            <button
+              onClick={() => setUITheme('monochrome')}
+              className={`p-4 rounded border-2 transition-all ${
+                uiTheme === 'monochrome'
+                  ? 'border-white bg-gray-700/30'
+                  : 'border-gray-600 bg-gray-800/50 hover:border-gray-500'
+              }`}
+            >
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-full h-16 rounded bg-gradient-to-br from-black to-gray-900 border border-white/50 flex items-center justify-center">
+                  <div className="text-white font-mono text-xs">MONOCHROME</div>
+                </div>
+                <div className="text-xs text-gray-300">
+                  Black/White/Gray
+                </div>
+              </div>
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">
+            Theme changes apply instantly to all UI elements
+          </p>
+        </div>
       </div>
 
       {/* Mining Effects Section */}
