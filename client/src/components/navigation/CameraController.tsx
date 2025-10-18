@@ -809,17 +809,20 @@ export function CameraController() {
 
       // ===== SIMPLIFIED FRICTION SYSTEM =====
       // Apply smooth friction-based deceleration
-      if (!thrusterActive) {
-        // Only apply friction when not actively thrusting
-        velocity.multiplyScalar(frictionCoefficient);
+      // Skip friction entirely during autopilot to allow autopilot to control velocity
+      if (!isAutopilotActive) {
+        if (!thrusterActive) {
+          // Only apply friction when not actively thrusting
+          velocity.multiplyScalar(frictionCoefficient);
 
-        // Clamp very small velocities to zero to prevent drift
-        if (velocity.length() < minVelocityThreshold) {
-          velocity.set(0, 0, 0);
+          // Clamp very small velocities to zero to prevent drift
+          if (velocity.length() < minVelocityThreshold) {
+            velocity.set(0, 0, 0);
+          }
+        } else {
+          // Apply reduced drag when thrusting (allows momentum buildup)
+          velocity.multiplyScalar(dragCoefficient);
         }
-      } else {
-        // Apply reduced drag when thrusting (allows momentum buildup)
-        velocity.multiplyScalar(dragCoefficient);
       }
     }
 
@@ -1114,6 +1117,11 @@ export function CameraController() {
             autopilotSpeed * delta,
           );
           velocity.add(autopilotVelocity);
+          
+          // Debug logging
+          if (frameCount % 60 === 0) {
+            console.log(`[AUTOPILOT] Distance: ${distanceToTarget.toFixed(1)}, Velocity: ${velocity.length().toFixed(2)}, Target: ${selectedPlanet}`);
+          }
 
           // Check if we've reached landing distance - trigger landing
           if (distanceToTarget <= landingDistance + 5) {
