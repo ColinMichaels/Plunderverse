@@ -107,7 +107,9 @@ export function useParrotEvents() {
 
     if (hull < 30 && hull > 0) {
         say("Avast! Hull integrity critical, Cap'n! Need repairs now!", 'critical', 'hull-critical');
-    } else if (shield < 20 && shield > 0) {
+    } else if (shield < 20 && shield > 5) {
+        // Only warn when shields are critically low but not completely failed (dead)
+        // This prevents the annoying loop on the death screen
         say("Squawk! Shields be failin', Cap'n!", 'warning', 'shields-low');
     }
   }, [shipStatus.hull, shipStatus.shield, parrot, isTakingOff]);

@@ -518,6 +518,11 @@ export const useAudio = create<AudioState>((set, get) => ({
     const clampedVolume = Math.max(0, Math.min(1, volume));
     set({ masterVolume: clampedVolume });
     saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, clampedVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+    
+    // Update parrot speech service when master volume changes
+    const actualParrotVolume = state.parrotVolume * clampedVolume;
+    parrotSpeechService.updateSettings({ volume: actualParrotVolume });
+    
     console.log(`Master volume set to ${Math.round(clampedVolume * 100)}%`);
   },
 
@@ -542,7 +547,12 @@ export const useAudio = create<AudioState>((set, get) => ({
     const clampedVolume = Math.max(0, Math.min(1, volume));
     set({ parrotVolume: clampedVolume });
     saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, clampedVolume);
-    console.log(`Parrot volume set to ${Math.round(clampedVolume * 100)}%`);
+    
+    // Update parrot speech service with master volume multiplication
+    const actualVolume = clampedVolume * state.masterVolume;
+    parrotSpeechService.updateSettings({ volume: actualVolume });
+    
+    console.log(`Parrot volume set to ${Math.round(clampedVolume * 100)}% (actual: ${Math.round(actualVolume * 100)}%)`);
   },
 
   stopAllAudio: () => {

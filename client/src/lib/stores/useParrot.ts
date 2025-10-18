@@ -98,9 +98,8 @@ const savedSettings = loadParrotSettings();
 
 // Helper function to update parrot speech service volume with master volume multiplication
 function updateParrotSpeechVolume() {
-  const parrotState = useParrot.getState();
-  const { masterVolume } = useAudio.getState();
-  const actualVolume = parrotState.settings.volume * masterVolume;
+  const { masterVolume, parrotVolume } = useAudio.getState();
+  const actualVolume = parrotVolume * masterVolume;
   parrotSpeechService.updateSettings({ volume: actualVolume });
 }
 
@@ -125,13 +124,19 @@ export const useParrot = create<ParrotState>((set, get) => ({
     parrotSpeechService.setMuted(state.settings.isMuted);
     updateParrotSpeechVolume();
     
-    // Subscribe to master volume changes to keep parrot speech volume in sync
-    useAudio.subscribe(
-      (state) => state.masterVolume,
-      () => {
+    // Subscribe to master volume and parrot volume changes to keep parrot speech volume in sync
+    // Note: We're already updating in setParrotVolume and setMasterVolume in useAudio,
+    // but this subscription handles any other edge cases
+    let lastMasterVolume = useAudio.getState().masterVolume;
+    let lastParrotVolume = useAudio.getState().parrotVolume;
+    
+    useAudio.subscribe((state) => {
+      if (state.masterVolume !== lastMasterVolume || state.parrotVolume !== lastParrotVolume) {
+        lastMasterVolume = state.masterVolume;
+        lastParrotVolume = state.parrotVolume;
         updateParrotSpeechVolume();
       }
-    );
+    });
     
     parrotSpeechService.ensureVoicesLoaded(() => {
       console.log('[Parrot] Voice synthesis initialized');
