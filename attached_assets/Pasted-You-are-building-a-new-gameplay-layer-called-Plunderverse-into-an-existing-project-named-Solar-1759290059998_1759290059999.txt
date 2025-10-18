@@ -1,0 +1,94 @@
+You are building a new gameplay layer called **Plunderverse** into an existing project named **Solar System Explorer**.  
+The current stack is:
+
+- **Frontend:** React 18 + TypeScript, React Three Fiber (Three.js), Tailwind CSS, Radix UI, Zustand stores (organized by feature), Vite build.  
+- **Backend:** Express.js + TypeScript, Drizzle ORM + Neon PostgreSQL.  
+- **Assets:** `/public/textures`, `/public/sounds`, `/public/geometries`.  
+- **Game Features Today:** 3D solar system navigation, cockpit HUD, missions panel, mining interface, economy/trading, crypto wallet/marketplace.  
+- **Organization:** Feature-aligned component folders (space/, cockpit/, economy/, etc.) and matching Zustand stores.  
+
+---
+
+## Goal
+
+Integrate **Plunderverse** — a space-pirate progression and mission system — into the existing codebase.  
+Players travel between planets, accept missions, mine/battle/raid, earn credits and notoriety, upgrade ships, and climb ranks until they become **Space Pirate Supreme**.
+
+---
+
+## Tasks
+
+### 1) Content & Config
+- Add `client/src/content/plunderverse/` folder with hot-reloadable JSON files:
+  - `ranks.json`, `nodes.json`, `missions.json`, `items.json`, `tuning.json`
+- Add `client/src/lib/plunderverse/contentRegistry.ts` to load/validate content.
+
+### 2) Shared Types
+Create `client/src/lib/plunderverse/types.ts` (mirrored on server) with:
+- `PlayerProfile`, `Ship`, `Mission`, `StarNode`, `EconomyTuning` etc.
+- Types for ranks, notoriety, rewards, penalties.
+
+### 3) Zustand Slices
+Add new slices (keeping your feature organization):
+- `economy/useEconomyPlunderverse.ts`: manages tuning + RNG (seeded).  
+- `economy/useMissionsPlunderverse.ts`: generates, accepts, resolves missions.  
+- Extend `usePlayer` + `useShipStatus` with rank, notoriety, fuel/repair, reward application.
+
+### 4) Game Facade
+Add `client/src/lib/plunderverse/gameFacade.ts`:
+- `listNodes()`: from ContentRegistry.  
+- `travelTo(nodeKey)`: consumes fuel, generates missions.  
+- `acceptMission(id)`, `resolveMission(id, success)`: apply rewards, notoriety, rank evaluation.  
+
+### 5) UI Integration
+- Add **icon-only action button** (per your Tailwind/Radix pattern) to Cockpit HUD or sidebar.  
+- Update MissionsPanel to source from `useMissionsPlunderverse`.  
+- HUD should show: active mission, rank, notoriety.
+
+### 6) Navigation/Mining Hooks
+- When autopilot arrives at a node, call `GameFacadePV.travelTo(nodeKey)`.  
+- On mining/combat success, call `GameFacadePV.resolveMission(id, true)`.  
+
+### 7) Backend / Express
+Add routes:  
+- `POST /api/save` → save slot to DB.  
+- `GET /api/save/:id` → load slot.  
+- `POST /api/telemetry` → record game telemetry.  
+
+### 8) Drizzle Schema
+Add `server/src/db/schema/plunderverse.ts` with tables:
+- `pv_players`, `pv_ships`, `pv_saves`, `pv_telemetry`.
+
+### 9) Deterministic RNG
+Replace `Math.random` with `seedrandom` in `useEconomyPlunderverse`.  
+Seed = `${playerId}:${saveTimestamp}` for repeatable mission rolls.
+
+### 10) Telemetry
+Emit lightweight events from GameFacade, batch to `/api/telemetry`:
+- `travel`: { from, to, fuelCost, encounter }  
+- `mission`: { key, success, duration }  
+- `economy`: { creditsDelta, repairCost }  
+- `progress`: { rank, notoriety }
+
+### 11) Acceptance Criteria
+- Travel consumes fuel and blocks without enough.  
+- Mission generation depends on node yield/risk.  
+- Rewards update credits, notoriety, rank.  
+- Save/Load round-trips state + seeded RNG.  
+- Telemetry events persist.  
+- UI buttons consistent with your design spec.  
+
+---
+
+## Immediate Next Steps
+1. Scaffold `content/plunderverse` JSON (stubs).  
+2. Implement Zustand slices.  
+3. Integrate GameFacadePV into MissionsPanel and Autopilot arrival.  
+4. Add Express save/telemetry endpoints.  
+5. Extend HUD with rank + notoriety.  
+
+---
+
+Deliver all code in **TypeScript**, consistent with your repo conventions.  
+Respect existing component/store organization.  
+Use **icon-only buttons with tooltips** as per your UI guidelines.  

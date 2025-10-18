@@ -1,0 +1,303 @@
+{
+  "storyline": {
+    "year": 2149,
+    "setting": {
+      "name": "The Bankrupt Solar System",
+      "description": "Earth went bust after centuries of exploitation and economic collapse. The solar system has fallen into lawlessness, controlled by competing factions and criminal enterprises."
+    },
+    "narrative": {
+      "overview": "In the year 2149, you are a space outlaw navigating a solar system that has fallen into economic ruin. Earth's collapse has left a power vacuum filled by smugglers, pirates, and desperate survivors. Inspired by the spirit of Firefly, you must trade, fight, and survive in the black while staying one step ahead of the law.",
+      "playerRole": "You are the captain of a small ship, taking on the roles of smuggler, trader, and sometimes reluctant hero. Your choices will determine not just your survival, but the fate of those around you.",
+      "acts": [
+        {
+          "number": 1,
+          "title": "The Awakening",
+          "description": "Begin your journey as a small-time trader, learning the ropes of survival in the hostile solar system."
+        },
+        {
+          "number": 2,
+          "title": "Rising Stakes",
+          "description": "As your reputation grows, bigger opportunities and deadlier threats emerge. Choose your allies wisely."
+        },
+        {
+          "number": 3,
+          "title": "Final Stand",
+          "description": "Your choices culminate in a final confrontation that will determine one of five possible endings."
+        }
+      ],
+      "endings": 5
+    }
+  },
+  "controls": {
+    "movement": {
+      "forward": ["W", "ArrowUp"],
+      "backward": ["S", "ArrowDown"],
+      "strafeLeft": ["A", "ArrowLeft"],
+      "strafeRight": ["D", "ArrowRight"],
+      "description": "Basic movement controls for navigating your ship in space and on planet surfaces"
+    },
+    "thrust": {
+      "boost": ["Shift"],
+      "description": "Hold to engage boost thrusters for increased speed"
+    },
+    "weapons": {
+      "primaryFire": ["Space"],
+      "secondaryWeapon": ["T"],
+      "missileToggle": ["M"],
+      "description": "Combat controls for engaging enemies"
+    },
+    "camera": {
+      "look": "Mouse Movement",
+      "zoom": "Mouse Scroll",
+      "description": "Use mouse to control camera view and zoom level"
+    },
+    "uiShortcuts": {
+      "inventory": ["I"],
+      "map": ["Tab"],
+      "missionLog": ["J"],
+      "tradeInterface": ["T"],
+      "pause": ["Escape"],
+      "quickSave": ["F5"],
+      "quickLoad": ["F9"],
+      "description": "Quick access to important game interfaces"
+    }
+  },
+  "gameMechanics": {
+    "tradeAndSurvive": {
+      "mining": {
+        "laserActivation": {
+          "min": 1,
+          "max": 3,
+          "unit": "seconds"
+        },
+        "resourceYield": {
+          "min": 10,
+          "max": 50,
+          "unit": "units per node"
+        },
+        "nodeTypes": ["Gold", "Crystal", "Iron", "Rare Earth"],
+        "description": "Extract resources from asteroids and planet surfaces using mining lasers"
+      },
+      "trading": {
+        "totalGoods": 60,
+        "strategy": "Buy low, sell high across different stations and planets",
+        "planetEconomies": "Each planet has unique supply and demand affecting prices",
+        "profitMargins": {
+          "min": 20,
+          "max": 100,
+          "unit": "percent"
+        }
+      },
+      "resourceManagement": {
+        "fuel": {
+          "max": 100,
+          "consumption": "Varies by distance and speed"
+        },
+        "oxygen": {
+          "dailyConsumption": 50,
+          "criticalLevel": 10
+        },
+        "hull": {
+          "max": 100,
+          "repairCost": "10 credits per point"
+        },
+        "dailyCosts": {
+          "total": 60,
+          "breakdown": {
+            "crew": 30,
+            "maintenance": 20,
+            "supplies": 10
+          }
+        },
+        "equipmentDegradation": {
+          "rate": 5,
+          "unit": "percent per day"
+        }
+      }
+    },
+    "missionAndStory": {
+      "missionTypes": [
+        {
+          "type": "delivery",
+          "description": "Transport cargo between stations",
+          "frequency": "common"
+        },
+        {
+          "type": "combat",
+          "description": "Eliminate pirates or protect convoys",
+          "frequency": "common"
+        },
+        {
+          "type": "exploration",
+          "description": "Discover new locations or artifacts",
+          "frequency": "uncommon"
+        },
+        {
+          "type": "story",
+          "description": "Main narrative missions with branching choices",
+          "frequency": "rare"
+        }
+      ],
+      "dialogueSystem": {
+        "features": ["Branching choices", "Faction impact", "Karma tracking"],
+        "consequences": "Choices affect reputation, mission availability, and story outcomes"
+      },
+      "rewards": {
+        "credits": {
+          "min": 225,
+          "max": 1000
+        },
+        "reputation": {
+          "min": -50,
+          "max": 50
+        },
+        "additionalRewards": ["Items", "Crew members", "Ship upgrades", "Story progression"]
+      }
+    },
+    "combatAndHeat": {
+      "positioning": {
+        "type": "Turn-based",
+        "description": "Strategic positioning affects damage and defense"
+      },
+      "damageCalculation": {
+        "formula": "baseDamage = weaponDamage * (1 + gunnerSkill/100)",
+        "criticalChance": "5% + (gunnerSkill * 0.1)",
+        "criticalMultiplier": 1.5,
+        "damageRange": {
+          "min": 10,
+          "max": 50,
+          "unit": "per hit"
+        }
+      },
+      "wantedLevels": [
+        {
+          "level": 0,
+          "name": "Clean",
+          "heatThreshold": 0,
+          "description": "No criminal record"
+        },
+        {
+          "level": 1,
+          "name": "Suspected",
+          "heatThreshold": 20,
+          "description": "Under surveillance"
+        },
+        {
+          "level": 2,
+          "name": "Wanted",
+          "heatThreshold": 40,
+          "description": "Active bounty, occasional patrols"
+        },
+        {
+          "level": 3,
+          "name": "Dangerous",
+          "heatThreshold": 60,
+          "description": "High priority target, frequent patrols"
+        },
+        {
+          "level": 4,
+          "name": "Infamous",
+          "heatThreshold": 80,
+          "description": "Shoot on sight orders for most factions"
+        },
+        {
+          "level": 5,
+          "name": "Terrorist",
+          "heatThreshold": 100,
+          "description": "Maximum heat, constant pursuit"
+        }
+      ],
+      "heatGeneration": {
+        "crime": {
+          "min": 10,
+          "max": 30
+        },
+        "killing": 50,
+        "decay": "1 point per day"
+      }
+    },
+    "economySystem": {
+      "pricingFormula": {
+        "description": "Dynamic pricing based on multiple factors",
+        "formula": "finalPrice = basePrice * supplyModifier * demandModifier * factionModifier * heatModifier",
+        "modifiers": {
+          "supply": "1 - (supply / maxSupply) * 0.5",
+          "demand": "1 + (demand / maxDemand) * 0.5",
+          "faction": "1 + (reputation * 0.003)",
+          "heat": "1 + (wantedLevel * 0.1)"
+        }
+      },
+      "supplyDemand": {
+        "updateFrequency": "Daily",
+        "volatility": "Varies by planet and current events",
+        "playerImpact": "Large trades affect local economy"
+      },
+      "startingConditions": {
+        "credits": 300,
+        "fuel": 50,
+        "basicCargo": ["Food Supplies", "Medical Supplies"]
+      }
+    },
+    "factionReputation": {
+      "range": {
+        "min": -100,
+        "max": 100
+      },
+      "levels": [
+        { "name": "Hostile", "threshold": -75, "effect": "+50% buy prices, denied docking" },
+        { "name": "Unfriendly", "threshold": -25, "effect": "+25% buy prices" },
+        { "name": "Neutral", "threshold": 0, "effect": "Standard prices" },
+        { "name": "Friendly", "threshold": 25, "effect": "-15% buy prices" },
+        { "name": "Allied", "threshold": 75, "effect": "-30% buy prices, exclusive missions" }
+      ],
+      "changeFormula": "baseChange = actionValue * factionMultiplier",
+      "decayRate": 0.1,
+      "decayTarget": "neutral",
+      "majorFactions": [
+        "Earth Government Remnants",
+        "Mars Mining Consortium",
+        "Belt Pirates",
+        "Venus Trade Union",
+        "Independent Traders"
+      ]
+    },
+    "xpAndLeveling": {
+      "levelCap": 100,
+      "xpFormula": {
+        "required": "100 * (level ^ 1.5)",
+        "missionBonus": "baseXP * (1 + difficulty * 0.5)"
+      },
+      "progression": {
+        "statsPerLevel": 3,
+        "rankProgression": "Every 5 levels",
+        "unlocks": ["New ships", "Advanced weapons", "Special abilities", "Elite missions"]
+      },
+      "experienceSources": [
+        { "source": "Mission completion", "xp": "100-500" },
+        { "source": "Combat victory", "xp": "10-50" },
+        { "source": "Successful trade", "xp": "5-20" },
+        { "source": "Discovery", "xp": "50-200" }
+      ]
+    }
+  },
+  "additionalInfo": {
+    "performanceTargets": {
+      "desktop": "60 FPS",
+      "mobile": "30 FPS",
+      "loadTime": "< 3 seconds"
+    },
+    "accessibility": {
+      "features": [
+        "Colorblind modes",
+        "Font scaling",
+        "High contrast mode",
+        "Subtitles",
+        "Rebindable controls"
+      ]
+    },
+    "platforms": {
+      "web": "Chrome/Edge 90+, Firefox 88+, Safari 14+",
+      "mobile": "iOS 14+, Android 10+"
+    }
+  }
+}

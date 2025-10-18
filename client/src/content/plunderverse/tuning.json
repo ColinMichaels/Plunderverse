@@ -1,0 +1,464 @@
+{
+  "$schema": "./schemas/tuning.schema.json",
+  "economy": {
+    "starting_conditions": {
+      "credits": 1000,
+      "fuel": 100,
+      "hull": 100,
+      "shields": 50,
+      "cargo_capacity": 10,
+      "starting_location": "neutral_zone"
+    },
+    "fuel_costs": {
+      "base_consumption_per_jump": 10,
+      "consumption_multipliers": {
+        "short_range": 0.5,
+        "medium_range": 1.0,
+        "long_range": 2.0,
+        "emergency_jump": 3.0
+      },
+      "refuel_prices": {
+        "corporations": 50,
+        "independents": 40,
+        "outlaws": 60
+      }
+    },
+    "repair_costs": {
+      "hull_per_point": 25,
+      "shield_per_point": 15,
+      "module_repair_base": 500,
+      "faction_modifiers": {
+        "corporations": 1.2,
+        "independents": 1.0,
+        "outlaws": 0.8
+      }
+    },
+    "trading": {
+      "base_profit_margin": 0.3,
+      "distance_bonus_per_sector": 0.15,
+      "risk_bonus": {
+        "low": 0.1,
+        "medium": 0.25,
+        "high": 0.5,
+        "extreme": 1.0
+      },
+      "bulk_discount": {
+        "threshold": 50,
+        "discount": 0.1
+      },
+      "reputation_price_modifier": {
+        "formula": "1.0 - (reputation * 0.003)",
+        "min": 0.7,
+        "max": 1.3
+      }
+    },
+    "combat": {
+      "base_reward_per_enemy": 1000,
+      "difficulty_multipliers": {
+        "scout": 0.5,
+        "patrol": 1.0,
+        "interceptor": 1.5,
+        "battleship": 3.0,
+        "boss": 5.0
+      },
+      "salvage_chance": 0.3,
+      "salvage_value_range": {
+        "min": 100,
+        "max": 2000
+      },
+      "escape_penalty": {
+        "reputation": -5,
+        "credits": 500
+      }
+    },
+    "missions": {
+      "base_rewards": {
+        "easy": 225,
+        "medium": 500,
+        "hard": 1000,
+        "legendary": 1500
+      },
+      "time_bonus": {
+        "early_completion": 1.25,
+        "on_time": 1.0,
+        "late": 0.75
+      },
+      "reputation_rewards": {
+        "easy": 5,
+        "medium": 10,
+        "hard": 20,
+        "legendary": 50
+      },
+      "rank_multipliers": {
+        "0": 1.0,
+        "1": 1.1,
+        "2": 1.25,
+        "3": 1.4,
+        "4": 1.6,
+        "5": 1.8,
+        "6": 2.0,
+        "7": 2.3,
+        "8": 2.6,
+        "9": 3.0
+      },
+      "failure_penalties": {
+        "credits": 0,
+        "reputation": -15,
+        "notoriety": -10
+      },
+      "daily_mission_refresh": 3,
+      "max_active_missions": 5
+    },
+    "reputation_system": {
+      "thresholds": {
+        "hated": { "min": -100, "max": -50, "description": "Kill on sight, maximum hostility" },
+        "hostile": { "min": -50, "max": -20, "description": "Active aggression, denied services" },
+        "unfriendly": { "min": -20, "max": -5, "description": "Distrusted, higher prices" },
+        "neutral": { "min": -5, "max": 5, "description": "Unknown, standard treatment" },
+        "friendly": { "min": 5, "max": 20, "description": "Known ally, minor benefits" },
+        "allied": { "min": 20, "max": 50, "description": "Trusted partner, significant benefits" },
+        "revered": { "min": 50, "max": 100, "description": "Hero status, maximum benefits" }
+      },
+      "price_modifiers": {
+        "hated": 2.0,
+        "hostile": 1.5,
+        "unfriendly": 1.2,
+        "neutral": 1.0,
+        "friendly": 0.95,
+        "allied": 0.8,
+        "revered": 0.6
+      },
+      "mission_reward_modifiers": {
+        "hated": 0.5,
+        "hostile": 0.75,
+        "unfriendly": 0.9,
+        "neutral": 1.0,
+        "friendly": 1.1,
+        "allied": 1.25,
+        "revered": 1.5
+      },
+      "decay": {
+        "rate_per_day": 1,
+        "target": 0,
+        "min_threshold": 0.5,
+        "description": "Reputation decays by 1 point per game day toward neutral"
+      },
+      "change_caps": {
+        "per_mission": 20,
+        "per_action": 5,
+        "critical_event": 50
+      },
+      "black_market_access": {
+        "outlaws_min_reputation": 10,
+        "corporations_max_reputation": -20
+      }
+    },
+    "heat_system": {
+      "max_heat": 100,
+      "heat_generation": {
+        "contraband_scan_failed": 25,
+        "combat_with_corporations": 15,
+        "witnessed_crime": 10,
+        "smuggling_success": 5
+      },
+      "heat_decay": {
+        "base_rate": 1,
+        "laying_low": 5,
+        "outlaw_territory": 3,
+        "bribe_efficiency": 10
+      },
+      "heat_consequences": {
+        "25": "Increased scan frequency",
+        "50": "Denied docking at Corporate stations",
+        "75": "Active patrols hunting you",
+        "100": "Shoot on sight orders"
+      }
+    },
+    "crew_management": {
+      "wages": {
+        "navigator": 500,
+        "gunner": 750,
+        "engineer": 600,
+        "medic": 400,
+        "muscle": 300
+      },
+      "loyalty": {
+        "base": 50,
+        "success_bonus": 5,
+        "failure_penalty": -10,
+        "no_pay_penalty": -25,
+        "shared_loot_bonus": 10
+      },
+      "efficiency_bonuses": {
+        "navigator": {
+          "fuel_efficiency": 0.9,
+          "jump_accuracy": 1.2
+        },
+        "gunner": {
+          "weapon_damage": 1.3,
+          "accuracy": 1.2
+        },
+        "engineer": {
+          "repair_speed": 1.5,
+          "module_efficiency": 1.2
+        }
+      },
+      "mutiny_threshold": 20
+    },
+    "random_events": {
+      "frequency": 0.15,
+      "types": {
+        "distress_call": {
+          "chance": 0.2,
+          "karma_impact": true
+        },
+        "pirate_ambush": {
+          "chance": 0.25,
+          "scales_with_cargo_value": true
+        },
+        "derelict_ship": {
+          "chance": 0.15,
+          "loot_quality": "variable"
+        },
+        "corporate_inspection": {
+          "chance": 0.2,
+          "scales_with_heat": true
+        },
+        "space_anomaly": {
+          "chance": 0.1,
+          "effects": "random"
+        },
+        "trader_encounter": {
+          "chance": 0.1,
+          "special_deals": true
+        }
+      }
+    },
+    "progression": {
+      "xp_sources": {
+        "mission_complete": 100,
+        "combat_victory": 50,
+        "successful_trade": 25,
+        "exploration": 30,
+        "smuggling_run": 75
+      },
+      "rank_xp_requirements": [
+        0,      
+        500,    
+        1500,   
+        3000,   
+        5000,   
+        8000,   
+        12000,  
+        17000,  
+        23000,  
+        30000   
+      ],
+      "skill_points_per_rank": 2,
+      "perk_unlock_ranks": [2, 4, 6, 8]
+    },
+    "difficulty_scaling": {
+      "enemy_health": {
+        "formula": "100 * (1 + rank * 0.2)",
+        "cap": 500
+      },
+      "enemy_damage": {
+        "formula": "10 * (1 + rank * 0.15)",
+        "cap": 50
+      },
+      "mission_complexity": {
+        "objectives_per_rank": 0.5,
+        "max_objectives": 5
+      },
+      "economy_inflation": {
+        "rate_per_rank": 0.05,
+        "cap": 2.0
+      }
+    },
+    "balance_constants": {
+      "max_cargo_weight": 1000,
+      "base_ship_speed": 100,
+      "scan_detection_base": 0.5,
+      "combat_escape_chance": 0.3,
+      "critical_hit_chance": 0.1,
+      "critical_hit_multiplier": 2.0,
+      "dodge_chance_base": 0.1,
+      "shield_recharge_delay": 5,
+      "fuel_emergency_reserve": 10,
+      "reputation_change_cap": 50,
+      "notoriety_decay_rate": 0.1
+    },
+    "fuel_system": {
+      "fuel_per_jump": {
+        "short_range": 10,
+        "medium_range": 25,
+        "long_range": 50,
+        "emergency_jump": 75
+      },
+      "distance_thresholds": {
+        "short": 100,
+        "medium": 250,
+        "long": 500
+      },
+      "fuel_warning_threshold": 20,
+      "fuel_critical_threshold": 10,
+      "max_fuel_capacity": 100,
+      "fuel_price_per_unit": 2,
+      "fuel_efficiency_modifiers": {
+        "damaged_engine": 1.5,
+        "optimized_route": 0.8,
+        "emergency_burn": 2.0
+      }
+    },
+    "maintenance_system": {
+      "maintenance_interval_days": 5,
+      "degradation_per_day": {
+        "hull": 2,
+        "engine": 3,
+        "equipment": 1,
+        "maintenance_kit": 1
+      },
+      "degradation_multipliers": {
+        "combat": 2.0,
+        "asteroid_field": 1.5,
+        "hostile_environment": 1.8,
+        "normal_space": 1.0
+      },
+      "maintenance_costs": {
+        "hull_per_point": 10,
+        "engine_per_point": 15,
+        "equipment_per_point": 8,
+        "full_overhaul": 500
+      },
+      "critical_failure_threshold": 20,
+      "performance_degradation": {
+        "excellent": 1.0,
+        "good": 0.9,
+        "fair": 0.75,
+        "poor": 0.5,
+        "critical": 0.25
+      },
+      "maintenance_reminder_threshold": 30
+    },
+    "daily_costs": {
+      "crew_salaries": {
+        "base_crew": 25,
+        "navigator": 30,
+        "gunner": 40,
+        "engineer": 35,
+        "medic": 25
+      },
+      "life_support": 15,
+      "docking_fees": {
+        "corporations": 15,
+        "independents": 10,
+        "outlaws": 5,
+        "deep_space": 0
+      },
+      "insurance": 10,
+      "supplies": 10,
+      "total_daily_minimum": 60,
+      "payment_interval_minutes": 7,
+      "warning_credit_threshold": 200,
+      "critical_credit_threshold": 50,
+      "bankruptcy_threshold": -500
+    },
+    "survival_system": {
+      "food_consumption": {
+        "per_crew_per_day": 1,
+        "emergency_rations": 0.5,
+        "starvation_damage_per_day": 10
+      },
+      "oxygen_consumption": {
+        "normal_per_minute": 0.5,
+        "combat_per_minute": 1.0,
+        "eva_per_minute": 2.0,
+        "planet_hostile_per_minute": 1.5,
+        "critical_oxygen_level": 10,
+        "suffocation_damage_per_minute": 20
+      },
+      "medical_supplies": {
+        "heal_per_use": 25,
+        "cost_per_unit": 50,
+        "emergency_use_threshold": 30,
+        "infection_risk_without_treatment": 0.3
+      },
+      "resource_storage": {
+        "food_max": 50,
+        "oxygen_max": 100,
+        "medical_max": 20,
+        "water_max": 30
+      },
+      "emergency_situations": {
+        "no_food_morale_penalty": -20,
+        "no_oxygen_panic_threshold": 5,
+        "no_medical_infection_rate": 5,
+        "resource_critical_mission_trigger": true
+      }
+    },
+    "economic_pressure": {
+      "desperation_thresholds": {
+        "comfortable": 1000,
+        "stable": 500,
+        "tight": 200,
+        "desperate": 50,
+        "critical": 0
+      },
+      "mission_desperation_modifiers": {
+        "comfortable": {
+          "mission_availability": 1.0,
+          "moral_missions": true,
+          "illegal_missions": false
+        },
+        "stable": {
+          "mission_availability": 1.0,
+          "moral_missions": true,
+          "illegal_missions": true
+        },
+        "tight": {
+          "mission_availability": 1.2,
+          "moral_missions": true,
+          "illegal_missions": true
+        },
+        "desperate": {
+          "mission_availability": 1.5,
+          "moral_missions": false,
+          "illegal_missions": true
+        },
+        "critical": {
+          "mission_availability": 2.0,
+          "moral_missions": false,
+          "illegal_missions": true
+        }
+      },
+      "emergency_missions": {
+        "trigger_credit_threshold": 100,
+        "payout_multiplier": 0.7,
+        "reputation_cost": -10,
+        "danger_level": "high",
+        "moral_compromise_required": true
+      },
+      "bankruptcy_consequences": {
+        "ship_repo_warning_threshold": -200,
+        "ship_repo_threshold": -500,
+        "crew_mutiny_threshold": -300,
+        "equipment_failure_rate": 0.5,
+        "reputation_penalty_per_day": -5
+      }
+    }
+  },
+  "debug_settings": {
+    "god_mode": false,
+    "infinite_credits": false,
+    "no_heat": false,
+    "all_locations_visible": false,
+    "instant_travel": false,
+    "mission_auto_complete": false,
+    "multipliers": {
+      "credits": 1.0,
+      "reputation": 1.0,
+      "damage": 1.0,
+      "fuel_consumption": 1.0
+    }
+  }
+}

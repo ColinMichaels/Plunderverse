@@ -1,0 +1,70 @@
+Warning: Encountered two children with the same key, `Earth_1_0_player_579677_1759323856127_Earth_1`. Keys should be unique so that components maintain their identity across updates. Non-unique keys may cause children to be duplicated and/or omitted — the behavior is unsupported and could change in a future version.
+    at div
+    at div
+    at div
+    at div
+    at MotionComponent (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=59d5e211:6562:40)
+    at PresenceChild (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=59d5e211:7768:24)
+    at AnimatePresence (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=59d5e211:7826:26)
+    at div
+    at div
+    at MotionComponent (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/framer-motion.js?v=59d5e211:6562:40)
+    at MissionHUD (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/MissionHUD.tsx:28:41)
+    at GameUI (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/GameUI.tsx:57:57)
+    at KeyboardControls (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@react-three_drei.js?v=59d5e211:9124:8)
+    at div
+    at UILayoutProvider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/ui/UILayoutManager.tsx:162:36)
+    at GameContent (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/App.tsx?t=1760219992976&v=0QBaQW6bEiW2K993lkGmE:52:39)
+    at AuthProvider (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/components/auth/AuthProvider.tsx:21:32)
+    at App
+console.error @ index.tsx:86
+printWarning @ react-dom.development.js:86
+error @ react-dom.development.js:60
+warnOnInvalidKey @ react-dom.development.js:13529
+reconcileChildrenArray @ react-dom.development.js:13566
+reconcileChildFibers2 @ react-dom.development.js:14057
+reconcileChildren @ react-dom.development.js:19193
+updateHostComponent @ react-dom.development.js:19953
+beginWork @ react-dom.development.js:21657
+beginWork$1 @ react-dom.development.js:27465
+performUnitOfWork @ react-dom.development.js:26596
+workLoopSync @ react-dom.development.js:26505
+renderRootSync @ react-dom.development.js:26473
+performSyncWorkOnRoot @ react-dom.development.js:26124
+flushSyncCallbacks @ react-dom.development.js:12042
+(anonymous) @ react-dom.development.js:25690
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558
+requestAnimationFrame
+loop @ events-776716bd.esm.js:1558Understand this error
+2

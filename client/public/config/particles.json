@@ -1,0 +1,97 @@
+{
+  "$schema": "./particles.schema.json",
+  "version": "1.0.0",
+  "particleTexture": {
+    "type": "procedural",
+    "quality": {
+      "low": { "size": 16, "alpha": 0.8 },
+      "medium": { "size": 32, "alpha": 0.9 },
+      "high": { "size": 64, "alpha": 1.0 }
+    },
+    "gradient": {
+      "center": { "r": 255, "g": 255, "b": 255, "a": 1.0 },
+      "edge": { "r": 255, "g": 255, "b": 255, "a": 0.0 }
+    }
+  },
+  "presets": {
+    "common_glow": {
+      "enabled": false,
+      "count": 0,
+      "size": 0.3,
+      "opacity": 0.4,
+      "speed": 0.01,
+      "spread": 2.0,
+      "lifetime": 2.0,
+      "updateFrequency": 3,
+      "blending": "additive",
+      "lodDistances": {
+        "low": 20,
+        "medium": 30,
+        "high": 50
+      }
+    },
+    "uncommon_glow": {
+      "enabled": false,
+      "count": 0,
+      "size": 0.35,
+      "opacity": 0.45,
+      "speed": 0.015,
+      "spread": 2.0,
+      "lifetime": 2.0,
+      "updateFrequency": 2,
+      "blending": "additive",
+      "lodDistances": {
+        "low": 20,
+        "medium": 30,
+        "high": 50
+      }
+    },
+    "rare_glow": {
+      "enabled": true,
+      "count": 20,
+      "size": 0.4,
+      "opacity": 0.5,
+      "speed": 0.02,
+      "spread": 2.0,
+      "lifetime": 2.5,
+      "updateFrequency": 2,
+      "blending": "additive",
+      "swirlIntensity": 0.01,
+      "lodDistances": {
+        "low": 20,
+        "medium": 30,
+        "high": 50
+      }
+    },
+    "legendary_glow": {
+      "enabled": true,
+      "count": 30,
+      "size": 0.5,
+      "opacity": 0.6,
+      "speed": 0.03,
+      "spread": 2.0,
+      "lifetime": 3.0,
+      "updateFrequency": 1,
+      "blending": "additive",
+      "swirlIntensity": 0.01,
+      "lodDistances": {
+        "low": 20,
+        "medium": 30,
+        "high": 50
+      }
+    }
+  },
+  "performanceSettings": {
+    "maxParticlesPerResource": 50,
+    "cullingDistance": {
+      "low": 30,
+      "medium": 50,
+      "high": 100
+    },
+    "updateThrottling": {
+      "low": 3,
+      "medium": 2,
+      "high": 1
+    }
+  }
+}

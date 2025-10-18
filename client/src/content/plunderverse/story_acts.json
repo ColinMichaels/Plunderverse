@@ -1,0 +1,454 @@
+{
+  "$schema": "./schemas/story_acts.schema.json",
+  "acts": [
+    {
+      "id": "act_1",
+      "number": 1,
+      "title": "The Rogue",
+      "subtitle": "Life on the Margins",
+      "description": "Fresh from Earth's collapse, you're just another desperate soul trying to survive in the black. Learn the rules of the frontier, make your first connections, and discover that trust is a luxury you can't afford.",
+      "rankRange": {
+        "min": 0,
+        "max": 3
+      },
+      "themes": [
+        "survival",
+        "learning_the_ropes",
+        "first_betrayal",
+        "finding_purpose"
+      ],
+      "keyEvents": [
+        {
+          "id": "event_first_ship",
+          "name": "Acquiring the Rust Bucket",
+          "description": "Steal, salvage, or earn your first spaceworthy vessel",
+          "triggerRank": 1
+        },
+        {
+          "id": "event_first_crew",
+          "name": "The First Mate",
+          "description": "Recruit your first crew member - someone as desperate as you",
+          "triggerRank": 2
+        },
+        {
+          "id": "event_betrayal",
+          "name": "The Knife in the Back",
+          "description": "Your trusted contact sells you out to Corporate Security",
+          "triggerRank": 3,
+          "climax": true
+        }
+      ],
+      "storyMissions": [
+        "story_act1_desperate_measures",
+        "story_act1_first_score",
+        "story_act1_betrayal"
+      ],
+      "unlockedFeatures": [
+        "basic_smuggling",
+        "crew_recruitment",
+        "black_market_contacts"
+      ],
+      "narrativeText": {
+        "intro": "The year is 2149. Earth went bust. You barely escaped on a transport ship with nothing but the clothes on your back. Now you're stuck in the frontier systems where the Corps squeeze every credit from desperate colonists, and the only law is what you can enforce yourself.",
+        "outro": "Betrayed and hunted, you realize the truth: in the black, everyone's looking out for themselves. Time to embrace what you've become - an outlaw."
+      }
+    },
+    {
+      "id": "act_2",
+      "number": 2,
+      "title": "The Outlaw",
+      "subtitle": "Building a Reputation",
+      "description": "You've learned the hard way that playing by the rules gets you killed. Time to build your crew, choose your allies, and take what's yours. But every heist brings you closer to uncovering the Corporate conspiracy that destroyed Earth.",
+      "rankRange": {
+        "min": 4,
+        "max": 6
+      },
+      "themes": [
+        "crew_loyalty",
+        "faction_politics",
+        "moral_choices",
+        "conspiracy_unveiled"
+      ],
+      "keyEvents": [
+        {
+          "id": "event_major_heist",
+          "name": "The Beaumonde Job",
+          "description": "Pull off the heist that makes your name known across the system",
+          "triggerRank": 4
+        },
+        {
+          "id": "event_crew_loyalty",
+          "name": "Bonds of Blood",
+          "description": "Your crew faces their demons, and you decide their fates",
+          "triggerRank": 5
+        },
+        {
+          "id": "event_conspiracy",
+          "name": "The Earth Files",
+          "description": "Discover the Corporate conspiracy that caused Earth's collapse",
+          "triggerRank": 6,
+          "climax": true
+        }
+      ],
+      "storyMissions": [
+        "story_act2_beaumonde_job",
+        "story_act2_crew_loyalty_missions",
+        "story_act2_corporate_conspiracy"
+      ],
+      "unlockedFeatures": [
+        "advanced_ships",
+        "crew_specializations",
+        "faction_alliances",
+        "base_operations"
+      ],
+      "narrativeText": {
+        "intro": "They know your name now. Some whisper it in fear, others in hope. You're building something - a crew, a reputation, maybe even a cause. But the Corps haven't forgotten your crimes.",
+        "outro": "The truth about Earth changes everything. The Corps didn't just let humanity's homeworld die - they killed it for profit. Someone needs to pay."
+      }
+    },
+    {
+      "id": "act_3",
+      "number": 3,
+      "title": "The Captain",
+      "subtitle": "Leading the Charge",
+      "description": "You command respect across the frontier. Multiple ships answer to you, and your decisions shape the fate of entire colonies. The faction war has begun, and everyone wants you on their side.",
+      "rankRange": {
+        "min": 7,
+        "max": 8
+      },
+      "themes": [
+        "leadership",
+        "faction_war",
+        "difficult_choices",
+        "power_and_responsibility"
+      ],
+      "keyEvents": [
+        {
+          "id": "event_fleet_command",
+          "name": "Admiral of Outcasts",
+          "description": "Take command of a small fleet of allied ships",
+          "triggerRank": 7
+        },
+        {
+          "id": "event_base_established",
+          "name": "Haven in the Black",
+          "description": "Establish your own base of operations",
+          "triggerRank": 7
+        },
+        {
+          "id": "event_faction_choice",
+          "name": "The Side You Choose",
+          "description": "The faction war reaches its peak - pick your allegiance",
+          "triggerRank": 8,
+          "climax": true
+        }
+      ],
+      "storyMissions": [
+        "story_act3_fleet_assembly",
+        "story_act3_base_defense",
+        "story_act3_faction_war_climax"
+      ],
+      "unlockedFeatures": [
+        "fleet_command",
+        "base_management",
+        "strategic_operations",
+        "political_influence"
+      ],
+      "narrativeText": {
+        "intro": "Captain. The title carries weight now. Ships rally to your banner, colonies seek your protection, and the Corps want your head. You're not just surviving anymore - you're leading a revolution.",
+        "outro": "The choice is made. Your allies stand with you, your enemies prepare for the final battle. Everything you've built leads to this moment."
+      }
+    },
+    {
+      "id": "act_4",
+      "number": 4,
+      "title": "The Legend",
+      "subtitle": "Destiny Awaits",
+      "description": "Your name will echo through history. The final battle approaches - will you become the Space Pirate Supreme who rules through fear, the Robin Hood who liberates the oppressed, or something else entirely? Your choices throughout this journey determine your legacy.",
+      "rankRange": {
+        "min": 9,
+        "max": 10
+      },
+      "themes": [
+        "legacy",
+        "final_confrontation",
+        "redemption_or_damnation",
+        "crew_epilogues"
+      ],
+      "keyEvents": [
+        {
+          "id": "event_system_influence",
+          "name": "Master of the Frontier",
+          "description": "Your influence reaches every corner of the system",
+          "triggerRank": 9
+        },
+        {
+          "id": "event_crew_epilogues",
+          "name": "Parting Ways",
+          "description": "Your crew members face their own destinies",
+          "triggerRank": 9
+        },
+        {
+          "id": "event_final_battle",
+          "name": "The Last Stand",
+          "description": "The final confrontation that determines the fate of the frontier",
+          "triggerRank": 10,
+          "climax": true
+        }
+      ],
+      "storyMissions": [
+        "story_act4_gathering_storm",
+        "story_act4_crew_epilogues",
+        "story_act4_final_battle",
+        "story_act4_epilogue"
+      ],
+      "unlockedFeatures": [
+        "legendary_ships",
+        "system_wide_influence",
+        "ending_paths",
+        "new_game_plus"
+      ],
+      "endings": [
+        {
+          "id": "ending_pirate_king",
+          "name": "The Pirate King",
+          "requirements": {
+            "notoriety": 90,
+            "outlawReputation": 80,
+            "moralityScore": -50
+          },
+          "description": "You rule the frontier through fear and strength. The Corps bend to your will, the colonies pay tribute, and your fleet controls every trade route. You got everything you wanted - but at what cost?"
+        },
+        {
+          "id": "ending_robin_hood",
+          "name": "Hero of the People",
+          "requirements": {
+            "independentReputation": 90,
+            "crewLoyalty": 85,
+            "moralityScore": 50
+          },
+          "description": "You broke the Corporate stranglehold and gave power back to the colonies. Children sing songs about you, and your crew became heroes in their own right. The frontier is free, and you made it happen."
+        },
+        {
+          "id": "ending_corporate_sellout",
+          "name": "The Devil's Bargain",
+          "requirements": {
+            "corporateReputation": 70,
+            "credits": 1000000,
+            "moralityScore": -20
+          },
+          "description": "You made a deal with the Corps - legitimacy and wealth in exchange for keeping the colonies in line. You're rich beyond measure, but your crew will never forgive you, and neither will history."
+        },
+        {
+          "id": "ending_true_independence",
+          "name": "Ghost of the Frontier",
+          "requirements": {
+            "notoriety": 100,
+            "noFactionAbove": 60,
+            "survivedCrewBetrayal": true
+          },
+          "description": "You answer to no one. Neither Corp nor Colony can claim you. Your ship disappears into the black, a legend whispered in spacer bars. You're truly free - and utterly alone."
+        },
+        {
+          "id": "ending_redemption",
+          "name": "The Redeemed",
+          "requirements": {
+            "startedAsVillain": true,
+            "moralityScore": 75,
+            "savedEarthRefugees": true
+          },
+          "description": "You began as a scoundrel but became something more. Your past sins are forgiven, your crew stands proudly beside you, and the frontier has a chance at a better future. Sometimes, people can change."
+        }
+      ],
+      "narrativeText": {
+        "intro": "They tell stories about you in every port from Mars to the Belt. Some call you savior, others call you monster. But everyone knows your name. This is your final chapter.",
+        "outro": "The black remembers everything - every choice, every betrayal, every act of kindness. Your story ends here, but your legend has just begun."
+      }
+    }
+  ],
+  "progressionMetrics": {
+    "creditsEarnedTotal": {
+      "id": "metric_credits",
+      "name": "Lifetime Earnings",
+      "description": "Total credits earned throughout your career",
+      "icon": "💰"
+    },
+    "missionsCompleted": {
+      "id": "metric_missions",
+      "name": "Jobs Completed",
+      "description": "Total number of successful missions",
+      "icon": "📋"
+    },
+    "missionsByType": {
+      "delivery": "Cargo Runs",
+      "smuggling": "Smuggling Operations",
+      "combat": "Combat Engagements",
+      "rescue": "Rescue Missions",
+      "heist": "Heists Pulled",
+      "story": "Story Missions"
+    },
+    "factionsStanding": {
+      "allied": "Faction reputation >= 80",
+      "friendly": "Faction reputation >= 50",
+      "neutral": "Faction reputation >= 20",
+      "hostile": "Faction reputation < 20"
+    },
+    "notorietyLevel": {
+      "unknown": "0-20",
+      "known": "21-40",
+      "infamous": "41-60",
+      "feared": "61-80",
+      "legendary": "81-100"
+    },
+    "crewLoyaltyAverage": {
+      "id": "metric_loyalty",
+      "name": "Crew Loyalty",
+      "description": "Average loyalty across all crew members",
+      "icon": "🤝"
+    }
+  },
+  "rankRequirements": [
+    {
+      "rank": 0,
+      "title": "Stowaway",
+      "requirements": {
+        "credits": 0,
+        "missions": 0,
+        "notoriety": 0
+      }
+    },
+    {
+      "rank": 1,
+      "title": "Deckhand",
+      "requirements": {
+        "credits": 5000,
+        "missions": 3,
+        "notoriety": 10
+      }
+    },
+    {
+      "rank": 2,
+      "title": "Smuggler",
+      "requirements": {
+        "credits": 15000,
+        "missions": 10,
+        "notoriety": 25,
+        "special": "Complete 2 smuggling missions"
+      }
+    },
+    {
+      "rank": 3,
+      "title": "Privateer",
+      "requirements": {
+        "credits": 35000,
+        "missions": 20,
+        "notoriety": 40,
+        "combatVictories": 5
+      }
+    },
+    {
+      "rank": 4,
+      "title": "Corsair",
+      "requirements": {
+        "credits": 60000,
+        "missions": 35,
+        "notoriety": 60,
+        "combatVictories": 15,
+        "special": "Complete Act 1"
+      }
+    },
+    {
+      "rank": 5,
+      "title": "Captain",
+      "requirements": {
+        "credits": 100000,
+        "missions": 50,
+        "notoriety": 75,
+        "crewSize": 5,
+        "special": "One faction at Friendly status"
+      }
+    },
+    {
+      "rank": 6,
+      "title": "Commodore",
+      "requirements": {
+        "credits": 200000,
+        "missions": 75,
+        "notoriety": 85,
+        "crewSize": 7,
+        "special": "Complete Act 2"
+      }
+    },
+    {
+      "rank": 7,
+      "title": "Warlord",
+      "requirements": {
+        "credits": 350000,
+        "missions": 100,
+        "notoriety": 90,
+        "fleetSize": 3,
+        "special": "Control a base"
+      }
+    },
+    {
+      "rank": 8,
+      "title": "Admiral",
+      "requirements": {
+        "credits": 500000,
+        "missions": 150,
+        "notoriety": 95,
+        "fleetSize": 5,
+        "special": "Complete Act 3"
+      }
+    },
+    {
+      "rank": 9,
+      "title": "Legendary Captain",
+      "requirements": {
+        "credits": 750000,
+        "missions": 200,
+        "notoriety": 98,
+        "special": "Maximum reputation with one faction"
+      }
+    },
+    {
+      "rank": 10,
+      "title": "Space Pirate Supreme",
+      "requirements": {
+        "credits": 1000000,
+        "missions": 250,
+        "notoriety": 100,
+        "special": "Complete the final battle"
+      }
+    }
+  ],
+  "newGamePlus": {
+    "enabled": true,
+    "bonuses": [
+      {
+        "id": "bonus_credits",
+        "name": "Starter Fund",
+        "description": "Start with 10% of your ending credits",
+        "calculation": "endingCredits * 0.1"
+      },
+      {
+        "id": "bonus_crew",
+        "name": "Veteran Crew",
+        "description": "One loyal crew member joins you immediately",
+        "condition": "crewLoyalty >= 90"
+      },
+      {
+        "id": "bonus_ship",
+        "name": "Legacy Ship",
+        "description": "Keep a upgraded version of your starting ship",
+        "condition": "completed_ending"
+      },
+      {
+        "id": "bonus_reputation",
+        "name": "Remembered",
+        "description": "Start with +10 reputation with your allied faction",
+        "condition": "faction_allied"
+      }
+    ]
+  }
+}

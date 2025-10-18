@@ -2,6 +2,39 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Custom scrollbar for pause menu */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(251, 146, 60, 0.5);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(251, 146, 60, 0.7);
+}
+
+@layer utilities {
+
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border;
@@ -17,6 +50,166 @@
   }
 }
 
+/* Stars background animation for game transition */
+.stars-bg {
+  background-image:
+    radial-gradient(2px 2px at 20px 30px, white, transparent),
+    radial-gradient(2px 2px at 40px 70px, white, transparent),
+    radial-gradient(1px 1px at 50px 50px, white, transparent),
+    radial-gradient(1px 1px at 80px 10px, white, transparent),
+    radial-gradient(2px 2px at 90px 40px, white, transparent),
+    radial-gradient(1px 1px at 130px 80px, white, transparent),
+    radial-gradient(1px 1px at 150px 60px, white, transparent);
+  background-repeat: repeat;
+  background-size: 200px 200px;
+  animation: stars-move 30s linear infinite;
+  opacity: 0.5;
+}
+
+@keyframes stars-move {
+  from {
+    transform: translateX(0) translateY(0);
+  }
+
+  to {
+    transform: translateX(-200px) translateY(-200px);
+  }
+}
+
+/* Slide-in animations for panels - smoother */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading spinner animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+/* Autopilot UI animations */
+@keyframes scan-line {
+  0% {
+    transform: translateY(0);
+  }
+
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes slide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-slow {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(50px);
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-scan-line {
+  animation: scan-line 3s linear infinite;
+}
+
+.animate-slide {
+  animation: slide 2s linear infinite;
+}
+
+.animate-slide-slow {
+  animation: slide-slow 1s linear infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 4s linear infinite;
+}
+
+.bg-repeating-linear-gradient-45 {
+  background: repeating-linear-gradient(-45deg,
+      transparent,
+      transparent 10px,
+      rgba(255, 255, 255, 0.1) 10px,
+      rgba(255, 255, 255, 0.1) 20px);
+}
+
+/* Button press animation */
+@keyframes button-press {
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.15);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Panel glow animation */
+@keyframes panel-glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+  }
+}
+
+.animate-button-press {
+  animation: button-press 0.3s ease-out;
+}
+
+.animate-panel-glow {
+  animation: panel-glow 2s ease-in-out infinite;
+}
+
 #root {
   width: 100%;
   height: 100%;
@@ -29,68 +222,115 @@ canvas {
   touch-action: none;
 }
 
-/* Mobile responsive adjustments */
+/* Mobile responsive adjustments - improved readability */
 @media (max-width: 768px) {
   .cockpit-panel {
-    @apply w-full max-w-sm p-2 text-sm;
-    max-height: 60vh !important;
+    @apply w-full max-w-xs p-2 text-sm;
+    max-height: 35vh !important;
+    /* Reduced from 40vh */
     left: 50% !important;
     transform: translateX(-50%) !important;
     right: auto !important;
+    font-size: 0.875rem !important;
+    /* Increased from 0.65rem */
   }
-  
+
   .status-bar {
-    @apply flex-wrap gap-1 p-2 text-xs;
-    bottom: 80px !important;
+    @apply flex-wrap gap-1 p-2 text-sm;
+    bottom: 60px !important;
+    font-size: 0.8rem !important;
+    /* Increased from 0.6rem */
   }
-  
+
   .status-item {
     @apply min-w-0 flex-1;
   }
-  
+
   .minimap {
-    @apply w-20 h-20;
-    bottom: 140px !important;
-    left: 8px !important;
+    @apply w-16 h-16;
+    bottom: 100px !important;
+    left: 4px !important;
     z-index: 50;
   }
-  
+
   .flight-controls {
-    @apply text-xs p-2;
+    @apply text-sm p-2;
+    font-size: 0.8rem !important;
+    /* Increased from 0.6rem */
   }
-  
-  /* Mobile navigation buttons */
+
+  /* Mobile navigation buttons - better sizing */
   .mobile-nav-left {
     left: 4px !important;
-    top: 80px !important;
+    top: 60px !important;
     transform: none !important;
   }
-  
+
   .mobile-nav-right {
     right: 4px !important;
-    top: 80px !important;
+    top: 60px !important;
     transform: none !important;
+  }
+
+  /* Better sized mobile nav buttons */
+  .mobile-nav-left button,
+  .mobile-nav-right button {
+    @apply w-10 h-10 text-sm !important;
+    font-size: 0.875rem !important;
+    /* Increased from 0.7rem */
+  }
+
+  /* Better sized mobile panels */
+  .mobile-nav-left .cockpit-panel,
+  .mobile-nav-right .cockpit-panel {
+    @apply w-72 max-h-80 p-3 text-sm !important;
+    font-size: 0.8rem !important;
+    /* Increased from 0.65rem */
   }
 }
 
 @media (max-width: 480px) {
   .cockpit-panel {
-    @apply max-w-xs text-xs;
-    max-height: 50vh !important;
+    @apply max-w-xs text-sm;
+    max-height: 30vh !important;
+    /* Reduced from 35vh */
     padding: 8px !important;
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.6rem */
   }
-  
+
   .status-bar {
-    @apply text-xs;
-    bottom: 70px !important;
+    @apply text-sm;
+    bottom: 50px !important;
+    font-size: 0.75rem !important;
+    /* Increased from 0.55rem */
+    padding: 6px !important;
   }
-  
+
   .minimap {
-    @apply w-16 h-16;
-    bottom: 130px !important;
-    left: 4px !important;
+    @apply w-14 h-14;
+    bottom: 90px !important;
+    left: 2px !important;
     z-index: 50;
   }
+
+  /* Properly sized nav buttons for small screens */
+  .mobile-nav-left button,
+  .mobile-nav-right button {
+    @apply w-8 h-8 text-sm !important;
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.6rem */
+  }
+
+  /* Readable panels for small phones */
+  .mobile-nav-left .cockpit-panel,
+  .mobile-nav-right .cockpit-panel {
+    @apply w-64 max-h-64 p-2 text-sm !important;
+    font-size: 0.75rem !important;
+    /* Minimum readable - increased from 0.55rem */
+  }
+
+  /* No conflicting transform overrides */
 }
 
 /* Touch feedback */
@@ -104,7 +344,7 @@ canvas {
   background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(51, 65, 85, 0.85));
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 8px;
-  box-shadow: 
+  box-shadow:
     0 0 20px rgba(6, 182, 212, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.1),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -114,7 +354,7 @@ canvas {
 
 .space-panel:hover {
   border-color: rgba(6, 182, 212, 0.5);
-  box-shadow: 
+  box-shadow:
     0 0 30px rgba(6, 182, 212, 0.2),
     inset 0 1px 0 rgba(255, 255, 255, 0.15),
     inset 0 -1px 0 rgba(0, 0, 0, 0.2);
@@ -152,38 +392,145 @@ canvas {
   @apply flex items-center justify-center p-2;
 }
 
-/* Metallic button styling */
+/* Metallic button styling - improved feedback */
 .space-button {
-  @apply px-3 py-2 rounded transition-all duration-200 font-mono text-sm;
+  @apply px-3 py-2 rounded transition-all duration-300 font-mono text-sm;
   background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 0.9));
   border: 1px solid rgba(6, 182, 212, 0.3);
   color: rgb(6, 182, 212);
-  box-shadow: 
+  box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.space-button:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.5s;
 }
 
 .space-button:hover {
   background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.1));
   border-color: rgba(6, 182, 212, 0.5);
-  transform: translateY(-1px);
-  box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.4),
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 6px 12px rgba(0, 0, 0, 0.4),
     inset 0 1px 0 rgba(255, 255, 255, 0.15);
 }
 
+.space-button:hover:before {
+  left: 100%;
+}
+
 .space-button:active {
-  transform: translateY(0);
-  box-shadow: 
+  transform: translateY(0) scale(0.98);
+  box-shadow:
     0 1px 2px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(0, 0, 0, 0.1);
 }
 
+.space-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.space-button:disabled:hover:before {
+  left: -100%;
+}
+
 /* Status indicators */
 .space-status-bar {
-  @apply grid gap-2 p-2 rounded;
+  @apply grid gap-2 p-2 rounded text-white;
   background: linear-gradient(135deg, rgba(15, 23, 42, 0.8), rgba(30, 41, 59, 0.6));
   border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+/* HUD Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes damageFloat {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-damageFloat {
+  animation: damageFloat 1s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Panel visibility transitions */
+.panel-transition {
+  transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+}
+
+.panel-expanded {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.panel-collapsed {
+  opacity: 0;
+  transform: translateX(100px);
+  pointer-events: none;
+}
+
+/* Context transition effects */
+.context-transition {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Combat screen effects */
+.combat-vignette {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 0, 0.1) 100%);
+  animation: pulse 2s infinite;
+  z-index: 100;
 }
 
 .space-status-item {
@@ -223,10 +570,10 @@ canvas {
 }
 
 .sidebar-panel-button {
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.95) 0%, 
-    rgba(51, 65, 85, 0.95) 50%, 
-    rgba(30, 41, 59, 0.95) 100%);
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.95) 0%,
+      rgba(51, 65, 85, 0.95) 50%,
+      rgba(30, 41, 59, 0.95) 100%);
   border: 1px solid rgba(6, 182, 212, 0.3);
   border-radius: 6px;
   backdrop-filter: blur(10px);
@@ -243,14 +590,14 @@ canvas {
 }
 
 .sidebar-panel-button:hover {
-  background: linear-gradient(135deg, 
-    rgba(51, 65, 85, 0.95) 0%, 
-    rgba(71, 85, 105, 0.95) 50%, 
-    rgba(51, 65, 85, 0.95) 100%);
+  background: linear-gradient(135deg,
+      rgba(51, 65, 85, 0.95) 0%,
+      rgba(71, 85, 105, 0.95) 50%,
+      rgba(51, 65, 85, 0.95) 100%);
   border-color: rgba(6, 182, 212, 0.6);
   color: rgb(6, 182, 212);
   transform: scale(1.05);
-  box-shadow: 
+  box-shadow:
     0 4px 15px rgba(0, 0, 0, 0.4),
     0 0 10px rgba(6, 182, 212, 0.2);
 }
@@ -271,7 +618,8 @@ canvas {
   left: 0;
   right: 0;
   bottom: 0;
-  z-index: 200;
+  z-index: 40;
+  /* Lowered from 200 to allow modals (z-50+) to appear above */
   background: rgba(0, 0, 0, 0.3);
   backdrop-filter: blur(2px);
   display: flex;
@@ -280,14 +628,14 @@ canvas {
 }
 
 .expanded-panel {
-  background: linear-gradient(135deg, 
-    rgba(30, 41, 59, 0.98) 0%, 
-    rgba(51, 65, 85, 0.98) 50%, 
-    rgba(30, 41, 59, 0.98) 100%);
+  background: linear-gradient(135deg,
+      rgba(30, 41, 59, 0.98) 0%,
+      rgba(51, 65, 85, 0.98) 50%,
+      rgba(30, 41, 59, 0.98) 100%);
   border: 1px solid rgba(6, 182, 212, 0.4);
   border-radius: 12px;
   backdrop-filter: blur(15px);
-  box-shadow: 
+  box-shadow:
     0 8px 30px rgba(0, 0, 0, 0.5),
     inset 0 1px 0 rgba(6, 182, 212, 0.2),
     0 0 20px rgba(6, 182, 212, 0.1);
@@ -311,6 +659,7 @@ canvas {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -323,7 +672,7 @@ canvas {
     bottom: 100px !important;
     right: 8px !important;
   }
-  
+
   .ui-sidebar-left {
     left: 4px;
   }
@@ -331,12 +680,12 @@ canvas {
   .ui-sidebar-right {
     right: 4px;
   }
-  
+
   .sidebar-panel-button {
     min-width: 48px;
     padding: 6px;
   }
-  
+
   .sidebar-panel-label {
     font-size: 9px;
   }
@@ -348,18 +697,83 @@ canvas {
     right: 4px !important;
     transform: scale(0.9);
   }
-  
+
   .sidebar-panel-button {
     min-width: 44px;
     padding: 4px;
   }
-  
+
   .sidebar-panel-label {
     font-size: 8px;
   }
-  
+
   .expanded-panel {
     max-width: calc(100vw - 100px);
     margin: 10px;
+  }
+}
+
+/* Desktop layout optimizations */
+@media (min-width: 1440px) {
+
+  /* Limit panel widths on wide screens */
+  .cockpit-panel,
+  .space-panel {
+    max-width: 500px;
+  }
+
+  .expanded-panel {
+    max-width: 600px;
+  }
+
+  /* Optimize action bar panels on desktop */
+  .fixed.right-16 {
+    width: 450px !important;
+  }
+
+  /* Better spacing for large screens */
+  .ui-sidebar-left {
+    left: 16px;
+  }
+
+  .ui-sidebar-right {
+    right: 16px;
+  }
+}
+
+@media (min-width: 1920px) {
+
+  /* Ultra-wide screen optimizations */
+  .cockpit-panel,
+  .space-panel {
+    max-width: 600px;
+  }
+
+  .expanded-panel {
+    max-width: 700px;
+  }
+
+  /* Center content on very wide screens */
+  .fixed.right-16 {
+    width: 500px !important;
+  }
+
+  /* Add margin to prevent panels from being too close to edges */
+  .ui-sidebar-left {
+    left: 24px;
+  }
+
+  .ui-sidebar-right {
+    right: 24px;
+  }
+
+  /* Larger buttons for big screens */
+  .sidebar-panel-button {
+    min-width: 64px;
+    padding: 10px;
+  }
+
+  .sidebar-panel-label {
+    font-size: 11px;
   }
 }

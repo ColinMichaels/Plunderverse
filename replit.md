@@ -1,96 +1,133 @@
-# Solar System Explorer
+# Plunderverse - Compressed Technical Specification
 
 ## Overview
-
-This is an interactive 3D solar system exploration game built with React, Three.js, and Express. Users can navigate through space, explore planets, and learn about our solar system through an immersive 3D experience. The application features realistic planetary orbits, detailed planet information, keyboard controls for space navigation, and audio feedback.
+"Plunderverse" is a 3D space outlaw game, set in a bankrupt solar system in 2149. Built with React, Three.js, and Express, the game allows players to be smugglers and space outlaws engaging in dynamic gameplay loops: trade and survival, mission and story progression, and combat and notoriety management. The game features a procedurally generated, economically driven solar system, aiming to deliver a highly replayable outlaw experience with a rich narrative and emergent gameplay.
 
 ## User Preferences
-
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### 2025-10-12: Mini-Game Victory & Objectives Completion
+- **Collection Objectives Room Fix**: Fixed collectibles spawning in non-existent rooms causing creation failures
+  - **Issue**: repair_tools, spare_parts, medical_supplies placed in 'maintenance' and 'medical_bay' rooms that don't exist
+  - **Solution**: Changed to valid rooms (corridor_2, cantina) - all 12 collectibles now spawn correctly
+  - **Impact**: All collection objectives (repair tools, spare parts, fuel cells, medical supplies) fully functional
+- **Door Progression Iterator Fix**: Fixed TypeScript compilation error in door unlocking system
+  - **Issue**: `for (const door of this.doors.values())` caused ES2015 iterator error
+  - **Solution**: Wrapped with `Array.from()` for compatibility
+  - **Impact**: Door progression system compiles and runs without errors
+- **Victory Rewards Cross-Client Sync**: Fixed completion rewards not syncing to main game
+  - **Issue**: MiniGameSyncService dropped all messages when mini-game inactive, preventing desktop from receiving rewards
+  - **Solution**: Whitelisted 'victory_rewards' messages to bypass `isMinigameActive` gate
+  - **Impact**: Main game now receives completion rewards (500 credits, 25% hull, 25% shields, 50% fuel)
+- **Fuel Restoration Implementation**: Completed fuel reward application in victory system
+  - **Issue**: Fuel restoration was logged only, not actually applied
+  - **Solution**: Added fuel tank update via `useEquipment.setState()` to trigger Zustand subscribers and persistence
+  - **Impact**: All victory rewards now fully functional (credits, hull, shields, fuel)
+
+### 2025-10-12: Final Death Crash Fix - Deferred Phase Transition
+- **Death Screen Crash Resolution**: Fixed persistent Radix UI infinite loop crash when killed by enemies
+  - **Issue**: Even with UI components hidden, Radix Slider tried to update state during unmount causing "Maximum update depth exceeded"
+  - **Root Cause**: Synchronous phase change to "ended" unmounted all UI components immediately, triggering Radix's internal ref cleanup that tried to update state
+  - **Solution**: Added 100ms setTimeout delay before calling `useGame.getState().end()` in death handler, allowing React to complete current render cycle
+  - **Impact**: Player death from enemy damage now works smoothly, no more crashes or infinite loops
+
+### 2025-10-12: WebSocket URL Fix - Always Use Current Hostname
+- **WebSocket Connection Fix**: Fixed WebSocket connection failures by always using current application URL
+  - **Issue**: WebSocket tried connecting to `wss://localhost:5000` even though server runs on Replit, causing connection failures
+  - **Root Cause**: Incorrect environment detection assumed localhost for development, but Replit server runs on actual hostname
+  - **Solution**: Removed localhost checks - WebSocket now always uses `window.location.hostname` and `window.location.port`
+  - **Behavior**: Automatically connects to wherever the server is actually running (Replit, production, or any environment)
+  - **Impact**: WebSocket connections work correctly in all environments without hardcoded assumptions
+
+### 2025-10-12: Combat Death Dynamic Import Fix
+- **Enemy Death Handling**: Fixed async race condition when player killed by enemies
+  - **Issue**: Game crashed when player died from enemy damage
+  - **Root Cause**: Death handler used dynamic imports `import(...).then()` inside state update, creating async race conditions
+  - **Solution**: Replaced dynamic imports with static imports of useEnemies, useShooting, useGame at top of file
+  - **Impact**: Combat state clears synchronously on death, no more race condition crashes
+
+### 2025-10-11: Performance Fix - Eliminated Excessive Material Logging
+- **Performance Optimization**: Fixed AtmosphericEffects fog plane material regeneration causing performance issues
+  - **Issue**: Fog plane materials used `Date.now()` in IDs, creating new materials every render, causing console spam and performance degradation
+  - **Solution**: Removed `Date.now()` from material IDs, using stable IDs: `fog-plane-material-${height}-${planetName}`
+  - **Logging**: Disabled verbose material registration logging in ResourceManager and AtmosphericEffects
+  - **Impact**: Eliminated thousands of console logs per second, improved rendering performance
+
+### 2025-10-11: Fixed React Duplicate Key Warning in Mission IDs
+- **Mission ID Fix**: Fixed duplicate React key warning by improving mission ID generation
+  - **Issue**: Mission IDs included seed with location name, causing location to appear twice (e.g., `Earth_0_player1_timestamp_playerId_Earth_1`)
+  - **Root Cause**: Seed pattern `${playerId}:${location}:${gameDay}` contained location, duplicating it in final mission ID
+  - **Solution**: Replaced seed with random string: `${location}_mission${i}_rank${playerRank}_${timestamp}_${random9chars}`
+  - **Impact**: Eliminated all React duplicate key warnings, truly unique mission IDs
+  - **Pattern**: Earth_mission0_rank1_1760225145123_a2b3c4d5e
+
+### 2025-10-11: Fixed Player Stats & Authentication UI on Splash Screen
+- **Stats Panel Fix**: Fixed player stats panel visibility and interaction on splash screen
+  - **Issue**: Account dropdown was always visible, stats panel not showing properly
+  - **Solution**: Made dropdown conditional, added click trigger button, implemented click-outside handler
+  - **Impact**: Player stats now properly display when authenticated, account menu works correctly
+  - **UI Flow**: Minimized stats always visible → Hover expands details → Click user for account menu
+
+### 2025-10-11: WebSocket Authentication Fix
+- **WebSocket Auth**: Added authentication tokens to CloudSyncManager WebSocket connections
+  - **Issue**: WebSocket connections failing due to missing authentication tokens
+  - **Solution**: Added token to WebSocket URL as query parameter
+  - **Impact**: Stable WebSocket connections, no more connection errors
+
+### 2025-10-11: Mining System Crash Fixes
+- **Mining Fix**: Fixed spacebar mining crash on planet surfaces
+  - **Issue**: Resource data undefined when pressing spacebar, causing crash
+  - **Solution**: Added resource data to collision registration, comprehensive null checks
+  - **Impact**: Mining system now stable and crash-free
+
+### 2025-10-09: Unified Sync Architecture - Consolidated WebSocket Connections
+- **Sync Consolidation**: Removed duplicate WebSocket in MiniGameSyncService, unified with CloudSyncManager
+  - **Issue**: Mini-game created separate WebSocket connection causing duplicate connections and sync errors
+  - **Solution**: Refactored MiniGameSyncService to use CloudSyncManager's existing WebSocket via message handlers
+  - **Impact**: Single WebSocket for all sync (desktop + mobile mini-game), eliminates connection errors
+  - **Architecture**: MiniGameSyncService registers/unregisters message handlers with CloudSyncManager when mini-game activates/deactivates
+  - **Queuing**: All messages route through CloudSyncManager's queue system for reliable delivery
+
+### 2025-10-09: Critical Mobile Login Bug Fix + Panel UI Standardization  
+- **Critical Bug Fix**: Fixed AuthProvider to show login screen when user is not authenticated
+  - **Issue**: AuthProvider was rendering game even for unauthenticated users, causing stuck loading screen
+  - **Fix**: Added check to show AuthScreen when `!isAuthenticated && !isGuest`
+  - **Impact**: Mobile users can now log in on new browsers/devices (no longer stuck on loading screen)
+- **Mobile Panel UI**: Standardized all mobile panels to match ShipRepairPanel compact header template
+  - **Space Savings**: 30-40% reduction in header vertical space
+  - **Structure**: Header (`p-2`), stats bar with integrated tabs (`bg-slate-700/50 px-2 py-1`), compact tabs (`px-2 py-0.5 text-[10px]`)
+  - **Panels Updated**: MissionsPanel, MarketPanel, TradingPanel, TradeHistoryPanel, ShipUpgradePanel
+  - **Design**: Solid colors (`bg-orange-600` active, `bg-slate-600` inactive) replace gradients
+
 ## System Architecture
+The project employs a client-server architecture. The frontend utilizes React 18.3.1, Three.js (React Three Fiber 8.x), and Zustand 5.0 for state management. The backend is built with Express 4.x, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite 6.x and TypeScript 5.7, with styling managed by TailwindCSS 3.x and Radix UI components.
 
-### Frontend Architecture
-- **React with TypeScript**: Modern component-based UI framework using functional components and hooks
-- **React Three Fiber**: React renderer for Three.js, enabling declarative 3D graphics
-- **React Three Drei**: Helper components and utilities for Three.js scenes
-- **Vite**: Fast build tool and development server with hot module replacement
-- **Tailwind CSS**: Utility-first CSS framework for responsive design
-- **Radix UI**: Headless component library for accessible UI primitives
+The game features three core gameplay loops:
+1.  **Trade & Survive**: Involves resource mining, dynamic inter-station trading with fluctuating prices, and continuous management of resources like fuel, hull, oxygen, and crew wages. This loop integrates economic pressure, equipment degradation, and faction reputation.
+2.  **Mission & Story**: Players undertake missions (delivery, combat, exploration) acquired from mission boards, with access tied to reputation. A multi-act story offers branching choices impacting karma and faction relations, leading to five distinct endings.
+3.  **Combat & Heat**: Features turn-based combat against various enemy types. Illegal activities generate "heat," increasing notoriety, leading to aggressive patrols, and "shoot on sight" orders at higher levels.
 
-### State Management
-- **Zustand**: Lightweight state management for:
-  - Solar system time and planet selection (`useSolarSystem`)
-  - Audio controls and sound effects (`useAudio`)
-  - Game phases and lifecycle (`useGame`)
+The UI/UX is designed for responsiveness across desktop and mobile.
+-   **Desktop**: Features a three-panel layout with a central 3D viewport, sidebars for navigation, and a bottom control bar.
+-   **Mobile**: Offers a touch-optimized layout including a header, 3D viewport, virtual joystick, action bar, and slide-in overlay panels.
+-   **Color Palette**: Employs deep space darks with vibrant cyan accents for interactive elements.
+-   **Components**: Standardized button, panel, and HUD styles with defined CSS for transitions and feedback.
+-   **Accessibility**: Includes features like colorblind modes, font scaling, screen reader support, and rebindable controls.
 
-### 3D Graphics System
-- **Three.js**: Core 3D graphics engine
-- **Orbital Mechanics**: Real-time planetary orbit calculations with accurate relative speeds
-- **Camera Controls**: First-person space navigation with keyboard input
-- **Lighting System**: Dynamic lighting with sun as primary light source
-- **Particle Systems**: Starfield background with thousands of procedurally positioned stars
-
-### Backend Architecture
-- **Express.js**: Minimal REST API server
-- **TypeScript**: Full-stack type safety
-- **Memory Storage**: In-memory data storage for user management (easily replaceable with database)
-- **Session Management**: Ready for user authentication and session handling
-
-### Database Layer
-- **Drizzle ORM**: Type-safe database toolkit configured for PostgreSQL
-- **Drizzle Kit**: Database migrations and schema management
-- **Neon Database**: Serverless PostgreSQL (via `@neondatabase/serverless`)
-- **Schema Definition**: Shared type definitions between client and server
-
-### Build System
-- **ESM Modules**: Modern ES module system throughout
-- **esbuild**: Fast bundling for server-side code
-- **Vite Build**: Optimized client bundling with asset handling
-- **GLSL Shader Support**: Custom shader loading for enhanced graphics
-
-### Audio System
-- **HTML5 Audio**: Native audio playbook with background music and sound effects
-- **Mute Controls**: User-controllable audio with persistent state
-- **Audio Stores**: Centralized audio management through Zustand
-- **Autopilot Audio**: Throttled thruster sound effects during automated flight
-
-### Autopilot System
-- **Auto-Orbit Mechanics**: Automatically orbits around moving planets when reaching landing distance
-- **Movement Control Lockout**: Disables manual controls during autopilot for immersive automated flight
-- **Real-time Orbit Tracking**: Uses orbital mechanics to follow planets as they move through their orbits
-- **Warping Visual Effects**: Particle-based "stars streaming past cockpit" effects during autopilot travel
-- **Extended Travel Time**: Reduced autopilot speed (4 units/sec) for more immersive space travel experience
-- **Navigation Integration**: Credit-based system with automatic target selection and UI management
+The system structure is hierarchical, managed by an `AuthProvider` that orchestrates `LoginScreen` and `GameContainer`. The `GameContainer` integrates a `ThreeCanvas` for 3D rendering, a `UILayer`, and an `AudioSystem`. Zustand stores manage various game states (player, ship, economy, combat, mission). The rendering pipeline uses Three.js with specific lighting, camera controls, object hierarchies, and post-processing effects. Performance is optimized through object pooling, LOD systems, and efficient texture management. Game state saving uses a structured JSON format with multiple save slots.
 
 ## External Dependencies
 
-### Core Frameworks
-- **React 18**: Frontend framework with concurrent features
-- **Three.js Ecosystem**: 3D graphics via `@react-three/fiber`, `@react-three/drei`, `@react-three/postprocessing`
-- **Express.js**: Backend web framework
-
-### Database & ORM
-- **Drizzle ORM**: Type-safe database operations
-- **Neon Database**: Serverless PostgreSQL hosting
-- **PostgreSQL**: Relational database (configured but not actively used)
-
-### UI Components
-- **Radix UI**: Complete headless component library for accessible interfaces
-- **Tailwind CSS**: Utility-first styling framework
-- **Lucide React**: Icon library for UI elements
-
-### Development Tools
-- **Vite**: Build tool with TypeScript support
-- **TypeScript**: Static type checking
-- **PostCSS**: CSS processing with Tailwind integration
-
-### Utilities
-- **TanStack Query**: Data fetching and caching (prepared for API integration)
-- **Class Variance Authority**: Type-safe component variants
-- **Date-fns**: Date manipulation utilities
-- **Zustand**: Lightweight state management
-
-### Audio Assets
-- Background music and sound effects loaded from `/public/sounds/` directory
-- Support for MP3, OGG, and WAV audio formats
+-   **Frontend Framework**: React 18.3.1
+-   **3D Graphics Library**: Three.js (via React Three Fiber 8.x)
+-   **State Management**: Zustand 5.0
+-   **Backend Framework**: Express 4.x
+-   **Database**: PostgreSQL (Neon-backed)
+-   **ORM**: Drizzle ORM
+-   **Build Tool**: Vite 6.x
+-   **Language**: TypeScript 5.7
+-   **Styling**: TailwindCSS 3.x with Radix UI components
+-   **Authentication**: Session-based authentication (stored in PostgreSQL)
+-   **Network Protocol**: WebSocket for real-time multiplayer communication

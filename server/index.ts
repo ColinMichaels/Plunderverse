@@ -1,10 +1,56 @@
 import express, { type Request, Response, NextFunction } from "express";
+import session from 'express-session';
+import connectPgSimple from 'connect-pg-simple';
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { initializePassport, passportSession } from "./middleware/auth";
+import { getSessionConfig } from "./config/auth.config";
+import { databaseConfig } from "./config/database.config";
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+// Session configuration
+const PgSession = connectPgSimple(session);
+
+// Configure session store with PostgreSQL
+const sessionConfig = {
+  ...getSessionConfig(),
+  store: new PgSession({
+    conString: databaseConfig.connectionString,
+    tableName: 'session',
+    createTableIfMissing: true,
+    pruneSessionInterval: 60 // Prune expired sessions every 60 seconds
+  })
+};
+
+// Set up session middleware
+app.use(session(sessionConfig));
+
+// Initialize Passport authentication
+app.use(initializePassport);
+app.use(passportSession);
+
+// CORS configuration for authentication
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  
+  // Allow credentials from configured origins
+  if (origin) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+  }
+  
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+  
+  if (req.method === 'OPTIONS') {
+    return res.sendStatus(200);
+  }
+  
+  next();
+});
 
 app.use((req, res, next) => {
   const start = Date.now();
