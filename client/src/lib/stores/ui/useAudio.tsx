@@ -391,6 +391,38 @@ class AudioManager {
             this.unregisterSound(si);
         }
     }
+
+    findSoundByKey(key: string): SoundInstance | undefined {
+        for (const si of this.activeSounds) {
+            if (si.key === key) {
+                return si;
+            }
+        }
+        return undefined;
+    }
+
+    updateSoundVolume(key: string, newBaseVolume: number): boolean {
+        const si = this.findSoundByKey(key);
+        if (si) {
+            si.baseVolume = newBaseVolume;
+            this.applyVolumeToInstance(si);
+            return true;
+        }
+        return false;
+    }
+
+    stopSoundByKey(key: string) {
+        const si = this.findSoundByKey(key);
+        if (si) {
+            if (si.instance instanceof Howl && si.howlId != null) {
+                si.instance.stop(si.howlId);
+            } else if (si.instance instanceof HTMLAudioElement) {
+                si.instance.pause();
+                si.instance.currentTime = 0;
+            }
+            this.unregisterSound(si);
+        }
+    }
 }
 
 const audioManager = new AudioManager();
@@ -429,6 +461,10 @@ interface AudioState {
     stopAmbientMusic: () => void;
     playThruster: (fadeInMs?: number) => void;
     stopThruster: () => void;
+    playWind: (intensity: number) => void;
+    stopWind: () => void;
+    playRain: () => void;
+    stopRain: () => void;
     crossfadeMusic: (newHowl: Howl, fadeMs: number) => Promise<void>;
 }
 
@@ -690,11 +726,11 @@ export const useAudio = create<AudioState>((set, get) => ({
     playAmbientMusic: (fadeInMs = 500) => {
         const ambient = (get() as any).ambientMusic as HTMLAudioElement | null;
         if (!ambient) return;
-        audioManager.playHtml(ambient, "ambient", 1, {fadeInMs});
+        audioManager.playHtml(ambient, "ambient", 1, {fadeInMs, key: "ambient-music"});
     },
 
     stopAmbientMusic: () => {
-        audioManager.stopAll();
+        audioManager.stopSoundByKey("ambient-music");
     },
 
     playThruster: (fadeInMs = 100) => {
@@ -719,7 +755,71 @@ export const useAudio = create<AudioState>((set, get) => ({
     },
 
     stopThruster: () => {
-        audioManager.stopAll();
+        audioManager.stopSoundByKey("thruster");
+    },
+
+    playWind: (intensity: number) => {
+        if (get().masterMute) return;
+        
+        const baseVol = Math.max(0, Math.min(1, intensity));
+        
+        // Try to update existing wind sound first
+        if (audioManager.updateSoundVolume("wind", baseVol)) {
+            return; // Volume updated successfully
+        }
+        
+        // No existing wind sound, create new one
+        (async () => {
+            try {
+                const windHowl = new Howl({
+                    src: ["/sounds/wind.mp3"],
+                    loop: true,
+                    volume: 0.5,
+                });
+                await audioManager.playHowl(windHowl, "ambient", baseVol, {
+                    fadeInMs: 500,
+                    key: "wind",
+                    loop: true,
+                });
+            } catch (err) {
+                console.error("playWind error:", err);
+            }
+        })();
+    },
+
+    stopWind: () => {
+        audioManager.stopSoundByKey("wind");
+    },
+
+    playRain: () => {
+        if (get().masterMute) return;
+        
+        // Check if rain is already playing
+        if (audioManager.findSoundByKey("rain")) {
+            return; // Already playing
+        }
+        
+        // No existing rain sound, create new one
+        (async () => {
+            try {
+                const rainHowl = new Howl({
+                    src: ["/sounds/rain.mp3"],
+                    loop: true,
+                    volume: 0.4,
+                });
+                await audioManager.playHowl(rainHowl, "ambient", 1, {
+                    fadeInMs: 800,
+                    key: "rain",
+                    loop: true,
+                });
+            } catch (err) {
+                console.error("playRain error:", err);
+            }
+        })();
+    },
+
+    stopRain: () => {
+        audioManager.stopSoundByKey("rain");
     },
 
     crossfadeMusic: async (newHowl: Howl, fadeMs: number) => {
