@@ -1115,11 +1115,12 @@ export function CameraController() {
           );
           velocity.add(autopilotVelocity);
 
-          // Check if we've reached landing distance - deactivate autopilot
+          // Check if we've reached landing distance - trigger landing
           if (distanceToTarget <= landingDistance + 5) {
             deactivateAutopilot();
+            setIsLanding(true);
             console.log(
-              `Autopilot reached ${selectedPlanet} at ${landingDistance} units`,
+              `Autopilot reached ${selectedPlanet} - initiating landing sequence`,
             );
           }
         } 
