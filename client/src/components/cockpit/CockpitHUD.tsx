@@ -37,7 +37,7 @@ export function CockpitHUD() {
     : 0;
   const { visitedPlanets, landingCount } = useRewards();
   const { missions, bounties } = useMissions();
-  const { toggleMute, isMuted } = useAudio();
+  const audio = useAudio();
   const { showSplash } = useGame();
   const { activate: activateAutopilot, isActive: isAutopilotActive } =
     useAutopilot();
@@ -527,8 +527,8 @@ export function CockpitHUD() {
               </div>
               <div className="w-px h-8 bg-slate-600"></div>
               <div className="flex items-center space-x-2">
-                <button onClick={toggleMute} className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors" title={isMuted ? "Unmute Audio" : "Mute Audio"}>
-                  <span className="text-xs">{isMuted ? "🔇" : "🔊"}</span>
+                <button onClick={audio.toggleMasterMute} className="w-8 h-8 bg-slate-700 hover:bg-slate-600 rounded-lg border border-slate-600 transition-colors" title={audio.masterMute ? "Unmute Audio" : "Mute Audio"}>
+                  <span className="text-xs">{audio.masterMute ? "🔇" : "🔊"}</span>
                 </button>
                 <button onClick={showSplash} className="px-3 py-1 bg-slate-700 hover:bg-slate-600 text-slate-300 hover:text-white rounded-lg border border-slate-600 transition-colors text-xs" title="Main Menu (ESC)">MENU</button>
               </div>

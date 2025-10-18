@@ -1333,41 +1333,41 @@ function HelmetOverlay({ planetName }: { planetName: string }) {
     const [helmetAudio, setHelmetAudio] = useState<HTMLAudioElement | null>(
         null,
     );
-    const { isMuted } = useAudio(); // Respect global audio settings
+    const audio = useAudio(); // Respect global audio settings
 
     // Initialize and manage helmet breathing audio
     useEffect(() => {
         if (needsHelmet) {
             const { soundEffects } = AUDIO_CONFIG;
-            const audio = new Audio(soundEffects.spaceHelmetBreathing.path);
-            audio.loop = soundEffects.spaceHelmetBreathing.loop ?? true;
-            audio.volume = isMuted
+            const audioEl = new Audio(soundEffects.spaceHelmetBreathing.path);
+            audioEl.loop = soundEffects.spaceHelmetBreathing.loop ?? true;
+            audioEl.volume = audio.masterMute
                 ? 0
                 : soundEffects.spaceHelmetBreathing.volume;
-            audio
+            audioEl
                 .play()
                 .catch((e) =>
                     console.log("Helmet audio autoplay prevented:", e),
                 );
-            setHelmetAudio(audio);
+            setHelmetAudio(audioEl);
 
             return () => {
-                audio.pause();
-                audio.currentTime = 0;
+                audioEl.pause();
+                audioEl.currentTime = 0;
                 setHelmetAudio(null);
             };
         }
-    }, [needsHelmet, isMuted]);
+    }, [needsHelmet, audio.masterMute]);
 
     // Update volume when mute state changes
     useEffect(() => {
         if (helmetAudio) {
             const { soundEffects } = AUDIO_CONFIG;
-            helmetAudio.volume = isMuted
+            helmetAudio.volume = audio.masterMute
                 ? 0
                 : soundEffects.spaceHelmetBreathing.volume;
         }
-    }, [isMuted, helmetAudio]);
+    }, [audio.masterMute, helmetAudio]);
 
     if (!needsHelmet) return null;
 

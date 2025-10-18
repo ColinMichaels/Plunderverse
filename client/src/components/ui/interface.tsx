@@ -9,7 +9,7 @@ import { DeathScreen } from "./DeathScreen";
 export function Interface() {
   const restart = useGame((state) => state.restart);
   const phase = useGame((state) => state.phase);
-  const { isMuted, toggleMute } = useAudio();
+  const audio = useAudio();
 
   // Handle clicks on the interface in the ready phase to start the game
   useEffect(() => {
@@ -35,10 +35,10 @@ export function Interface() {
         <Button
           variant="outline"
           size="icon"
-          onClick={toggleMute}
-          title={isMuted ? "Unmute" : "Mute"}
+          onClick={audio.toggleMasterMute}
+          title={audio.masterMute ? "Unmute" : "Mute"}
         >
-          {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+          {audio.masterMute ? <VolumeX size={18} /> : <Volume2 size={18} />}
         </Button>
         
         <Button
