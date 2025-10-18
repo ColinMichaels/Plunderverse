@@ -847,6 +847,7 @@ export const useAudio = create<AudioState>((set, get) => ({
         if (audioManager.findSoundByKey("motor")) {
             return; // Already playing
         }
+
         // No existing motor sound, create new one
         (async () => {
             try {
@@ -855,7 +856,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                     loop: true,
                     volume: intensity ?? 0.1,
                 });
-                await audioManager.playHowl(motorHowl, "ambient", 1, {
+                await audioManager.playHowl(motorHowl, "sfx", 0.2, {
                     fadeInMs: 800,
                     key: "motor",
                     loop: true,
