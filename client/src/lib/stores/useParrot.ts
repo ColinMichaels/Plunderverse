@@ -171,6 +171,13 @@ export const useParrot = create<ParrotState>((set, get) => ({
       settings: { ...state.settings, isMuted: muted },
     }));
     parrotSpeechService.setMuted(muted);
+    
+    // Immediately stop any active speech when muting
+    if (muted) {
+      parrotSpeechService.stop();
+      get().setSpeaking(false);
+    }
+    
     const state = get();
     saveParrotSettings(muted, state.settings.volume);
   },
