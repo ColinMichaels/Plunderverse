@@ -947,16 +947,29 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
             
             {/* Quick Info Cards */}
             <div className="grid grid-cols-2 gap-3">
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 text-center`}>
-                <div className="text-3xl mb-2">⚡</div>
-                <div className="text-xs text-gray-400 mb-1">Available Now</div>
-                <div className="text-sm font-bold text-purple-400">Zero-G Racing</div>
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-3 text-center`}>
+                <div className="text-2xl mb-1">⚡</div>
+                <div className="text-xs font-bold text-purple-400">Zero-G Racing</div>
               </div>
               
-              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 text-center`}>
-                <div className="text-3xl mb-2">🎯</div>
-                <div className="text-xs text-gray-400 mb-1">Available Now</div>
-                <div className="text-sm font-bold text-orange-400">Shooting Gallery</div>
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-3 text-center`}>
+                <div className="text-2xl mb-1">🎯</div>
+                <div className="text-xs font-bold text-orange-400">Shooting Gallery</div>
+              </div>
+
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-3 text-center`}>
+                <div className="text-2xl mb-1">💎</div>
+                <div className="text-xs font-bold text-gray-300">Asteroids</div>
+              </div>
+              
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-3 text-center`}>
+                <div className="text-2xl mb-1">🚀</div>
+                <div className="text-xs font-bold text-cyan-400">Space Shooter</div>
+              </div>
+
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-3 text-center col-span-2`}>
+                <div className="text-2xl mb-1">🏓</div>
+                <div className="text-xs font-bold text-green-400">Classic Pong</div>
               </div>
             </div>
             
