@@ -1,29 +1,31 @@
 // Save Game State Serialization Helper
 // Collects and restores state from all Zustand stores
 
-import * as THREE from 'three';
-import {usePlayer} from '../lib/stores/player/usePlayer';
-import {useShipStatus} from '../lib/stores/ship/useShipStatus';
-import {useEquipment} from '../lib/stores/ship/useEquipment';
-import {useUpgrades} from '../lib/stores/ship/useUpgrades';
-import {useCrewManagement} from '../lib/stores/ship/useCrewManagement';
-import {useCreditsStore} from '../domain/economy/credits.store';
-import {useInventoryStore} from '../domain/economy/inventory.store';
-import {usePlunderverseEconomy} from '../lib/stores/economy/usePlunderverseEconomy';
-import {usePlunderverseMissions} from '../lib/stores/economy/usePlunderverseMissions';
-import {useTradeHistory} from '../lib/stores/economy/useTradeHistory';
-import {useCrypto} from '../lib/stores/economy/useCrypto';
-import {useSolarSystem} from '../lib/stores/space/useSolarSystem';
-import {useDestroyedNodes} from '../lib/stores/surface/useDestroyedNodes';
-import {useHeatSystem} from '../lib/stores/player/useHeatSystem';
-import {useLandedState} from '../lib/stores/surface/useLandedState';
-import {useRewards} from '../lib/stores/ui/useRewards';
-import {useSettings} from '../lib/stores/ui/useSettings';
-import {useGame} from '../lib/stores/ui/useGame';
-import {gameApi, GameStateData} from '../services/gameApi';
+import * as THREE from "three";
+import {
+    useEquipment,
+    usePlayer,
+    useShipStatus,
+    useUpgrades,
+} from "@/lib/stores";
+import { useCrewManagement } from "../lib/stores/ship/useCrewManagement";
+import { useCreditsStore } from "@/domain";
+import { useInventoryStore } from "../domain/economy/inventory.store";
+import { usePlunderverseEconomy } from "../lib/stores/economy/usePlunderverseEconomy";
+import { usePlunderverseMissions } from "../lib/stores/economy/usePlunderverseMissions";
+import { useTradeHistory } from "../lib/stores/economy/useTradeHistory";
+import { useCrypto } from "../lib/stores/economy/useCrypto";
+import { useSolarSystem } from "../lib/stores/space/useSolarSystem";
+import { useDestroyedNodes } from "../lib/stores/surface/useDestroyedNodes";
+import { useHeatSystem } from "../lib/stores/player/useHeatSystem";
+import { useLandedState } from "../lib/stores/surface/useLandedState";
+import { useRewards } from "../lib/stores/ui/useRewards";
+import { useSettings } from "../lib/stores/ui/useSettings";
+import { useGame } from "../lib/stores/ui/useGame";
+import { gameApi, GameStateData } from "../services/gameApi";
 
 // Save format version for compatibility checking
-const SAVE_FORMAT_VERSION = '1.0.0';
+const SAVE_FORMAT_VERSION = "1.0.0";
 
 // Helper to calculate play time
 function calculatePlayTime(): number {
@@ -34,7 +36,7 @@ function calculatePlayTime(): number {
 // Helper to get current location
 function getCurrentLocation(): string {
     const solarSystem = useSolarSystem.getState();
-    return solarSystem.selectedPlanet || 'Space';
+    return solarSystem.selectedPlanet || "Space";
 }
 
 // Collect all game state from stores
@@ -69,7 +71,9 @@ export function collectGameState(): GameStateData {
         shipStatus: {
             hull: shipStatus.hull ?? 100,
             shield: shipStatus.shield ?? 100,
-            fuel: equipment.equipment.find(e => e.type === 'fuel')?.currentDurability ?? 100,
+            fuel:
+                equipment.equipment.find((e) => e.type === "fuel")
+                    ?.currentDurability ?? 100,
         },
         stores: {
             // Player stores
@@ -134,31 +138,42 @@ export function collectGameState(): GameStateData {
                 crewMembers: crew.activeCrew,
                 maxCrewSize: crew.maxCrewSize,
                 totalWages: crew.dailySalaryCosts,
-                loyaltyModifier: '',
+                loyaltyModifier: "",
             },
 
             plunderverseEconomy: {
                 tuning: plunderverseEconomy.tuning,
                 currentSeed: plunderverseEconomy.currentSeed,
-                priceModifiers: Array.from(plunderverseEconomy.priceModifiers.entries()),
-                demandModifiers: Array.from(plunderverseEconomy.demandModifiers.entries()),
-                factionEconomies: Array.from(plunderverseEconomy.factionEconomies.entries()),
+                priceModifiers: Array.from(
+                    plunderverseEconomy.priceModifiers.entries(),
+                ),
+                demandModifiers: Array.from(
+                    plunderverseEconomy.demandModifiers.entries(),
+                ),
+                factionEconomies: Array.from(
+                    plunderverseEconomy.factionEconomies.entries(),
+                ),
                 heatDecayInterval: plunderverseEconomy.heatDecayInterval,
             },
 
             plunderverseMissions: {
                 availableMissions: plunderverseMissions.availableMissions,
                 activeMissions: plunderverseMissions.activeMissions,
-                completedMissionIds: Array.from(plunderverseMissions.completedMissionIds),
-                failedMissionIds: Array.from(plunderverseMissions.failedMissionIds),
-                currentMissionId: plunderverseMissions.currentMissionId,
-                currentObjectiveProgress: Array.from(plunderverseMissions.currentObjectiveProgress.entries()).map(
-                    ([missionId, objectives]) => ({
-                        missionId,
-                        objectives: Array.from(objectives.entries()),
-                    })
+                completedMissionIds: Array.from(
+                    plunderverseMissions.completedMissionIds,
                 ),
-                lastGenerationTimestamp: plunderverseMissions.lastGenerationTimestamp,
+                failedMissionIds: Array.from(
+                    plunderverseMissions.failedMissionIds,
+                ),
+                currentMissionId: plunderverseMissions.currentMissionId,
+                currentObjectiveProgress: Array.from(
+                    plunderverseMissions.currentObjectiveProgress.entries(),
+                ).map(([missionId, objectives]) => ({
+                    missionId,
+                    objectives: Array.from(objectives.entries()),
+                })),
+                lastGenerationTimestamp:
+                    plunderverseMissions.lastGenerationTimestamp,
                 generationSeed: plunderverseMissions.generationSeed,
             },
 
@@ -178,13 +193,13 @@ export function collectGameState(): GameStateData {
 
             crypto: crypto.isInitialized
                 ? {
-                    isInitialized: crypto.isInitialized,
-                    walletAddress: crypto.walletAddress,
-                    balance: crypto.balance ?? 0,
-                    currency: crypto.currency ?? 'SPACE',
-                    marketPrice: crypto.marketPrice,
-                    transactions: crypto.transactions ?? [],
-                }
+                      isInitialized: crypto.isInitialized,
+                      walletAddress: crypto.walletAddress,
+                      balance: crypto.balance ?? 0,
+                      currency: crypto.currency ?? "SPACE",
+                      marketPrice: crypto.marketPrice,
+                      transactions: crypto.transactions ?? [],
+                  }
                 : undefined,
 
             solarSystem: {
@@ -213,7 +228,9 @@ export function collectGameState(): GameStateData {
             },
 
             destroyedNodes: {
-                destroyedNodeIds: destroyedNodes.getDestroyedNodes(solarSystem.selectedPlanet ?? 'Earth'),
+                destroyedNodeIds: destroyedNodes.getDestroyedNodes(
+                    solarSystem.selectedPlanet ?? "Earth",
+                ),
             },
 
             heat: {
@@ -259,7 +276,7 @@ export function restoreGameState(gameState: GameStateData | any): void {
     // Check version compatibility
     if (gameState.version && !isVersionCompatible(gameState.version)) {
         console.warn(
-            `Save version ${gameState.version} may not be fully compatible with current version ${SAVE_FORMAT_VERSION}`
+            `Save version ${gameState.version} may not be fully compatible with current version ${SAVE_FORMAT_VERSION}`,
         );
     }
 
@@ -314,66 +331,105 @@ export function restoreGameState(gameState: GameStateData | any): void {
     if (stores.plunderverseEconomy) {
         const economyState = usePlunderverseEconomy.getState();
         economyState.tuning = stores.plunderverseEconomy.tuning;
-        economyState.currentSeed = stores.plunderverseEconomy.currentSeed ?? '';
+        economyState.currentSeed = stores.plunderverseEconomy.currentSeed ?? "";
 
         try {
-            economyState.priceModifiers = Array.isArray(stores.plunderverseEconomy.priceModifiers)
+            economyState.priceModifiers = Array.isArray(
+                stores.plunderverseEconomy.priceModifiers,
+            )
                 ? new Map(stores.plunderverseEconomy.priceModifiers)
                 : new Map();
-            economyState.demandModifiers = Array.isArray(stores.plunderverseEconomy.demandModifiers)
+            economyState.demandModifiers = Array.isArray(
+                stores.plunderverseEconomy.demandModifiers,
+            )
                 ? new Map(stores.plunderverseEconomy.demandModifiers)
                 : new Map();
-            economyState.factionEconomies = Array.isArray(stores.plunderverseEconomy.factionEconomies)
+            economyState.factionEconomies = Array.isArray(
+                stores.plunderverseEconomy.factionEconomies,
+            )
                 ? new Map(stores.plunderverseEconomy.factionEconomies)
                 : new Map();
         } catch (error) {
-            console.warn('[SaveGame] Failed to restore economy maps, using defaults:', error);
+            console.warn(
+                "[SaveGame] Failed to restore economy maps, using defaults:",
+                error,
+            );
             economyState.priceModifiers = new Map();
             economyState.demandModifiers = new Map();
             economyState.factionEconomies = new Map();
         }
 
-        economyState.heatDecayInterval = stores.plunderverseEconomy.heatDecayInterval ?? 60000;
+        economyState.heatDecayInterval =
+            stores.plunderverseEconomy.heatDecayInterval ?? 60000;
     }
 
     // Missions
     if (stores.plunderverseMissions) {
         const missionsState = usePlunderverseMissions.getState();
-        missionsState.availableMissions = stores.plunderverseMissions.availableMissions ?? [];
-        missionsState.activeMissions = stores.plunderverseMissions.activeMissions ?? [];
-        missionsState.failedMissionIds = stores.plunderverseMissions.failedMissions ?? 0;
+        missionsState.availableMissions =
+            stores.plunderverseMissions.availableMissions ?? [];
+        missionsState.activeMissions =
+            stores.plunderverseMissions.activeMissions ?? [];
+        missionsState.failedMissionIds =
+            stores.plunderverseMissions.failedMissions ?? 0;
 
         try {
-            missionsState.completedMissionIds = Array.isArray(stores.plunderverseMissions.completedMissionIds)
+            missionsState.completedMissionIds = Array.isArray(
+                stores.plunderverseMissions.completedMissionIds,
+            )
                 ? new Set(stores.plunderverseMissions.completedMissionIds)
                 : new Set();
-            missionsState.failedMissionIds = Array.isArray(stores.plunderverseMissions.failedMissionIds)
+            missionsState.failedMissionIds = Array.isArray(
+                stores.plunderverseMissions.failedMissionIds,
+            )
                 ? new Set(stores.plunderverseMissions.failedMissionIds)
                 : new Set();
         } catch (error) {
-            console.warn('[SaveGame] Failed to restore mission sets, using defaults:', error);
+            console.warn(
+                "[SaveGame] Failed to restore mission sets, using defaults:",
+                error,
+            );
             missionsState.completedMissionIds = new Set();
             missionsState.failedMissionIds = new Set();
         }
 
-        missionsState.currentMissionId = stores.plunderverseMissions.currentMissionId;
+        missionsState.currentMissionId =
+            stores.plunderverseMissions.currentMissionId;
 
         const progressMap = new Map<string, Map<string, number>>();
         try {
-            if (Array.isArray(stores.plunderverseMissions.currentObjectiveProgress)) {
-                stores.plunderverseMissions.currentObjectiveProgress.forEach((entry: any) => {
-                    if (entry && entry.missionId && Array.isArray(entry.objectives)) {
-                        progressMap.set(entry.missionId, new Map(entry.objectives));
-                    }
-                });
+            if (
+                Array.isArray(
+                    stores.plunderverseMissions.currentObjectiveProgress,
+                )
+            ) {
+                stores.plunderverseMissions.currentObjectiveProgress.forEach(
+                    (entry: any) => {
+                        if (
+                            entry &&
+                            entry.missionId &&
+                            Array.isArray(entry.objectives)
+                        ) {
+                            progressMap.set(
+                                entry.missionId,
+                                new Map(entry.objectives),
+                            );
+                        }
+                    },
+                );
             }
         } catch (error) {
-            console.warn('[SaveGame] Failed to restore objective progress:', error);
+            console.warn(
+                "[SaveGame] Failed to restore objective progress:",
+                error,
+            );
         }
         missionsState.currentObjectiveProgress = progressMap;
 
-        missionsState.lastGenerationTimestamp = stores.plunderverseMissions.lastGenerationTimestamp ?? 0;
-        missionsState.generationSeed = stores.plunderverseMissions.generationSeed ?? '';
+        missionsState.lastGenerationTimestamp =
+            stores.plunderverseMissions.lastGenerationTimestamp ?? 0;
+        missionsState.generationSeed =
+            stores.plunderverseMissions.generationSeed ?? "";
     }
 
     // Trade history
@@ -388,7 +444,7 @@ export function restoreGameState(gameState: GameStateData | any): void {
         cryptoState.isInitialized = stores.crypto.isInitialized;
         cryptoState.walletAddress = stores.crypto.walletAddress;
         cryptoState.balance = stores.crypto.balance ?? 0;
-        cryptoState.currency = stores.crypto.currency ?? 'SPACE';
+        cryptoState.currency = stores.crypto.currency ?? "SPACE";
         cryptoState.marketPrice = stores.crypto.marketPrice;
         cryptoState.transactions = stores.crypto.transactions ?? [];
     }
@@ -397,13 +453,19 @@ export function restoreGameState(gameState: GameStateData | any): void {
     if (stores.solarSystem) {
         const solarState = useSolarSystem.getState();
         if (stores.solarSystem.accumulatedTime !== undefined) {
-            Object.assign(solarState, {accumulatedTime: stores.solarSystem.accumulatedTime});
+            Object.assign(solarState, {
+                accumulatedTime: stores.solarSystem.accumulatedTime,
+            });
         }
         if (stores.solarSystem.universeStartTime !== undefined) {
-            Object.assign(solarState, {universeStartTime: stores.solarSystem.universeStartTime});
+            Object.assign(solarState, {
+                universeStartTime: stores.solarSystem.universeStartTime,
+            });
         }
         if (stores.solarSystem.timeScale !== undefined) {
-            Object.assign(solarState, {timeScale: stores.solarSystem.timeScale});
+            Object.assign(solarState, {
+                timeScale: stores.solarSystem.timeScale,
+            });
         }
         if (stores.solarSystem.selectedPlanet !== undefined) {
             solarState.setSelectedPlanet(stores.solarSystem.selectedPlanet);
@@ -433,20 +495,22 @@ export function restoreGameState(gameState: GameStateData | any): void {
         }
     }
 
-
     // Heat system
     if (stores.heat) {
         const heatState = useHeatSystem.getState();
         heatState.currentHeat = stores.heat.currentHeat ?? 0;
         heatState.wantedLevel = stores.heat.wantedLevel ?? 0;
-        heatState.lastEncounterTime = stores.heat.lastActionTimestamp ?? Date.now();
+        heatState.lastEncounterTime =
+            stores.heat.lastActionTimestamp ?? Date.now();
     }
 
     // Rewards
     if (stores.rewards) {
         const rewardsState = useRewards.getState();
         const visited = stores.rewards.visitedPlanets;
-        rewardsState.visitedPlanets = new Set(Array.isArray(visited) ? visited : []);
+        rewardsState.visitedPlanets = new Set(
+            Array.isArray(visited) ? visited : [],
+        );
     }
 
     // Settings
@@ -461,8 +525,8 @@ export function restoreGameState(gameState: GameStateData | any): void {
 }
 
 function isVersionCompatible(version: string): boolean {
-    const [major] = version.split('.');
-    const [currentMajor] = SAVE_FORMAT_VERSION.split('.');
+    const [major] = version.split(".");
+    const [currentMajor] = SAVE_FORMAT_VERSION.split(".");
     return major === currentMajor;
 }
 
@@ -471,7 +535,7 @@ export async function saveGame(slot: number): Promise<void> {
         const gameState = collectGameState();
         await gameApi.saveGame(slot, gameState);
     } catch (error) {
-        console.error('Failed to save game:', error);
+        console.error("Failed to save game:", error);
         throw error;
     }
 }
@@ -481,7 +545,7 @@ export async function loadGame(slot: number): Promise<void> {
         const gameState = await gameApi.loadGame(slot);
         restoreGameState(gameState);
     } catch (error) {
-        console.error('Failed to load game:', error);
+        console.error("Failed to load game:", error);
         throw error;
     }
 }
@@ -491,7 +555,7 @@ export async function quickSave(): Promise<void> {
         const gameState = collectGameState();
         await gameApi.quickSave(gameState);
     } catch (error) {
-        console.error('Failed to quick save:', error);
+        console.error("Failed to quick save:", error);
         throw error;
     }
 }
@@ -502,11 +566,11 @@ export async function quickLoad(): Promise<void> {
         if (gameState) {
             restoreGameState(gameState);
         } else {
-            console.error('No saves found');
-            throw new Error('No saves found');
+            console.error("No saves found");
+            throw new Error("No saves found");
         }
     } catch (error) {
-        console.error('Failed to quick load:', error);
+        console.error("Failed to quick load:", error);
         throw error;
     }
 }
@@ -515,7 +579,7 @@ export async function exportSave(slot: number): Promise<void> {
     try {
         await gameApi.exportSave(slot);
     } catch (error) {
-        console.error('Failed to export save:', error);
+        console.error("Failed to export save:", error);
         throw error;
     }
 }
@@ -524,7 +588,7 @@ export async function importSave(slot: number, file: File): Promise<void> {
     try {
         await gameApi.importSaveFromFile(slot, file);
     } catch (error) {
-        console.error('Failed to import save:', error);
+        console.error("Failed to import save:", error);
         throw error;
     }
 }
