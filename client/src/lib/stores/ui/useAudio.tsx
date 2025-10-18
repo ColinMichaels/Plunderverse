@@ -1,8 +1,6 @@
 import {create} from "zustand";
 import {Howl} from "howler";
 import {AUDIO_CONFIG} from "../../audioConfig";
-import {useMusicPlayer} from "@/lib/stores";
-import {useEnhancedMusicPlayer} from "./useEnhancedMusicPlayer";
 import {parrotSpeechService} from "@/services/ParrotSpeechService";
 import * as THREE from "three";
 
@@ -505,23 +503,31 @@ export const useAudio = create<AudioState>((set, get) => ({
     get().stopRain();
     get().stopThruster();
 
-    // Stop music player
-    try {
-      const musicPlayer = useMusicPlayer.getState();
-      if (musicPlayer.isPlaying) {
-        musicPlayer.pause();
+    // Stop music player (use dynamic import to avoid circular dependency)
+    import("@/lib/stores").then(({ useMusicPlayer }) => {
+      try {
+        const musicPlayer = useMusicPlayer.getState();
+        if (musicPlayer.isPlaying) {
+          musicPlayer.pause();
+        }
+      } catch (e) {
+        // Music player may not be loaded yet
       }
-    } catch (e) {
-      // Music player may not be loaded yet
-    }
+    }).catch(() => {
+      // Module loading failed
+    });
 
-    // Stop enhanced music player
-    try {
-      const enhancedPlayer = useEnhancedMusicPlayer.getState();
-      enhancedPlayer.cleanup();
-    } catch (e) {
-      // Enhanced player may not be loaded yet
-    }
+    // Stop enhanced music player (use dynamic import to avoid circular dependency)
+    import("./useEnhancedMusicPlayer").then(({ useEnhancedMusicPlayer }) => {
+      try {
+        const enhancedPlayer = useEnhancedMusicPlayer.getState();
+        enhancedPlayer.cleanup();
+      } catch (e) {
+        // Enhanced player may not be loaded yet
+      }
+    }).catch(() => {
+      // Module loading failed
+    });
 
     // Stop parrot speech
     parrotSpeechService.stop();

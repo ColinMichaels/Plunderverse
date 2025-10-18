@@ -6,148 +6,33 @@
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
-## Recent Changes
-
-### 2025-10-18: Audio System Real-Time Volume Control Fix
-- **Master Bus Volume Mixing**: Fixed individual sound levels not adjusting in real-time when sliders changed
-  - **Issue**: Music players and SFX set volume only when tracks started playing, didn't respond to slider changes during playback
-  - **Root Cause**: No subscription to useAudio volume state changes - volume multiplication (categoryVolume × masterVolume) applied once at playback start
-  - **Solution**: Added Zustand subscriptions in both music players that watch masterVolume/musicVolume/sfxVolume changes and update all active audio elements in real-time
-  - **Architecture**: 
-    - useAudio is the single source of truth for all volume state (masterVolume, musicVolume, sfxVolume, parrotVolume, mute states)
-    - useMusicPlayer subscribes to volume changes, applies multiplication to currently playing track: `baseVolume × musicVolume × masterVolume`
-    - useEnhancedMusicPlayer subscribes to volume changes, updates all active layers: `layer.volume × musicVolume × masterVolume`
-    - All SFX in useAudio directly multiply at play time: `configVolume × sfxVolume × masterVolume`
-  - **Impact**: Volume sliders now immediately affect all playing audio (music, SFX, parrot speech) without requiring track restart
-- **Theme System Implementation**: Built complete UI theme system with persistent theme selection
-  - **Themes**: Classic (cyberpunk orange/cyan) and Monochrome (black/white/gray)
-  - **Architecture**: CSS variables (`--theme-*`) with `data-theme` attribute on document root, theme state in useSettings store
-  - **Components**: PauseMenu fully converted to theme variables, SettingsContent has visual theme selector with preview cards
-  - **Impact**: Users can switch themes instantly, preference persists across sessions
-- **Pause Menu Centering Fix**: Fixed pause menu viewport cutoff on smaller screens
-  - **Solution**: Changed from absolute positioning to flexbox centering with `max-h-[90vh]` constraint and scroll support
-  - **Impact**: Pause menu always visible and accessible regardless of screen size
-
-### 2025-10-12: Mini-Game Victory & Objectives Completion
-- **Collection Objectives Room Fix**: Fixed collectibles spawning in non-existent rooms causing creation failures
-  - **Issue**: repair_tools, spare_parts, medical_supplies placed in 'maintenance' and 'medical_bay' rooms that don't exist
-  - **Solution**: Changed to valid rooms (corridor_2, cantina) - all 12 collectibles now spawn correctly
-  - **Impact**: All collection objectives (repair tools, spare parts, fuel cells, medical supplies) fully functional
-- **Door Progression Iterator Fix**: Fixed TypeScript compilation error in door unlocking system
-  - **Issue**: `for (const door of this.doors.values())` caused ES2015 iterator error
-  - **Solution**: Wrapped with `Array.from()` for compatibility
-  - **Impact**: Door progression system compiles and runs without errors
-- **Victory Rewards Cross-Client Sync**: Fixed completion rewards not syncing to main game
-  - **Issue**: MiniGameSyncService dropped all messages when mini-game inactive, preventing desktop from receiving rewards
-  - **Solution**: Whitelisted 'victory_rewards' messages to bypass `isMinigameActive` gate
-  - **Impact**: Main game now receives completion rewards (500 credits, 25% hull, 25% shields, 50% fuel)
-- **Fuel Restoration Implementation**: Completed fuel reward application in victory system
-  - **Issue**: Fuel restoration was logged only, not actually applied
-  - **Solution**: Added fuel tank update via `useEquipment.setState()` to trigger Zustand subscribers and persistence
-  - **Impact**: All victory rewards now fully functional (credits, hull, shields, fuel)
-
-### 2025-10-12: Final Death Crash Fix - Deferred Phase Transition
-- **Death Screen Crash Resolution**: Fixed persistent Radix UI infinite loop crash when killed by enemies
-  - **Issue**: Even with UI components hidden, Radix Slider tried to update state during unmount causing "Maximum update depth exceeded"
-  - **Root Cause**: Synchronous phase change to "ended" unmounted all UI components immediately, triggering Radix's internal ref cleanup that tried to update state
-  - **Solution**: Added 100ms setTimeout delay before calling `useGame.getState().end()` in death handler, allowing React to complete current render cycle
-  - **Impact**: Player death from enemy damage now works smoothly, no more crashes or infinite loops
-
-### 2025-10-12: WebSocket URL Fix - Always Use Current Hostname
-- **WebSocket Connection Fix**: Fixed WebSocket connection failures by always using current application URL
-  - **Issue**: WebSocket tried connecting to `wss://localhost:5000` even though server runs on Replit, causing connection failures
-  - **Root Cause**: Incorrect environment detection assumed localhost for development, but Replit server runs on actual hostname
-  - **Solution**: Removed localhost checks - WebSocket now always uses `window.location.hostname` and `window.location.port`
-  - **Behavior**: Automatically connects to wherever the server is actually running (Replit, production, or any environment)
-  - **Impact**: WebSocket connections work correctly in all environments without hardcoded assumptions
-
-### 2025-10-12: Combat Death Dynamic Import Fix
-- **Enemy Death Handling**: Fixed async race condition when player killed by enemies
-  - **Issue**: Game crashed when player died from enemy damage
-  - **Root Cause**: Death handler used dynamic imports `import(...).then()` inside state update, creating async race conditions
-  - **Solution**: Replaced dynamic imports with static imports of useEnemies, useShooting, useGame at top of file
-  - **Impact**: Combat state clears synchronously on death, no more race condition crashes
-
-### 2025-10-11: Performance Fix - Eliminated Excessive Material Logging
-- **Performance Optimization**: Fixed AtmosphericEffects fog plane material regeneration causing performance issues
-  - **Issue**: Fog plane materials used `Date.now()` in IDs, creating new materials every render, causing console spam and performance degradation
-  - **Solution**: Removed `Date.now()` from material IDs, using stable IDs: `fog-plane-material-${height}-${planetName}`
-  - **Logging**: Disabled verbose material registration logging in ResourceManager and AtmosphericEffects
-  - **Impact**: Eliminated thousands of console logs per second, improved rendering performance
-
-### 2025-10-11: Fixed React Duplicate Key Warning in Mission IDs
-- **Mission ID Fix**: Fixed duplicate React key warning by improving mission ID generation
-  - **Issue**: Mission IDs included seed with location name, causing location to appear twice (e.g., `Earth_0_player1_timestamp_playerId_Earth_1`)
-  - **Root Cause**: Seed pattern `${playerId}:${location}:${gameDay}` contained location, duplicating it in final mission ID
-  - **Solution**: Replaced seed with random string: `${location}_mission${i}_rank${playerRank}_${timestamp}_${random9chars}`
-  - **Impact**: Eliminated all React duplicate key warnings, truly unique mission IDs
-  - **Pattern**: Earth_mission0_rank1_1760225145123_a2b3c4d5e
-
-### 2025-10-11: Fixed Player Stats & Authentication UI on Splash Screen
-- **Stats Panel Fix**: Fixed player stats panel visibility and interaction on splash screen
-  - **Issue**: Account dropdown was always visible, stats panel not showing properly
-  - **Solution**: Made dropdown conditional, added click trigger button, implemented click-outside handler
-  - **Impact**: Player stats now properly display when authenticated, account menu works correctly
-  - **UI Flow**: Minimized stats always visible → Hover expands details → Click user for account menu
-
-### 2025-10-11: WebSocket Authentication Fix
-- **WebSocket Auth**: Added authentication tokens to CloudSyncManager WebSocket connections
-  - **Issue**: WebSocket connections failing due to missing authentication tokens
-  - **Solution**: Added token to WebSocket URL as query parameter
-  - **Impact**: Stable WebSocket connections, no more connection errors
-
-### 2025-10-11: Mining System Crash Fixes
-- **Mining Fix**: Fixed spacebar mining crash on planet surfaces
-  - **Issue**: Resource data undefined when pressing spacebar, causing crash
-  - **Solution**: Added resource data to collision registration, comprehensive null checks
-  - **Impact**: Mining system now stable and crash-free
-
-### 2025-10-09: Unified Sync Architecture - Consolidated WebSocket Connections
-- **Sync Consolidation**: Removed duplicate WebSocket in MiniGameSyncService, unified with CloudSyncManager
-  - **Issue**: Mini-game created separate WebSocket connection causing duplicate connections and sync errors
-  - **Solution**: Refactored MiniGameSyncService to use CloudSyncManager's existing WebSocket via message handlers
-  - **Impact**: Single WebSocket for all sync (desktop + mobile mini-game), eliminates connection errors
-  - **Architecture**: MiniGameSyncService registers/unregisters message handlers with CloudSyncManager when mini-game activates/deactivates
-  - **Queuing**: All messages route through CloudSyncManager's queue system for reliable delivery
-
-### 2025-10-09: Critical Mobile Login Bug Fix + Panel UI Standardization  
-- **Critical Bug Fix**: Fixed AuthProvider to show login screen when user is not authenticated
-  - **Issue**: AuthProvider was rendering game even for unauthenticated users, causing stuck loading screen
-  - **Fix**: Added check to show AuthScreen when `!isAuthenticated && !isGuest`
-  - **Impact**: Mobile users can now log in on new browsers/devices (no longer stuck on loading screen)
-- **Mobile Panel UI**: Standardized all mobile panels to match ShipRepairPanel compact header template
-  - **Space Savings**: 30-40% reduction in header vertical space
-  - **Structure**: Header (`p-2`), stats bar with integrated tabs (`bg-slate-700/50 px-2 py-1`), compact tabs (`px-2 py-0.5 text-[10px]`)
-  - **Panels Updated**: MissionsPanel, MarketPanel, TradingPanel, TradeHistoryPanel, ShipUpgradePanel
-  - **Design**: Solid colors (`bg-orange-600` active, `bg-slate-600` inactive) replace gradients
-
 ## System Architecture
-The project employs a client-server architecture. The frontend utilizes React 18.3.1, Three.js (React Three Fiber 8.x), and Zustand 5.0 for state management. The backend is built with Express 4.x, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite 6.x and TypeScript 5.7, with styling managed by TailwindCSS 3.x and Radix UI components.
+The project employs a client-server architecture. The frontend utilizes React, Three.js (React Three Fiber), and Zustand for state management. The backend is built with Express, PostgreSQL (Neon-backed), and Drizzle ORM. Development is supported by Vite and TypeScript, with styling managed by TailwindCSS and Radix UI components.
 
 The game features three core gameplay loops:
-1.  **Trade & Survive**: Involves resource mining, dynamic inter-station trading with fluctuating prices, and continuous management of resources like fuel, hull, oxygen, and crew wages. This loop integrates economic pressure, equipment degradation, and faction reputation.
-2.  **Mission & Story**: Players undertake missions (delivery, combat, exploration) acquired from mission boards, with access tied to reputation. A multi-act story offers branching choices impacting karma and faction relations, leading to five distinct endings.
+1.  **Trade & Survive**: Involves resource mining, dynamic inter-station trading with fluctuating prices, and continuous management of resources like fuel, hull, oxygen, and crew wages, integrating economic pressure, equipment degradation, and faction reputation.
+2.  **Mission & Story**: Players undertake missions (delivery, combat, exploration) with access tied to reputation. A multi-act story offers branching choices impacting karma and faction relations, leading to five distinct endings.
 3.  **Combat & Heat**: Features turn-based combat against various enemy types. Illegal activities generate "heat," increasing notoriety, leading to aggressive patrols, and "shoot on sight" orders at higher levels.
 
 The UI/UX is designed for responsiveness across desktop and mobile.
 -   **Desktop**: Features a three-panel layout with a central 3D viewport, sidebars for navigation, and a bottom control bar.
--   **Mobile**: Offers a touch-optimized layout including a header, 3D viewport, virtual joystick, action bar, and slide-in overlay panels.
--   **Color Palette**: Employs deep space darks with vibrant cyan accents for interactive elements.
--   **Components**: Standardized button, panel, and HUD styles with defined CSS for transitions and feedback.
+-   **Mobile**: Offers a touch-optimized layout including a header, 3D viewport, virtual joystick, action bar, and slide-in overlay panels. Mobile panels have standardized compact headers to optimize vertical space.
+-   **Color Palette**: Employs deep space darks with vibrant cyan accents for interactive elements. A theme system allows users to switch between "Classic" (cyberpunk orange/cyan) and "Monochrome" (black/white/gray) themes, with preference persistence.
+-   **Components**: Standardized button, panel, and HUD styles with defined CSS for transitions and feedback. Standardized click-outside-to-close behavior for collapsible panels.
 -   **Accessibility**: Includes features like colorblind modes, font scaling, screen reader support, and rebindable controls.
 
-The system structure is hierarchical, managed by an `AuthProvider` that orchestrates `LoginScreen` and `GameContainer`. The `GameContainer` integrates a `ThreeCanvas` for 3D rendering, a `UILayer`, and an `AudioSystem`. Zustand stores manage various game states (player, ship, economy, combat, mission). The rendering pipeline uses Three.js with specific lighting, camera controls, object hierarchies, and post-processing effects. Performance is optimized through object pooling, LOD systems, and efficient texture management. Game state saving uses a structured JSON format with multiple save slots.
+The system structure is hierarchical, managed by an `AuthProvider` that orchestrates `LoginScreen` and `GameContainer`. The `GameContainer` integrates a `ThreeCanvas` for 3D rendering, a `UILayer`, and an `AudioSystem`. Zustand stores manage various game states (player, ship, economy, combat, mission). The rendering pipeline uses Three.js with specific lighting, camera controls, object hierarchies, and post-processing effects. Performance is optimized through object pooling, LOD systems, and efficient texture management. Game state saving uses a structured JSON format with multiple save slots. The audio system implements real-time volume control by subscribing to global volume state changes. WebSocket connections are unified through a `CloudSyncManager` to ensure reliable real-time communication and authentication across all environments, including mini-games, by always using the current application URL. Player death handling and mission ID generation have been refined for stability and uniqueness.
 
 ## External Dependencies
 
--   **Frontend Framework**: React 18.3.1
--   **3D Graphics Library**: Three.js (via React Three Fiber 8.x)
--   **State Management**: Zustand 5.0
--   **Backend Framework**: Express 4.x
+-   **Frontend Framework**: React
+-   **3D Graphics Library**: Three.js (via React Three Fiber)
+-   **State Management**: Zustand
+-   **Backend Framework**: Express
 -   **Database**: PostgreSQL (Neon-backed)
 -   **ORM**: Drizzle ORM
--   **Build Tool**: Vite 6.x
--   **Language**: TypeScript 5.7
--   **Styling**: TailwindCSS 3.x with Radix UI components
--   **Authentication**: Session-based authentication (stored in PostgreSQL)
+-   **Build Tool**: Vite
+-   **Language**: TypeScript
+-   **Styling**: TailwindCSS with Radix UI components
+-   **Authentication**: Session-based authentication
 -   **Network Protocol**: WebSocket for real-time multiplayer communication
