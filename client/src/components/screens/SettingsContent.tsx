@@ -1,10 +1,10 @@
-import { useSettings, UITheme } from "../../lib/stores/ui/useSettings";
-import { Controls } from "../../lib/controls";
-import { Slider } from "../ui/slider";
-import { Switch } from "../ui/switch";
-import { Button } from "../ui/button";
-import { Label } from "../ui/label";
-import { Palette } from "lucide-react";
+import {useSettings} from "../../lib/stores/ui/useSettings";
+import {Slider} from "../ui/slider";
+import {Switch} from "../ui/switch";
+import {Button} from "../ui/button";
+import {Label} from "../ui/label";
+import {Palette} from "lucide-react";
+import {KeybindingEditor} from "@/lib/utils/KeyBindingEditor.tsx";
 
 const CONTROL_LABELS: Record<string, string> = {
   forward: "Move Forward",
@@ -210,63 +210,7 @@ export function SettingsContent({
       </div>
 
       {/* Keybindings */}
-      <div className="space-y-3">
-        <h3 className="text-cyan-300 font-semibold text-sm uppercase border-b border-cyan-700 pb-1">
-          🎮 Key Bindings
-        </h3>
-        <div className="space-y-2">
-          {Object.entries(Controls).map(([key, value]) => {
-            const action = value as string;
-            const keys = keybinds[action] || [];
-            const isEditing = editingKeybind === action;
-
-            return (
-              <div
-                key={action}
-                className="flex justify-between items-center bg-gray-800/50 p-2 rounded"
-              >
-                <span className="text-gray-300">
-                  {CONTROL_LABELS[action] || action}
-                </span>
-                <div className="flex gap-2 items-center">
-                  {keys.map((keyCode) => (
-                    <div
-                      key={keyCode}
-                      className="flex items-center gap-1 bg-gray-700 px-2 py-1 rounded"
-                    >
-                      <kbd className="text-white font-mono text-sm">
-                        {keyCode.replace("Key", "").replace("Arrow", "")}
-                      </kbd>
-                      <button
-                        onClick={() => onRemoveKey(action, keyCode)}
-                        className="text-red-400 hover:text-red-300 text-xs ml-1"
-                        title="Remove key"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ))}
-                  {isEditing ? (
-                    <div className="px-3 py-1 bg-yellow-600 text-black rounded font-mono text-sm animate-pulse">
-                      Press key...
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => onKeybindClick(action)}
-                      className="px-2 py-1 bg-cyan-600 hover:bg-cyan-500 text-white rounded text-xs"
-                    >
-                      + Add
-                    </button>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-        <p className="text-xs text-gray-400 mt-2">
-          Click "+ Add" to bind a new key. Press ESC to cancel.
-        </p>
-      </div>
+        <KeybindingEditor/>
 
       {/* Reset Button */}
       <div className="flex justify-end pt-4 border-t border-gray-700">
