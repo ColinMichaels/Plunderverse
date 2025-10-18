@@ -1067,6 +1067,9 @@ export function CameraController() {
 
     // Autopilot system with orbital mechanics - THROTTLED SLERP
     // Check !isLanded to prevent autopilot from running when docked/landed
+    if (frameCount % 60 === 0) {
+      console.log(`[AUTOPILOT-CHECK] isActive: ${isAutopilotActive}, selectedPlanet: ${selectedPlanet}, isLanded: ${isLanded}`);
+    }
     if (isAutopilotActive && selectedPlanet && !isLanded) {
       // Calculate current planet position dynamically
       const planetData = planets.find((p) => p.name === selectedPlanet);
