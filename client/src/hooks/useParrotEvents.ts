@@ -21,6 +21,8 @@ export function useParrotEvents() {
     const {hull, shield} = useShipStatus();
     const shipStatus = {hull, shield};
     const lastSaidRef = useRef<Record<string, number>>({});
+    // get the player instance to use their player name from the playerName function
+    const captainName = "Captain";
 
     // === Helper utilities ===
     const getRandomFrom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
@@ -31,54 +33,55 @@ export function useParrotEvents() {
         string[]
     > = {
         fuelLow: [
-            "Squawk! Fuel reserves be runnin' low, Cap'n! Only {pct}% left!",
-            "Cap'n – we've got about {pct}% fuel remaining, time to refuel!",
-            "Alert! Fuel dipping to {pct}% — ship's going hungry, Cap'n!"
+            `Squawk! Fuel reserves be running' low, ${captainName}! Only {pct}% left!`,
+            `${captainName} – we've got about {pct}% fuel remaining, time to refuel!`,
+            `Alert! Fuel dipping to {pct}% — ship's going hungry, ${captainName}!`
         ],
         fuelEmpty: [
-            "Blimey! We're outta fuel, Cap'n! Dead in space we are!",
-            "Fuel’s gone. We’re driftin’ without juice, Cap'n!",
-            "No fuel left. Brace for unattended drifting, Cap'n!"
+            `Blimey! We're outta fuel, ${captainName}! Dead in space we are!`,
+            `Fuel’s gone. We’re driftin’ without juice, ${captainName}!`,
+            `No fuel left. Brace for unattended drifting, ${captainName}!`
         ],
         hullCritical: [
-            "Avast! Hull integrity critical, Cap'n! Need repairs now!",
-            "Hull’s at {pct}% — we’ll not last long like this, Cap’n!",
-            "Critical hull alert! Patch her up or we’re done, Cap’n!"
+            `Avast! Hull integrity critical, ${captainName}! Need repairs now!`,
+            `Hull’s at ${hull}% — we’ll not last long like this, ${captainName}!`,
+            `Critical hull alert! Patch her up or we’re done, ${captainName}!`
         ],
         shieldsLow: [
-            "Squawk! Shields be failin’, Cap’n!",
-            "Shields down to {pct}% — danger be closin’ fast, Cap’n!",
-            "Warning! Shields weakened, Cap’n — get ready!"
+            `quawk! Shields be failing’, ${captainName}!`,
+            `Shields down to ${shield}% — danger be closin’ fast, ${captainName}!`,
+            `Warning! Shields weakened, ${captainName} — get ready!`
         ],
         missionsReminder: [
-            "Reminder, Cap’n: We still got that {title} mission to finish!",
-            "Cap’n — don’t forget the {title} mission’s still active!",
-            "The {title} mission awaits, Cap’n — ready yer boots!"
+            `Reminder, ${captainName}: We still got that {title} mission to finish!`,
+            `${captainName} — don’t forget the {title} mission’s still active!`,
+            `The {title} mission awaits, ${captainName} — ready yer boots!`
         ],
         missionsComplete: [
-            "Har har! {count} missions in the bag, Cap’n! Nice work!",
-            "Well done, Cap’n — {count} missions done and dusted!",
-            "Victory! {count} missions complete — we’re legends now, Cap’n!"
+            `Har har! {count} missions in the bag, ${captainName}! Nice work!`,
+            `Well done, ${captainName} — {count} missions done and dusted!`,
+            `Victory! {count} missions complete — we’re legends now, ${captainName}!`
         ],
         heatHigh: [
-            "Avast! Heat levels be risin’, Cap’n! Keep yer head down!",
-            "Warning! Ship heat at {pct}% — things be gettin’ toasty!",
-            "Heat warning, Cap’n — if we don’t cool off, we'll fry!"
+            `Avast! Heat levels be risin’, ${captainName}! Keep yer head down!`,
+            `Warning! Ship heat at {pct}% — things be gettin’ toasty!`,
+            `Heat warning, ${captainName} — if we don’t cool off, we'll fry!`
         ],
         wantedHigh: [
-            "Squawk! Yer wanted across the system, Cap’n! Patrols everywhere!",
-            "Alert! Wanted level high — hide yer sails, Cap’n!",
-            "Danger, Cap’n: We’re flagged — bounty hunters loom!"
+            `Squawk! Yer wanted across the system, ${captainName}! Patrols everywhere!`,
+            `Alert! Wanted level high — hide yer sails, ${captainName}!`,
+            `Danger, ${captainName}: We’re flagged — bounty hunters loom!`
         ],
         randomComment: [
-            "Cap’n, remember that time we outran the kraken? Ahoy memories!",
-            "Want a joke, Cap’n? Why did the pirate buy a ram? For bustin’ boardin’ parties!",
-            "Cap’n, I spy a treasure map in yer dreams — let’s sail!"
+            `${captainName}, remember that time we outran the kraken? Ahoy memories!`,
+            `Want a joke, ${captainName}? Why did the pirate buy a ram? For bustin’ boardin’ parties!`,
+            `${captainName}, I spy a treasure map in yer dreams — let’s sail!`,
+            `What do you call a very rude bird? A mockingbird!`
         ],
         memoryRecall: [
-            "Cap’n, remember our first haul? Feels like yesterday!",
-            "Flashback, Cap’n: That storm off Neptune — we lived it!",
-            "Memory, Cap’n: The gold we found near Davy’s Rift — adventure!"
+            `${captainName}, remember our first haul? Feels like yesterday!`,
+            `Flashback, ${captainName}: That storm off Neptune — we lived it!`,
+            `Memory, ${captainName}: The gold we found near Davy’s Rift — adventure!`
         ]
     };
 

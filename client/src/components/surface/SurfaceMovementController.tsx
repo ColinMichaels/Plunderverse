@@ -12,11 +12,11 @@ import {
     useSettings,
     useSurfaceCollision,
     useSurfacePlayer,
-    useTerrain
+    useTerrain,
 } from "@/lib/stores";
 
 // Ensure global input router is attached once on the client
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
     InputRouter.instance().attach();
 }
 
@@ -29,10 +29,10 @@ enum SurfaceControls {
     turnRight = "turnRight",
     flashlight = "flashlight",
     charge = "charge",
-    shoot = "shoot", // Spacebar for mining/shooting
+    shoot = "shoot",
 }
 
-// Function to calculate terrain height at any x,z position (uses new terrain system)
+// Helper to get terrain height
 function terrainHeightAt(x: number, z: number): number {
     const terrainStore = useTerrain.getState();
     return terrainStore.getHeightAt(x, z);
@@ -47,45 +47,58 @@ interface SurfaceMovementControllerProps {
     onMiningBeamChange?: (state: MiningBeamState) => void;
 }
 
-export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovementControllerProps = {}) {
+export function SurfaceMovementController({
+                                              onMiningBeamChange,
+                                          }: SurfaceMovementControllerProps = {}) {
     const {camera, gl, scene} = useThree();
+
     const positionRef = useRef(new THREE.Vector3(0, 1.8, 5));
-    const rotationRef = useRef(0); // Yaw (left/right)
-    const pitchRef = useRef(0); // Pitch (up/down)
+    const rotationRef = useRef(0);
+    const pitchRef = useRef(0);
     const velocityRef = useRef(new THREE.Vector3());
+
     const {sensitivity} = useSettings();
     const {keybinds} = useSettings();
+
     const pressedCodesRef = useRef<Set<string>>(new Set());
     const prevControlsRef = useRef({
-        forward: false, backward: false,
-        left: false, right: false,
-        turnLeft: false, turnRight: false,
-        flashlight: false, charge: false, shoot: false
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        turnLeft: false,
+        turnRight: false,
+        flashlight: false,
+        charge: false,
+        shoot: false,
     });
+
     const motorPlayingRef = useRef(false);
 
-    // Target values for smooth interpolation (initialize to current values)
-    const targetRotationRef = useRef(0); // Target yaw for smooth rotation
-    const targetPitchRef = useRef(0); // Target pitch for smooth rotation
-    const smoothingFactor = 0.12; // Lower = smoother but less responsive (0.12 = smooth cinematic feel)
+    const targetRotationRef = useRef(0);
+    const targetPitchRef = useRef(0);
+    const smoothingFactor = 0.12;
 
-    // Initialize target values to match current values on mount
     useEffect(() => {
         targetRotationRef.current = rotationRef.current;
         targetPitchRef.current = pitchRef.current;
     }, []);
 
-    // Collision system
-    const {checkCollision, getResourceNodes} = useSurfaceCollision();
-    const {isActive: isMining, currentNodeId, startMining, performClick} = useMining();
+    const {
+        checkCollision,
+        getResourceNodes,
+    } = useSurfaceCollision();
+    const {
+        isActive: isMining,
+        currentNodeId,
+        startMining,
+        performClick,
+    } = useMining();
     const {playHit, playLaser, playMotor, stopMotor} = useAudio();
     const {setPosition, setRotation} = useSurfacePlayer();
     const {landedPlanet} = useLandedState();
     const {isNodeDestroyed} = useDestroyedNodes();
-    const lastCollisionSoundRef = useRef(0);
-    const lastCollisionTimeRef = useRef(0);
 
-    // Camera shake system
     const cameraShakeRef = useRef({
         active: false,
         intensity: 0,
@@ -94,7 +107,9 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         offset: new THREE.Vector3(),
     });
 
-    // Flashlight system
+    const lastCollisionSoundRef = useRef(0);
+    const lastCollisionTimeRef = useRef(0);
+
     const {
         toggle: toggleFlashlight,
         updateBattery,
@@ -105,46 +120,53 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
     const lastFlashlightPressRef = useRef(0);
     const lastChargePressRef = useRef(0);
 
-    // Spacebar mining system
     const lastShootPressRef = useRef(0);
     const [miningBeamActive, setMiningBeamActive] = useState(false);
-    const [miningBeamTarget, setMiningBeamTarget] = useState<THREE.Vector3 | null>(null);
-    const miningRange = 10; // Maximum mining range in units
-    const currentMiningNodeRef = useRef<any>(null); // Track the node we're actively mining
-    const lastSoundPlayRef = useRef(0); // Track when we last played the laser sound
+    const [miningBeamTarget, setMiningBeamTarget] = useState<THREE.Vector3 | null>(
+        null
+    );
+    const miningRange = 10;
+    const currentMiningNodeRef = useRef<any>(null);
+    const lastSoundPlayRef = useRef(0);
 
-    // Listen to global InputRouter key events and track pressed codes
+    // Track pressed keys
     useEffect(() => {
         const onKey = (e: Event) => {
-            const ce = e as CustomEvent<{ key: string; code: string; domEvent: KeyboardEvent }>;
+            const ce = e as CustomEvent<{
+                key: string;
+                code: string;
+                domEvent: KeyboardEvent;
+            }>;
             const detail = ce.detail as any;
             if (!detail) return;
             const {code, domEvent} = detail;
             if (!code || !domEvent) return;
-            // Avoid repeats from keydown auto-repeat
-            if (domEvent.type === 'keydown' && domEvent.repeat) return;
+            if (domEvent.type === "keydown" && domEvent.repeat) return;
             const set = pressedCodesRef.current;
-            if (domEvent.type === 'keydown') {
+            if (domEvent.type === "keydown") {
                 set.add(code);
-            } else if (domEvent.type === 'keyup') {
+            } else if (domEvent.type === "keyup") {
                 set.delete(code);
             }
         };
 
-        window.addEventListener(INPUT_KEY_EVENT, onKey as EventListener, {capture: true});
         const handleBlur = () => {
             pressedCodesRef.current.clear();
-            Logger.info('[Surface] Input blur – cleared pressed codes');
+            Logger.info("[Surface] Input blur – cleared pressed codes");
         };
-        window.addEventListener('blur', handleBlur);
+
+        window.addEventListener(INPUT_KEY_EVENT, onKey as EventListener, {
+            capture: true,
+        });
+        window.addEventListener("blur", handleBlur);
 
         return () => {
             window.removeEventListener(INPUT_KEY_EVENT, onKey as EventListener);
-            window.removeEventListener('blur', handleBlur);
+            window.removeEventListener("blur", handleBlur);
         };
     }, []);
 
-    // Mouse look controls while holding primary mouse button (no pointer lock)
+    // Mouse look while holding LMB
     useEffect(() => {
         const canvas = gl.domElement as HTMLCanvasElement;
 
@@ -152,15 +174,14 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         let activePointerId: number | null = null;
 
         const handlePointerDown = (ev: PointerEvent) => {
-            if (ev.button !== 0) return; // Only primary (LMB)
+            if (ev.button !== 0) return;
             activePointerId = ev.pointerId;
             try {
                 canvas.setPointerCapture(ev.pointerId);
             } catch {
-                // Silence
             }
             isHeld = true;
-            Logger.info('[Surface] Mouse look engaged (hold LMB)');
+            Logger.info("[Surface] Mouse look engaged (hold LMB)");
         };
 
         const handlePointerUp = (ev: PointerEvent) => {
@@ -169,12 +190,11 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
                 try {
                     canvas.releasePointerCapture(ev.pointerId);
                 } catch {
-                    // Silence
                 }
                 activePointerId = null;
             }
             isHeld = false;
-            Logger.info('[Surface] Mouse look released');
+            Logger.info("[Surface] Mouse look released");
         };
 
         const handlePointerMove = (ev: PointerEvent) => {
@@ -183,22 +203,24 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
             targetRotationRef.current -= ev.movementX * mouseSensitivity;
             targetPitchRef.current -= ev.movementY * mouseSensitivity;
             const maxPitch = Math.PI / 2.1;
-            targetPitchRef.current = Math.max(-maxPitch, Math.min(maxPitch, targetPitchRef.current));
+            targetPitchRef.current = Math.max(
+                -maxPitch,
+                Math.min(maxPitch, targetPitchRef.current)
+            );
         };
 
-        canvas.addEventListener('pointerdown', handlePointerDown);
-        window.addEventListener('pointerup', handlePointerUp);
-        window.addEventListener('pointermove', handlePointerMove);
+        canvas.addEventListener("pointerdown", handlePointerDown);
+        window.addEventListener("pointerup", handlePointerUp);
+        window.addEventListener("pointermove", handlePointerMove);
 
         return () => {
-            canvas.removeEventListener('pointerdown', handlePointerDown);
-            window.removeEventListener('pointerup', handlePointerUp);
-            window.removeEventListener('pointermove', handlePointerMove);
+            canvas.removeEventListener("pointerdown", handlePointerDown);
+            window.removeEventListener("pointerup", handlePointerUp);
+            window.removeEventListener("pointermove", handlePointerMove);
         };
     }, [gl, sensitivity]);
 
     useFrame((state, delta) => {
-        // Helper to check if any of the key codes bound to an action are currently pressed
         const isActionDown = (action: string) => {
             const codes: string[] = (keybinds as any)?.[action] || [];
             const set = pressedCodesRef.current;
@@ -209,48 +231,47 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
         };
 
         const controls = {
-            forward: isActionDown('forward'),
-            backward: isActionDown('backward'),
-            left: isActionDown('left'),
-            right: isActionDown('right'),
-            turnLeft: isActionDown('turnLeft'),
-            turnRight: isActionDown('turnRight'),
-            flashlight: isActionDown('flashlight'),
-            charge: isActionDown('charge'),
-            shoot: isActionDown('shoot'),
+            forward: isActionDown("forward"),
+            backward: isActionDown("backward"),
+            left: isActionDown("left"),
+            right: isActionDown("right"),
+            turnLeft: isActionDown("turnLeft"),
+            turnRight: isActionDown("turnRight"),
+            flashlight: isActionDown("flashlight"),
+            charge: isActionDown("charge"),
+            shoot: isActionDown("shoot"),
         };
 
-        // Flashlight toggle only on transition false→true
-        if (controls.flashlight) {
+        // Toggle flashlight once on press
+        if (controls.flashlight && !prevControlsRef.current.flashlight) {
             toggleFlashlight();
-            Logger.info('[Surface] Flashlight toggle triggered');
+            Logger.info("[Surface] Flashlight toggle triggered");
         }
 
-        // Charge toggle only on transition false→true
-        if (controls.charge) {
+        // Toggle charge once on press
+        if (controls.charge && !prevControlsRef.current.charge) {
             if (isCharging) {
                 stopCharging();
-                Logger.info('[Surface] Charging stopped');
+                Logger.info("[Surface] Charging stopped");
             } else {
                 startCharging();
-                Logger.info('[Surface] Charging started');
+                Logger.info("[Surface] Charging started");
             }
         }
 
         const position = positionRef.current;
         const rotation = rotationRef.current;
         const velocity = velocityRef.current;
-        const shake = cameraShakeRef.current;
 
-        const moveSpeed = 6; // Rover movement speed
-        const turnSpeed = 0.55; // Reduced turning speed for smoother control (was 0.9)
-        const maxVelocity = 15; // Cap velocity to prevent runaway acceleration
-        const playerCollisionRadius = 1.5; // Collision detection radius
+        const moveSpeed = 6;
+        const turnSpeed = 0.55;
+        const maxVelocity = 15;
+        const playerCollisionRadius = 1.5;
 
-        // Reset velocity for this frame
+        // Reset velocity each frame
         velocity.set(0, 0, 0);
 
-        // Surface movement controls
+        // Apply movement only while keys are held
         if (controls.forward) {
             const forwardVec = new THREE.Vector3(0, 0, -1);
             forwardVec.applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation);
@@ -272,7 +293,7 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
             velocity.add(rightVec.multiplyScalar(moveSpeed));
         }
 
-        // Rotation controls – update target rotation for smooth interpolation
+        // Apply rotation controls
         if (controls.turnLeft) {
             targetRotationRef.current += turnSpeed * delta;
         }
@@ -280,40 +301,49 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
             targetRotationRef.current -= turnSpeed * delta;
         }
 
-        const moving = controls.forward || controls.backward || controls.left || controls.right;
+        // Motor sound logic
+        const moving =
+            controls.forward ||
+            controls.backward ||
+            controls.left ||
+            controls.right;
         if (moving && !motorPlayingRef.current) {
-            playMotor(0.05);
+            playMotor(0.07);
             motorPlayingRef.current = true;
         } else if (!moving && motorPlayingRef.current) {
             stopMotor();
             motorPlayingRef.current = false;
         }
 
-        // Smooth interpolation for camera rotation (lerp)
         const lerpFactor = 1 - Math.pow(1 - smoothingFactor, delta * 60);
-        rotationRef.current += (targetRotationRef.current - rotationRef.current) * lerpFactor;
-        pitchRef.current += (targetPitchRef.current - pitchRef.current) * lerpFactor;
+        rotationRef.current +=
+            (targetRotationRef.current - rotationRef.current) * lerpFactor;
+        pitchRef.current +=
+            (targetPitchRef.current - pitchRef.current) * lerpFactor;
 
         // Flashlight battery update
         updateBattery(delta);
 
-        // Spacebar mining logic
+        // Mining logic (spacebar/shoot)
         if (controls.shoot) {
-            if (isMining && currentMiningNodeRef.current && landedPlanet) {
-                if (!isNodeDestroyed(landedPlanet, currentMiningNodeRef.current.id)) {
-                    performClick();
-                    if (!miningBeamActive) {
-                        setMiningBeamActive(true);
-                        setMiningBeamTarget(new THREE.Vector3(...currentMiningNodeRef.current.position));
-                        if (onMiningBeamChange) {
-                            onMiningBeamChange({
-                                active: true,
-                                target: new THREE.Vector3(...currentMiningNodeRef.current.position)
-                            });
-                        }
+            if (
+                isMining &&
+                currentMiningNodeRef.current &&
+                landedPlanet &&
+                !isNodeDestroyed(landedPlanet, currentMiningNodeRef.current.id)
+            ) {
+                performClick();
+                if (!miningBeamActive) {
+                    setMiningBeamActive(true);
+                    setMiningBeamTarget(
+                        new THREE.Vector3(...currentMiningNodeRef.current.position)
+                    );
+                    if (onMiningBeamChange) {
+                        onMiningBeamChange({
+                            active: true,
+                            target: new THREE.Vector3(...currentMiningNodeRef.current.position),
+                        });
                     }
-                } else {
-                    currentMiningNodeRef.current = null;
                 }
             }
 
@@ -324,7 +354,10 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
                 let nearestDistance = Infinity;
 
                 resourceNodes.forEach((node: any) => {
-                    if (landedPlanet && isNodeDestroyed(landedPlanet, node.id)) {
+                    if (
+                        landedPlanet &&
+                        isNodeDestroyed(landedPlanet, node.id)
+                    ) {
                         return;
                     }
                     const nodePos = new THREE.Vector3(...node.position);
@@ -343,15 +376,24 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
 
                 if (nearestNode && landedPlanet) {
                     if (!nearestNode.resource) {
-                        Logger.warn(`[Mining] Node ${nearestNode.id} is missing resource data. Skipping.`);
+                        Logger.warn(
+                            `[Mining] Node ${nearestNode.id} is missing resource data. Skipping.`
+                        );
                     } else if (!isMining || currentNodeId !== nearestNode.id) {
-                        startMining(landedPlanet, nearestNode.resource, nearestNode.id);
+                        startMining(
+                            landedPlanet,
+                            nearestNode.resource,
+                            nearestNode.id
+                        );
                         currentMiningNodeRef.current = nearestNode;
                         playLaser();
                         setMiningBeamActive(true);
                         setMiningBeamTarget(new THREE.Vector3(...nearestNode.position));
                         if (onMiningBeamChange) {
-                            onMiningBeamChange({active: true, target: new THREE.Vector3(...nearestNode.position)});
+                            onMiningBeamChange({
+                                active: true,
+                                target: new THREE.Vector3(...nearestNode.position),
+                            });
                         }
                     }
                 } else if (!isMining) {
@@ -372,36 +414,52 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
             }
         }
 
-        // Save this controls state for next frame transition detection
+        // Update prevControls for toggles
         prevControlsRef.current = controls;
 
         // Clamp velocity
         velocity.clampLength(0, maxVelocity);
 
-        // Calculate new position
-        const newPosition = position.clone().add(velocity.clone().multiplyScalar(delta));
+        // Compute next position
+        const newPosition = position
+            .clone()
+            .add(velocity.clone().multiplyScalar(delta));
         newPosition.x = Math.max(-80, Math.min(80, newPosition.x));
         newPosition.z = Math.max(-80, Math.min(80, newPosition.z));
         newPosition.y = terrainHeightAt(newPosition.x, newPosition.z) + 1.8;
 
         const collision = checkCollision(newPosition, playerCollisionRadius);
         if (collision) {
-
-            const miningCurrentNode = isMining && collision.type === "resource" && collision.id === currentNodeId;
+            const miningCurrentNode =
+                isMining &&
+                collision.type === "resource" &&
+                collision.id === currentNodeId;
             if (!miningCurrentNode) {
                 const velocityMagnitude = velocity.length();
-                const collisionIntensity = Math.min(velocityMagnitude / maxVelocity, 1.0);
-                if (velocityMagnitude > 0.5 && performance.now() - lastCollisionTimeRef.current > 100) {
-                    if (performance.now() - lastCollisionSoundRef.current > 500) {
+                if (
+                    velocityMagnitude > 0.5 &&
+                    performance.now() - lastCollisionTimeRef.current > 100
+                ) {
+                    if (
+                        performance.now() - lastCollisionSoundRef.current > 500
+                    ) {
                         playHit();
                         lastCollisionSoundRef.current = performance.now();
                     }
                     lastCollisionTimeRef.current = performance.now();
                 }
-                const directionToObject = new THREE.Vector3().subVectors(newPosition, collision.position).normalize();
-                const velocityProjected = velocity.clone().projectOnPlane(directionToObject);
-                const slidingPosition = position.clone().add(velocityProjected.multiplyScalar(delta * 0.3));
-                slidingPosition.y = terrainHeightAt(slidingPosition.x, slidingPosition.z) + 1.8;
+                const directionToObject = new THREE.Vector3().subVectors(
+                    newPosition,
+                    collision.position
+                ).normalize();
+                const velocityProjected = velocity.clone().projectOnPlane(
+                    directionToObject
+                );
+                const slidingPosition = position
+                    .clone()
+                    .add(velocityProjected.multiplyScalar(delta * 0.3));
+                slidingPosition.y =
+                    terrainHeightAt(slidingPosition.x, slidingPosition.z) + 1.8;
                 positionRef.current.copy(slidingPosition);
             } else {
                 positionRef.current.copy(newPosition);
@@ -410,13 +468,11 @@ export function SurfaceMovementController({ onMiningBeamChange }: SurfaceMovemen
             positionRef.current.copy(newPosition);
         }
 
-        // Update global surface player position
         setPosition(positionRef.current);
         setRotation(rotationRef.current);
 
-        // Camera positioning and rotation
         camera.position.copy(positionRef.current);
-        camera.rotation.order = 'YXZ';
+        camera.rotation.order = "YXZ";
         camera.rotation.y = rotationRef.current;
         camera.rotation.x = pitchRef.current;
         camera.rotation.z = 0;
