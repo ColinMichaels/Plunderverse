@@ -194,7 +194,7 @@ class AudioManager {
             key?: string;
             crossfadeFrom?: SoundInstance;
         }
-    ): Promise<SoundInstance> {
+    ): Promise<SoundInstance | null> {
         const {fadeInMs = 0, fadeOutMs = 0, key, crossfadeFrom} = options ?? {};
         const now = performance.now();
 
@@ -202,7 +202,8 @@ class AudioManager {
             const last = this.throttleMap.get(key) ?? 0;
             const minInterval = 100;
             if (now - last < minInterval) {
-                return Promise.reject(new Error("Throttled"));
+                // Silently skip throttled sounds instead of throwing error
+                return Promise.resolve(null);
             }
             this.throttleMap.set(key, now);
         }
@@ -704,21 +705,17 @@ export const useAudio = create<AudioState>((set, get) => ({
 
     playSuccess: async () => {
         if (get().masterMute || get().sfxMute) return;
-        try {
-            const cfg = AUDIO_CONFIG.soundEffects.success;
-            const h = new Howl({
-                src: [cfg.path],
-                volume: cfg.volume ?? 1,
-            });
-            const baseVol = cfg.volume ?? 1;
-            await audioManager.playHowl(h, "sfx", baseVol, {
-                fadeInMs: 30,
-                fadeOutMs: 80,
-                key: "success",
-            });
-        } catch (err) {
-            console.error("playSuccess error:", err);
-        }
+        const cfg = AUDIO_CONFIG.soundEffects.success;
+        const h = new Howl({
+            src: [cfg.path],
+            volume: cfg.volume ?? 1,
+        });
+        const baseVol = cfg.volume ?? 1;
+        await audioManager.playHowl(h, "sfx", baseVol, {
+            fadeInMs: 30,
+            fadeOutMs: 80,
+            key: "success",
+        });
     },
 
     playLaser: async () => {
