@@ -1,13 +1,38 @@
-import { Volume2, VolumeX, Music, Zap, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Volume2, VolumeX, Music, Zap, MessageSquare, Briefcase, Eye, EyeOff, Type } from 'lucide-react';
 import { useAudio } from '@/lib/stores/ui/useAudio';
 import { useParrot } from '@/lib/stores/useParrot';
+import { parrotSpeechService } from '@/services/ParrotSpeechService';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export function AudioSettingsPanel() {
   const audio = useAudio();
   const parrot = useParrot();
+  const [availableVoices, setAvailableVoices] = useState<SpeechSynthesisVoice[]>([]);
+
+  // Load available TTS voices
+  useEffect(() => {
+    let isMounted = true;
+    
+    parrotSpeechService.ensureVoicesLoaded(() => {
+      if (isMounted) {
+        setAvailableVoices(parrotSpeechService.getAvailableVoices());
+      }
+    });
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleMasterMuteToggle = () => {
     audio.setMasterMute(!audio.masterMute);
@@ -117,21 +142,74 @@ export function AudioSettingsPanel() {
           </div>
           
           {!audio.masterMute && !parrot.settings.isMuted && (
-            <div className="space-y-2 pt-2">
-              <div className="flex items-center justify-between">
-                <Label className="text-cyan-400 text-xs">Volume</Label>
-                <span className="text-cyan-400 text-xs font-mono">
-                  {Math.round(parrot.settings.volume * 100)}%
-                </span>
+            <>
+              <div className="space-y-2 pt-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-cyan-400 text-xs">Volume</Label>
+                  <span className="text-cyan-400 text-xs font-mono">
+                    {Math.round(parrot.settings.volume * 100)}%
+                  </span>
+                </div>
+                <Slider
+                  value={[parrot.settings.volume * 100]}
+                  onValueChange={handleParrotVolumeChange}
+                  max={100}
+                  step={5}
+                  className="[&_.bg-primary]:bg-cyan-400 [&_.border-primary]:border-cyan-400"
+                />
               </div>
-              <Slider
-                value={[parrot.settings.volume * 100]}
-                onValueChange={handleParrotVolumeChange}
-                max={100}
-                step={5}
-                className="[&_.bg-primary]:bg-cyan-400 [&_.border-primary]:border-cyan-400"
-              />
-            </div>
+
+              {/* Parrot Behavior Controls */}
+              <div className="grid grid-cols-2 gap-2 pt-2">
+                <button
+                  onClick={() => parrot.setMode(parrot.settings.mode === 'chatty' ? 'serious' : 'chatty')}
+                  className="bg-gray-800/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white h-9 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all flex items-center justify-center gap-2"
+                  title={parrot.settings.mode === 'chatty' ? 'Switch to Serious Mode' : 'Switch to Chatty Mode'}
+                >
+                  {parrot.settings.mode === 'chatty' ? <MessageSquare className="w-3.5 h-3.5" /> : <Briefcase className="w-3.5 h-3.5" />}
+                  <span className="text-xs">{parrot.settings.mode === 'chatty' ? 'Chatty' : 'Serious'}</span>
+                </button>
+
+                <button
+                  onClick={() => parrot.setVisible(!parrot.settings.isVisible)}
+                  className="bg-gray-800/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white h-9 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all flex items-center justify-center gap-2"
+                  title={parrot.settings.isVisible ? 'Hide Parrot' : 'Show Parrot'}
+                >
+                  {parrot.settings.isVisible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                  <span className="text-xs">{parrot.settings.isVisible ? 'Visible' : 'Hidden'}</span>
+                </button>
+
+                <button
+                  onClick={() => parrot.setShowText(!parrot.settings.showText)}
+                  className={`bg-gray-800/90 hover:bg-cyan-600/90 text-cyan-400 hover:text-white h-9 rounded-lg border border-cyan-400/50 hover:border-cyan-400 transition-all flex items-center justify-center gap-2 ${parrot.settings.showText ? 'bg-cyan-600/70' : ''}`}
+                  title={parrot.settings.showText ? 'Hide Text Captions' : 'Show Text Captions'}
+                >
+                  <Type className="w-3.5 h-3.5" />
+                  <span className="text-xs">Captions</span>
+                </button>
+              </div>
+
+              {/* Voice Selection */}
+              <div className="space-y-2 pt-2">
+                <Label className="text-cyan-400 text-xs">Voice</Label>
+                <Select
+                  value={parrot.settings.selectedVoice || 'default'}
+                  onValueChange={(value) => parrot.setVoice(value === 'default' ? null : value)}
+                >
+                  <SelectTrigger className="bg-gray-800/90 border-cyan-400/50 text-cyan-400 h-9 text-xs">
+                    <SelectValue placeholder="Select voice" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-cyan-400/50">
+                    <SelectItem value="default" className="text-cyan-400 text-xs">Default Voice</SelectItem>
+                    {availableVoices.map((voice) => (
+                      <SelectItem key={voice.name} value={voice.name} className="text-cyan-400 text-xs">
+                        {voice.name} ({voice.lang})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
         </div>
 
