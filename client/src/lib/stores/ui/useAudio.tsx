@@ -3,6 +3,7 @@ import {Howl} from "howler";
 import {AUDIO_CONFIG} from "../../audioConfig";
 import {useMusicPlayer} from "@/lib/stores";
 import {useEnhancedMusicPlayer} from "./useEnhancedMusicPlayer";
+import {parrotSpeechService} from "@/services/ParrotSpeechService";
 import * as THREE from "three";
 
 const STORAGE_KEY = 'plunderverse_audio_settings';
@@ -338,7 +339,7 @@ export const useAudio = create<AudioState>((set, get) => ({
         ambientMusic.pause();
       }
 
-      // Also stop music player
+      // Stop music player
       try {
         const musicPlayer = useMusicPlayer.getState();
         if (musicPlayer.isPlaying) {
@@ -346,6 +347,14 @@ export const useAudio = create<AudioState>((set, get) => ({
         }
       } catch (e) {
         // Music player may not be loaded yet
+      }
+
+      // Stop enhanced music player
+      try {
+        const enhancedPlayer = useEnhancedMusicPlayer.getState();
+        enhancedPlayer.cleanup();
+      } catch (e) {
+        // Enhanced player may not be loaded yet
       }
     }
 
@@ -368,6 +377,11 @@ export const useAudio = create<AudioState>((set, get) => ({
         thrusterSound.pause();
         thrusterSound.currentTime = 0;
       }
+
+      // Stop all atmospheric sounds
+      state.stopWind();
+      state.stopRain();
+      state.stopThruster();
     }
 
     // Save to localStorage
@@ -405,6 +419,24 @@ export const useAudio = create<AudioState>((set, get) => ({
       if (ambientMusic) {
         ambientMusic.pause();
       }
+
+      // Stop music player
+      try {
+        const musicPlayer = useMusicPlayer.getState();
+        if (musicPlayer.isPlaying) {
+          musicPlayer.pause();
+        }
+      } catch (e) {
+        // Music player may not be loaded yet
+      }
+
+      // Stop enhanced music player
+      try {
+        const enhancedPlayer = useEnhancedMusicPlayer.getState();
+        enhancedPlayer.cleanup();
+      } catch (e) {
+        // Enhanced player may not be loaded yet
+      }
     }
 
     // Save to localStorage
@@ -422,6 +454,11 @@ export const useAudio = create<AudioState>((set, get) => ({
         thrusterSound.pause();
         thrusterSound.currentTime = 0;
       }
+
+      // Stop all atmospheric sounds
+      state.stopWind();
+      state.stopRain();
+      state.stopThruster();
     }
 
     // Save to localStorage
@@ -470,6 +507,9 @@ export const useAudio = create<AudioState>((set, get) => ({
     } catch (e) {
       // Enhanced player may not be loaded yet
     }
+
+    // Stop parrot speech
+    parrotSpeechService.stop();
 
     console.log("All audio stopped");
   },

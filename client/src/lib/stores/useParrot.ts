@@ -1,6 +1,7 @@
 import {create} from 'zustand';
 import {parrotSpeechService} from '@/services/ParrotSpeechService';
 import {Parrot, ParrotMode} from '@/services/ParrotPersonality';
+import {useAudio} from '@/lib/stores/ui/useAudio';
 
 const STORAGE_KEY = 'plunderverse_audio_settings';
 
@@ -120,7 +121,8 @@ export const useParrot = create<ParrotState>((set, get) => ({
       console.log('[Parrot] Voice synthesis initialized');
       set({ isInitialized: true });
 
-      if (!state.settings.isMuted) {
+      const masterMuted = useAudio.getState().masterMute;
+      if (!state.settings.isMuted && !masterMuted) {
         Parrot.comment('Squawk! Parrot systems online, Cap\'n!', 'info');
       }
     });
@@ -132,10 +134,14 @@ export const useParrot = create<ParrotState>((set, get) => ({
     }));
       Parrot.setMode(mode);
 
-    if (mode === 'serious') {
-        Parrot.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
-    } else {
-        Parrot.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
+    const state = get();
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
+      if (mode === 'serious') {
+          Parrot.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
+      } else {
+          Parrot.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
+      }
     }
   },
 
@@ -233,8 +239,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
       }));
     }
 
-    // Speak if not muted
-    if (!state.settings.isMuted) {
+    // Speak if not muted (check both parrot mute and master audio mute)
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
         // Route through personality so voice, filters, memory & mood apply
         Parrot.comment(text, 'info');
 
@@ -277,7 +284,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
             }));
         }
 
-        if (!state.settings.isMuted) {
+        // Check both parrot mute and master audio mute
+        const masterMuted = useAudio.getState().masterMute;
+        if (!state.settings.isMuted && !masterMuted) {
             // Speak without personality filters
             Parrot.sayRaw(text);
 
@@ -320,8 +329,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
       }));
     }
 
-      // Speak if not muted
-    if (!state.settings.isMuted) {
+      // Speak if not muted (check both parrot mute and master audio mute)
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
         Parrot.comment(message, type);
       // Monitor speech completion
       const checkSpeaking = setInterval(() => {
@@ -343,37 +353,43 @@ export const useParrot = create<ParrotState>((set, get) => ({
   },
 
   repeatCommand: (command) => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.repeatAndConfirm(command);
     }
   },
 
   squawk: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.squawk();
     }
   },
 
   praise: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.praise();
     }
   },
 
   scold: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.scold();
     }
   },
 
   randomComment: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.randomComment();
     }
   },
 
   recallMemory: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.recallMemory();
     }
   },
