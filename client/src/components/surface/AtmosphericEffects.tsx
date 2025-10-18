@@ -466,7 +466,7 @@ export function AtmosphericEffects({
 
     // Play or update rain sound (Earth only for now)
     if (rainIntensity > 0) {
-      playRain(rainIntensity);
+      playRain();
     } else {
       stopRain();
     }
