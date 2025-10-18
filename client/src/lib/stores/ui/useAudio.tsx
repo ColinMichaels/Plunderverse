@@ -2,6 +2,7 @@ import {create} from "zustand";
 import {Howl} from "howler";
 import {AUDIO_CONFIG} from "../../audioConfig";
 import {parrotSpeechService} from "@/services/ParrotSpeechService";
+import Logger from "@/services/Logger.ts";
 
 const STORAGE_KEY = "plunderverse_audio_settings";
 
@@ -40,7 +41,7 @@ function loadAudioSettings() {
             };
         }
     } catch (err) {
-        console.error("[AudioStore] loadAudioSettings error:", err);
+        Logger.error("[AudioStore] loadAudioSettings error:", err);
     }
     return {
         masterMute: false,
@@ -79,7 +80,7 @@ function saveAudioSettings(
         };
         localStorage.setItem(STORAGE_KEY, JSON.stringify(upd));
     } catch (err) {
-        console.error("[AudioStore] saveAudioSettings error:", err);
+        Logger.error("[AudioStore] saveAudioSettings error:", err);
     }
 }
 
@@ -361,7 +362,7 @@ class AudioManager {
         }
 
         audioEl.play().catch((err) => {
-            console.error("AudioManager playHtml error:", err);
+            Logger.error("AudioManager playHtml error:", err);
         });
 
         if (fadeOutMs > 0) {
@@ -477,6 +478,8 @@ interface AudioState {
     stopWind: () => void;
     playRain: () => void;
     stopRain: () => void;
+    playMotor: (intensity: number) => void;
+    stopMotor: () => void;
     crossfadeMusic: (newHowl: Howl, fadeMs: number) => Promise<void>;
 }
 
@@ -661,7 +664,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 key: "explosion",
             });
         } catch (err) {
-            console.error("playExplosion error:", err);
+            Logger.error("playExplosion error:", err);
         }
     },
 
@@ -680,7 +683,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 key: "takeoff",
             });
         } catch (err) {
-            console.error("playTakeoff error:", err);
+            Logger.error("playTakeoff error:", err);
         }
     },
 
@@ -699,7 +702,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 key: "hit",
             });
         } catch (err) {
-            console.error("playHit error:", err);
+            Logger.error("playHit error:", err);
         }
     },
 
@@ -733,7 +736,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                 key: "laser",
             });
         } catch (err) {
-            console.error("playLaser error:", err);
+            Logger.error("playLaser error:", err);
         }
     },
 
@@ -764,7 +767,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                     loop: true,
                 });
             } catch (err) {
-                console.error("playThruster error:", err);
+                Logger.error("playThruster error:", err);
             }
         })();
     },
@@ -797,7 +800,7 @@ export const useAudio = create<AudioState>((set, get) => ({
                     loop: true,
                 });
             } catch (err) {
-                console.error("playWind error:", err);
+                Logger.error("playWind error:", err);
             }
         })();
     },
@@ -828,13 +831,41 @@ export const useAudio = create<AudioState>((set, get) => ({
                     loop: true,
                 });
             } catch (err) {
-                console.error("playRain error:", err);
+                Logger.error("playRain error:", err);
             }
         })();
     },
 
     stopRain: () => {
         audioManager.stopSoundByKey("rain");
+    },
+    playMotor: (intensity: number) => {
+        if (get().masterMute) return;
+
+        // Check if rain is already playing
+        if (audioManager.findSoundByKey("motor")) {
+            return; // Already playing
+        }
+        // No existing motor sound, create new one
+        (async () => {
+            try {
+                const motorHowl = new Howl({
+                    src: ["/sounds/motor.mp3"],
+                    loop: true,
+                    volume: 0.4,
+                });
+                await audioManager.playHowl(motorHowl, "ambient", 1, {
+                    fadeInMs: 800,
+                    key: "motor",
+                    loop: true,
+                });
+            } catch (err) {
+                Logger.error("playMotor error:", err);
+            }
+        })();
+    },
+    stopMotor: () => {
+        audioManager.stopSoundByKey("motor");
     },
 
     crossfadeMusic: async (newHowl: Howl, fadeMs: number) => {
