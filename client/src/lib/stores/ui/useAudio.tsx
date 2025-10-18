@@ -5,6 +5,58 @@ import {useMusicPlayer} from "@/lib/stores";
 import {useEnhancedMusicPlayer} from "./useEnhancedMusicPlayer";
 import * as THREE from "three";
 
+const STORAGE_KEY = 'plunderverse_audio_settings';
+
+function hasLocalStorage(): boolean {
+  try {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function loadAudioSettings() {
+  if (!hasLocalStorage()) {
+    return {
+      masterMute: false,
+      musicMute: false,
+      sfxMute: false,
+    };
+  }
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return {
+        masterMute: settings.masterMute ?? false,
+        musicMute: settings.musicMute ?? false,
+        sfxMute: settings.sfxMute ?? false,
+      };
+    }
+  } catch (error) {
+    console.error('[AudioStore] Failed to load settings:', error);
+  }
+  return {
+    masterMute: false,
+    musicMute: false,
+    sfxMute: false,
+  };
+}
+
+function saveAudioSettings(masterMute: boolean, musicMute: boolean, sfxMute: boolean) {
+  if (!hasLocalStorage()) return;
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const updated = { ...current, masterMute, musicMute, sfxMute };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('[AudioStore] Failed to save settings:', error);
+  }
+}
+
 // Sound Effects Cache using Howler.js for better performance
 class SoundEffectsCache {
   private cache: Map<string, Howl> = new Map();
@@ -120,6 +172,8 @@ interface AudioState {
   preloadSounds: () => Promise<void>;
 }
 
+const savedAudioSettings = loadAudioSettings();
+
 export const useAudio = create<AudioState>((set, get) => ({
   // Sound effects cache
   soundEffectsCache: new SoundEffectsCache(),
@@ -137,11 +191,11 @@ export const useAudio = create<AudioState>((set, get) => ({
   // Last play times for throttling
   lastPlayTimes: new Map(),
 
-  // Mute controls
-  isMuted: false, // Legacy support - mirrors masterMute
-  masterMute: false, // Controls everything
-  musicMute: false, // Controls only music
-  sfxMute: false, // Controls only sound effects
+  // Mute controls - initialized from localStorage
+  isMuted: savedAudioSettings.masterMute, // Legacy support - mirrors masterMute
+  masterMute: savedAudioSettings.masterMute, // Controls everything
+  musicMute: savedAudioSettings.musicMute, // Controls only music
+  sfxMute: savedAudioSettings.sfxMute, // Controls only sound effects
 
   setBackgroundMusic: (music) => {
     set({ backgroundMusic: music });
@@ -249,8 +303,8 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   toggleMasterMute: () => {
-    const { masterMute } = get();
-    const newMutedState = !masterMute;
+    const state = get();
+    const newMutedState = !state.masterMute;
 
     set({
       masterMute: newMutedState,
@@ -259,21 +313,24 @@ export const useAudio = create<AudioState>((set, get) => ({
 
     // Stop all audio immediately when master mute is activated
     if (newMutedState) {
-      get().stopAllAudio();
+      state.stopAllAudio();
     }
+
+    // Save to localStorage
+    saveAudioSettings(newMutedState, state.musicMute, state.sfxMute);
 
     console.log(`Master audio ${newMutedState ? "muted" : "unmuted"}`);
   },
 
   toggleMusicMute: () => {
-    const { musicMute } = get();
-    const newMutedState = !musicMute;
+    const state = get();
+    const newMutedState = !state.musicMute;
 
     set({ musicMute: newMutedState });
 
     // Stop music immediately if muted
     if (newMutedState) {
-      const { backgroundMusic, ambientMusic } = get();
+      const { backgroundMusic, ambientMusic } = state;
       if (backgroundMusic) {
         backgroundMusic.pause();
       }
@@ -292,43 +349,56 @@ export const useAudio = create<AudioState>((set, get) => ({
       }
     }
 
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, newMutedState, state.sfxMute);
+
     console.log(`Music ${newMutedState ? "muted" : "unmuted"}`);
   },
 
   toggleSfxMute: () => {
-    const { sfxMute } = get();
-    const newMutedState = !sfxMute;
+    const state = get();
+    const newMutedState = !state.sfxMute;
 
     set({ sfxMute: newMutedState });
 
     // Stop sound effects immediately if muted
     if (newMutedState) {
-      const { thrusterSound } = get();
+      const { thrusterSound } = state;
       if (thrusterSound) {
         thrusterSound.pause();
         thrusterSound.currentTime = 0;
       }
     }
 
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, state.musicMute, newMutedState);
+
     console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"}`);
   },
 
   setMasterMute: (muted: boolean) => {
+    const state = get();
+    
     set({
       masterMute: muted,
       isMuted: muted, // Keep legacy flag in sync
     });
 
     if (muted) {
-      get().stopAllAudio();
+      state.stopAllAudio();
     }
+
+    // Save to localStorage
+    saveAudioSettings(muted, state.musicMute, state.sfxMute);
   },
 
   setMusicMute: (muted: boolean) => {
+    const state = get();
+    
     set({ musicMute: muted });
 
     if (muted) {
-      const { backgroundMusic, ambientMusic } = get();
+      const { backgroundMusic, ambientMusic } = state;
       if (backgroundMusic) {
         backgroundMusic.pause();
       }
@@ -336,18 +406,26 @@ export const useAudio = create<AudioState>((set, get) => ({
         ambientMusic.pause();
       }
     }
+
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, muted, state.sfxMute);
   },
 
   setSfxMute: (muted: boolean) => {
+    const state = get();
+    
     set({ sfxMute: muted });
 
     if (muted) {
-      const { thrusterSound } = get();
+      const { thrusterSound } = state;
       if (thrusterSound) {
         thrusterSound.pause();
         thrusterSound.currentTime = 0;
       }
     }
+
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, state.musicMute, muted);
   },
 
   stopAllAudio: () => {

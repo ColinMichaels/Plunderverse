@@ -2,6 +2,47 @@ import {create} from 'zustand';
 import {parrotSpeechService} from '@/services/ParrotSpeechService';
 import {Parrot, ParrotMode} from '@/services/ParrotPersonality';
 
+const STORAGE_KEY = 'plunderverse_audio_settings';
+
+function hasLocalStorage(): boolean {
+  try {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function loadParrotSettings(): Partial<ParrotSettings> {
+  if (!hasLocalStorage()) return {};
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return {
+        isMuted: settings.parrotMute,
+        volume: settings.parrotVolume,
+      };
+    }
+  } catch (error) {
+    console.error('[Parrot] Failed to load settings:', error);
+  }
+  return {};
+}
+
+function saveParrotSettings(isMuted: boolean, volume: number) {
+  if (!hasLocalStorage()) return;
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const updated = { ...current, parrotMute: isMuted, parrotVolume: volume };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('[Parrot] Failed to save settings:', error);
+  }
+}
+
 interface ParrotSettings {
   mode: ParrotMode;
   isMuted: boolean;
@@ -52,11 +93,13 @@ interface ParrotState {
   recallMemory: () => void;
 }
 
+const savedSettings = loadParrotSettings();
+
 export const useParrot = create<ParrotState>((set, get) => ({
   settings: {
     mode: 'chatty',
-    isMuted: false,
-    volume: 0.8,
+    isMuted: savedSettings.isMuted ?? false,
+    volume: savedSettings.volume ?? 0.8,
     rate: 1.1,
     pitch: 1.2,
     isVisible: true,
@@ -69,11 +112,17 @@ export const useParrot = create<ParrotState>((set, get) => ({
   currentMessage: null,
 
   initialize: () => {
+    const state = get();
+    parrotSpeechService.setMuted(state.settings.isMuted);
+    parrotSpeechService.updateSettings({ volume: state.settings.volume });
+    
     parrotSpeechService.ensureVoicesLoaded(() => {
       console.log('[Parrot] Voice synthesis initialized');
       set({ isInitialized: true });
 
+      if (!state.settings.isMuted) {
         Parrot.comment('Squawk! Parrot systems online, Cap\'n!', 'info');
+      }
     });
   },
 
@@ -95,6 +144,8 @@ export const useParrot = create<ParrotState>((set, get) => ({
       settings: { ...state.settings, isMuted: muted },
     }));
     parrotSpeechService.setMuted(muted);
+    const state = get();
+    saveParrotSettings(muted, state.settings.volume);
   },
 
   setVolume: (volume) => {
@@ -102,6 +153,8 @@ export const useParrot = create<ParrotState>((set, get) => ({
       settings: { ...state.settings, volume },
     }));
     parrotSpeechService.updateSettings({ volume });
+    const state = get();
+    saveParrotSettings(state.settings.isMuted, volume);
   },
 
   setVisible: (visible) => {

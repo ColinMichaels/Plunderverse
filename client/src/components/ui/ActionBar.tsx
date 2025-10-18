@@ -8,7 +8,7 @@ import {CrewManagementPanel} from '../ship/CrewManagementPanel';
 import {StoryProgressionPanel} from './StoryProgressionPanel';
 import {CryptoWallet} from '../economy/crypto/CryptoWallet';
 import {FastTravelMenu} from '../navigation/FastTravelMenu';
-import {ParrotSettingsPanel} from '../navigation/ParrotSettingsPanel';
+import {AudioSettingsPanel} from '../settings/AudioSettingsPanel';
 import {INPUT_KEY_EVENT, InputRouter} from '@/lib/InputRouter';
 import {PlanetInfo} from "@/components/shared/PlanetInfo.tsx";
 import {CryptoMarketplace} from "@/components/economy/crypto/CryptoMarketplace.tsx";
@@ -32,7 +32,7 @@ const ACTION_BUTTONS: ActionButton[] = [
   { id: 'trading', icon: '💱', label: 'Trading', shortcut: 'F3' },
   { id: 'crew', icon: '👥', label: 'Crew', shortcut: 'F4' },
   { id: 'story', icon: '📖', label: 'Story', shortcut: 'F5' },
-    {id: 'parrot-settings', icon: '🦜', label: 'Parrot', shortcut: 'P'},
+    {id: 'parrot-settings', icon: '🔊', label: 'Audio', shortcut: 'P'},
   { id: 'crypto', icon: '💰', label: 'Crypto', shortcut: 'F6' },
 
 
@@ -107,7 +107,7 @@ export function ActionBar() {
         return;
       }
 
-      // P key for Parrot Settings
+      // P key for Audio Settings
           if (lower === 'p' && !detail.ctrlKey && !detail.altKey && !detail.metaKey) {
               evt.preventDefault();
         setPressedButton('parrot-settings');
@@ -361,7 +361,7 @@ export function ActionBar() {
           </div>
         )}
         
-        {/* Parrot Settings Panel */}
+        {/* Audio Settings Panel */}
         {panels.get('parrot-settings')?.isOpen && (
           <div className="
             absolute inset-0 
@@ -373,7 +373,7 @@ export function ActionBar() {
             overflow-y-auto
             scrollbar-hide
           ">
-            <ParrotSettingsPanel />
+            <AudioSettingsPanel />
           </div>
         )}
       </div>
