@@ -44,6 +44,34 @@ export class InputRouter {
             true
         );
 
+        // Re-broadcast keyup as a cancelable CustomEvent
+        window.addEventListener(
+            'keyup',
+            (e) => {
+                const evt = new CustomEvent(INPUT_KEY_EVENT, {
+                    detail: {
+                        key: e.key,
+                        code: e.code,
+                        altKey: e.altKey,
+                        ctrlKey: e.ctrlKey,
+                        metaKey: e.metaKey,
+                        shiftKey: e.shiftKey,
+                        domEvent: e,
+                    },
+                    cancelable: true,
+                });
+                const notCancelled = window.dispatchEvent(evt);
+                if (!notCancelled) {
+                    try {
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                    } catch {
+                    }
+                }
+            },
+            true
+        );
+
         // Re-broadcast pointer interactions
         const pointerHandler = (type: string) => (e: MouseEvent) => {
             const evt = new CustomEvent(INPUT_POINTER_EVENT, {

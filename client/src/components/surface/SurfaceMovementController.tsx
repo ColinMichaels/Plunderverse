@@ -230,6 +230,8 @@ export function SurfaceMovementController({
             return false;
         };
 
+        stopMotor();
+
         const controls = {
             forward: isActionDown("forward"),
             backward: isActionDown("backward"),
