@@ -1,11 +1,11 @@
 // client/src/hooks/useParrotEvents.ts
 
 import {useEffect, useRef} from 'react';
-import {Logger} from 'client/src/services/Logger';
+import {Logger} from '../services/Logger';
 // Adjust this import path as needed
 import {useLandedState} from '@/lib/stores/';
 import {useShipStatus} from '@/lib/stores/ship/useShipStatus'
-import {parrotSpeechService} from 'client/src/services/ParrotSpeechService';
+import {parrotSpeechService} from '../services/ParrotSpeechService';
 
 type Tone = 'info' | 'warning' | 'critical';
 
