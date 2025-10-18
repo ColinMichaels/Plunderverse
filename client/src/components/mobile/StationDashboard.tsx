@@ -45,8 +45,9 @@ import {
   Gamepad2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MinigameManager } from '../minigames/MinigameManager';
 
-type TabType = 'overview' | 'trade' | 'crew' | 'missions' | 'ship';
+type TabType = 'overview' | 'trade' | 'crew' | 'missions' | 'ship' | 'arcade';
 type ResourcePanelType = 'fuel' | 'cargo' | 'hull' | 'heat' | null;
 
 // Station data (would normally come from a store)
@@ -78,6 +79,7 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
   const [showTradingPanel, setShowTradingPanel] = useState(false);
   const [showTradeHistoryPanel, setShowTradeHistoryPanel] = useState(false);
   const [showMissionsPanel, setShowMissionsPanel] = useState(false);
+  const [showMinigames, setShowMinigames] = useState(false);
   
   // Fuel management state
   const [fuelAmount, setFuelAmount] = useState(10);
@@ -914,17 +916,70 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
             </div>
           </div>
         )}
+
+        {activeTab === 'arcade' && (
+          <div className="p-4 space-y-4">
+            <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
+              <Gamepad2 className="w-6 h-6 text-cyan-400" />
+              Station Arcade
+            </h2>
+            
+            {/* Arcade Welcome Card */}
+            <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-6`}>
+              <div className="text-center space-y-3">
+                <div className="text-6xl mb-2">🎮</div>
+                <h3 className="text-xl font-bold text-cyan-400">Welcome to the Arcade!</h3>
+                <p className="text-gray-300 text-sm">
+                  Take a break from smuggling and test your skills in our zero-gravity games. Earn credits and bragging rights!
+                </p>
+                
+                <button
+                  onClick={() => {
+                    triggerHaptic();
+                    setShowMinigames(true);
+                  }}
+                  className="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-700 hover:to-cyan-700 text-white font-bold py-3 px-6 rounded-lg transition-all mt-4"
+                >
+                  Enter Arcade
+                </button>
+              </div>
+            </div>
+            
+            {/* Quick Info Cards */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 text-center`}>
+                <div className="text-3xl mb-2">⚡</div>
+                <div className="text-xs text-gray-400 mb-1">Available Now</div>
+                <div className="text-sm font-bold text-purple-400">Zero-G Racing</div>
+              </div>
+              
+              <div className={`${config.panel.bg} ${config.panel.border} ${config.panel.backdrop} ${config.panel.radius} p-4 text-center`}>
+                <div className="text-3xl mb-2">🎯</div>
+                <div className="text-xs text-gray-400 mb-1">Available Now</div>
+                <div className="text-sm font-bold text-orange-400">Shooting Gallery</div>
+              </div>
+            </div>
+            
+            {/* Info Box */}
+            <div className="bg-cyan-400/10 border border-cyan-400/30 rounded-lg p-3">
+              <p className="text-xs text-cyan-300">
+                💡 Mini-games award credits based on your performance. The better you do, the more you earn!
+              </p>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Bottom Navigation */}
       <nav className="bg-slate-900 border-t-2 border-slate-700">
-        <div className="grid grid-cols-5 h-16">
+        <div className="grid grid-cols-6 h-16">
           {[
             { id: 'overview', icon: '🏠', label: 'Overview' },
             { id: 'trade', icon: '💰', label: 'Market' },
             { id: 'crew', icon: '👥', label: 'Crew' },
             { id: 'missions', icon: '📋', label: 'Missions' },
             { id: 'ship', icon: '🚀', label: 'Ship' },
+            { id: 'arcade', icon: '🎮', label: 'Arcade' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -1375,6 +1430,12 @@ export const StationDashboard: React.FC<StationDashboardProps> = ({ onOpenMiniga
       
       {/* Reputation Warning */}
       <ReputationWarning />
+      
+      {/* Mini-games Manager */}
+      <MinigameManager
+        isOpen={showMinigames}
+        onClose={() => setShowMinigames(false)}
+      />
     </div>
   );
 };
