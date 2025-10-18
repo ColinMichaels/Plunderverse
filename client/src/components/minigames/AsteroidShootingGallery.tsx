@@ -1,8 +1,9 @@
 import { useRef, useState, useEffect } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { Sphere } from '@react-three/drei';
 import * as THREE from 'three';
 import { X, Trophy, RotateCcw, Target } from 'lucide-react';
+import { useMinigameSettings, getThemeColors, ThemeColors } from './minigameUtils';
 
 interface AsteroidShootingGalleryProps {
   onComplete: (score: number) => void;
@@ -18,7 +19,15 @@ interface Asteroid {
 }
 
 // Asteroid target component
-function AsteroidTarget({ asteroid, onHit }: { asteroid: Asteroid; onHit: (id: number) => void }) {
+function AsteroidTarget({ 
+  asteroid, 
+  onHit, 
+  themeColors 
+}: { 
+  asteroid: Asteroid; 
+  onHit: (id: number) => void;
+  themeColors: ThemeColors;
+}) {
   const meshRef = useRef<THREE.Mesh>(null);
   const [isHovered, setIsHovered] = useState(false);
 
@@ -56,8 +65,8 @@ function AsteroidTarget({ asteroid, onHit }: { asteroid: Asteroid; onHit: (id: n
     >
       <dodecahedronGeometry args={[asteroid.size, 0]} />
       <meshStandardMaterial
-        color={isHovered ? '#ff6b6b' : '#8b7355'}
-        emissive={isHovered ? '#ff0000' : '#000000'}
+        color={isHovered ? new THREE.Color(themeColors.danger) : new THREE.Color(themeColors.secondary)}
+        emissive={isHovered ? new THREE.Color(themeColors.danger) : new THREE.Color('#000000')}
         emissiveIntensity={isHovered ? 0.5 : 0}
         roughness={0.8}
       />
@@ -65,17 +74,53 @@ function AsteroidTarget({ asteroid, onHit }: { asteroid: Asteroid; onHit: (id: n
   );
 }
 
-// Crosshair component
-function Crosshair() {
+// Crosshair component that follows pointer
+function Crosshair({ 
+  mousePosition, 
+  themeColors 
+}: { 
+  mousePosition: { x: number; y: number };
+  themeColors: ThemeColors;
+}) {
+  const groupRef = useRef<THREE.Group>(null);
+  const { camera } = useThree();
+
+  useFrame(() => {
+    if (!groupRef.current) return;
+    
+    // Convert screen position to world position
+    const vector = new THREE.Vector3(
+      mousePosition.x,
+      mousePosition.y,
+      0.5
+    );
+    vector.unproject(camera);
+    
+    const dir = vector.sub(camera.position).normalize();
+    const distance = -camera.position.z / dir.z;
+    const pos = camera.position.clone().add(dir.multiplyScalar(distance));
+    
+    groupRef.current.position.set(pos.x, pos.y, -10);
+  });
+
   return (
-    <group>
-      <mesh position={[0, 0, -10]}>
+    <group ref={groupRef}>
+      <mesh>
         <ringGeometry args={[0.1, 0.15, 32]} />
-        <meshBasicMaterial color="#00ff00" transparent opacity={0.5} />
+        <meshBasicMaterial 
+          color={new THREE.Color(themeColors.primary)} 
+          transparent 
+          opacity={0.5} 
+        />
       </mesh>
-      <mesh position={[0, 0, -10]}>
+      <mesh>
         <ringGeometry args={[0.05, 0.08, 32]} />
-        <meshBasicMaterial color="#00ff00" />
+        <meshBasicMaterial color={new THREE.Color(themeColors.primary)} />
+      </mesh>
+      {/* Center dot */}
+      <mesh>
+        <circleGeometry args={[0.02, 16]} />
+        <meshBasicMaterial color={new THREE.Color(themeColors.primary)} />
       </mesh>
     </group>
   );
@@ -85,50 +130,93 @@ function Crosshair() {
 function ShootingScene({ 
   asteroids, 
   onHit,
-  showCrosshair 
+  showCrosshair,
+  mousePosition,
+  themeColors
 }: { 
   asteroids: Asteroid[]; 
   onHit: (id: number) => void;
   showCrosshair: boolean;
+  mousePosition: { x: number; y: number };
+  themeColors: ThemeColors;
 }) {
+  // Pre-calculate starfield positions (avoiding Math.random in render)
+  const starPositions = useRef<Array<[number, number, number]>>(
+    Array.from({ length: 150 }, () => [
+      (Math.random() - 0.5) * 100,
+      (Math.random() - 0.5) * 100,
+      (Math.random() - 0.5) * 100 - 50
+    ])
+  );
+
   return (
     <>
+      <color attach="background" args={[themeColors.background]} />
       <ambientLight intensity={0.4} />
       <directionalLight position={[5, 5, 5]} intensity={0.6} />
       
       {/* Starfield background */}
-      {Array.from({ length: 150 }).map((_, i) => {
-        const x = (Math.random() - 0.5) * 100;
-        const y = (Math.random() - 0.5) * 100;
-        const z = (Math.random() - 0.5) * 100 - 50;
-        return (
-          <Sphere key={i} args={[0.05, 8, 8]} position={[x, y, z]}>
-            <meshBasicMaterial color="#ffffff" />
-          </Sphere>
-        );
-      })}
+      {starPositions.current.map((pos, i) => (
+        <Sphere key={i} args={[0.05, 8, 8]} position={pos}>
+          <meshBasicMaterial color={new THREE.Color(themeColors.text)} />
+        </Sphere>
+      ))}
       
       {/* Asteroids */}
       {asteroids.map((asteroid) => (
-        <AsteroidTarget key={asteroid.id} asteroid={asteroid} onHit={onHit} />
+        <AsteroidTarget 
+          key={asteroid.id} 
+          asteroid={asteroid} 
+          onHit={onHit} 
+          themeColors={themeColors}
+        />
       ))}
       
       {/* Crosshair */}
-      {showCrosshair && <Crosshair />}
+      {showCrosshair && (
+        <Crosshair mousePosition={mousePosition} themeColors={themeColors} />
+      )}
     </>
   );
 }
 
 export const AsteroidShootingGallery: React.FC<AsteroidShootingGalleryProps> = ({ onComplete, onExit }) => {
+  const settings = useMinigameSettings();
+  const themeColors = settings.themeColors;
+  
   const [gameState, setGameState] = useState<'ready' | 'playing' | 'finished'>('ready');
   const [score, setScore] = useState(0);
   const [combo, setCombo] = useState(0);
   const [misses, setMisses] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
   const [asteroids, setAsteroids] = useState<Asteroid[]>([]);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
   const nextAsteroidId = useRef(0);
   const lastMissTime = useRef(0);
   const gameStartTime = useRef(0);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  // Track mouse/touch position
+  useEffect(() => {
+    const handlePointerMove = (e: PointerEvent) => {
+      if (!canvasRef.current) return;
+      
+      const rect = canvasRef.current.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      
+      setMousePosition({ x, y });
+    };
+
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('touchmove', handlePointerMove as any);
+    
+    return () => {
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('touchmove', handlePointerMove as any);
+    };
+  }, []);
 
   // Spawn asteroids
   useEffect(() => {
@@ -236,65 +324,108 @@ export const AsteroidShootingGallery: React.FC<AsteroidShootingGalleryProps> = (
   const accuracy = misses + score / 10 > 0 ? ((score / 10) / (misses + score / 10) * 100).toFixed(1) : '0';
 
   return (
-    <div className="fixed inset-0 bg-black z-50" style={{ cursor: gameState === 'playing' ? 'crosshair' : 'default' }}>
+    <div 
+      ref={canvasRef}
+      className="fixed inset-0 z-50" 
+      style={{ 
+        backgroundColor: themeColors.background,
+        cursor: gameState === 'playing' ? 'crosshair' : 'default',
+        touchAction: 'none'
+      }}
+    >
       {/* 3D Canvas */}
       <Canvas
         camera={{ position: [0, 0, 5], fov: 75 }}
         className="w-full h-full"
+        style={{ touchAction: 'none' }}
       >
         <ShootingScene 
           asteroids={asteroids} 
           onHit={handleHit}
           showCrosshair={gameState === 'playing'}
+          mousePosition={mousePosition}
+          themeColors={themeColors}
         />
       </Canvas>
 
       {/* HUD Overlay */}
       <div className="absolute inset-0 pointer-events-none">
         {/* Top HUD */}
-        <div className="absolute top-4 left-4 right-4 flex justify-between items-start">
-          <div className="bg-black/80 border border-orange-400 rounded-lg p-3 pointer-events-auto">
-            <div className="text-xs text-gray-400 mb-1">SCORE</div>
-            <div className="text-3xl font-bold text-orange-400">
+        <div className="absolute top-2 left-2 right-2 sm:top-4 sm:left-4 sm:right-4 flex justify-between items-start gap-2">
+          <div 
+            className="rounded-lg p-2 sm:p-3 pointer-events-auto min-w-[100px] sm:min-w-[120px]"
+            style={{ 
+              backgroundColor: themeColors.panel + 'cc',
+              borderColor: themeColors.secondary,
+              borderWidth: '2px'
+            }}
+          >
+            <div className="text-xs mb-1" style={{ color: themeColors.text + '99' }}>SCORE</div>
+            <div className="text-2xl sm:text-3xl font-bold" style={{ color: themeColors.secondary }}>
               {score}
             </div>
             {combo > 1 && (
-              <div className="text-xs text-yellow-400 font-bold mt-1">
+              <div className="text-xs font-bold mt-1" style={{ color: themeColors.accent }}>
                 {combo}x COMBO!
               </div>
             )}
           </div>
           
-          <div className="bg-black/80 border border-cyan-400 rounded-lg p-3">
-            <div className="text-xs text-gray-400 mb-1">TIME</div>
-            <div className="text-2xl font-bold font-mono text-cyan-400">
+          <div 
+            className="rounded-lg p-2 sm:p-3"
+            style={{ 
+              backgroundColor: themeColors.panel + 'cc',
+              borderColor: themeColors.primary,
+              borderWidth: '2px'
+            }}
+          >
+            <div className="text-xs mb-1" style={{ color: themeColors.text + '99' }}>TIME</div>
+            <div className="text-xl sm:text-2xl font-bold font-mono" style={{ color: themeColors.primary }}>
               {timeLeft.toFixed(1)}s
             </div>
           </div>
           
           <button
             onClick={onExit}
-            className="bg-black/80 border border-red-400 rounded-lg p-3 hover:bg-red-900/50 transition-colors pointer-events-auto"
+            className="rounded-lg p-2 sm:p-3 hover:opacity-80 transition-opacity pointer-events-auto min-w-[44px] min-h-[44px] flex items-center justify-center"
+            style={{ 
+              backgroundColor: themeColors.panel + 'cc',
+              borderColor: themeColors.danger,
+              borderWidth: '2px'
+            }}
           >
-            <X className="w-6 h-6 text-red-400" />
+            <X className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: themeColors.danger }} />
           </button>
         </div>
 
         {/* Accuracy Display */}
         {gameState === 'playing' && (
-          <div className="absolute bottom-4 right-4 bg-black/80 border border-gray-600 rounded-lg p-3 text-xs">
-            <div className="grid grid-cols-2 gap-3 text-gray-300">
+          <div 
+            className="absolute bottom-2 right-2 sm:bottom-4 sm:right-4 rounded-lg p-2 sm:p-3 text-xs"
+            style={{ 
+              backgroundColor: themeColors.panel + 'cc',
+              borderColor: themeColors.border,
+              borderWidth: '2px'
+            }}
+          >
+            <div className="grid grid-cols-2 gap-2 sm:gap-3" style={{ color: themeColors.text }}>
               <div>
-                <div className="text-gray-400">Hits</div>
-                <div className="text-lg font-bold text-green-400">{Math.floor(score / 10)}</div>
+                <div style={{ color: themeColors.text + '99' }}>Hits</div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: themeColors.success }}>
+                  {Math.floor(score / 10)}
+                </div>
               </div>
               <div>
-                <div className="text-gray-400">Misses</div>
-                <div className="text-lg font-bold text-red-400">{misses}</div>
+                <div style={{ color: themeColors.text + '99' }}>Misses</div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: themeColors.danger }}>
+                  {misses}
+                </div>
               </div>
               <div className="col-span-2">
-                <div className="text-gray-400">Accuracy</div>
-                <div className="text-lg font-bold text-cyan-400">{accuracy}%</div>
+                <div style={{ color: themeColors.text + '99' }}>Accuracy</div>
+                <div className="text-base sm:text-lg font-bold" style={{ color: themeColors.primary }}>
+                  {accuracy}%
+                </div>
               </div>
             </div>
           </div>
@@ -302,16 +433,25 @@ export const AsteroidShootingGallery: React.FC<AsteroidShootingGalleryProps> = (
 
         {/* Start Screen */}
         {gameState === 'ready' && (
-          <div className="absolute inset-0 bg-black/90 flex items-center justify-center pointer-events-auto">
-            <div className="text-center max-w-md">
-              <Target className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-              <h2 className="text-4xl font-bold text-orange-400 mb-4">Shooting Gallery</h2>
-              <p className="text-gray-300 mb-6">
-                Click on asteroids to destroy them! Build combos for higher scores. Don't let them escape!
+          <div 
+            className="absolute inset-0 flex items-center justify-center pointer-events-auto p-4"
+            style={{ backgroundColor: themeColors.background + 'e6' }}
+          >
+            <div className="text-center max-w-md w-full">
+              <Target className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: themeColors.secondary }} />
+              <h2 className="text-3xl sm:text-4xl font-bold mb-4" style={{ color: themeColors.secondary }}>
+                Shooting Gallery
+              </h2>
+              <p className="mb-6" style={{ color: themeColors.text }}>
+                {settings.isMobile ? 'Tap' : 'Click'} on asteroids to destroy them! Build combos for higher scores. Don't let them escape!
               </p>
               <button
                 onClick={handleStart}
-                className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-8 rounded-lg transition-colors"
+                className="font-bold py-3 px-6 sm:py-4 sm:px-8 rounded-lg transition-opacity hover:opacity-90 min-h-[44px] text-base sm:text-lg"
+                style={{ 
+                  backgroundColor: themeColors.secondary,
+                  color: themeColors.background
+                }}
               >
                 Start Shooting
               </button>
@@ -321,41 +461,67 @@ export const AsteroidShootingGallery: React.FC<AsteroidShootingGalleryProps> = (
 
         {/* Finish Screen */}
         {gameState === 'finished' && (
-          <div className="absolute inset-0 bg-black/90 flex items-center justify-center pointer-events-auto">
-            <div className="text-center max-w-md bg-gray-900 border-2 border-orange-400 rounded-lg p-8">
-              <Trophy className="w-16 h-16 text-yellow-400 mx-auto mb-4" />
-              <h2 className="text-3xl font-bold text-orange-400 mb-2">Time's Up!</h2>
-              <div className="text-5xl font-bold text-orange-400 mb-4">
+          <div 
+            className="absolute inset-0 flex items-center justify-center pointer-events-auto p-4"
+            style={{ backgroundColor: themeColors.background + 'e6' }}
+          >
+            <div 
+              className="text-center max-w-md w-full rounded-lg p-6 sm:p-8"
+              style={{ 
+                backgroundColor: themeColors.panel,
+                borderColor: themeColors.secondary,
+                borderWidth: '2px'
+              }}
+            >
+              <Trophy className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4" style={{ color: themeColors.accent }} />
+              <h2 className="text-2xl sm:text-3xl font-bold mb-2" style={{ color: themeColors.secondary }}>
+                Time's Up!
+              </h2>
+              <div className="text-4xl sm:text-5xl font-bold mb-4" style={{ color: themeColors.secondary }}>
                 {score}
               </div>
-              <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-6 text-sm">
                 <div>
-                  <div className="text-gray-400">Hits</div>
-                  <div className="text-xl font-bold text-green-400">{Math.floor(score / 10)}</div>
+                  <div style={{ color: themeColors.text + '99' }}>Hits</div>
+                  <div className="text-lg sm:text-xl font-bold" style={{ color: themeColors.success }}>
+                    {Math.floor(score / 10)}
+                  </div>
                 </div>
                 <div>
-                  <div className="text-gray-400">Misses</div>
-                  <div className="text-xl font-bold text-red-400">{misses}</div>
+                  <div style={{ color: themeColors.text + '99' }}>Misses</div>
+                  <div className="text-lg sm:text-xl font-bold" style={{ color: themeColors.danger }}>
+                    {misses}
+                  </div>
                 </div>
                 <div className="col-span-2">
-                  <div className="text-gray-400">Accuracy</div>
-                  <div className="text-xl font-bold text-cyan-400">{accuracy}%</div>
+                  <div style={{ color: themeColors.text + '99' }}>Accuracy</div>
+                  <div className="text-lg sm:text-xl font-bold" style={{ color: themeColors.primary }}>
+                    {accuracy}%
+                  </div>
                 </div>
               </div>
-              <div className="text-lg text-gray-300 mb-6">
+              <div className="text-base sm:text-lg mb-6" style={{ color: themeColors.text }}>
                 Reward: {Math.floor(score * 2)}₡
               </div>
-              <div className="flex gap-3 justify-center">
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <button
                   onClick={handleRestart}
-                  className="bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center gap-2"
+                  className="font-bold py-3 px-6 rounded-lg transition-opacity hover:opacity-90 flex items-center justify-center gap-2 min-h-[44px]"
+                  style={{ 
+                    backgroundColor: themeColors.border,
+                    color: themeColors.text
+                  }}
                 >
                   <RotateCcw className="w-5 h-5" />
                   Play Again
                 </button>
                 <button
                   onClick={() => onComplete(score)}
-                  className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                  className="font-bold py-3 px-6 rounded-lg transition-opacity hover:opacity-90 min-h-[44px]"
+                  style={{ 
+                    backgroundColor: themeColors.secondary,
+                    color: themeColors.background
+                  }}
                 >
                   Collect Reward
                 </button>

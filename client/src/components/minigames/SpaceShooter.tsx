@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Phaser from 'phaser';
 import { X, Trophy, RotateCcw } from 'lucide-react';
+import { useMinigameSettings, getPhaserThemeColors } from './minigameUtils';
 
 interface SpaceShooterProps {
   onComplete: (score: number) => void;
@@ -14,9 +15,12 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
   const [score, setScore] = useState(0);
   const [wave, setWave] = useState(1);
   const [finalScore, setFinalScore] = useState(0);
+  const { theme, isMobile, isTouch, getSfxVolume } = useMinigameSettings();
 
   useEffect(() => {
     if (gameState !== 'playing' || !gameRef.current) return;
+
+    const colors = getPhaserThemeColors(theme);
 
     class ShooterScene extends Phaser.Scene {
       private player!: Phaser.GameObjects.Rectangle;
@@ -29,31 +33,53 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
       private waveText!: Phaser.GameObjects.Text;
       private lastFired = 0;
       private spaceKey!: Phaser.Input.Keyboard.Key;
+      private targetX = 400;
+      private targetY = 550;
+      private touchControlsText?: Phaser.GameObjects.Text;
 
       constructor() {
         super({ key: 'ShooterScene' });
       }
 
       create() {
-        // Starfield background
+        // Starfield background (using theme colors)
         const graphics = this.add.graphics();
         for (let i = 0; i < 200; i++) {
           const x = Phaser.Math.Between(0, 800);
           const y = Phaser.Math.Between(0, 600);
           const size = Phaser.Math.Between(1, 2);
-          graphics.fillStyle(0xffffff, Phaser.Math.FloatBetween(0.3, 1));
+          graphics.fillStyle(colors.text, Phaser.Math.FloatBetween(0.3, 1));
           graphics.fillCircle(x, y, size);
         }
 
-        // Player ship
-        this.player = this.add.rectangle(400, 550, 20, 30, 0x06b6d4);
+        // Player ship (using theme primary color)
+        this.player = this.add.rectangle(400, 550, 20, 30, colors.primary);
         this.physics.add.existing(this.player);
         const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
         playerBody.setCollideWorldBounds(true);
 
-        // Input
+        // Input - keyboard
         this.cursors = this.input.keyboard!.createCursorKeys();
         this.spaceKey = this.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+
+        // Input - touch/mouse
+        this.input.on('pointermove', (pointer: Phaser.Input.Pointer) => {
+          this.targetX = pointer.x;
+          this.targetY = pointer.y;
+        });
+
+        this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          this.targetX = pointer.x;
+          this.targetY = pointer.y;
+        });
+
+        // Touch controls hint
+        if (isTouch) {
+          this.touchControlsText = this.add.text(400, 580, 'Touch to move', {
+            fontSize: '14px',
+            color: '#888888'
+          }).setOrigin(0.5);
+        }
 
         // Bullets
         this.bullets = this.physics.add.group({
@@ -69,14 +95,14 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         this.physics.add.overlap(this.bullets, this.enemies, this.bulletHitEnemy as any, undefined, this);
         this.physics.add.overlap(this.player, this.enemies, this.playerHitEnemy as any, undefined, this);
 
-        // UI
+        // UI (using theme colors)
         this.scoreText = this.add.text(16, 16, 'Score: 0', {
           fontSize: '24px',
-          color: '#06b6d4'
+          color: `#${colors.primary.toString(16).padStart(6, '0')}`
         });
         this.waveText = this.add.text(16, 50, 'Wave: 1', {
           fontSize: '24px',
-          color: '#8b5cf6'
+          color: `#${colors.accent.toString(16).padStart(6, '0')}`
         });
       }
 
@@ -84,12 +110,19 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         // Player movement
         const playerBody = this.player.body as Phaser.Physics.Arcade.Body;
         
+        // Keyboard controls
         if (this.cursors.left?.isDown) {
           playerBody.setVelocityX(-300);
         } else if (this.cursors.right?.isDown) {
           playerBody.setVelocityX(300);
         } else {
-          playerBody.setVelocityX(0);
+          // Touch/mouse controls - smooth movement to target
+          const diffX = this.targetX - this.player.x;
+          if (Math.abs(diffX) > 5) {
+            playerBody.setVelocityX(diffX * 8);
+          } else {
+            playerBody.setVelocityX(0);
+          }
         }
 
         if (this.cursors.up?.isDown) {
@@ -97,7 +130,13 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         } else if (this.cursors.down?.isDown) {
           playerBody.setVelocityY(300);
         } else {
-          playerBody.setVelocityY(0);
+          // Touch/mouse controls - smooth movement to target
+          const diffY = this.targetY - this.player.y;
+          if (Math.abs(diffY) > 5) {
+            playerBody.setVelocityY(diffY * 8);
+          } else {
+            playerBody.setVelocityY(0);
+          }
         }
 
         // Auto-fire
@@ -106,7 +145,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
           this.lastFired = time;
         }
 
-        // Clean up bullets that are off-screen
+        // Clean up bullets that are off-screen (bullet recycling)
         this.bullets.children.entries.forEach((bullet) => {
           if (bullet.active && (bullet.y < -10 || bullet.y > 610)) {
             bullet.setActive(false);
@@ -130,10 +169,10 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         bullet.setActive(true);
         bullet.setVisible(true);
 
-        // Create bullet graphics if not already created
+        // Create bullet graphics if not already created (using theme secondary color)
         if (!this.textures.exists('bullet')) {
           const graphics = this.add.graphics();
-          graphics.fillStyle(0xffff00, 1);
+          graphics.fillStyle(colors.secondary, 1);
           graphics.fillRect(0, 0, 4, 10);
           graphics.generateTexture('bullet', 4, 10);
           graphics.destroy();
@@ -151,12 +190,13 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         
         for (let row = 0; row < rows; row++) {
           for (let col = 0; col < Math.ceil(enemiesPerWave / rows); col++) {
+            // Enemy using theme danger color
             const enemy = this.add.rectangle(
               100 + col * 80,
               50 + row * 60,
               30,
               20,
-              0xf87171
+              colors.danger
             );
             this.physics.add.existing(enemy);
             this.enemies.add(enemy);
@@ -180,8 +220,8 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
         setScore(this.score);
         this.scoreText.setText(`Score: ${this.score}`);
 
-        // Explosion effect
-        const explosion = this.add.circle(enemy.x, enemy.y, 20, 0xffa500, 0.8);
+        // Explosion effect (using theme secondary color)
+        const explosion = this.add.circle(enemy.x, enemy.y, 20, colors.secondary, 0.8);
         this.tweens.add({
           targets: explosion,
           scale: 2,
@@ -225,7 +265,7 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
       phaserGameRef.current?.destroy(true);
       phaserGameRef.current = null;
     };
-  }, [gameState]);
+  }, [gameState, theme, isTouch]);
 
   const handleStart = () => {
     setGameState('playing');
@@ -250,10 +290,14 @@ export const SpaceShooter: React.FC<SpaceShooterProps> = ({ onComplete, onExit }
           <div className="text-center max-w-md bg-gray-900 border-2 border-cyan-400 rounded-lg p-8">
             <h2 className="text-4xl font-bold text-cyan-400 mb-4">Space Shooter</h2>
             <p className="text-gray-300 mb-6">
-              Defend against waves of enemies! Use arrow keys to move. Your ship auto-fires.
+              Defend against waves of enemies! {isTouch ? 'Touch to move your ship.' : 'Use arrow keys to move.'} Your ship auto-fires.
             </p>
             <div className="text-sm text-gray-400 mb-4">
-              <div>Arrow Keys : Move</div>
+              {isTouch ? (
+                <div>Touch : Move Ship</div>
+              ) : (
+                <div>Arrow Keys : Move</div>
+              )}
               <div>Auto-Fire : Enabled</div>
             </div>
             <button

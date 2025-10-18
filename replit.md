@@ -8,13 +8,19 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
-### 2025-10-18: Mini-Game System Implementation
-- **Mini-Game Manager**: Created MinigameManager component to handle game selection, high scores, and rewards
-- **Zero-Gravity Racing**: Implemented 3D racing mini-game with keyboard controls (WASD/Arrows + Space/Shift for vertical movement)
-- **Asteroid-Shooting Gallery**: Implemented 2D shooting mini-game with click-to-shoot mechanics
-- **Station Integration**: Added "Arcade" tab to StationDashboard for accessing mini-games when landed at stations
-- **Reward System**: Mini-games award credits based on performance (racing time and shooting accuracy)
-- **Keyboard Controls Fix**: Fixed Zero-Gravity Racing controls using @react-three/drei KeyboardControls wrapper
+### 2025-10-18: Mini-Game System Enhancements
+- **Mini-Game Manager**: Created MinigameManager component with 5 games, high scores, and credit rewards
+- **Shared Services Integration**: All mini-games now use useSettings (themes), useAudio (volume control), and usePlatform (touch detection)
+- **Touch Controls**: Added mobile-friendly touch controls to all 5 games:
+  * Pong: Touch/drag to move paddle
+  * Space Shooter: Touch to move ship
+  * Asteroids: On-screen buttons for rotation/thrust/fire
+  * Asteroid Shooting Gallery: Touch-friendly crosshair and shooting
+  * Zero-Gravity Racing: Touch control buttons for 6-DOF movement
+- **Theme System**: All games respect Classic/Monochrome theme from settings with dynamic colors
+- **Audio Integration**: Games respect master/sfx volume settings from main audio controls
+- **Mobile Optimization**: Responsive UI with platform-specific hints (touch vs keyboard)
+- **Station Integration**: Arcade tab shows all 5 games with individual cards and stats
 
 ### 2025-10-18: Circular Dependency Fixes
 - **Audio System**: Fixed "Cannot access 'useAudio' before initialization" error by replacing static imports with dynamic imports in stopAllAudio() method

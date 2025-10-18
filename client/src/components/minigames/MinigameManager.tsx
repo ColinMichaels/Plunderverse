@@ -7,6 +7,8 @@ import { SpaceShooter } from './SpaceShooter';
 import { Pong } from './Pong';
 import { useCreditsData } from '@/domain';
 import { usePlayer } from '@/lib/stores';
+import { useMinigameSettings, getThemeColors } from './minigameUtils';
+import { useMobileLayout } from '@/stores/useMobileLayout';
 
 export type MinigameType = 'racing' | 'shooting' | 'asteroids' | 'spaceshooter' | 'pong' | null;
 
@@ -26,6 +28,8 @@ export const MinigameManager: React.FC<MinigameManagerProps> = ({ isOpen, onClos
   });
   const { earnCredits } = useCreditsData();
   const player = usePlayer();
+  const { theme, themeColors, isMobile } = useMinigameSettings();
+  const { config } = useMobileLayout();
 
   if (!isOpen) return null;
 

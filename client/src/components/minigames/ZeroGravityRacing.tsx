@@ -2,7 +2,8 @@ import { useRef, useState, useEffect } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, Sphere, Torus, KeyboardControls, useKeyboardControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { X, Trophy, RotateCcw } from 'lucide-react';
+import { X, Trophy, RotateCcw, ArrowUp, ArrowDown, ArrowLeft, ArrowRight, ChevronUp, ChevronDown } from 'lucide-react';
+import { useMinigameSettings } from './minigameUtils';
 
 enum Controls {
   forward = 'forward',
@@ -19,7 +20,7 @@ interface ZeroGravityRacingProps {
 }
 
 // Checkpoint ring component
-function CheckpointRing({ position, isActive, isPassed }: { position: [number, number, number]; isActive: boolean; isPassed: boolean }) {
+function CheckpointRing({ position, isActive, isPassed, themeColors }: { position: [number, number, number]; isActive: boolean; isPassed: boolean; themeColors: any }) {
   const ringRef = useRef<THREE.Mesh>(null);
 
   useFrame((state) => {
@@ -27,6 +28,10 @@ function CheckpointRing({ position, isActive, isPassed }: { position: [number, n
       ringRef.current.rotation.z = state.clock.elapsedTime * 0.5;
     }
   });
+
+  const activeColor = themeColors.primary;
+  const passedColor = themeColors.success;
+  const inactiveColor = themeColors.secondary;
 
   return (
     <group position={position}>
@@ -36,8 +41,8 @@ function CheckpointRing({ position, isActive, isPassed }: { position: [number, n
         rotation={[Math.PI / 2, 0, 0]}
       >
         <meshStandardMaterial
-          color={isPassed ? '#10b981' : isActive ? '#06b6d4' : '#6b7280'}
-          emissive={isPassed ? '#10b981' : isActive ? '#06b6d4' : '#000000'}
+          color={isPassed ? passedColor : isActive ? activeColor : inactiveColor}
+          emissive={isPassed ? passedColor : isActive ? activeColor : '#000000'}
           emissiveIntensity={isPassed ? 0.3 : isActive ? 0.5 : 0}
         />
       </Torus>
@@ -46,7 +51,7 @@ function CheckpointRing({ position, isActive, isPassed }: { position: [number, n
           position={[0, 0, 0]}
           intensity={2}
           distance={10}
-          color="#06b6d4"
+          color={activeColor}
         />
       )}
     </group>
@@ -54,7 +59,7 @@ function CheckpointRing({ position, isActive, isPassed }: { position: [number, n
 }
 
 // Player ship component
-function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onCheckpoint: (index: number) => void }) {
+function PlayerShip({ position, onCheckpoint, touchInput, themeColors }: { position: THREE.Vector3; onCheckpoint: (index: number) => void; touchInput: React.MutableRefObject<{x: number, y: number, z: number}>; themeColors: any }) {
   const shipRef = useRef<THREE.Group>(null);
   const velocity = useRef(new THREE.Vector3(0, 0, 0));
   const [, getKeys] = useKeyboardControls<Controls>();
@@ -81,12 +86,18 @@ function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onChe
     const thrust = 20;
     const thrustVector = new THREE.Vector3();
     
+    // Keyboard controls
     if (keys.forward) thrustVector.z -= thrust;
     if (keys.back) thrustVector.z += thrust;
     if (keys.left) thrustVector.x -= thrust;
     if (keys.right) thrustVector.x += thrust;
     if (keys.up) thrustVector.y += thrust;
     if (keys.down) thrustVector.y -= thrust;
+
+    // Touch controls
+    thrustVector.x += touchInput.current.x * thrust;
+    thrustVector.y += touchInput.current.y * thrust;
+    thrustVector.z += touchInput.current.z * thrust;
 
     // Apply acceleration
     velocity.current.add(thrustVector.multiplyScalar(delta));
@@ -119,8 +130,8 @@ function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onChe
       <mesh rotation={[0, 0, Math.PI / 2]}>
         <coneGeometry args={[0.5, 2, 8]} />
         <meshStandardMaterial
-          color="#8b5cf6"
-          emissive="#8b5cf6"
+          color={themeColors.accent}
+          emissive={themeColors.accent}
           emissiveIntensity={0.3}
         />
       </mesh>
@@ -131,7 +142,7 @@ function PlayerShip({ position, onCheckpoint }: { position: THREE.Vector3; onChe
 }
 
 // Main game scene
-function RaceScene({ onCheckpoint, cameraPosition }: { onCheckpoint: (index: number) => void; cameraPosition: THREE.Vector3 }) {
+function RaceScene({ onCheckpoint, cameraPosition, touchInput, themeColors }: { onCheckpoint: (index: number) => void; cameraPosition: THREE.Vector3; touchInput: React.MutableRefObject<{x: number, y: number, z: number}>; themeColors: any }) {
   const checkpointPositions: [number, number, number][] = [
     [0, 0, -20],
     [15, 5, -40],
@@ -164,7 +175,7 @@ function RaceScene({ onCheckpoint, cameraPosition }: { onCheckpoint: (index: num
         const z = (Math.random() - 0.5) * 200 - 100;
         return (
           <Sphere key={i} args={[0.1, 8, 8]} position={[x, y, z]}>
-            <meshBasicMaterial color="#ffffff" />
+            <meshBasicMaterial color={themeColors.text} opacity={0.8} />
           </Sphere>
         );
       })}
@@ -176,11 +187,12 @@ function RaceScene({ onCheckpoint, cameraPosition }: { onCheckpoint: (index: num
           position={pos}
           isActive={i === currentCheckpoint}
           isPassed={passedCheckpoints.includes(i)}
+          themeColors={themeColors}
         />
       ))}
       
       {/* Player ship */}
-      <PlayerShip position={cameraPosition} onCheckpoint={handleCheckpoint} />
+      <PlayerShip position={cameraPosition} onCheckpoint={handleCheckpoint} touchInput={touchInput} themeColors={themeColors} />
       
       {/* Camera follows ship */}
       <OrbitControls
@@ -201,6 +213,8 @@ export const ZeroGravityRacing: React.FC<ZeroGravityRacingProps> = ({ onComplete
   const [finalTime, setFinalTime] = useState<number | null>(null);
   const cameraPosition = useRef(new THREE.Vector3(0, 5, 10));
   const startTime = useRef<number>(0);
+  const touchInput = useRef({ x: 0, y: 0, z: 0 });
+  const { theme, themeColors, isMobile, isTouch } = useMinigameSettings();
 
   const totalCheckpoints = 8;
 
@@ -256,9 +270,68 @@ export const ZeroGravityRacing: React.FC<ZeroGravityRacingProps> = ({ onComplete
           camera={{ position: [0, 5, 10], fov: 75 }}
           className="w-full h-full"
         >
-          <RaceScene onCheckpoint={handleCheckpoint} cameraPosition={cameraPosition.current} />
+          <RaceScene onCheckpoint={handleCheckpoint} cameraPosition={cameraPosition.current} touchInput={touchInput} themeColors={themeColors} />
         </Canvas>
       </KeyboardControls>
+
+      {/* Touch Controls */}
+      {isTouch && gameState === 'racing' && (
+        <div className="absolute bottom-20 left-4 right-4 flex justify-between items-end pointer-events-auto">
+          {/* Left stick - horizontal/vertical */}
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-center">
+              <button
+                onPointerDown={() => touchInput.current.z = -1}
+                onPointerUp={() => touchInput.current.z = 0}
+                className="bg-purple-600/50 border-2 border-purple-400 p-4 rounded-lg active:bg-purple-600"
+              >
+                <ArrowUp className="w-6 h-6" />
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onPointerDown={() => touchInput.current.x = -1}
+                onPointerUp={() => touchInput.current.x = 0}
+                className="bg-purple-600/50 border-2 border-purple-400 p-4 rounded-lg active:bg-purple-600"
+              >
+                <ArrowLeft className="w-6 h-6" />
+              </button>
+              <button
+                onPointerDown={() => touchInput.current.z = 1}
+                onPointerUp={() => touchInput.current.z = 0}
+                className="bg-purple-600/50 border-2 border-purple-400 p-4 rounded-lg active:bg-purple-600"
+              >
+                <ArrowDown className="w-6 h-6" />
+              </button>
+              <button
+                onPointerDown={() => touchInput.current.x = 1}
+                onPointerUp={() => touchInput.current.x = 0}
+                className="bg-purple-600/50 border-2 border-purple-400 p-4 rounded-lg active:bg-purple-600"
+              >
+                <ArrowRight className="w-6 h-6" />
+              </button>
+            </div>
+          </div>
+
+          {/* Right buttons - up/down */}
+          <div className="flex flex-col gap-2">
+            <button
+              onPointerDown={() => touchInput.current.y = 1}
+              onPointerUp={() => touchInput.current.y = 0}
+              className="bg-cyan-600/50 border-2 border-cyan-400 p-4 rounded-lg active:bg-cyan-600"
+            >
+              <ChevronUp className="w-6 h-6" />
+            </button>
+            <button
+              onPointerDown={() => touchInput.current.y = -1}
+              onPointerUp={() => touchInput.current.y = 0}
+              className="bg-cyan-600/50 border-2 border-cyan-400 p-4 rounded-lg active:bg-cyan-600"
+            >
+              <ChevronDown className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* HUD Overlay */}
       <div className="absolute inset-0 pointer-events-none">
@@ -286,8 +359,8 @@ export const ZeroGravityRacing: React.FC<ZeroGravityRacingProps> = ({ onComplete
           </button>
         </div>
 
-        {/* Controls Help */}
-        {gameState === 'racing' && (
+        {/* Controls Help - only show for keyboard */}
+        {gameState === 'racing' && !isTouch && (
           <div className="absolute bottom-4 left-4 bg-black/80 border border-gray-600 rounded-lg p-3 text-xs">
             <div className="text-gray-400 mb-2">CONTROLS</div>
             <div className="grid grid-cols-2 gap-2 text-gray-300">
