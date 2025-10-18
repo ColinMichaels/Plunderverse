@@ -1,9 +1,89 @@
 import {create} from "zustand";
 import {Howl} from "howler";
 import {AUDIO_CONFIG} from "../../audioConfig";
-import {useMusicPlayer} from "@/lib/stores";
-import {useEnhancedMusicPlayer} from "./useEnhancedMusicPlayer";
+import {parrotSpeechService} from "@/services/ParrotSpeechService";
 import * as THREE from "three";
+
+const STORAGE_KEY = 'plunderverse_audio_settings';
+
+function hasLocalStorage(): boolean {
+  try {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function loadAudioSettings() {
+  if (!hasLocalStorage()) {
+    return {
+      masterMute: false,
+      musicMute: false,
+      sfxMute: false,
+      masterVolume: 1.0,
+      musicVolume: 1.0,
+      sfxVolume: 1.0,
+      parrotVolume: 1.0,
+    };
+  }
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return {
+        masterMute: settings.masterMute ?? false,
+        musicMute: settings.musicMute ?? false,
+        sfxMute: settings.sfxMute ?? false,
+        masterVolume: settings.masterVolume ?? 1.0,
+        musicVolume: settings.musicVolume ?? 1.0,
+        sfxVolume: settings.sfxVolume ?? 1.0,
+        parrotVolume: settings.parrotVolume ?? 1.0,
+      };
+    }
+  } catch (error) {
+    console.error('[AudioStore] Failed to load settings:', error);
+  }
+  return {
+    masterMute: false,
+    musicMute: false,
+    sfxMute: false,
+    masterVolume: 1.0,
+    musicVolume: 1.0,
+    sfxVolume: 1.0,
+    parrotVolume: 1.0,
+  };
+}
+
+function saveAudioSettings(
+  masterMute: boolean,
+  musicMute: boolean,
+  sfxMute: boolean,
+  masterVolume: number,
+  musicVolume: number,
+  sfxVolume: number,
+  parrotVolume: number
+) {
+  if (!hasLocalStorage()) return;
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const updated = {
+      ...current,
+      masterMute,
+      musicMute,
+      sfxMute,
+      masterVolume,
+      musicVolume,
+      sfxVolume,
+      parrotVolume,
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('[AudioStore] Failed to save settings:', error);
+  }
+}
 
 // Sound Effects Cache using Howler.js for better performance
 class SoundEffectsCache {
@@ -85,6 +165,12 @@ interface AudioState {
   musicMute: boolean; // Controls only music
   sfxMute: boolean; // Controls only sound effects
 
+  // Volume controls (0.0 to 1.0)
+  masterVolume: number; // Controls overall volume - multiplies with category volumes
+  musicVolume: number; // Music volume (actual = musicVolume × masterVolume)
+  sfxVolume: number; // SFX volume (actual = sfxVolume × masterVolume)
+  parrotVolume: number; // Parrot speech volume (actual = parrotVolume × masterVolume)
+
   // Setter functions (legacy support)
   setBackgroundMusic: (music: HTMLAudioElement) => void;
   setAmbientMusic: (music: HTMLAudioElement) => void;
@@ -103,6 +189,10 @@ interface AudioState {
   setMasterMute: (muted: boolean) => void;
   setMusicMute: (muted: boolean) => void;
   setSfxMute: (muted: boolean) => void;
+  setMasterVolume: (volume: number) => void;
+  setMusicVolume: (volume: number) => void;
+  setSfxVolume: (volume: number) => void;
+  setParrotVolume: (volume: number) => void;
   stopAllAudio: () => void;
   playHit: () => void;
   playSuccess: () => void;
@@ -119,6 +209,8 @@ interface AudioState {
   // Preload frequently used sounds
   preloadSounds: () => Promise<void>;
 }
+
+const savedAudioSettings = loadAudioSettings();
 
 export const useAudio = create<AudioState>((set, get) => ({
   // Sound effects cache
@@ -137,11 +229,17 @@ export const useAudio = create<AudioState>((set, get) => ({
   // Last play times for throttling
   lastPlayTimes: new Map(),
 
-  // Mute controls
-  isMuted: false, // Legacy support - mirrors masterMute
-  masterMute: false, // Controls everything
-  musicMute: false, // Controls only music
-  sfxMute: false, // Controls only sound effects
+  // Mute controls - initialized from localStorage
+  isMuted: savedAudioSettings.masterMute, // Legacy support - mirrors masterMute
+  masterMute: savedAudioSettings.masterMute, // Controls everything
+  musicMute: savedAudioSettings.musicMute, // Controls only music
+  sfxMute: savedAudioSettings.sfxMute, // Controls only sound effects
+
+  // Volume controls - initialized from localStorage (0.0 to 1.0)
+  masterVolume: savedAudioSettings.masterVolume,
+  musicVolume: savedAudioSettings.musicVolume,
+  sfxVolume: savedAudioSettings.sfxVolume,
+  parrotVolume: savedAudioSettings.parrotVolume,
 
   setBackgroundMusic: (music) => {
     set({ backgroundMusic: music });
@@ -199,7 +297,7 @@ export const useAudio = create<AudioState>((set, get) => ({
     }
   },
     playExplosion: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
     
     if (masterMute || sfxMute) {
       console.log("Explosion sound skipped (muted)");
@@ -212,7 +310,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         AUDIO_CONFIG.soundEffects.explosion
       );
       
-      // Optional: Add 3D positioning logic here if position is provided
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.explosion.volume || 1.0) * sfxVolume * masterVolume;
+      explosionSound.volume(actualVolume);
       explosionSound.play();
       console.log("Explosion sound played");
     } catch (error) {
@@ -221,7 +321,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
   
   playTakeoff: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
     
     if (masterMute || sfxMute) {
       console.log("Takeoff sound skipped (muted)");
@@ -234,10 +334,11 @@ export const useAudio = create<AudioState>((set, get) => ({
         AUDIO_CONFIG.soundEffects.takeoff
       );
       
-      // Play at full volume for prominent effect
-      takeoffSound.volume(AUDIO_CONFIG.soundEffects.takeoff.volume);
+      // Apply volume multiplication for prominent effect: sfxVolume × masterVolume
+      const actualVolume = AUDIO_CONFIG.soundEffects.takeoff.volume * sfxVolume * masterVolume;
+      takeoffSound.volume(actualVolume);
       takeoffSound.play();
-      console.log("[AUDIO] Takeoff sound played prominently at full volume");
+      console.log("[AUDIO] Takeoff sound played with volume:", actualVolume.toFixed(2));
     } catch (error) {
       console.error("Failed to play takeoff sound:", error);
     }
@@ -249,105 +350,132 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   toggleMasterMute: () => {
-    const { masterMute } = get();
-    const newMutedState = !masterMute;
+    const state = get();
+    const newMutedState = !state.masterMute;
 
     set({
       masterMute: newMutedState,
       isMuted: newMutedState, // Keep legacy flag in sync
     });
 
-    // Stop all audio immediately when master mute is activated
-    if (newMutedState) {
-      get().stopAllAudio();
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Audio continues playing silently when muted, and resumes at current level when unmuted
 
-    console.log(`Master audio ${newMutedState ? "muted" : "unmuted"}`);
+    // Save to localStorage
+    saveAudioSettings(newMutedState, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+
+    console.log(`Master audio ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   toggleMusicMute: () => {
-    const { musicMute } = get();
-    const newMutedState = !musicMute;
+    const state = get();
+    const newMutedState = !state.musicMute;
 
     set({ musicMute: newMutedState });
 
-    // Stop music immediately if muted
-    if (newMutedState) {
-      const { backgroundMusic, ambientMusic } = get();
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-      }
-      if (ambientMusic) {
-        ambientMusic.pause();
-      }
+    // Volume subscriptions in music players will handle volume changes
+    // Music continues playing silently when muted, and resumes at current level when unmuted
 
-      // Also stop music player
-      try {
-        const musicPlayer = useMusicPlayer.getState();
-        if (musicPlayer.isPlaying) {
-          musicPlayer.pause();
-        }
-      } catch (e) {
-        // Music player may not be loaded yet
-      }
-    }
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, newMutedState, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
 
-    console.log(`Music ${newMutedState ? "muted" : "unmuted"}`);
+    console.log(`Music ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   toggleSfxMute: () => {
-    const { sfxMute } = get();
-    const newMutedState = !sfxMute;
+    const state = get();
+    const newMutedState = !state.sfxMute;
 
     set({ sfxMute: newMutedState });
 
-    // Stop sound effects immediately if muted
-    if (newMutedState) {
-      const { thrusterSound } = get();
-      if (thrusterSound) {
-        thrusterSound.pause();
-        thrusterSound.currentTime = 0;
-      }
-    }
+    // Volume is controlled by SFX playback functions
+    // Continuous sounds (thruster, wind, rain) will continue playing silently when muted
 
-    console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"}`);
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, state.musicMute, newMutedState, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+
+    console.log(`Sound effects ${newMutedState ? "muted" : "unmuted"} - playback continues at ${newMutedState ? "0" : "current"} volume`);
   },
 
   setMasterMute: (muted: boolean) => {
+    const state = get();
+    
     set({
       masterMute: muted,
       isMuted: muted, // Keep legacy flag in sync
     });
 
-    if (muted) {
-      get().stopAllAudio();
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Audio continues playing silently when muted, and resumes at current level when unmuted
+
+    // Save to localStorage
+    saveAudioSettings(muted, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
   },
 
   setMusicMute: (muted: boolean) => {
+    const state = get();
+    
     set({ musicMute: muted });
 
-    if (muted) {
-      const { backgroundMusic, ambientMusic } = get();
-      if (backgroundMusic) {
-        backgroundMusic.pause();
-      }
-      if (ambientMusic) {
-        ambientMusic.pause();
-      }
-    }
+    // Volume subscriptions in music players will handle volume changes
+    // Music continues playing silently when muted, and resumes at current level when unmuted
+
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, muted, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
   },
 
   setSfxMute: (muted: boolean) => {
+    const state = get();
+    
     set({ sfxMute: muted });
 
-    if (muted) {
-      const { thrusterSound } = get();
-      if (thrusterSound) {
-        thrusterSound.pause();
-        thrusterSound.currentTime = 0;
-      }
-    }
+    // Volume is controlled by SFX playback functions
+    // Continuous sounds (thruster, wind, rain) will continue playing silently when muted
+
+    // Save to localStorage
+    saveAudioSettings(state.masterMute, state.musicMute, muted, state.masterVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+  },
+
+  setMasterVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ masterVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, clampedVolume, state.musicVolume, state.sfxVolume, state.parrotVolume);
+    
+    // Update parrot speech service when master volume changes
+    const actualParrotVolume = state.parrotVolume * clampedVolume;
+    parrotSpeechService.updateSettings({ volume: actualParrotVolume });
+    
+    console.log(`Master volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setMusicVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ musicVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, clampedVolume, state.sfxVolume, state.parrotVolume);
+    console.log(`Music volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setSfxVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ sfxVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, clampedVolume, state.parrotVolume);
+    console.log(`SFX volume set to ${Math.round(clampedVolume * 100)}%`);
+  },
+
+  setParrotVolume: (volume: number) => {
+    const state = get();
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    set({ parrotVolume: clampedVolume });
+    saveAudioSettings(state.masterMute, state.musicMute, state.sfxMute, state.masterVolume, state.musicVolume, state.sfxVolume, clampedVolume);
+    
+    // Update parrot speech service with master volume multiplication
+    const actualVolume = clampedVolume * state.masterVolume;
+    parrotSpeechService.updateSettings({ volume: actualVolume });
+    
+    console.log(`Parrot volume set to ${Math.round(clampedVolume * 100)}% (actual: ${Math.round(actualVolume * 100)}%)`);
   },
 
   stopAllAudio: () => {
@@ -375,29 +503,40 @@ export const useAudio = create<AudioState>((set, get) => ({
     get().stopRain();
     get().stopThruster();
 
-    // Stop music player
-    try {
-      const musicPlayer = useMusicPlayer.getState();
-      if (musicPlayer.isPlaying) {
-        musicPlayer.pause();
+    // Stop music player (use dynamic import to avoid circular dependency)
+    import("@/lib/stores").then(({ useMusicPlayer }) => {
+      try {
+        const musicPlayer = useMusicPlayer.getState();
+        if (musicPlayer.isPlaying) {
+          musicPlayer.pause();
+        }
+      } catch (e) {
+        // Music player may not be loaded yet
       }
-    } catch (e) {
-      // Music player may not be loaded yet
-    }
+    }).catch(() => {
+      // Module loading failed
+    });
 
-    // Stop enhanced music player
-    try {
-      const enhancedPlayer = useEnhancedMusicPlayer.getState();
-      enhancedPlayer.cleanup();
-    } catch (e) {
-      // Enhanced player may not be loaded yet
-    }
+    // Stop enhanced music player (use dynamic import to avoid circular dependency)
+    import("./useEnhancedMusicPlayer").then(({ useEnhancedMusicPlayer }) => {
+      try {
+        const enhancedPlayer = useEnhancedMusicPlayer.getState();
+        enhancedPlayer.cleanup();
+      } catch (e) {
+        // Enhanced player may not be loaded yet
+      }
+    }).catch(() => {
+      // Module loading failed
+    });
+
+    // Stop parrot speech
+    parrotSpeechService.stop();
 
     console.log("All audio stopped");
   },
 
   playHit: async () => {
-    const { masterMute, sfxMute, soundEffectsCache, lastPlayTimes } = get();
+    const { masterMute, sfxMute, soundEffectsCache, lastPlayTimes, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -422,6 +561,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "hit",
         AUDIO_CONFIG.soundEffects.hit,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.hit.volume || 1.0) * sfxVolume * masterVolume;
+      hitSound.volume(actualVolume);
       hitSound.play();
     } catch (error) {
       console.error("Failed to play hit sound:", error);
@@ -429,7 +571,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playSuccess: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -442,6 +584,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "success",
         AUDIO_CONFIG.soundEffects.success,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.success.volume || 1.0) * sfxVolume * masterVolume;
+      successSound.volume(actualVolume);
       successSound.play();
     } catch (error) {
       console.error("Failed to play success sound:", error);
@@ -449,7 +594,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playLaser: async () => {
-    const { masterMute, sfxMute, soundEffectsCache } = get();
+    const { masterMute, sfxMute, soundEffectsCache, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -462,6 +607,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         "laser",
         AUDIO_CONFIG.soundEffects.laser,
       );
+      // Apply volume multiplication: sfxVolume × masterVolume
+      const actualVolume = (AUDIO_CONFIG.soundEffects.laser.volume || 1.0) * sfxVolume * masterVolume;
+      laserSound.volume(actualVolume);
       laserSound.play();
     } catch (error) {
       console.error("Failed to play laser sound:", error);
@@ -469,9 +617,10 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playAmbientMusic: () => {
-    const { ambientMusic, masterMute, musicMute } = get();
+    const { ambientMusic, masterMute, musicMute, masterVolume, musicVolume } = get();
     if (ambientMusic && !masterMute && !musicMute) {
-      ambientMusic.volume = 0.4; // Low volume for background ambience
+      // Apply volume multiplication: musicVolume × masterVolume
+      ambientMusic.volume = 0.4 * musicVolume * masterVolume; // Low base volume for background ambience
       ambientMusic.loop = true;
       ambientMusic.play().catch((error) => {
         console.log("Ambient music play prevented:", error);
@@ -488,7 +637,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playThruster: async (fuelLevel) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeThrusterSound } =
+    const { masterMute, sfxMute, soundEffectsCache, activeThrusterSound, masterVolume, sfxVolume } =
       get();
 
     if (masterMute || sfxMute) {
@@ -507,10 +656,10 @@ export const useAudio = create<AudioState>((set, get) => ({
         thrusterSound.stop(activeThrusterSound);
       }
 
-      // Calculate volume based on fuel level
+      // Calculate volume based on fuel level with volume multiplication
       const baseVolume = 0.15;
       const fuelRatio = Math.max(0, Math.min(1, fuelLevel / 100));
-      const volume = baseVolume * fuelRatio;
+      const volume = baseVolume * fuelRatio * sfxVolume * masterVolume;
 
       thrusterSound.volume(volume);
       const soundId = thrusterSound.play();
@@ -535,7 +684,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playWind: async (intensity = 0.5) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeWindSound } = get();
+    const { masterMute, sfxMute, soundEffectsCache, activeWindSound, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -554,9 +703,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         windSound.stop(activeWindSound);
       }
 
-      // Set volume based on intensity (0 to 1)
+      // Set volume based on intensity with volume multiplication
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
-      const volume = clampedIntensity * 0.4; // Max volume 0.4 for wind
+      const volume = clampedIntensity * 0.4 * sfxVolume * masterVolume; // Max base volume 0.4 for wind
 
         windSound.volume(volume);
       const soundId = windSound.play();
@@ -579,7 +728,7 @@ export const useAudio = create<AudioState>((set, get) => ({
   },
 
   playRain: async (intensity = 0.5) => {
-    const { masterMute, sfxMute, soundEffectsCache, activeRainSound } = get();
+    const { masterMute, sfxMute, soundEffectsCache, activeRainSound, masterVolume, sfxVolume } = get();
 
     // Check both master and sfx mute
     if (masterMute || sfxMute) {
@@ -598,9 +747,9 @@ export const useAudio = create<AudioState>((set, get) => ({
         rainSound.stop(activeRainSound);
       }
 
-      // Set volume based on intensity (0 to 1)
+      // Set volume based on intensity with volume multiplication
       const clampedIntensity = Math.max(0, Math.min(1, intensity));
-      const volume = clampedIntensity * 0.5; // Max volume 0.5 for rain
+      const volume = clampedIntensity * 0.5 * sfxVolume * masterVolume; // Max base volume 0.5 for rain
 
         rainSound.volume(volume);
       const soundId = rainSound.play();

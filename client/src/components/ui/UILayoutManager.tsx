@@ -71,7 +71,15 @@ function ExpandedPanel({
   const panelRef = useUIInteraction(`panel-${panel.id}`, panel.isExpanded);
 
   return (
-    <div className="expanded-panel-overlay">
+    <div 
+      className="expanded-panel-overlay"
+      onClick={(e) => {
+        // Close panel when clicking the overlay background (not the panel content itself)
+        if (e.target === e.currentTarget && panel.canCollapse !== false) {
+          onToggle();
+        }
+      }}
+    >
       <div
         ref={panelRef}
         className={`expanded-panel ${panel.zone === "left-sidebar" ? "expanded-panel-left" : "expanded-panel-right"}`}

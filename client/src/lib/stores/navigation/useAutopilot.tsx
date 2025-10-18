@@ -177,6 +177,29 @@ export const useAutopilot = create<AutopilotState>((set, get) => ({
     },
 }));
 
+// Lazy subscription setup to avoid circular dependency
+let landingSubscriptionInitialized = false;
+function initializeLandingSubscription() {
+  if (landingSubscriptionInitialized) return;
+  landingSubscriptionInitialized = true;
+  
+  // Subscribe to landing state changes to automatically deactivate autopilot when landing
+  useLandedState.subscribe((state, prevState) => {
+    // If we just landed, deactivate autopilot
+    if (state.isLanded && !prevState?.isLanded) {
+      const autopilotState = useAutopilot.getState();
+      if (autopilotState.isActive) {
+        console.log('[AUTOPILOT] Auto-deactivating due to landing on', state.landedPlanet);
+        autopilotState.deactivate();
+      }
+    }
+  });
+}
+
+// Initialize subscription after a brief delay to ensure all stores are loaded
+if (typeof window !== 'undefined') {
+  setTimeout(initializeLandingSubscription, 100);
+}
 
 /** Sample the cinematic plan at a given traveled distance */
 function sampleCinematic(
@@ -261,5 +284,5 @@ function applyTorqueToShip(torque: THREE.Vector3) {
 }
 
 function applyThrustToShip(thrust: number) {
-    // TODO: integrate with your engine’s thrust control / force application
+    // TODO: integrate with your engine's thrust control / force application
 }

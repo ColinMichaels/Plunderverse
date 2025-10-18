@@ -2,6 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Controls, DEFAULT_KEYBINDS } from "../../controls";
 
+export type UITheme = 'classic' | 'monochrome';
+
 interface SettingsState {
   sensitivity: number;
   invertY: boolean;
@@ -10,6 +12,9 @@ interface SettingsState {
   enableDynamicLights: boolean;
   enableParticles: boolean;
   enableBloom: boolean;
+  
+  // UI theme
+  uiTheme: UITheme;
   
   // Mining effect settings
   miningEffectsIntensity: number; // 0-1 overall intensity
@@ -23,6 +28,7 @@ interface SettingsState {
   setEnableDynamicLights: (enable: boolean) => void;
   setEnableParticles: (enable: boolean) => void;
   setEnableBloom: (enable: boolean) => void;
+  setUITheme: (theme: UITheme) => void;
   
   // Mining effect setters
   setMiningEffectsIntensity: (intensity: number) => void;
@@ -49,6 +55,9 @@ export const useSettings = create<SettingsState>()(
       enableDynamicLights: true,
       enableParticles: true,
       enableBloom: true,
+      
+      // UI theme default
+      uiTheme: 'classic' as UITheme,
       
       // Mining effect defaults
       miningEffectsIntensity: 1.0,
@@ -94,6 +103,14 @@ export const useSettings = create<SettingsState>()(
         set({ enableBloom: enable });
       },
 
+      setUITheme: (theme: UITheme) => {
+        set({ uiTheme: theme });
+        // Apply theme to document root
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-theme', theme);
+        }
+      },
+
       setMiningEffectsIntensity: (intensity: number) => {
         set({ miningEffectsIntensity: Math.max(0, Math.min(1, intensity)) });
       },
@@ -115,10 +132,14 @@ export const useSettings = create<SettingsState>()(
           enableDynamicLights: true,
           enableParticles: true,
           enableBloom: true,
+          uiTheme: 'classic' as UITheme,
           miningEffectsIntensity: 1.0,
           enableScreenShake: true,
           enableVisualEffects: true,
         });
+        if (typeof document !== 'undefined') {
+          document.documentElement.setAttribute('data-theme', 'classic');
+        }
       },
 
       getKeyboardMap: () => {

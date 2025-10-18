@@ -2,6 +2,7 @@
 // Routes all economic transactions through WebSocket to server-authoritative TransactionManager
 
 import {CloudSyncManager} from './CloudSyncWebSocket';
+import Logger from './Logger';
 
 export interface TransactionRequest {
   type: 'debit' | 'credit';
@@ -58,7 +59,7 @@ export class TransactionClient {
     private registeredWithSync = false;
 
   private constructor() {
-    console.log('[TransactionClient] Initializing...');
+    Logger.log('[TransactionClient] Initializing...');
     this.setupMessageHandler();
   }
 
@@ -114,7 +115,7 @@ export class TransactionClient {
               // Otherwise surface the failure
               return pending.resolve({success: false, error: errMsg || 'Transaction failed'});
           } catch (e) {
-              console.warn('[TransactionClient] Message handler error:', e);
+              Logger.warn('[TransactionClient] Message handler error:', e);
           }
       };
   }
@@ -164,7 +165,7 @@ export class TransactionClient {
 
       // Not authenticated → local apply + opportunistic queue to SW
     if (!syncManager.isAuthenticated()) {
-        console.warn('[TransactionClient] Not authenticated, executing locally + queuing for sync');
+        Logger.warn('[TransactionClient] Not authenticated, executing locally + queuing for sync');
         try {
             // Opportunistic queue into SW for later reconciliation
             if (typeof navigator !== 'undefined' && (navigator as any).serviceWorker?.controller) {
@@ -202,7 +203,7 @@ export class TransactionClient {
                   transaction: request,
                   data: request, // backwards compatibility
               };
-              console.log(`[TransactionClient] Sending transaction: ${request.category}/${request.subtype ?? '—'} amount=${request.amount}`);
+              Logger.log(`[TransactionClient] Sending transaction: ${request.category}/${request.subtype ?? '—'} amount=${request.amount}`);
               (sm as any).sendMessage(message);
           } catch (err) {
               clearTimeout(timeout);
@@ -317,7 +318,7 @@ export class TransactionClient {
   private async executeLocalTransaction(request: TransactionRequest): Promise<TransactionResponse> {
         // Local-only fallback: apply state client-side for dev/testing
         // Also see executeTransaction() which attempts to queue an offline sync entry.
-    console.warn('[TransactionClient] Running in local-only mode');
+    Logger.warn('[TransactionClient] Running in local-only mode');
 
         // Get current balances from stores
     const creditsStore = await import('../domain/economy/credits.store');
@@ -340,13 +341,13 @@ export class TransactionClient {
       creditsStore.useCreditsStore.getState().spendCredits(request.amount);
       if (request.resourceCosts?.fuel) {
         // TODO: Deduct fuel when fuel store is implemented
-        console.log(`[TransactionClient] Would deduct ${request.resourceCosts.fuel} fuel (not yet implemented)`);
+        Logger.log(`[TransactionClient] Would deduct ${request.resourceCosts.fuel} fuel (not yet implemented)`);
       }
     } else {
       creditsStore.useCreditsStore.getState().earnCredits(request.amount);
       if (request.resourceCosts?.fuel) {
         // TODO: Add fuel when fuel store is implemented
-        console.log(`[TransactionClient] Would add ${request.resourceCosts.fuel} fuel (not yet implemented)`);
+        Logger.log(`[TransactionClient] Would add ${request.resourceCosts.fuel} fuel (not yet implemented)`);
       }
     }
 

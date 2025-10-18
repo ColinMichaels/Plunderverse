@@ -4,6 +4,7 @@
 import { TransactionClient } from './TransactionClient';
 import { CloudSyncManager } from './CloudSyncWebSocket';
 import { toast } from 'sonner';
+import Logger from './Logger';
 
 export interface MobileTransactionRequest {
   type: 'trade' | 'repair' | 'upgrade' | 'crew' | 'mission' | 'station';
@@ -24,7 +25,7 @@ export class MobileSyncAdapter {
   private constructor() {
     this.transactionClient = TransactionClient.getInstance();
     this.syncManager = CloudSyncManager.getInstance();
-    console.log('[MobileSyncAdapter] Initialized');
+    Logger.log('[MobileSyncAdapter] Initialized');
   }
   
   static getInstance(): MobileSyncAdapter {
@@ -39,12 +40,12 @@ export class MobileSyncAdapter {
    */
   setMinigameActive(active: boolean): void {
     this.isMinigameActive = active;
-    console.log(`[MobileSyncAdapter] Mini-game ${active ? 'activated' : 'deactivated'}`);
+    Logger.log(`[MobileSyncAdapter] Mini-game ${active ? 'activated' : 'deactivated'}`);
     
     if (active && !this.syncManager.isConnected()) {
       // Ensure WebSocket is connected
       this.syncManager.initialize().catch(err => {
-        console.error('[MobileSyncAdapter] Failed to initialize sync:', err);
+        Logger.error('[MobileSyncAdapter] Failed to initialize sync:', err);
       });
     }
   }
@@ -78,14 +79,14 @@ export class MobileSyncAdapter {
           }
         );
         
-        console.log(`[MobileSyncAdapter] Trade successful: ${result.transactionId}`);
+        Logger.log(`[MobileSyncAdapter] Trade successful: ${result.transactionId}`);
         return true;
       } else {
         toast.error(`Transaction failed: ${result.error || 'Unknown error'}`);
         return false;
       }
     } catch (error) {
-      console.error('[MobileSyncAdapter] Trade failed:', error);
+      Logger.error('[MobileSyncAdapter] Trade failed:', error);
       toast.error('Transaction error', {
         description: error instanceof Error ? error.message : 'Connection failed'
       });
@@ -104,14 +105,14 @@ export class MobileSyncAdapter {
         toast.success('Repairs completed', {
           description: `Repaired ${systems.join(', ')} for ${cost}c`
         });
-        console.log(`[MobileSyncAdapter] Repair successful: ${result.transactionId}`);
+        Logger.log(`[MobileSyncAdapter] Repair successful: ${result.transactionId}`);
         return true;
       } else {
         toast.error(`Repair failed: ${result.error || 'Unknown error'}`);
         return false;
       }
     } catch (error) {
-      console.error('[MobileSyncAdapter] Repair failed:', error);
+      Logger.error('[MobileSyncAdapter] Repair failed:', error);
       toast.error('Repair error', {
         description: error instanceof Error ? error.message : 'Connection failed'
       });
@@ -144,14 +145,14 @@ export class MobileSyncAdapter {
         toast.success('Crew hired', {
           description: `Hired ${crewName} for ${hiringCost}c`
         });
-        console.log(`[MobileSyncAdapter] Crew hire successful: ${result.transactionId}`);
+        Logger.log(`[MobileSyncAdapter] Crew hire successful: ${result.transactionId}`);
         return true;
       } else {
         toast.error(`Hiring failed: ${result.error || 'Unknown error'}`);
         return false;
       }
     } catch (error) {
-      console.error('[MobileSyncAdapter] Crew hire failed:', error);
+      Logger.error('[MobileSyncAdapter] Crew hire failed:', error);
       toast.error('Hiring error', {
         description: error instanceof Error ? error.message : 'Connection failed'
       });
@@ -179,14 +180,14 @@ export class MobileSyncAdapter {
         toast.success('Mission complete!', {
           description: `Earned ${creditReward}c from ${missionName}`
         });
-        console.log(`[MobileSyncAdapter] Mission reward successful: ${result.transactionId}`);
+        Logger.log(`[MobileSyncAdapter] Mission reward successful: ${result.transactionId}`);
         return true;
       } else {
         toast.error(`Reward failed: ${result.error || 'Unknown error'}`);
         return false;
       }
     } catch (error) {
-      console.error('[MobileSyncAdapter] Mission reward failed:', error);
+      Logger.error('[MobileSyncAdapter] Mission reward failed:', error);
       toast.error('Reward error', {
         description: error instanceof Error ? error.message : 'Connection failed'
       });
@@ -219,14 +220,14 @@ export class MobileSyncAdapter {
         toast.success('Service completed', {
           description: `Paid ${cost}c for ${service}`
         });
-        console.log(`[MobileSyncAdapter] Station service successful: ${result.transactionId}`);
+        Logger.log(`[MobileSyncAdapter] Station service successful: ${result.transactionId}`);
         return true;
       } else {
         toast.error(`Service failed: ${result.error || 'Unknown error'}`);
         return false;
       }
     } catch (error) {
-      console.error('[MobileSyncAdapter] Station service failed:', error);
+      Logger.error('[MobileSyncAdapter] Station service failed:', error);
       toast.error('Service error', {
         description: error instanceof Error ? error.message : 'Connection failed'
       });

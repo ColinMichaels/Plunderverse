@@ -44,7 +44,7 @@ export function GameUI() {
   const { isGuest } = useAuthStore();
   const { manualSave } = useAutoSave();
   const { phase } = useGame();
-  const { initialize: initializeParrot } = useParrot();
+  const { initialize: initializeParrot, comment: parrotComment, praise: parrotPraise } = useParrot();
   const crewManagement = useCrewManagement();
   const { isTakingOff, setIsTakingOff, setNotLanded, setLanded } = useLandedState();
   const { processLandingReward } = useRewards();
@@ -56,8 +56,8 @@ export function GameUI() {
   useEffect(() => {
     initializeParrot();
       // Brief greeting through personality once UI mounts
-      Parrot.comment("Systems online. Cockpit HUD linked.", "info");
-  }, [initializeParrot]);
+      parrotComment("Systems online. Cockpit HUD linked.", "info");
+  }, [initializeParrot, parrotComment]);
 
     // Update crew task progress every 10 second
   useEffect(() => {
@@ -169,12 +169,12 @@ export function GameUI() {
           targetPlanet={selectedPlanet}
           onThrustStart={() => {
             console.log('[Landing] Deceleration started - play retro-thrust sound');
-              Parrot.notify('mission_update', {text: 'Decelerating for landing burn.'});
+              parrotComment('Decelerating for landing burn.', 'info');
           }}
           onComplete={() => {
             console.log('[Landing] Landing sequence complete - switching to surface view');
-              Parrot.notify('checkpoint_reached');
-              Parrot.praise();
+              parrotComment('Landing sequence complete!', 'info');
+              parrotPraise();
             setIsLanding(false);
             setLanded(selectedPlanet);
             processLandingReward(selectedPlanet);

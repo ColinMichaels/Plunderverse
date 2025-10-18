@@ -8,8 +8,9 @@ import {useShooting} from "@/lib/stores/combat/useShooting";
 import {useEnemies} from "@/lib/stores/combat/useEnemies";
 import {useAutopilot} from "@/lib/stores/navigation/useAutopilot";
 import {INPUT_KEY_EVENT, InputRouter} from "@/lib/InputRouter";
-import {HelpCircle, Home, Play, Power, Settings,} from "lucide-react";
+import {HelpCircle, Home, Play, Power, Settings, Save} from "lucide-react";
 import {SettingsContent} from "../screens/SettingsContent";
+import {useAutoSave} from "@/hooks/useAutoSave";
 
 // Ensure router is attached once this module is imported
 if (typeof window !== 'undefined') {
@@ -29,6 +30,7 @@ export function PauseMenu() {
   const { isLanded } = useLandedState();
   const { deactivate: deactivateAutopilot } = useAutopilot();
   const { keybinds, updateKeybind, resetToDefaults } = useSettings();
+  const { manualSave, isSaving } = useAutoSave();
 
     // Open/close the pause menu with ESC via global input router
   useEffect(() => {
@@ -114,6 +116,10 @@ export function PauseMenu() {
       handleReturnToHome();
   };
 
+  const handleQuickSave = () => {
+    manualSave();
+  };
+
   const handleKeybindClick = (action: string) => {
     setEditingKeybind(action);
   };
@@ -140,7 +146,7 @@ export function PauseMenu() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200]"
+        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[200] flex items-center justify-center p-4"
         onClick={(e) => {
           // Close if clicking outside the menu
           if (e.target === e.currentTarget) {
@@ -155,33 +161,33 @@ export function PauseMenu() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: -20 }}
           transition={{ type: "spring", damping: 25, stiffness: 400 }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg"
+          className="w-full max-w-lg max-h-[90vh] overflow-y-auto"
         >
-          {/* Glassmorphism Card */}
-          <div className="relative bg-slate-900/90 backdrop-blur-xl border-2 border-orange-500/30 rounded-2xl shadow-2xl overflow-hidden">
-            {/* Animated border gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 via-transparent to-amber-500/10 pointer-events-none" />
+          {/* Themed Glassmorphism Card */}
+          <div className="relative bg-[var(--theme-bg-primary)] backdrop-blur-xl border border-[var(--theme-border-primary)] rounded-none shadow-2xl overflow-hidden">
+            {/* Subtle scan line effect */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/5 via-transparent to-white/5 pointer-events-none" />
 
-            {/* Sci-fi corner decorations */}
-            <div className="absolute top-0 left-0 w-16 h-16 border-l-2 border-t-2 border-orange-400/40 rounded-tl-2xl pointer-events-none" />
-            <div className="absolute top-0 right-0 w-16 h-16 border-r-2 border-t-2 border-orange-400/40 rounded-tr-2xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-16 h-16 border-l-2 border-b-2 border-orange-400/40 rounded-bl-2xl pointer-events-none" />
-            <div className="absolute bottom-0 right-0 w-16 h-16 border-r-2 border-b-2 border-orange-400/40 rounded-br-2xl pointer-events-none" />
+            {/* Corner decorations */}
+            <div className="absolute top-0 left-0 w-12 h-12 border-l border-t border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute top-0 right-0 w-12 h-12 border-r border-t border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-12 h-12 border-l border-b border-[var(--theme-border-accent)] pointer-events-none" />
+            <div className="absolute bottom-0 right-0 w-12 h-12 border-r border-b border-[var(--theme-border-accent)] pointer-events-none" />
 
             {/* Header */}
-            <div className="relative px-8 py-6 bg-gradient-to-r from-orange-600/20 via-amber-600/20 to-orange-600/20 border-b border-orange-500/20">
+            <div className="relative px-8 py-6 bg-[var(--theme-bg-secondary)] border-b border-[var(--theme-border-primary)]">
               <motion.h1
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.1 }}
-                className="text-3xl font-bold text-center bg-gradient-to-r from-orange-400 to-amber-400 bg-clip-text text-transparent"
+                className="text-3xl font-bold text-center text-[var(--theme-text-primary)] tracking-widest font-mono"
               >
-                GAME PAUSED
+                // SYSTEM PAUSED
               </motion.h1>
-              <p className="text-center text-gray-400 mt-2 text-sm">
+              <p className="text-center text-[var(--theme-text-secondary)] mt-2 text-xs font-mono tracking-wider">
                 {isLanded
-                  ? "Surface Operations Suspended"
-                  : "Space Flight Suspended"}
+                  ? "[ SURFACE OPS SUSPENDED ]"
+                  : "[ SPACE FLIGHT SUSPENDED ]"}
               </p>
             </div>
 
@@ -197,68 +203,81 @@ export function PauseMenu() {
                   {/* Resume Button */}
                   <button
                     onClick={handleResume}
-                    className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-green-600/20 to-emerald-600/20 border border-green-500/30 hover:border-green-400/50 transition-all duration-300 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-green-600/0 to-emerald-600/20 group-hover:from-green-600/20 group-hover:to-emerald-600/30 transition-all duration-300" />
                     <div className="relative flex items-center justify-center gap-3">
-                      <Play className="w-6 h-6 text-green-400 group-hover:text-green-300" />
-                      <span className="text-lg font-semibold text-green-400 group-hover:text-green-300">
-                        Resume Game
+                      <Play className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
+                        RESUME
                       </span>
                     </div>
-                    <p className="relative text-xs text-gray-500 mt-1">
-                      Press ESC to continue
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
+                      ESC
                     </p>
                   </button>
 
-                  {/* Return to Home */}
+                  {/* Quick Save Button */}
                   <button
-                    onClick={handleReturnToHome}
-                    className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-blue-600/20 to-cyan-600/20 border border-blue-500/30 hover:border-blue-400/50 transition-all duration-300 p-4"
+                    onClick={handleQuickSave}
+                    disabled={isSaving}
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600/0 to-cyan-600/20 group-hover:from-blue-600/20 group-hover:to-cyan-600/30 transition-all duration-300" />
                     <div className="relative flex items-center justify-center gap-3">
-                      <Home className="w-6 h-6 text-blue-400 group-hover:text-blue-300" />
-                      <span className="text-lg font-semibold text-blue-400 group-hover:text-blue-300">
-                        Return to Home
+                      <Save className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
+                        {isSaving ? "SAVING..." : "QUICK SAVE"}
                       </span>
                     </div>
-                    <p className="relative text-xs text-gray-500 mt-1">
-                      Go back to main menu
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
+                      F5
                     </p>
                   </button>
 
                   {/* Settings */}
                   <button
                     onClick={() => setActivePanel("settings")}
-                    className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-purple-600/20 to-pink-600/20 border border-purple-500/30 hover:border-purple-400/50 transition-all duration-300 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-purple-600/0 to-pink-600/20 group-hover:from-purple-600/20 group-hover:to-pink-600/30 transition-all duration-300" />
                     <div className="relative flex items-center justify-center gap-3">
-                      <Settings className="w-6 h-6 text-purple-400 group-hover:text-purple-300" />
-                      <span className="text-lg font-semibold text-purple-400 group-hover:text-purple-300">
-                        Settings
+                      <Settings className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
+                        SETTINGS
                       </span>
                     </div>
-                    <p className="relative text-xs text-gray-500 mt-1">
-                      Game options & controls
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
+                      OPTIONS & CONTROLS
+                    </p>
+                  </button>
+
+                  {/* Return to Home */}
+                  <button
+                    onClick={handleReturnToHome}
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
+                  >
+                    <div className="relative flex items-center justify-center gap-3">
+                      <Home className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
+                        MAIN MENU
+                      </span>
+                    </div>
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
+                      RETURN TO HOME
                     </p>
                   </button>
 
                   {/* Exit Game */}
                   <button
                     onClick={handleExitGame}
-                    className="w-full group relative overflow-hidden rounded-lg bg-gradient-to-r from-red-600/20 to-orange-600/20 border border-red-500/30 hover:border-red-400/50 transition-all duration-300 p-4"
+                    className="w-full group relative overflow-hidden border border-[var(--theme-border-primary)] hover:border-[var(--theme-border-hover)] hover:bg-[var(--theme-bg-secondary)] transition-all duration-200 p-4"
                   >
-                    <div className="absolute inset-0 bg-gradient-to-r from-red-600/0 to-orange-600/20 group-hover:from-red-600/20 group-hover:to-orange-600/30 transition-all duration-300" />
                     <div className="relative flex items-center justify-center gap-3">
-                      <Power className="w-6 h-6 text-red-400 group-hover:text-red-300" />
-                      <span className="text-lg font-semibold text-red-400 group-hover:text-red-300">
-                        Exit Game
+                      <Power className="w-5 h-5 text-[var(--theme-text-accent)]" />
+                      <span className="text-base font-mono font-medium text-[var(--theme-text-primary)] tracking-wide">
+                        EXIT
                       </span>
                     </div>
-                    <p className="relative text-xs text-gray-500 mt-1">
-                      Desktop version only
+                    <p className="relative text-[10px] text-[var(--theme-text-secondary)] mt-1 font-mono">
+                      DESKTOP ONLY
                     </p>
                   </button>
                 </motion.div>
@@ -273,9 +292,9 @@ export function PauseMenu() {
                   {/* Back button */}
                   <button
                     onClick={() => setActivePanel("main")}
-                    className="text-orange-400 hover:text-orange-300 flex items-center gap-2 mb-4"
+                    className="text-[var(--theme-text-accent)] hover:text-[var(--theme-text-highlight)] flex items-center gap-2 mb-4 font-mono text-sm"
                   >
-                    ← Back to Menu
+                    ← BACK
                   </button>
 
                   {/* Settings Content */}
@@ -293,10 +312,10 @@ export function PauseMenu() {
             </div>
 
             {/* Footer with tips */}
-            <div className="px-8 py-4 bg-slate-800/50 border-t border-slate-700/50">
-              <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+            <div className="px-8 py-4 bg-[var(--theme-bg-secondary)] border-t border-[var(--theme-border-primary)]">
+              <div className="flex items-center justify-center gap-2 text-[10px] text-[var(--theme-text-secondary)] font-mono">
                 <HelpCircle className="w-3 h-3" />
-                <span>Press ESC to close this menu</span>
+                <span>ESC TO CLOSE</span>
               </div>
             </div>
           </div>

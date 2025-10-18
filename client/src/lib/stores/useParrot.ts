@@ -1,6 +1,48 @@
 import {create} from 'zustand';
 import {parrotSpeechService} from '@/services/ParrotSpeechService';
 import {Parrot, ParrotMode} from '@/services/ParrotPersonality';
+import {useAudio} from '@/lib/stores/ui/useAudio';
+
+const STORAGE_KEY = 'plunderverse_audio_settings';
+
+function hasLocalStorage(): boolean {
+  try {
+    return typeof window !== 'undefined' && typeof localStorage !== 'undefined';
+  } catch {
+    return false;
+  }
+}
+
+function loadParrotSettings(): Partial<ParrotSettings> {
+  if (!hasLocalStorage()) return {};
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const settings = JSON.parse(stored);
+      return {
+        isMuted: settings.parrotMute,
+        volume: settings.parrotVolume,
+      };
+    }
+  } catch (error) {
+    console.error('[Parrot] Failed to load settings:', error);
+  }
+  return {};
+}
+
+function saveParrotSettings(isMuted: boolean, volume: number) {
+  if (!hasLocalStorage()) return;
+  
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    const current = stored ? JSON.parse(stored) : {};
+    const updated = { ...current, parrotMute: isMuted, parrotVolume: volume };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+  } catch (error) {
+    console.error('[Parrot] Failed to save settings:', error);
+  }
+}
 
 interface ParrotSettings {
   mode: ParrotMode;
@@ -52,11 +94,20 @@ interface ParrotState {
   recallMemory: () => void;
 }
 
+const savedSettings = loadParrotSettings();
+
+// Helper function to update parrot speech service volume with master volume multiplication
+function updateParrotSpeechVolume() {
+  const { masterVolume, parrotVolume } = useAudio.getState();
+  const actualVolume = parrotVolume * masterVolume;
+  parrotSpeechService.updateSettings({ volume: actualVolume });
+}
+
 export const useParrot = create<ParrotState>((set, get) => ({
   settings: {
     mode: 'chatty',
-    isMuted: false,
-    volume: 0.8,
+    isMuted: savedSettings.isMuted ?? false,
+    volume: savedSettings.volume ?? 0.8,
     rate: 1.1,
     pitch: 1.2,
     isVisible: true,
@@ -69,11 +120,32 @@ export const useParrot = create<ParrotState>((set, get) => ({
   currentMessage: null,
 
   initialize: () => {
+    const state = get();
+    parrotSpeechService.setMuted(state.settings.isMuted);
+    updateParrotSpeechVolume();
+    
+    // Subscribe to master volume and parrot volume changes to keep parrot speech volume in sync
+    // Note: We're already updating in setParrotVolume and setMasterVolume in useAudio,
+    // but this subscription handles any other edge cases
+    let lastMasterVolume = useAudio.getState().masterVolume;
+    let lastParrotVolume = useAudio.getState().parrotVolume;
+    
+    useAudio.subscribe((state) => {
+      if (state.masterVolume !== lastMasterVolume || state.parrotVolume !== lastParrotVolume) {
+        lastMasterVolume = state.masterVolume;
+        lastParrotVolume = state.parrotVolume;
+        updateParrotSpeechVolume();
+      }
+    });
+    
     parrotSpeechService.ensureVoicesLoaded(() => {
       console.log('[Parrot] Voice synthesis initialized');
       set({ isInitialized: true });
 
+      const masterMuted = useAudio.getState().masterMute;
+      if (!state.settings.isMuted && !masterMuted) {
         Parrot.comment('Squawk! Parrot systems online, Cap\'n!', 'info');
+      }
     });
   },
 
@@ -83,10 +155,14 @@ export const useParrot = create<ParrotState>((set, get) => ({
     }));
       Parrot.setMode(mode);
 
-    if (mode === 'serious') {
-        Parrot.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
-    } else {
-        Parrot.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
+    const state = get();
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
+      if (mode === 'serious') {
+          Parrot.comment('Switching to serious mode, Cap\'n. All business now.', 'info');
+      } else {
+          Parrot.comment('Har har! Back to chatty mode! Let\'s have some fun!', 'info');
+      }
     }
   },
 
@@ -95,13 +171,24 @@ export const useParrot = create<ParrotState>((set, get) => ({
       settings: { ...state.settings, isMuted: muted },
     }));
     parrotSpeechService.setMuted(muted);
+    
+    // Immediately stop any active speech when muting
+    if (muted) {
+      parrotSpeechService.stop();
+      get().setSpeaking(false);
+    }
+    
+    const state = get();
+    saveParrotSettings(muted, state.settings.volume);
   },
 
   setVolume: (volume) => {
     set((state) => ({
       settings: { ...state.settings, volume },
     }));
-    parrotSpeechService.updateSettings({ volume });
+    updateParrotSpeechVolume();
+    const state = get();
+    saveParrotSettings(state.settings.isMuted, volume);
   },
 
   setVisible: (visible) => {
@@ -180,8 +267,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
       }));
     }
 
-    // Speak if not muted
-    if (!state.settings.isMuted) {
+    // Speak if not muted (check both parrot mute and master audio mute)
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
         // Route through personality so voice, filters, memory & mood apply
         Parrot.comment(text, 'info');
 
@@ -224,7 +312,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
             }));
         }
 
-        if (!state.settings.isMuted) {
+        // Check both parrot mute and master audio mute
+        const masterMuted = useAudio.getState().masterMute;
+        if (!state.settings.isMuted && !masterMuted) {
             // Speak without personality filters
             Parrot.sayRaw(text);
 
@@ -267,8 +357,9 @@ export const useParrot = create<ParrotState>((set, get) => ({
       }));
     }
 
-      // Speak if not muted
-    if (!state.settings.isMuted) {
+      // Speak if not muted (check both parrot mute and master audio mute)
+    const masterMuted = useAudio.getState().masterMute;
+    if (!state.settings.isMuted && !masterMuted) {
         Parrot.comment(message, type);
       // Monitor speech completion
       const checkSpeaking = setInterval(() => {
@@ -290,37 +381,43 @@ export const useParrot = create<ParrotState>((set, get) => ({
   },
 
   repeatCommand: (command) => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.repeatAndConfirm(command);
     }
   },
 
   squawk: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.squawk();
     }
   },
 
   praise: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.praise();
     }
   },
 
   scold: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.scold();
     }
   },
 
   randomComment: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.randomComment();
     }
   },
 
   recallMemory: () => {
-    if (!get().settings.isMuted) {
+    const masterMuted = useAudio.getState().masterMute;
+    if (!get().settings.isMuted && !masterMuted) {
         Parrot.recallMemory();
     }
   },

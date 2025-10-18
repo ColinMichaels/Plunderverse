@@ -196,7 +196,7 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
 
   play: async () => {
     const { tracks, currentTrackIndex, volume } = get();
-    const { masterMute, musicMute } = useAudio.getState();
+    const { masterMute, musicMute, masterVolume, musicVolume } = useAudio.getState();
 
     if (masterMute || musicMute) {
       console.log("Music playback skipped (muted)");
@@ -217,7 +217,9 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       }
       
       if (currentTrack.audio) {
-        currentTrack.audio.volume = volume;
+        // Apply volume multiplication: baseVolume × musicVolume × masterVolume
+        const actualVolume = volume * musicVolume * masterVolume;
+        currentTrack.audio.volume = actualVolume;
         currentTrack.audio.play().catch((error) => {
           console.log("Music play prevented:", error);
         });
@@ -435,6 +437,9 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
       
       // Fade in next track
       if (nextTrack.audio && !masterMute && !musicMute) {
+        const { masterVolume: audioMasterVolume, musicVolume: audioMusicVolume } = useAudio.getState();
+        const targetVolume = volume * audioMusicVolume * audioMasterVolume;
+        
         nextTrack.audio.volume = 0;
         nextTrack.audio.currentTime = 0;
 
@@ -442,13 +447,28 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
           .play()
           .then(() => {
             const fadeInInterval = setInterval(() => {
-              if (nextTrack.audio!.volume < volume - 0.01) {
+              // Re-check mute state on every tick
+              const { masterMute: currentMasterMute, musicMute: currentMusicMute } = useAudio.getState();
+              
+              if (currentMasterMute || currentMusicMute) {
+                // Muted during fade - stop fading and set to 0
+                nextTrack.audio!.volume = 0;
+                clearInterval(fadeInInterval);
+                fadeIntervals.delete(fadeInInterval);
+                return;
+              }
+              
+              // Recalculate target volume on every tick to honor slider changes
+              const { masterVolume: latestMasterVol, musicVolume: latestMusicVol } = useAudio.getState();
+              const latestTarget = volume * latestMusicVol * latestMasterVol;
+              
+              if (nextTrack.audio!.volume < latestTarget - 0.01) {
                 nextTrack.audio!.volume = Math.min(
-                  volume,
+                  latestTarget,
                   nextTrack.audio!.volume + 0.02,
                 );
               } else {
-                nextTrack.audio!.volume = volume;
+                nextTrack.audio!.volume = latestTarget;
                 clearInterval(fadeInInterval);
                 fadeIntervals.delete(fadeInInterval);
               }
@@ -828,6 +848,36 @@ export const useMusicPlayer = create<MusicPlayerState>((set, get) => ({
   }
 }));
 
+// Lazy subscription setup to avoid circular dependency
+let volumeSubscriptionInitialized = false;
+function initializeVolumeSubscription() {
+  if (volumeSubscriptionInitialized) return;
+  volumeSubscriptionInitialized = true;
+  
+  // Subscribe to volume changes from useAudio and update currently playing track
+  useAudio.subscribe((audioState) => {
+    const { masterVolume, musicVolume, masterMute, musicMute } = audioState;
+    const musicPlayerState = useMusicPlayer.getState();
+    const { tracks, currentTrackIndex, isPlaying } = musicPlayerState;
+    
+    // Update volume of currently playing track in real-time
+    if (isPlaying && tracks.length > 0) {
+      const currentTrack = tracks[currentTrackIndex];
+      if (currentTrack?.audio) {
+        // Check mute state
+        if (masterMute || musicMute) {
+          currentTrack.audio.volume = 0;
+        } else {
+          // Apply volume multiplication: musicVolume × masterVolume
+          const baseVolume = musicPlayerState.volume || 0.2;
+          const actualVolume = baseVolume * musicVolume * masterVolume;
+          currentTrack.audio.volume = actualVolume;
+        }
+      }
+    }
+  });
+}
+
 // Track initialization state globally to prevent multiple initializations
 let isInitialized = false;
 let isAutoLoading = false;
@@ -836,6 +886,10 @@ export const initializeMusicPlayer = () => {
   if (!isAutoLoading && !isInitialized) {
     isAutoLoading = true;
     console.log('[MusicPlayer] Initializing music player (singleton)');
+    
+    // Initialize volume subscription
+    initializeVolumeSubscription();
+    
     setTimeout(() => {
       const state = useMusicPlayer.getState();
       if (!state.isLoaded && !state.isLoading) {

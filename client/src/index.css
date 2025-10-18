@@ -2,23 +2,77 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme System - CSS Variables */
+:root[data-theme="classic"],
+:root {
+  /* Classic theme - Cyberpunk Orange/Cyan */
+  --theme-bg-primary: rgba(30, 41, 59, 0.95);
+  --theme-bg-secondary: rgba(51, 65, 85, 0.9);
+  --theme-bg-overlay: rgba(0, 0, 0, 0.6);
+  
+  --theme-border-primary: rgba(6, 182, 212, 0.3);
+  --theme-border-hover: rgba(6, 182, 212, 0.6);
+  --theme-border-accent: rgba(251, 146, 60, 0.3);
+  
+  --theme-text-primary: rgb(255, 255, 255);
+  --theme-text-secondary: rgb(156, 163, 175);
+  --theme-text-accent: rgb(6, 182, 212);
+  --theme-text-highlight: rgb(251, 146, 60);
+  
+  --theme-accent-primary: rgb(6, 182, 212);
+  --theme-accent-secondary: rgb(251, 146, 60);
+  
+  --theme-button-bg: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(30, 41, 59, 0.9));
+  --theme-button-hover-bg: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(14, 165, 233, 0.1));
+  
+  --theme-scrollbar-track: rgba(30, 41, 59, 0.5);
+  --theme-scrollbar-thumb: rgba(251, 146, 60, 0.5);
+  --theme-scrollbar-thumb-hover: rgba(251, 146, 60, 0.7);
+}
+
+:root[data-theme="monochrome"] {
+  /* Monochrome theme - Black/White/Gray */
+  --theme-bg-primary: rgba(0, 0, 0, 0.95);
+  --theme-bg-secondary: rgba(30, 30, 30, 0.9);
+  --theme-bg-overlay: rgba(0, 0, 0, 0.6);
+  
+  --theme-border-primary: rgba(255, 255, 255, 0.2);
+  --theme-border-hover: rgba(255, 255, 255, 0.6);
+  --theme-border-accent: rgba(255, 255, 255, 0.4);
+  
+  --theme-text-primary: rgb(255, 255, 255);
+  --theme-text-secondary: rgb(156, 163, 175);
+  --theme-text-accent: rgb(255, 255, 255);
+  --theme-text-highlight: rgb(200, 200, 200);
+  
+  --theme-accent-primary: rgb(255, 255, 255);
+  --theme-accent-secondary: rgb(150, 150, 150);
+  
+  --theme-button-bg: linear-gradient(135deg, rgba(40, 40, 40, 0.9), rgba(20, 20, 20, 0.9));
+  --theme-button-hover-bg: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(200, 200, 200, 0.1));
+  
+  --theme-scrollbar-track: rgba(40, 40, 40, 0.5);
+  --theme-scrollbar-thumb: rgba(255, 255, 255, 0.3);
+  --theme-scrollbar-thumb-hover: rgba(255, 255, 255, 0.5);
+}
+
 /* Custom scrollbar for pause menu */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5);
+  background: var(--theme-scrollbar-track);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(251, 146, 60, 0.5);
+  background: var(--theme-scrollbar-thumb);
   border-radius: 4px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(251, 146, 60, 0.7);
+  background: var(--theme-scrollbar-thumb-hover);
 }
 
 @layer utilities {

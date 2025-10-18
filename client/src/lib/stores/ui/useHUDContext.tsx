@@ -228,17 +228,17 @@ export const useHUDContext = create<HUDContextState>((set, get) => ({
       case 'mining':
         return {
           topLeft: true,   // Equipment status critical
-          topRight: false, // Hide missions during mining
+          topRight: true,  // Keep missions visible during mining
           bottomCenter: true, // Mining controls
-          rightSidebar: false // Focus on mining
+          rightSidebar: true // Keep panels accessible during mining
         };
         
       case 'combat':
         return {
           topLeft: true,   // Critical ship info
-          topRight: false, // Hide missions in combat
+          topRight: true,  // Keep missions visible in combat
           bottomCenter: true, // Combat controls
-          rightSidebar: false // Hide panels during combat
+          rightSidebar: true // Keep panels accessible during combat
         };
         
       case 'docked':

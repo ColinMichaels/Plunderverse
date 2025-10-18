@@ -1,6 +1,8 @@
 // Game Save API Service
 // Handles all communication with the game save backend endpoints
 
+import Logger from './Logger';
+
 export interface GameStateData {
   version: string;
   timestamp: number;
@@ -177,7 +179,7 @@ class GameAPI {
         }
       }
     } catch (error) {
-      console.error('Failed to refresh token:', error);
+      Logger.error('Failed to refresh token:', error);
       // Redirect to login if refresh fails
       window.location.href = '/login';
       throw error;
