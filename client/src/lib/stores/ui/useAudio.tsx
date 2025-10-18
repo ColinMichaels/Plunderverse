@@ -274,22 +274,33 @@ class AudioManager {
 
         // Fade out near end if requested
         if (fadeOutMs > 0) {
-            const totalMs = howl.duration(id) * 1000;
-            const fadeStart = Math.max(0, totalMs - fadeOutMs);
-            setTimeout(() => {
-                if (howl.playing(id)) {
-                    const currentVol = howl.volume(id);
-                    if (typeof currentVol === "number") {
-                        howl.fade(currentVol, 0, fadeOutMs, id);
-                    }
-                    howl.once("fade", () => {
-                        if (howl.volume(id) === 0) {
-                            howl.stop(id);
-                            this.unregisterSound(si);
+            // Wait for sound to load before getting duration
+            howl.once("load", () => {
+                const dur = howl.duration(id);
+                if (dur && typeof dur === "number" && !isNaN(dur)) {
+                    const totalMs = dur * 1000;
+                    const fadeStart = Math.max(0, totalMs - fadeOutMs);
+                    setTimeout(() => {
+                        if (howl.playing(id)) {
+                            const currentVol = howl.volume(id);
+                            if (typeof currentVol === "number") {
+                                howl.fade(currentVol, 0, fadeOutMs, id);
+                            }
+                            howl.once("fade", () => {
+                                if (howl.volume(id) === 0) {
+                                    howl.stop(id);
+                                    this.unregisterSound(si);
+                                }
+                            });
                         }
+                    }, fadeStart);
+                } else {
+                    // Fallback if duration not available
+                    howl.once("end", () => {
+                        this.unregisterSound(si);
                     });
                 }
-            }, fadeStart);
+            });
         } else {
             // No fade-out: unregister when ends
             howl.once("end", () => {
