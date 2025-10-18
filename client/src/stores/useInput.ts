@@ -11,6 +11,10 @@ export interface InputState {
   isGyroEnabled: boolean;
   setGyroEnabled: (enabled: boolean) => void;
   
+  // Mouse steering state
+  isMouseSteering: boolean;
+  setMouseSteering: (steering: boolean) => void;
+  
   // Mobile state
   isMobile: boolean;
   isDragging: boolean;
@@ -27,6 +31,10 @@ export const useInput = create<InputState>((set) => ({
   // Control state
   isGyroEnabled: false,
   setGyroEnabled: (enabled: boolean) => set({ isGyroEnabled: enabled }),
+  
+  // Mouse steering state
+  isMouseSteering: false,
+  setMouseSteering: (steering: boolean) => set({ isMouseSteering: steering }),
   
   // Mobile detection
   isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),

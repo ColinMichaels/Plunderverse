@@ -8,6 +8,13 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-18: Mouse Click-and-Hold Steering
+- **Input System Enhancement**: Extended useInput store with `isMouseSteering` state for tracking mouse button state
+- **Non-Intrusive Controls**: Mouse steering only activates when left mouse button is held down - no cursor lock or focus lock
+- **Visual Feedback**: Added animated crosshair indicator in center of screen when mouse steering is active
+- **Integration**: Mouse event listeners properly registered via CameraController, integrated with existing input service architecture
+- **Documentation**: Updated flight controls help panel to show new "Click & Hold - Mouse Steering" control
+
 ### 2025-10-18: Mini-Game System Enhancements
 - **Mini-Game Manager**: Created MinigameManager component with 5 games, high scores, and credit rewards
 - **Shared Services Integration**: All mini-games now use useSettings (themes), useAudio (volume control), and usePlatform (touch detection)

@@ -46,7 +46,7 @@ export function CameraController() {
   const { playLaser } = useAudio();
   const { setThrusting, setWarpMode, isWarpMode, upgrades } = useShipStatus();
   const { showSplash } = useGame();
-  const { setGyroEnabled, setDragging } = useInput();
+  const { setGyroEnabled, setDragging, isMouseSteering, setMouseSteering } = useInput();
   const { sensitivity, invertY } = useSettings();
   const lastShotTimeRef = useRef(0);
   const lastLandingAttemptRef = useRef(0);
@@ -1003,12 +1003,13 @@ export function CameraController() {
     camera.rotation.order = "YXZ";
 
     // Only apply look controls if not landing, has focus, not paused, AND not in autopilot
+    // Mouse steering only works when clicking and holding
     // Autopilot should have full control of camera orientation
     if (!isLanding && hasFocus && !isPaused && !isAutopilotActive) {
-      // Combine mouse and mobile rotation inputs
+      // Combine mouse (only when steering) and mobile rotation inputs
       // Dramatically increased sensitivity for instant, snappy combat aiming
-      const mouseX = mouse.x * sensitivity * 20.0; // Increased from 5.0 to 20.0 for instant response
-      const mouseY = mouse.y * sensitivity * 20.0 * (invertY ? -1 : 1); // Increased from 5.0 to 20.0
+      const mouseX = isMouseSteering ? mouse.x * sensitivity * 20.0 : 0; // Only apply when clicking
+      const mouseY = isMouseSteering ? mouse.y * sensitivity * 20.0 * (invertY ? -1 : 1) : 0; // Only apply when clicking
       const mobileX = mobileRotationRef.current.x * 1.0; // Increased mobile rotation sensitivity
       const mobileY = mobileRotationRef.current.y * 1.0 * (invertY ? -1 : 1); // Increased mobile rotation sensitivity
 
@@ -1475,6 +1476,32 @@ export function CameraController() {
       });
     };
   }, []);
+
+  // Mouse steering: only apply mouse look when clicking and holding
+  useEffect(() => {
+    const handleMouseDown = (event: MouseEvent) => {
+      // Only activate steering on left mouse button
+      if (event.button === 0) {
+        setMouseSteering(true);
+      }
+    };
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button === 0) {
+        setMouseSteering(false);
+      }
+    };
+
+    // Add listeners to window so they work anywhere
+    window.addEventListener('mousedown', handleMouseDown);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      window.removeEventListener('mousedown', handleMouseDown);
+      window.removeEventListener('mouseup', handleMouseUp);
+      setMouseSteering(false);
+    };
+  }, [setMouseSteering]);
 
   return null; // Component doesn't render anything, only manages camera
 }

@@ -10,6 +10,7 @@ import { useGame } from "../../lib/stores/ui/useGame";
 import { useAutopilot } from "../../lib/stores/navigation/useAutopilot";
 import { useLandedState } from "../../lib/stores/surface/useLandedState";
 import { useHeatSystem } from "../../lib/stores/player/useHeatSystem";
+import { useInput } from "../../stores/useInput";
 import { WantedLevelIndicator } from "../ui/WantedLevelIndicator";
 import { planets } from "../../lib/planetData";
 import * as THREE from "three";
@@ -43,6 +44,7 @@ export function CockpitHUD() {
     useAutopilot();
   const { isLanded } = useLandedState();
   const { currentHeat, wantedLevel } = useHeatSystem();
+  const { isMouseSteering } = useInput();
 
   const selectedPlanetData = selectedPlanet
     ? planets.find((p) => p.name === selectedPlanet)
@@ -537,6 +539,21 @@ export function CockpitHUD() {
         </div>
       </div>
 
+      {/* Mouse Steering Indicator - appears when clicking and holding */}
+      {isMouseSteering && (
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+          <div className="relative">
+            {/* Crosshair */}
+            <div className="w-8 h-8 border-2 border-cyan-400 rounded-full opacity-60 animate-pulse"></div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 bg-cyan-400 rounded-full"></div>
+            {/* Steering text */}
+            <div className="absolute top-12 left-1/2 transform -translate-x-1/2 text-cyan-400 text-xs font-mono whitespace-nowrap">
+              MOUSE STEERING
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Flight Controls Toggle */}
       <div className="absolute top-4 right-4 pointer-events-auto">
         <button
@@ -548,11 +565,12 @@ export function CockpitHUD() {
         </button>
 
         {showControls && (
-          <div className="absolute top-12 right-0 bg-slate-800/90 border border-slate-600 rounded-xl p-3 text-xs backdrop-blur-sm w-48">
+          <div className="absolute top-12 right-0 bg-slate-800/90 border border-slate-600 rounded-xl p-3 text-xs backdrop-blur-sm w-56">
             <div className="text-cyan-400 mb-2">FLIGHT CONTROLS</div>
             <div className="space-y-1 text-white">
               <div>WASD - Navigation</div>
               <div>QE - Up/Down</div>
+              <div>Click & Hold - Mouse Steering</div>
               <div>SPACE - Fire Lasers</div>
               <div>L - Land</div>
               <div>C - Center View</div>
