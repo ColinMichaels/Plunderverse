@@ -231,22 +231,13 @@ export function EnhancedSplashScreen() {
     return () => clearInterval(interval);
   }, [slideContent.length]);
 
-  const { setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic } =
-    useAudio();
+  const { playAmbientMusic, stopAmbientMusic } = useAudio();
 
-  // Initialize sounds
+  // Play ambient music on mount
   useEffect(() => {
-    const { soundEffects } = AUDIO_CONFIG;
-    const ambientAudio = new Audio(soundEffects.ambient.path);
-    ambientAudio.volume = soundEffects.ambient.volume;
-    ambientAudio.loop = soundEffects.ambient.loop ?? false;
-    setAmbientMusic(ambientAudio);
-    const zapAudio = new Audio(soundEffects.zap.path);
-    zapAudio.volume = soundEffects.zap.volume;
-    setLaserSound(zapAudio);
     playAmbientMusic();
     return () => stopAmbientMusic();
-  }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
+  }, [playAmbientMusic, stopAmbientMusic]);
 
   // Handle clicking outside to close account menu
   useEffect(() => {

@@ -34,7 +34,6 @@ import "@fontsource/inter";
 // Main Game component (without auth wrapper)
 function GameContent() {
   const [showCanvas, setShowCanvas] = useState(false);
-  const { setBackgroundMusic } = useAudio();
   const { phase } = useGame();
   const { isLanded } = useLandedState();
     const {platformType, updatePlatform} = usePlatform();
@@ -136,18 +135,8 @@ function GameContent() {
 
     if (isLanded) {
       // Stop space ambience when landing
-      if (
-        audioState.ambientMusic &&
-        audioState.ambientMusic instanceof HTMLAudioElement
-      ) {
-        console.log("[SCENE-MANAGER] Landing detected, pausing space ambience");
-        audioState.stopAmbientMusic();
-      } else {
-        console.log(
-          "[SCENE-MANAGER] Landing detected, but ambient music not initialized:",
-          audioState.ambientMusic,
-        );
-      }
+      console.log("[SCENE-MANAGER] Landing detected, stopping space ambience");
+      audioState.stopAmbientMusic();
 
       // Memory profiling: Track memory before and after landing
       memoryProfiler.logCurrentStatus("Before landing cleanup");
@@ -164,24 +153,12 @@ function GameContent() {
       resourceManager.logMemoryStatus();
     } else {
       // Play space ambience when entering space
-      if (
-        audioState.ambientMusic &&
-        audioState.ambientMusic instanceof HTMLAudioElement &&
-        !audioState.masterMute &&
-        !audioState.musicMute
-      ) {
+      if (!audioState.masterMute && !audioState.musicMute) {
         console.log("[SCENE-MANAGER] Entering space, starting space ambience");
         audioState.playAmbientMusic();
       } else {
         console.log(
-          "[SCENE-MANAGER] Entering space, but cannot play ambient music:",
-          {
-            hasAmbient: !!audioState.ambientMusic,
-            isHTMLAudioElement:
-              audioState.ambientMusic instanceof HTMLAudioElement,
-            masterMute: audioState.masterMute,
-            musicMute: audioState.musicMute,
-          },
+          "[SCENE-MANAGER] Audio is muted, not playing space ambience"
         );
       }
 
@@ -476,61 +453,10 @@ function GameContent() {
     }
   }, []);
 
-  // Initialize audio and show canvas
+  // Show canvas on mount
   useEffect(() => {
-    const { soundEffects } = AUDIO_CONFIG;
-    const audioState = useAudio.getState();
-    const resourceManager = ResourceManager.getInstance();
-
-    // Only initialize audio if not already initialized (check if it's a proper HTMLAudioElement)
-    if (
-      !audioState.ambientMusic ||
-      !(audioState.ambientMusic instanceof HTMLAudioElement)
-    ) {
-      console.log("[APP] Initializing audio system...");
-      // Load background music
-      const music = new Audio(soundEffects.background.path);
-      music.loop = soundEffects.background.loop ?? false;
-      music.volume = soundEffects.background.volume;
-      setBackgroundMusic(music);
-
-      // Load laser sound
-      const laser = new Audio(soundEffects.laser.path);
-      laser.volume = soundEffects.laser.volume;
-      audioState.setLaserSound(laser);
-
-      // Load hit sound for mining
-      const hit = new Audio(soundEffects.hit.path);
-      hit.volume = soundEffects.hit.volume;
-      audioState.setHitSound(hit);
-
-      // Load success sound
-      const success = new Audio(soundEffects.success.path);
-      success.volume = soundEffects.success.volume;
-      audioState.setSuccessSound(success);
-
-      // Load ambient sound (space ambience) - SINGLETON PATTERN
-      const ambient = new Audio(soundEffects.ambient.path);
-      ambient.volume = soundEffects.ambient.volume;
-      ambient.loop = true; // Force loop to be true for space ambience
-      audioState.setAmbientMusic(ambient);
-
-      // Register ambient audio with ResourceManager with 'persistent-audio' tag to prevent disposal
-      resourceManager.registerAudio("space-ambience-persistent", ambient, [
-        "persistent-audio",
-        "space-ambience",
-      ]);
-      console.log("[APP] Initialized persistent space ambience audio");
-
-      // Load thruster sound for autopilot
-      const thruster = new Audio(soundEffects.thruster.path);
-      thruster.volume = soundEffects.thruster.volume;
-      thruster.loop = soundEffects.thruster.loop ?? false;
-      audioState.setThrusterSound(thruster);
-    }
-
     setShowCanvas(true);
-  }, [setBackgroundMusic]);
+  }, []);
 
   return (
     <UILayoutProvider>

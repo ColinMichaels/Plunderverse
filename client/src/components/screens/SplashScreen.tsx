@@ -152,38 +152,15 @@ export function SplashScreen() {
   )[0];
 
   const { start } = useGame();
-  const {
-    toggleMute,
-    isMuted,
-    setAmbientMusic,
-    setLaserSound,
-    playAmbientMusic,
-    stopAmbientMusic,
-  } = useAudio();
+  const audio = useAudio();
 
-  // Initialize sounds and start ambient music
+  // Play ambient music on mount
   useEffect(() => {
-    const { soundEffects } = AUDIO_CONFIG;
-
-    // Load space ambience
-    const ambientAudio = new Audio(soundEffects.ambient.path);
-    ambientAudio.volume = soundEffects.ambient.volume;
-    ambientAudio.loop = soundEffects.ambient.loop ?? false;
-    setAmbientMusic(ambientAudio);
-
-    // Load zap sound
-    const zapAudio = new Audio(soundEffects.zap.path);
-    zapAudio.volume = soundEffects.zap.volume;
-    setLaserSound(zapAudio);
-
-    // Play ambient music when splash screen loads
-    playAmbientMusic();
-
-    // Cleanup when component unmounts
+    audio.playAmbientMusic();
     return () => {
-      stopAmbientMusic();
+      audio.stopAmbientMusic();
     };
-  }, [setAmbientMusic, setLaserSound, playAmbientMusic, stopAmbientMusic]);
+  }, [audio]);
 
   const handleEnterCockpit = () => {
     start();
@@ -473,14 +450,14 @@ export function SplashScreen() {
               <div className="flex items-center justify-between">
                 <span className="text-slate-300">Audio</span>
                 <button
-                  onClick={toggleMute}
+                  onClick={audio.toggleMasterMute}
                   className={`px-4 py-2 rounded-lg transition-colors ${
-                    isMuted
+                    audio.masterMute
                       ? "bg-red-600 hover:bg-red-500 text-white"
                       : "bg-orange-500 hover:bg-orange-400 text-slate-900"
                   }`}
                 >
-                  {isMuted ? "🔇 Muted" : "🔊 Enabled"}
+                  {audio.masterMute ? "🔇 Muted" : "🔊 Enabled"}
                 </button>
               </div>
 
