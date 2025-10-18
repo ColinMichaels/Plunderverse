@@ -207,15 +207,10 @@ export const NavigationPanel: React.FC = () => {
     
     setSystemStatus('engaging');
     
-    try {
-      await audio.preloadSounds();
-      audio.playLaser();
-      setTimeout(() => {
-        audio.playThruster(currentFuel);
-      }, 200);
-    } catch (error) {
-      console.log('Audio playback failed:', error);
-    }
+    audio.playLaser();
+    setTimeout(() => {
+      audio.playThruster(100);
+    }, 200);
     
     const targetPosition = calculatePlanetPosition(planet);
     activate(targetPosition);
@@ -325,7 +320,6 @@ export const NavigationPanel: React.FC = () => {
   
   // Get system status text
   const getSystemStatusText = () => {
-    if (isOrbiting) return 'ORBITAL LOCK';
     switch(systemStatus) {
       case 'online': return 'AUTOPILOT ENGAGED';
       case 'engaging': return 'SYSTEMS ENGAGING...';
@@ -462,23 +456,13 @@ export const NavigationPanel: React.FC = () => {
                     <div className="p-2 bg-slate-900/50 rounded-lg">
                       <div className="flex items-center gap-2 text-gray-400 mb-1">
                         <Crosshair className="w-3 h-3" />
-                        <span className="text-xs">Progress</span>
+                        <span className="text-xs">Status</span>
                       </div>
-                      <div className="w-full bg-slate-700 rounded-full h-2 mt-1">
-                        <div 
-                          className="bg-cyan-400 h-2 rounded-full transition-all duration-300"
-                          style={{ width: `${approachProgress * 100}%` }}
-                        />
-                      </div>
+                      <p className="font-mono text-cyan-400 text-xs">
+                        {isActive ? 'ACTIVE' : 'STANDBY'}
+                      </p>
                     </div>
                   </div>
-                  
-                  {isOrbiting && (
-                    <div className="flex items-center gap-2 p-2 bg-green-500/10 border border-green-500/30 rounded-lg">
-                      <Globe className="w-4 h-4 text-green-400 animate-pulse" />
-                      <span className="text-sm text-green-400">Maintaining orbital trajectory</span>
-                    </div>
-                  )}
                 </motion.div>
               )}
               

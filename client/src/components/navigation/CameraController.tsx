@@ -1087,7 +1087,7 @@ export function CameraController() {
           setWarpMode(false);
         }
 
-        if (!isOrbiting && distanceToTarget > landingDistance) {
+        if (distanceToTarget > landingDistance) {
           // Approach phase - fly towards current planet position
           const direction = tempVec3_1.current
             .copy(currentPlanetPosition)
@@ -1115,14 +1115,17 @@ export function CameraController() {
           );
           velocity.add(autopilotVelocity);
 
-          // Check if we should enter orbit (within landing distance)
+          // Check if we've reached landing distance - deactivate autopilot
           if (distanceToTarget <= landingDistance + 5) {
-            enterOrbit(landingDistance);
+            deactivateAutopilot();
             console.log(
-              `Autopilot entering stable orbit around ${selectedPlanet} at ${landingDistance} units`,
+              `Autopilot reached ${selectedPlanet} at ${landingDistance} units`,
             );
           }
-        } else if (isOrbiting) {
+        } 
+        
+        /* ORBITAL FEATURES DISABLED - Not yet implemented in autopilot store
+        else if (isOrbiting) {
           // Orbital phase - locked orbit around the moving planet
           const orbitSpeed = 0.15; // Orbital rotation speed
           const currentOrbitAngle =
@@ -1203,6 +1206,7 @@ export function CameraController() {
           previousPlanetPositionRef.current = null;
           trackedPlanetNameRef.current = null;
         }
+        */
 
         // Mark as thrusting during autopilot and consume fuel
         setThrusting(true);
@@ -1224,9 +1228,6 @@ export function CameraController() {
         if (!consumeShipFuel(finalAutopilotConsumption)) {
           console.warn("Out of fuel! Autopilot deactivated.");
           deactivateAutopilot();
-        } else {
-          // Update thruster volume based on current fuel level
-          updateThrusterVolume();
         }
 
         // Apply ship degradation during autopilot travel
