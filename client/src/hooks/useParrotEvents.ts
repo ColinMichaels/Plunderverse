@@ -1,198 +1,202 @@
+// client/src/hooks/useParrotEvents.ts
+
 import {useEffect, useRef} from 'react';
-import {useParrot} from '@/lib/stores/useParrot';
-import {useShipStatus} from '@/lib/stores/ship/useShipStatus';
-import {useEquipment} from '@/lib/stores/ship/useEquipment';
-import {usePlunderverseMissions} from '@/lib/stores/economy/usePlunderverseMissions';
-import {useHeatSystem} from '@/lib/stores/player/useHeatSystem';
-import {useLandedState} from '@/lib/stores/surface/useLandedState';
-import {parrotSpeechService} from '@/services/ParrotSpeechService';
+import {Logger} from 'client/src/services/Logger';
+// Adjust this import path as needed
+import {useLandedState} from '@/lib/stores/';
+import {useShipStatus} from '@/lib/stores/ship/useShipStatus'
+import {parrotSpeechService} from 'client/src/services/ParrotSpeechService';
+
+type Tone = 'info' | 'warning' | 'critical';
+
+const GLOBAL_COOLDOWN_MS = 30_000; // 30 seconds for any key
+const CATEGORY_COOLDOWN: Record<Tone, number> = {
+    info: 60_000,
+    warning: 30_000,
+    critical: 15_000,
+};
 
 export function useParrotEvents() {
-  const parrot = useParrot();
-  const shipStatus = useShipStatus();
-  const equipment = useEquipment();
-  const missions = usePlunderverseMissions();
-  const heatSystem = useHeatSystem();
-  const { isTakingOff } = useLandedState();
+    const {isTakingOff} = useLandedState();
+    const {hull, shield} = useShipStatus();
+    const shipStatus = {hull, shield};
+    const lastSaidRef = useRef<Record<string, number>>({});
 
-    // === Speech helpers & cooldowns ===
-    const takingOffRef = useRef(isTakingOff);
+    // === Helper utilities ===
+    const getRandomFrom = <T>(arr: T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+    const phrasePools: Record<
+        'fuelLow' | 'fuelEmpty' | 'hullCritical' | 'shieldsLow' | 'missionsReminder' |
+        'missionsComplete' | 'heatHigh' | 'wantedHigh' | 'randomComment' | 'memoryRecall',
+        string[]
+    > = {
+        fuelLow: [
+            "Squawk! Fuel reserves be runnin' low, Cap'n! Only {pct}% left!",
+            "Cap'n – we've got about {pct}% fuel remaining, time to refuel!",
+            "Alert! Fuel dipping to {pct}% — ship's going hungry, Cap'n!"
+        ],
+        fuelEmpty: [
+            "Blimey! We're outta fuel, Cap'n! Dead in space we are!",
+            "Fuel’s gone. We’re driftin’ without juice, Cap'n!",
+            "No fuel left. Brace for unattended drifting, Cap'n!"
+        ],
+        hullCritical: [
+            "Avast! Hull integrity critical, Cap'n! Need repairs now!",
+            "Hull’s at {pct}% — we’ll not last long like this, Cap’n!",
+            "Critical hull alert! Patch her up or we’re done, Cap’n!"
+        ],
+        shieldsLow: [
+            "Squawk! Shields be failin’, Cap’n!",
+            "Shields down to {pct}% — danger be closin’ fast, Cap’n!",
+            "Warning! Shields weakened, Cap’n — get ready!"
+        ],
+        missionsReminder: [
+            "Reminder, Cap’n: We still got that {title} mission to finish!",
+            "Cap’n — don’t forget the {title} mission’s still active!",
+            "The {title} mission awaits, Cap’n — ready yer boots!"
+        ],
+        missionsComplete: [
+            "Har har! {count} missions in the bag, Cap’n! Nice work!",
+            "Well done, Cap’n — {count} missions done and dusted!",
+            "Victory! {count} missions complete — we’re legends now, Cap’n!"
+        ],
+        heatHigh: [
+            "Avast! Heat levels be risin’, Cap’n! Keep yer head down!",
+            "Warning! Ship heat at {pct}% — things be gettin’ toasty!",
+            "Heat warning, Cap’n — if we don’t cool off, we'll fry!"
+        ],
+        wantedHigh: [
+            "Squawk! Yer wanted across the system, Cap’n! Patrols everywhere!",
+            "Alert! Wanted level high — hide yer sails, Cap’n!",
+            "Danger, Cap’n: We’re flagged — bounty hunters loom!"
+        ],
+        randomComment: [
+            "Cap’n, remember that time we outran the kraken? Ahoy memories!",
+            "Want a joke, Cap’n? Why did the pirate buy a ram? For bustin’ boardin’ parties!",
+            "Cap’n, I spy a treasure map in yer dreams — let’s sail!"
+        ],
+        memoryRecall: [
+            "Cap’n, remember our first haul? Feels like yesterday!",
+            "Flashback, Cap’n: That storm off Neptune — we lived it!",
+            "Memory, Cap’n: The gold we found near Davy’s Rift — adventure!"
+        ]
+    };
+
+    const formatPhrase = (template: string, variables: Record<string, any>): string => {
+        return template.replace(/{(\w+)}/g, (_match, key) => String(variables[key] ?? ''));
+    };
+
+    const speak = async (
+        poolKey: keyof typeof phrasePools,
+        variables: Record<string, any> = {},
+        tone: Tone,
+        keyOverride?: string
+    ): Promise<void> => {
+        const templates = phrasePools[poolKey];
+        const template = getRandomFrom(templates);
+        const text = formatPhrase(template, variables);
+        Logger.log(`[ParrotEvents] speaking phrase key=${keyOverride ?? poolKey}, tone=${tone}, text="${text}"`);
+        parrotSpeechService.speak(text);
+        lastSaidRef.current[keyOverride ?? poolKey] = Date.now();
+    };
+
+    const canSpeak = (key: string, tone: Tone): boolean => {
+        const now = Date.now();
+        const lastGlobal = Math.min(
+            ...(Object.values(lastSaidRef.current).length ? Object.values(lastSaidRef.current) : [0])
+        );
+        if (now - lastGlobal < GLOBAL_COOLDOWN_MS) {
+            Logger.debug(`[ParrotEvents] cannot speak: global cooldown active (${now - lastGlobal}ms)`);
+            return false;
+        }
+        const last = lastSaidRef.current[key] || 0;
+        const cooldown = CATEGORY_COOLDOWN[tone];
+        if (now - last < cooldown) {
+            Logger.debug(`[ParrotEvents] cannot speak: key=${key} on tone=${tone}, cooldown active (${now - last}ms)`);
+            return false;
+        }
+        return true;
+    };
+
+    // === Core effects ===
+
     useEffect(() => {
-        takingOffRef.current = isTakingOff;
+        Logger.debug(`[ParrotEvents] hull/shield effect triggered: hull=${shipStatus.hull}, shield=${shipStatus.shield}, isTakingOff=${isTakingOff}`);
+        if (isTakingOff) {
+            Logger.log(`[ParrotEvents] skipping speech: taking off`);
+            return;
+        }
+
+        const hull = shipStatus.hull;
+        const shield = shipStatus.shield;
+
+        if (hull <= 0) {
+            Logger.log(`[ParrotEvents] skipping speech: hull ≤ 0 (destroyed)`);
+            return;
+        }
+
+        const key = 'hull-shield-status';
+        let poolKey: keyof typeof phrasePools | undefined;
+        let variables: Record<string, any> = {};
+        let tone: Tone;
+
+        if (hull < 30) {
+            poolKey = 'hullCritical';
+            variables = {pct: hull};
+            tone = 'critical';
+            Logger.log(`[ParrotEvents] hull warning condition met (hull ${hull}%)`);
+        } else if (shield < 20 && shield > 5) {
+            poolKey = 'shieldsLow';
+            variables = {pct: shield};
+            tone = 'warning';
+            Logger.log(`[ParrotEvents] shield warning condition met (shield ${shield}%)`);
+        } else {
+            Logger.debug(`[ParrotEvents] safe state — resetting lastSaidRef for key=${key}`);
+            delete lastSaidRef.current[key];
+            return;
+        }
+
+        Logger.debug(`[ParrotEvents] attempting speak: pool=${poolKey}, variables=${JSON.stringify(variables)}, tone=${tone}, key=${key}`);
+        if (canSpeak(key, tone)) {
+            speak(poolKey!, variables, tone, key);
+        } else {
+            Logger.log(`[ParrotEvents] canSpeak prevented speech for key=${key}, tone=${tone}`);
+        }
+    }, [shipStatus.hull, shipStatus.shield, isTakingOff]);
+
+    // Random comment interval
+    const setupInterval = (callback: () => void, ms: number, label: string) => {
+        if (isTakingOff) {
+            Logger.log(`[ParrotEvents] Skipping ${label} interval setup during takeoff`);
+            return () => {
+            };
+        }
+        const interval = setInterval(() => {
+            if (!isTakingOff) {
+                Logger.debug(`[ParrotEvents] interval triggered: ${label}`);
+                callback();
+            } else {
+                Logger.log(`[ParrotEvents] Suppressed ${label} during takeoff`);
+            }
+        }, ms);
+        Logger.log(`[ParrotEvents] ${label} interval started (every ${ms}ms)`);
+        return () => {
+            Logger.log(`[ParrotEvents] ${label} interval cleared`);
+            clearInterval(interval);
+        };
+    };
+
+    useEffect(() => {
+        return setupInterval(() => {
+            speak('randomComment', {}, 'info', 'random-comment');
+        }, 45_000, 'random comment');
     }, [isTakingOff]);
 
-    type Tone = 'info' | 'warning' | 'critical';
-    const lastSaidRef = useRef<Record<string, number>>({});
-    const GLOBAL_COOLDOWN_MS = 8000; // minimum gap between any two utterances
-    const CATEGORY_COOLDOWN: Record<Tone, number> = {
-        info: 60000,
-        warning: 45000,
-        critical: 20000,
-    };
-
-    function canSpeak(key: string, tone: Tone): boolean {
-        const now = Date.now();
-        const lastAny = lastSaidRef.current['*'] || 0;
-        if (now - lastAny < GLOBAL_COOLDOWN_MS) return false;
-        const last = lastSaidRef.current[key] || 0;
-        return now - last >= (CATEGORY_COOLDOWN[tone] || 30000);
-    }
-
-    async function say(text: string, tone: Tone = 'info', key?: string) {
-        if (takingOffRef.current) return; // hard block during takeoff
-        const k = key || text.slice(0, 48);
-        if (!canSpeak(k, tone)) return;
-        try {
-            parrot.setCurrentMessage({text, tone});
-            parrot.setSpeaking(true);
-            await parrotSpeechService.speak(text);
-        } catch (e) {
-            console.warn('[ParrotEvents] Speech failed, falling back to log:', e);
-            console.log(`[Parrot] (${tone})`, text);
-        } finally {
-            parrot.setSpeaking(false);
-            const now = Date.now();
-            lastSaidRef.current[k] = now;
-            lastSaidRef.current['*'] = now;
-        }
-    }
-
-  // Track when takeoff state changes for debug logging
-  const previousTakeoffState = useRef(false);
-
-  // Track fuel percentage
-  const fuelTank = equipment.getEquipment('fuel-tank');
-  const fuel = fuelTank?.currentDurability || 0;
-  const maxFuel = fuelTank?.maxDurability || 100;
-  const fuelPercentage = (fuel / maxFuel) * 100;
-
-  // Debug logging for takeoff state changes
-  useEffect(() => {
-    if (isTakingOff !== previousTakeoffState.current) {
-      console.log(`[ParrotEvents] Takeoff state changed: ${previousTakeoffState.current} -> ${isTakingOff}`);
-
-      if (isTakingOff) {
-        console.log('[ParrotEvents] 🚀 TAKEOFF INITIATED - Pausing parrot speech');
-        // Stop any current speech immediately
-          try {
-              parrotSpeechService.stop();
-          } catch {
-          }
-        parrot.setSpeaking(false);
-      } else if (previousTakeoffState.current) {
-        console.log('[ParrotEvents] 🛬 TAKEOFF COMPLETE - Resuming parrot speech');
-      }
-
-      previousTakeoffState.current = isTakingOff;
-    }
-  }, [isTakingOff, parrot]);
-
-  useEffect(() => {
-    // Skip fuel warnings during takeoff
-    if (isTakingOff) return;
-
-    if (fuelPercentage < 20 && fuelPercentage > 0) {
-        say("Squawk! Fuel reserves be runnin' low, Cap'n! Only " + Math.floor(fuelPercentage) + '% left!', 'warning', 'fuel-low');
-    } else if (fuelPercentage === 0) {
-        say("Blimey! We're outta fuel, Cap'n! Dead in space we are!", 'critical', 'fuel-empty');
-    }
-  }, [fuelPercentage, parrot, isTakingOff]);
-
-  useEffect(() => {
-    // Skip status warnings during takeoff
-    if (isTakingOff) return;
-
-    const hull = shipStatus.hull;
-    const shield = shipStatus.shield;
-
-    if (hull < 30 && hull > 0) {
-        say("Avast! Hull integrity critical, Cap'n! Need repairs now!", 'critical', 'hull-critical');
-    } else if (shield < 20 && shield > 5) {
-        // Only warn when shields are critically low but not completely failed (dead)
-        // This prevents the annoying loop on the death screen
-        say("Squawk! Shields be failin', Cap'n!", 'warning', 'shields-low');
-    }
-  }, [shipStatus.hull, shipStatus.shield, parrot, isTakingOff]);
-
-  useEffect(() => {
-    // Skip mission reminders during takeoff
-    if (isTakingOff) return;
-
-      const activeMissions = missions.activeMissions.filter(m => m.active && !m.completed);
-    const completedCount = missions.activeMissions.filter(m => m.completed).length;
-
-    if (activeMissions.length > 0 && Math.random() < 0.1) {
-      const mission = activeMissions[0];
-        say(`Reminder, Cap'n: We still got that ${mission.title} mission to finish!`, 'info', 'mission-reminder');
-    }
-
-    if (completedCount > 0) {
-        say(`Har har! ${completedCount} missions in the bag, Cap'n! Nice work!`, 'info', 'missions-complete');
-    }
-  }, [missions.activeMissions.length, parrot, isTakingOff]);
-
-  useEffect(() => {
-    // Skip heat warnings during takeoff
-    if (isTakingOff) return;
-
-      const heat = heatSystem.currentHeat;
-    const wantedLevel = heatSystem.wantedLevel;
-
-    if (wantedLevel >= 4) {
-        say("Squawk! Yer wanted across the system, Cap'n! Patrols everywhere!", 'critical', 'wanted-high');
-    } else if (heat > 50) {
-        say("Avast! Heat levels be risin', Cap'n! Keep yer head down!", 'warning', 'heat-high');
-    }
-  }, [heatSystem.currentHeat, heatSystem.wantedLevel, parrot, isTakingOff]);
-
-
-  useEffect(() => {
-    // Don't set up interval if we're taking off
-    if (isTakingOff) {
-      console.log('[ParrotEvents] Skipping random comment interval setup during takeoff');
-      return;
-    }
-    
-    const interval = setInterval(() => {
-      // Double-check we're not taking off before speaking
-      if (!useLandedState.getState().isTakingOff) {
-        parrot.randomComment();
-      } else {
-        console.log('[ParrotEvents] Suppressed random comment during takeoff');
-      }
-    }, 45000);
-    
-    console.log('[ParrotEvents] Random comment interval started');
-
-    return () => {
-      console.log('[ParrotEvents] Random comment interval cleared');
-      clearInterval(interval);
-    };
-  }, [parrot, isTakingOff]);
-
-  useEffect(() => {
-    // Don't set up interval if we're taking off
-    if (isTakingOff) {
-      console.log('[ParrotEvents] Skipping memory recall interval setup during takeoff');
-      return;
-    }
-    
-    const memoryInterval = setInterval(() => {
-      // Double-check we're not taking off before speaking
-      if (!useLandedState.getState().isTakingOff) {
-        if (Math.random() < 0.2) {
-          parrot.recallMemory();
-        }
-      } else {
-        console.log('[ParrotEvents] Suppressed memory recall during takeoff');
-      }
-    }, 90000);
-    
-    console.log('[ParrotEvents] Memory recall interval started');
-
-    return () => {
-      console.log('[ParrotEvents] Memory recall interval cleared');
-      clearInterval(memoryInterval);
-    };
-  }, [parrot, isTakingOff]);
+    useEffect(() => {
+        return setupInterval(() => {
+            if (Math.random() < 0.2) {
+                speak('memoryRecall', {}, 'info', 'memory-recall');
+            }
+        }, 90_000, 'memory recall');
+    }, [isTakingOff]);
 }
