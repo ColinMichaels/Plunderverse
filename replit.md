@@ -8,6 +8,12 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-18: Autopilot Thruster Sound Lifecycle Fix
+- **Thruster Sound Completion**: Added stopThruster() call when autopilot reaches destination and initiates landing
+- **Fuel Depletion Handling**: Added stopThruster() call when autopilot runs out of fuel mid-flight
+- **Audio API Fix**: Corrected playRain() call in AtmosphericEffects to match useAudio API (no parameters)
+- **Sound Integration**: All thruster sounds use useAudio service with proper volume/mute control
+
 ### 2025-10-18: Mouse Click-and-Hold Steering
 - **Input System Enhancement**: Extended useInput store with `isMouseSteering` state for tracking mouse button state
 - **Non-Intrusive Controls**: Mouse steering only activates when left mouse button is held down - no cursor lock or focus lock
