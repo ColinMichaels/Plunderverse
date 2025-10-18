@@ -8,6 +8,14 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### 2025-10-18: Mini-Game System Implementation
+- **Mini-Game Manager**: Created MinigameManager component to handle game selection, high scores, and rewards
+- **Zero-Gravity Racing**: Implemented 3D racing mini-game with keyboard controls (WASD/Arrows + Space/Shift for vertical movement)
+- **Asteroid-Shooting Gallery**: Implemented 2D shooting mini-game with click-to-shoot mechanics
+- **Station Integration**: Added "Arcade" tab to StationDashboard for accessing mini-games when landed at stations
+- **Reward System**: Mini-games award credits based on performance (racing time and shooting accuracy)
+- **Keyboard Controls Fix**: Fixed Zero-Gravity Racing controls using @react-three/drei KeyboardControls wrapper
+
 ### 2025-10-18: Circular Dependency Fixes
 - **Audio System**: Fixed "Cannot access 'useAudio' before initialization" error by replacing static imports with dynamic imports in stopAllAudio() method
 - **Autopilot System**: Fixed "Cannot access 'useLandedState' before initialization" error by deferring subscription initialization with setTimeout pattern
