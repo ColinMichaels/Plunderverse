@@ -19,6 +19,7 @@ export function NavigationPanel({ onClose }: NavigationPanelProps) {
   const { 
     selectedPlanet, 
     cameraPosition, 
+    distanceToTarget,
     time, 
     setSelectedPlanet 
   } = useSolarSystem();
@@ -127,7 +128,7 @@ export function NavigationPanel({ onClose }: NavigationPanelProps) {
               </div>
               <div className="text-sm text-slate-300">{selectedPlanetData.description}</div>
               <div className="text-xs text-slate-400 mt-1">
-                Distance: {Math.round(selectedPlanetData.distance)} AU
+                Distance: {Math.round(distanceToTarget)} units
                 {visitedPlanets.has(selectedPlanet) && ' • Visited'}
               </div>
             </div>

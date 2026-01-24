@@ -115,6 +115,17 @@ Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
 ## Recent Changes
 
+### 2026-01-24: Mobile UI Feature Parity
+- Created NavigationPanel for mobile with planet list, coordinates, autopilot
+- Created ShipStatusPanel with shields, hull, fuel bars (matching desktop)
+- Created SettingsPanel with audio toggle, menu access, controls help
+- Enhanced MobileHUD with quick-access buttons for all panels
+- Added compact status bar showing fuel, shields, credits
+- Added target indicator and wanted level display
+- Mobile now hides HUD when landed (matching desktop behavior)
+- All panels use same stores as desktop for synchronized state
+- Added engine-agnostic setters to useSolarSystem for Babylon compatibility
+
 ### 2026-01-24: Babylon.js Full Migration (Space Scene)
 - Replaced R3F Canvas with BabylonCanvas in App.tsx
 - Created BabylonSolarSystem scene with all planets, sun, moon, starfield

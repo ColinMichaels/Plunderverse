@@ -8,6 +8,7 @@ import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
 import { useCreditsData } from '../../domain/economy/selectors';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
+import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { ActionBar } from './ActionBar';
 import { ControlPanel } from './ControlPanel';
 import { CleanViewToggle } from './CleanViewToggle';
@@ -31,6 +32,8 @@ export function MobileHUD() {
   const { credits } = useCreditsData();
   const { currentHeat } = useHeatSystem();
 
+  const { isLanded } = useLandedState();
+
   const fuelTank = getEquipment("fuel-tank");
   const fuel = fuelTank
     ? (fuelTank.currentDurability / fuelTank.maxDurability) * 100
@@ -43,6 +46,8 @@ export function MobileHUD() {
   };
 
   if (!isMobile) return null;
+  
+  if (isLanded) return null;
 
   const openPanel = (panel: ActivePanel) => {
     setActivePanel(panel);
