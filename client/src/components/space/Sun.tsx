@@ -77,7 +77,7 @@ export function Sun({
     flareTex.wrapS = flareTex.wrapT = THREE.ClampToEdgeWrapping;
     // If you’re using linear workflow/tone mapping, leave colorSpace as SRGB for UI-ish sprites
     // @ts-ignore
-    flareTex.colorSpace = THREE.SRGBColorSpace ?? THREE.sRGBEncoding;
+    flareTex.colorSpace = THREE.SRGBColorSpace;
   }, [sunTex, noiseTex, flareTex]);
 
   // === Photosphere shader (UV warp via two scrolling noise samples) ===

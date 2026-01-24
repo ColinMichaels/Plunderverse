@@ -38,8 +38,11 @@ export function EngineProvider({
   const engineRef = useRef<IRenderingEngine | null>(null);
   const initializingRef = useRef(false);
 
+  console.log('[EngineProvider] Render - canvas:', !!canvasRef.current, 'isInitialized:', isInitialized);
+
   useEffect(() => {
     const canvas = canvasRef.current;
+    console.log('[EngineProvider] useEffect - canvas:', canvas, 'initializing:', initializingRef.current, 'engineRef:', !!engineRef.current);
     if (!canvas) return;
     if (initializingRef.current) return;
     if (engineRef.current) return;

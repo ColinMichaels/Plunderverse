@@ -425,7 +425,7 @@ function PlanetTransitionScene({
     planetTex.minFilter = THREE.LinearMipMapLinearFilter;
     planetTex.magFilter = THREE.LinearFilter;
     // @ts-ignore
-    planetTex.colorSpace = THREE.SRGBColorSpace ?? THREE.sRGBEncoding;
+    planetTex.colorSpace = THREE.SRGBColorSpace;
   }, [planetTex]);
 
   // Enhanced atmosphere shader with blue rim light

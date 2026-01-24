@@ -67,6 +67,7 @@ function GameContent() {
     }
   }, [uiTheme]);
   
+  
   // Log scene switches when isLanded changes
   useEffect(() => {
     console.log(`[APP-SCENE-SWITCH] isLanded changed to: ${isLanded}`, {
@@ -117,6 +118,9 @@ function GameContent() {
 
   // Use forced mobile if needed
   const effectivePlatformType = forceMobile ? "mobile" : platformType;
+
+  // Log the current game state on every render for debugging
+  console.log(`[APP-RENDER] phase: ${phase}, isLanded: ${isLanded}, showCanvas: ${showCanvas}, effectivePlatformType: ${effectivePlatformType}`);
 
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());

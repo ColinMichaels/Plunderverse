@@ -54,8 +54,11 @@ export function BabylonCanvasWithInit({
   const [mounted, setMounted] = React.useState(false);
 
   useEffect(() => {
+    console.log('[BabylonCanvasWithInit] Component mounted, canvas ref:', canvasRef.current);
     setMounted(true);
   }, []);
+
+  console.log('[BabylonCanvasWithInit] Render - mounted:', mounted, 'canvasRef.current:', !!canvasRef.current);
 
   return (
     <div className={`relative w-full h-full ${className}`} style={style}>
