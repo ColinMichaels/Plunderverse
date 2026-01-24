@@ -460,6 +460,29 @@ export class BabylonAdapter implements IRenderingEngine {
     }
   }
 
+  setCameraTransform(id: string, transform: { position?: { x: number; y: number; z: number }; target?: { x: number; y: number; z: number } }): void {
+    const node = this.getNode(id);
+    if (!node || node.type !== 'camera') return;
+
+    const camera = node.nativeObject as FreeCamera;
+
+    if (transform.position) {
+      camera.position = new Vector3(
+        transform.position.x,
+        transform.position.y,
+        transform.position.z
+      );
+    }
+
+    if (transform.target) {
+      camera.setTarget(new Vector3(
+        transform.target.x,
+        transform.target.y,
+        transform.target.z
+      ));
+    }
+  }
+
   async loadTexture(url: string): Promise<unknown> {
     const scene = this.getActiveScene();
     if (!scene) throw new Error('No active scene');

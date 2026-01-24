@@ -141,6 +141,7 @@ export interface IRenderingEngine {
 
   setActiveCamera(id: string): void;
   updateCamera(id: string, options: Partial<CameraOptions>): void;
+  setCameraTransform(id: string, transform: { position?: Vector3Like; target?: Vector3Like }): void;
 
   loadTexture(url: string): Promise<unknown>;
   loadModel(url: string): Promise<SceneNode>;

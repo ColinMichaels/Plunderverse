@@ -1,8 +1,8 @@
-import {Canvas} from "@react-three/fiber";
 import {Suspense, useEffect, useRef, useState} from "react";
 import {KeyboardControls} from "@react-three/drei";
-import {SolarSystem} from "./components/space/SolarSystem";
 import {GameUI} from "./components/ui/GameUI";
+import {BabylonCanvasWithInit} from "./engine/components/BabylonCanvas";
+import {BabylonSolarSystem} from "./engine/scenes/BabylonSolarSystem";
 import {EnhancedSplashScreen} from "./components/screens/EnhancedSplashScreen";
 import {PlanetSurfaceScene} from "./components/surface/PlanetSurfaceScene";
 import {WebGLCheckWrapper} from "./components/shared/WebGLCheckWrapper";
@@ -488,36 +488,16 @@ function GameContent() {
               <KeyboardControls map={keyboardMapRef.current}>
                 {/* Conditionally render EITHER space scene OR planet surface scene */}
                 {phase === "playing" && !isLanded && (
-                  // Space scene - only rendered when not landed
+                  // Space scene - Babylon.js powered
                   <TouchPropulsionControls>
                     <WebGLCheckWrapper fallbackMessage="WebGL is required to render the space environment.">
-                      <Canvas
-                        shadows
-                        camera={{
-                          position: [0, 10, 50],
-                          fov: 90,
-                          near: 0.1,
-                          far: 10000,
-                        }}
-                        gl={{
-                          antialias: true,
-                          powerPreference: "high-performance",
-                        }}
-                        onCreated={({ gl, camera }) => {
-                          console.log("[CANVAS-SPACE] Canvas created with camera at:", camera.position.toArray());
-                          gl.toneMapping = 1; // ACESFilmicToneMapping for better HDR
-                          gl.toneMappingExposure = 1.0;
-                        }}
-                        onError={(error) => {
-                          console.error("[CANVAS-SPACE] Canvas/Three.js error:", error);
-                        }}
+                      <BabylonCanvasWithInit
+                        className="absolute inset-0"
+                        onReady={() => console.log("[BABYLON-SPACE] Engine ready")}
+                        onError={(err) => console.error("[BABYLON-SPACE] Engine error:", err)}
                       >
-                        <color attach="background" args={["#000000"]} />
-
-                        <Suspense fallback={<mesh><boxGeometry /><meshBasicMaterial color="red" /></mesh>}>
-                          <SolarSystem />
-                        </Suspense>
-                      </Canvas>
+                        <BabylonSolarSystem />
+                      </BabylonCanvasWithInit>
                     </WebGLCheckWrapper>
                   </TouchPropulsionControls>
                 )}
