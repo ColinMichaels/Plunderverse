@@ -27,15 +27,21 @@ client/src/
 │   ├── space/        # Solar system, planets, stars
 │   ├── surface/      # Planet surface rendering
 │   └── ui/           # Core UI components
+├── domain/           # Domain-driven design modules
+│   ├── economy/      # Credits, inventory, trading stores
+│   └── crypto/       # Cryptocurrency mock service
 ├── engine/           # Rendering engine abstraction layer
 │   ├── interfaces/   # Engine-agnostic interfaces
 │   ├── adapters/     # Engine implementations (Babylon, Three)
 │   ├── components/   # React components for engine
 │   ├── hooks/        # Engine React hooks
 │   └── utils/        # Math utilities (Vec3, Quat, Color)
+├── providers/        # React context providers
+│   ├── DebugProvider     # Debug mode and logging control
+│   └── PlatformProvider  # Platform detection (mobile/desktop)
 ├── hooks/            # Custom React hooks
 ├── lib/
-│   ├── stores/       # Zustand state management
+│   ├── stores/       # Zustand state management (legacy + domain)
 │   ├── plunderverse/ # Game engine (missions, economy)
 │   └── utils/        # Utilities and helpers
 ├── services/         # API clients, cloud sync
@@ -53,27 +59,26 @@ server/
 - **Audio**: Howler.js
 - **Network**: WebSocket for real-time sync
 
-## Rendering Engine Abstraction
+## Architecture Patterns
 
-The project uses an engine abstraction layer (`client/src/engine/`) that allows swapping rendering engines:
+### State Management
+- **Domain Stores** (preferred): `client/src/domain/` - New domain-driven stores
+- **Legacy Stores**: `client/src/lib/stores/` - Backward-compatible adapters
+- Use `useCreditsStore`, `useInventoryStore` for new code
+- Legacy `useCredits`, `useInventory` delegate to domain stores
 
-### Key Components
-- `IRenderingEngine` - Interface defining engine-agnostic operations
+### Rendering Engine Abstraction
+Located in `client/src/engine/`:
+- `IRenderingEngine` - Engine-agnostic interface
 - `BabylonAdapter` - Babylon.js implementation
 - `Vec3`, `Quat`, `Color` - Engine-agnostic math utilities
-- `useEngine` hook - React context for engine access
-- `EngineProvider` - React provider for engine lifecycle
+- `useEngine`, `useEngineUpdate` - React hooks for engine access
+- Test via `?babylon=true` URL parameter
 
-### Testing Babylon.js
-Add `?babylon=true` to URL to test the Babylon.js rendering engine
-
-### Engine Features
-- Scene management (create, dispose, switch)
-- Mesh creation (box, sphere, plane, cylinder)
-- Light types (ambient, point, directional, spot)
-- Camera management (perspective, orthographic)
-- Update loop callbacks with delta time
-- Texture and model loading
+### Debug Utilities
+- `client/src/lib/utils/debug.ts` - Centralized logging
+- `client/src/providers/DebugProvider.tsx` - Debug mode context
+- Console spam reduced with once-only warnings
 
 ## Key Features
 1. **Space Flight**: 3D navigation with autopilot, mouse steering, keyboard controls
@@ -91,7 +96,20 @@ All sounds managed through `useAudio` hook with category-based volume control:
 ## Database
 Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
+## Improvement Roadmap
+1. **Integrate Babylon Engine**: Migrate components from Three.js to abstraction layer
+2. **Split App.tsx**: Extract scene management, cloud sync into providers
+3. **Domain Store Migration**: Move remaining legacy stores to domain pattern
+4. **Performance**: Add scene lifecycle manager for resource cleanup
+
 ## Recent Changes
+
+### 2026-01-24: Code Optimization
+- Created providers folder with DebugProvider and PlatformProvider
+- Added centralized debug utilities with log gating
+- Fixed MemoryProfiler to warn only once about missing API
+- Reduced console spam from deprecated store warnings
+- Added debug.ts utility for controlled logging
 
 ### 2026-01-24: Babylon.js Engine Abstraction
 - Created rendering engine abstraction layer in `client/src/engine/`
@@ -100,11 +118,9 @@ Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 - Added engine-agnostic math utilities (Vec3, Quat, Color, MathUtils)
 - Created React hooks (`useEngine`, `useEngineUpdate`) for engine access
 - Added Babylon.js test page accessible via `?babylon=true` URL parameter
-- Installed @babylonjs/core, @babylonjs/loaders, @babylonjs/materials
 
 ### 2026-01-24: Codebase Cleanup
 - Removed scattered test files from src/ root
 - Organized Parrot components into dedicated folder
 - Removed old test documentation and backup files
-- Cleaned up unused imports and dependencies
 - Simplified project structure

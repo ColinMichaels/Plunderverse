@@ -35,6 +35,8 @@ class MemoryProfiler {
   private enabled: boolean = import.meta.env.DEV;
   private lastCleanupTime: number = 0;
   private cleanupCount: number = 0;
+  private apiWarningShown: boolean = false;
+  private memoryApiAvailable: boolean | null = null;
 
   private constructor() {
     if (this.enabled) {
@@ -57,10 +59,19 @@ class MemoryProfiler {
    * Check if performance.memory API is available
    */
   private checkMemoryAPISupport(): boolean {
+    if (this.memoryApiAvailable !== null) {
+      return this.memoryApiAvailable;
+    }
+    
     if (!performance || !(performance as any).memory) {
-      console.warn('[MemoryProfiler] performance.memory API not available in this browser');
+      if (!this.apiWarningShown) {
+        console.warn('[MemoryProfiler] performance.memory API not available in this browser');
+        this.apiWarningShown = true;
+      }
+      this.memoryApiAvailable = false;
       return false;
     }
+    this.memoryApiAvailable = true;
     return true;
   }
 
