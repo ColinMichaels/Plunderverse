@@ -73,9 +73,28 @@ export class BabylonAdapter implements IRenderingEngine {
 
   async initialize(canvas: HTMLCanvasElement): Promise<void> {
     this.canvas = canvas;
+    
+    // Dispose any existing engine first
+    if (this.engine) {
+      console.log('[BabylonAdapter] Disposing existing engine before reinitializing');
+      this.dispose();
+    }
+    
     this.engine = new Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true
+    });
+
+    // Wait for engine to be fully ready
+    await new Promise<void>((resolve) => {
+      if (this.engine) {
+        this.engine.runRenderLoop(() => {
+          this.engine?.stopRenderLoop();
+          resolve();
+        });
+      } else {
+        resolve();
+      }
     });
 
     console.log('[BabylonAdapter] Engine initialized');
@@ -92,7 +111,10 @@ export class BabylonAdapter implements IRenderingEngine {
   }
 
   createScene(id: string): void {
-    if (!this.engine) throw new Error('Engine not initialized');
+    if (!this.engine) {
+      console.error('[BabylonAdapter] Cannot create scene - engine not initialized');
+      throw new Error('Engine not initialized');
+    }
     
     const scene = new Scene(this.engine);
     scene.clearColor = new Color4(0, 0, 0, 1);
