@@ -1,5 +1,4 @@
-import {Suspense, useEffect, useRef, useState} from "react";
-import {KeyboardControls} from "@react-three/drei";
+import {Suspense, useEffect, useRef, useState, ReactNode} from "react";
 import {GameUI} from "./components/ui/GameUI";
 import {BabylonCanvasWithInit} from "./engine/components/BabylonCanvas";
 import {BabylonSolarSystem} from "./engine/scenes/BabylonSolarSystem";
@@ -37,10 +36,28 @@ function GameContent() {
     const params = new URLSearchParams(window.location.search);
     return params.get('babylon') === 'true';
   });
-  const { phase } = useGame();
-  const { isLanded } = useLandedState();
-    const {platformType, updatePlatform} = usePlatform();
-  const { uiTheme } = useSettings();
+  
+  // Use state with subscription instead of Zustand hooks to avoid React duplicate issue
+  const [phase, setPhase] = useState(() => useGame.getState().phase);
+  const [isLanded, setIsLanded] = useState(() => useLandedState.getState().isLanded);
+  const [platformType, setPlatformType] = useState(() => usePlatform.getState().platformType);
+  const [uiTheme, setUiTheme] = useState(() => useSettings.getState().uiTheme);
+  
+  // Subscribe to store changes
+  useEffect(() => {
+    const unsubGame = useGame.subscribe((state) => setPhase(state.phase));
+    const unsubLanded = useLandedState.subscribe((state) => setIsLanded(state.isLanded));
+    const unsubPlatform = usePlatform.subscribe((state) => setPlatformType(state.platformType));
+    const unsubSettings = useSettings.subscribe((state) => setUiTheme(state.uiTheme));
+    return () => {
+      unsubGame();
+      unsubLanded();
+      unsubPlatform();
+      unsubSettings();
+    };
+  }, []);
+  
+  const updatePlatform = usePlatform.getState().updatePlatform;
   
   // Initialize theme on mount
   useEffect(() => {
@@ -487,7 +504,7 @@ function GameContent() {
 
             {/* Show game when playing OR ended (for death screen) */}
             {(phase === "playing" || phase === "ended") && showCanvas && (
-              <KeyboardControls map={keyboardMapRef.current}>
+              <>
                 {/* Unified Babylon.js canvas for all scenes - seamless transitions */}
                 <TouchPropulsionControls>
                   <WebGLCheckWrapper fallbackMessage="WebGL is required to render the game.">
@@ -517,7 +534,7 @@ function GameContent() {
                 <PatrolEncounter />
                 <TakeoffControls />
                 <HintModal />
-              </KeyboardControls>
+              </>
             )}
             </>
           )

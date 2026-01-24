@@ -1,0 +1,48 @@
+react.development.js:1676 Uncaught TypeError: Cannot read properties of null (reading 'useSyncExternalStore')
+    at Object.useSyncExternalStore (react.development.js:1676:21)
+    at useStore (react.mjs:6:23)
+    at useBoundStore (react.mjs:16:39)
+    at GameContent (App.tsx:40:21)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)Understand this error
+2index.tsx:86 Warning: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://reactjs.org/link/invalid-hook-call for tips about how to debug and fix this problem.
+console.error @ index.tsx:86Understand this error
+react.development.js:1676 Uncaught TypeError: Cannot read properties of null (reading 'useSyncExternalStore')
+    at Object.useSyncExternalStore (react.development.js:1676:21)
+    at useStore (react.mjs:6:23)
+    at useBoundStore (react.mjs:16:39)
+    at GameContent (App.tsx:40:21)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback2 (react-dom.development.js:4164:14)
+    at Object.invokeGuardedCallbackDev (react-dom.development.js:4213:16)
+    at invokeGuardedCallback (react-dom.development.js:4277:31)Understand this error
+index.tsx:86 The above error occurred in the <GameContent> component:
+
+    at GameContent (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/App.tsx?v=6C1b75vKvpmCLVFSsNzKs:48:39)
+    at App (https://8a0951cd-9dd4-4d58-95e8-dd4ac5b8814a-00-32ziu7mjabk24.riker.replit.dev/src/App.tsx?v=6C1b75vKvpmCLVFSsNzKs:509:3)
+
+Consider adding an error boundary to your tree to customize error handling behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error boundaries.
+console.error @ index.tsx:86Understand this error
+react-dom.development.js:26962 Uncaught TypeError: Cannot read properties of null (reading 'useSyncExternalStore')
+    at Object.useSyncExternalStore (react.development.js:1676:21)
+    at useStore (react.mjs:6:23)
+    at useBoundStore (react.mjs:16:39)
+    at GameContent (App.tsx:40:21)
+    at renderWithHooks (react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (react-dom.development.js:20103:13)
+    at beginWork (react-dom.development.js:21626:16)
+    at beginWork$1 (react-dom.development.js:27465:14)
+    at performUnitOfWork (react-dom.development.js:26596:12)
+    at workLoopSync (react-dom.development.js:26505:5)Understand this error
+content.js:295 Uncaught TypeError: Cannot read properties of undefined (reading 'onClicked')
