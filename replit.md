@@ -70,10 +70,16 @@ server/
 ### Rendering Engine Abstraction
 Located in `client/src/engine/`:
 - `IRenderingEngine` - Engine-agnostic interface
-- `BabylonAdapter` - Babylon.js implementation
+- `BabylonAdapter` - Babylon.js implementation with advanced features
 - `Vec3`, `Quat`, `Color` - Engine-agnostic math utilities
 - `useEngine`, `useEngineUpdate` - React hooks for engine access
 - Test via `?babylon=true` URL parameter
+
+**Babylon.js Features**:
+- Post-processing: Glow, Bloom, Vignette, Chromatic Aberration
+- Particle systems for effects (thrusters, explosions, corona)
+- Skybox/environment support
+- Scene management with proper cleanup
 
 ### Debug Utilities
 - `client/src/lib/utils/debug.ts` - Centralized logging
@@ -110,6 +116,13 @@ Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 - Fixed MemoryProfiler to warn only once about missing API
 - Reduced console spam from deprecated store warnings
 - Added debug.ts utility for controlled logging
+
+### 2026-01-24: Babylon.js Enhanced Features
+- Added post-processing pipeline (glow, bloom, vignette, chromatic aberration)
+- Implemented particle system support for visual effects
+- Added skybox/environment texture support
+- Enhanced test scene with sun corona particles, asteroid belt, moon orbits
+- Camera animation and improved visual quality
 
 ### 2026-01-24: Babylon.js Engine Abstraction
 - Created rendering engine abstraction layer in `client/src/engine/`

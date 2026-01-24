@@ -13,10 +13,15 @@ import {
   MeshBuilder,
   StandardMaterial,
   Texture,
+  CubeTexture,
   TransformNode,
   AbstractMesh,
   SceneLoader,
-  Quaternion
+  Quaternion,
+  ParticleSystem,
+  GPUParticleSystem,
+  GlowLayer,
+  DefaultRenderingPipeline
 } from '@babylonjs/core';
 import '@babylonjs/loaders';
 
@@ -30,12 +35,18 @@ import type {
   TransformData,
   UpdateCallback,
   ColorLike,
-  Vector3Like
+  Vector3Like,
+  PostProcessingOptions,
+  ParticleSystemOptions
 } from '../interfaces/RenderingEngine';
 
 interface SceneData {
   scene: Scene;
   nodes: Map<string, SceneNode>;
+  particleSystems: Map<string, ParticleSystem | GPUParticleSystem>;
+  glowLayer: GlowLayer | null;
+  renderingPipeline: DefaultRenderingPipeline | null;
+  skybox: AbstractMesh | null;
 }
 
 export class BabylonAdapter implements IRenderingEngine {
@@ -88,7 +99,11 @@ export class BabylonAdapter implements IRenderingEngine {
     
     this.scenes.set(id, {
       scene,
-      nodes: new Map()
+      nodes: new Map(),
+      particleSystems: new Map(),
+      glowLayer: null,
+      renderingPipeline: null,
+      skybox: null
     });
 
     if (!this.activeSceneId) {
@@ -101,6 +116,20 @@ export class BabylonAdapter implements IRenderingEngine {
   disposeScene(id: string): void {
     const data = this.scenes.get(id);
     if (data) {
+      data.particleSystems.forEach((ps) => ps.dispose());
+      data.particleSystems.clear();
+      if (data.glowLayer) {
+        data.glowLayer.dispose();
+        data.glowLayer = null;
+      }
+      if (data.renderingPipeline) {
+        data.renderingPipeline.dispose();
+        data.renderingPipeline = null;
+      }
+      if (data.skybox) {
+        data.skybox.dispose();
+        data.skybox = null;
+      }
       data.scene.dispose();
       this.scenes.delete(id);
       if (this.activeSceneId === id) {
@@ -540,5 +569,213 @@ export class BabylonAdapter implements IRenderingEngine {
 
   getNativeScene(): unknown {
     return this.getActiveScene();
+  }
+
+  setSkybox(textureUrl: string): void {
+    const data = this.getActiveSceneData();
+    if (!data) return;
+
+    if (data.skybox) {
+      data.skybox.dispose();
+    }
+
+    const skybox = MeshBuilder.CreateBox('skybox', { size: 1000 }, data.scene);
+    const skyboxMaterial = new StandardMaterial('skyboxMat', data.scene);
+    skyboxMaterial.backFaceCulling = false;
+    skyboxMaterial.reflectionTexture = new CubeTexture(textureUrl, data.scene);
+    skyboxMaterial.reflectionTexture.coordinatesMode = Texture.SKYBOX_MODE;
+    skyboxMaterial.diffuseColor = new Color3(0, 0, 0);
+    skyboxMaterial.specularColor = new Color3(0, 0, 0);
+    skybox.material = skyboxMaterial;
+    skybox.infiniteDistance = true;
+    
+    data.skybox = skybox;
+    console.log('[BabylonAdapter] Skybox created');
+  }
+
+  clearSkybox(): void {
+    const data = this.getActiveSceneData();
+    if (data?.skybox) {
+      data.skybox.dispose();
+      data.skybox = null;
+    }
+  }
+
+  setPostProcessing(options: PostProcessingOptions): void {
+    const data = this.getActiveSceneData();
+    if (!data || !this.engine) return;
+
+    if (options.glow?.enabled) {
+      if (!data.glowLayer) {
+        data.glowLayer = new GlowLayer('glow', data.scene);
+      }
+      data.glowLayer.intensity = options.glow.intensity ?? 1.0;
+    } else if (data.glowLayer) {
+      data.glowLayer.dispose();
+      data.glowLayer = null;
+    }
+
+    if (options.bloom?.enabled || options.vignette?.enabled || options.chromaticAberration?.enabled) {
+      if (!data.scene.activeCamera) {
+        console.warn('[BabylonAdapter] Cannot set post-processing: no active camera');
+        return;
+      }
+      if (!data.renderingPipeline) {
+        data.renderingPipeline = new DefaultRenderingPipeline(
+          'defaultPipeline',
+          true,
+          data.scene,
+          [data.scene.activeCamera]
+        );
+      }
+
+      const pipeline = data.renderingPipeline;
+
+      if (options.bloom?.enabled) {
+        pipeline.bloomEnabled = true;
+        pipeline.bloomThreshold = options.bloom.threshold ?? 0.8;
+        pipeline.bloomWeight = options.bloom.intensity ?? 0.3;
+        pipeline.bloomKernel = 64;
+        pipeline.bloomScale = 0.5;
+      } else {
+        pipeline.bloomEnabled = false;
+      }
+
+      if (options.vignette?.enabled) {
+        pipeline.imageProcessingEnabled = true;
+        pipeline.imageProcessing.vignetteEnabled = true;
+        pipeline.imageProcessing.vignetteWeight = options.vignette.weight ?? 1.5;
+        pipeline.imageProcessing.vignetteStretch = 0.5;
+      }
+
+      if (options.chromaticAberration?.enabled) {
+        pipeline.chromaticAberrationEnabled = true;
+        pipeline.chromaticAberration.aberrationAmount = options.chromaticAberration.amount ?? 30;
+      } else {
+        pipeline.chromaticAberrationEnabled = false;
+      }
+    }
+
+    console.log('[BabylonAdapter] Post-processing configured');
+  }
+
+  clearPostProcessing(): void {
+    const data = this.getActiveSceneData();
+    if (!data) return;
+
+    if (data.glowLayer) {
+      data.glowLayer.dispose();
+      data.glowLayer = null;
+    }
+    if (data.renderingPipeline) {
+      data.renderingPipeline.dispose();
+      data.renderingPipeline = null;
+    }
+  }
+
+  createParticleSystem(options: ParticleSystemOptions): string {
+    const scene = this.getActiveScene();
+    const data = this.getActiveSceneData();
+    if (!scene || !data) throw new Error('No active scene');
+
+    let particleSystem: ParticleSystem | GPUParticleSystem;
+
+    if (GPUParticleSystem.IsSupported) {
+      particleSystem = new GPUParticleSystem(
+        options.id,
+        { capacity: options.capacity },
+        scene
+      );
+    } else {
+      particleSystem = new ParticleSystem(options.id, options.capacity, scene);
+    }
+
+    if (options.textureUrl) {
+      particleSystem.particleTexture = new Texture(options.textureUrl, scene);
+    }
+
+    particleSystem.emitter = new Vector3(
+      options.emitterPosition.x,
+      options.emitterPosition.y,
+      options.emitterPosition.z
+    );
+
+    particleSystem.emitRate = options.emitRate;
+    particleSystem.minLifeTime = options.minLifeTime;
+    particleSystem.maxLifeTime = options.maxLifeTime;
+    particleSystem.minSize = options.minSize;
+    particleSystem.maxSize = options.maxSize;
+
+    if (options.color1) {
+      particleSystem.color1 = new Color4(
+        options.color1.r,
+        options.color1.g,
+        options.color1.b,
+        options.color1.a ?? 1
+      );
+    }
+    if (options.color2) {
+      particleSystem.color2 = new Color4(
+        options.color2.r,
+        options.color2.g,
+        options.color2.b,
+        options.color2.a ?? 1
+      );
+    }
+
+    if (options.direction1) {
+      particleSystem.direction1 = new Vector3(
+        options.direction1.x,
+        options.direction1.y,
+        options.direction1.z
+      );
+    }
+    if (options.direction2) {
+      particleSystem.direction2 = new Vector3(
+        options.direction2.x,
+        options.direction2.y,
+        options.direction2.z
+      );
+    }
+
+    particleSystem.minEmitPower = options.minEmitPower ?? 1;
+    particleSystem.maxEmitPower = options.maxEmitPower ?? 3;
+
+    if (options.gravity) {
+      particleSystem.gravity = new Vector3(
+        options.gravity.x,
+        options.gravity.y,
+        options.gravity.z
+      );
+    }
+
+    data.particleSystems.set(options.id, particleSystem);
+    console.log(`[BabylonAdapter] Particle system created: ${options.id}`);
+    return options.id;
+  }
+
+  startParticleSystem(id: string): void {
+    const data = this.getActiveSceneData();
+    const ps = data?.particleSystems.get(id);
+    if (ps) {
+      ps.start();
+    }
+  }
+
+  stopParticleSystem(id: string): void {
+    const data = this.getActiveSceneData();
+    const ps = data?.particleSystems.get(id);
+    if (ps) {
+      ps.stop();
+    }
+  }
+
+  disposeParticleSystem(id: string): void {
+    const data = this.getActiveSceneData();
+    const ps = data?.particleSystems.get(id);
+    if (ps) {
+      ps.dispose();
+      data?.particleSystems.delete(id);
+    }
   }
 }

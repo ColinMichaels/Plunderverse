@@ -31,15 +31,18 @@ export function BabylonTestPage({ onBack }: BabylonTestPageProps) {
       </div>
 
       <div className="absolute top-4 right-4 z-10 text-white bg-black/70 p-4 rounded max-w-xs">
-        <h3 className="text-cyan-400 font-bold mb-2">Babylon.js Test Scene</h3>
+        <h3 className="text-cyan-400 font-bold mb-2">Babylon.js Enhanced Scene</h3>
         <p className="text-sm text-gray-300 mb-2">
-          This is a test of the new rendering engine abstraction layer.
+          Testing the enhanced rendering engine with new features.
         </p>
         <ul className="text-xs text-gray-400 space-y-1">
-          <li>- Sun with emissive glow</li>
-          <li>- 2 orbiting planets</li>
-          <li>- 100 background stars</li>
-          <li>- Directional + ambient lighting</li>
+          <li>- Sun with particle corona effect</li>
+          <li>- 3 orbiting planets + moon</li>
+          <li>- 150 background stars</li>
+          <li>- 20 asteroid belt objects</li>
+          <li>- Glow + bloom post-processing</li>
+          <li>- Vignette effect</li>
+          <li>- Orbital camera animation</li>
         </ul>
       </div>
 
@@ -106,15 +109,18 @@ export function BabylonTestPageWithMount({ onBack }: BabylonTestPageProps) {
       </div>
 
       <div className="absolute top-4 right-4 z-10 text-white bg-black/70 p-4 rounded max-w-xs">
-        <h3 className="text-cyan-400 font-bold mb-2">Babylon.js Test Scene</h3>
+        <h3 className="text-cyan-400 font-bold mb-2">Babylon.js Enhanced Scene</h3>
         <p className="text-sm text-gray-300 mb-2">
-          Testing the new rendering engine abstraction layer.
+          Testing the enhanced rendering engine with new features.
         </p>
         <ul className="text-xs text-gray-400 space-y-1">
-          <li>- Sun with emissive glow</li>
-          <li>- 2 orbiting planets</li>
-          <li>- 100 background stars</li>
-          <li>- Hemisphere + directional lighting</li>
+          <li>- Sun with particle corona effect</li>
+          <li>- 3 orbiting planets + moon</li>
+          <li>- 150 background stars</li>
+          <li>- 20 asteroid belt objects</li>
+          <li>- Glow + bloom post-processing</li>
+          <li>- Vignette effect</li>
+          <li>- Orbital camera animation</li>
         </ul>
       </div>
 

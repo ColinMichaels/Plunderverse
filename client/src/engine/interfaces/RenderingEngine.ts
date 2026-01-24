@@ -57,6 +57,45 @@ export interface CameraOptions {
   far?: number;
 }
 
+export interface PostProcessingOptions {
+  bloom?: {
+    enabled: boolean;
+    intensity?: number;
+    threshold?: number;
+  };
+  glow?: {
+    enabled: boolean;
+    intensity?: number;
+  };
+  vignette?: {
+    enabled: boolean;
+    weight?: number;
+  };
+  chromaticAberration?: {
+    enabled: boolean;
+    amount?: number;
+  };
+}
+
+export interface ParticleSystemOptions {
+  id: string;
+  emitterPosition: Vector3Like;
+  capacity: number;
+  emitRate: number;
+  minLifeTime: number;
+  maxLifeTime: number;
+  minSize: number;
+  maxSize: number;
+  color1?: ColorLike;
+  color2?: ColorLike;
+  direction1?: Vector3Like;
+  direction2?: Vector3Like;
+  minEmitPower?: number;
+  maxEmitPower?: number;
+  gravity?: Vector3Like;
+  textureUrl?: string;
+}
+
 export interface SceneNode {
   id: string;
   type: 'mesh' | 'light' | 'camera' | 'group' | 'empty';
@@ -109,6 +148,17 @@ export interface IRenderingEngine {
   setBackgroundColor(color: ColorLike): void;
   setFog(color: ColorLike, near: number, far: number): void;
   clearFog(): void;
+
+  setSkybox(textureUrl: string): void;
+  clearSkybox(): void;
+
+  setPostProcessing(options: PostProcessingOptions): void;
+  clearPostProcessing(): void;
+
+  createParticleSystem(options: ParticleSystemOptions): string;
+  startParticleSystem(id: string): void;
+  stopParticleSystem(id: string): void;
+  disposeParticleSystem(id: string): void;
 
   registerUpdateCallback(id: string, callback: UpdateCallback): void;
   unregisterUpdateCallback(id: string): void;
