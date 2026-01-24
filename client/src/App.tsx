@@ -3,8 +3,9 @@ import {KeyboardControls} from "@react-three/drei";
 import {GameUI} from "./components/ui/GameUI";
 import {BabylonCanvasWithInit} from "./engine/components/BabylonCanvas";
 import {BabylonSolarSystem} from "./engine/scenes/BabylonSolarSystem";
+import {BabylonCombatScene} from "./engine/scenes/BabylonCombatScene";
+import {BabylonSurfaceScene} from "./engine/scenes/BabylonSurfaceScene";
 import {EnhancedSplashScreen} from "./components/screens/EnhancedSplashScreen";
-import {PlanetSurfaceScene} from "./components/surface/PlanetSurfaceScene";
 import {WebGLCheckWrapper} from "./components/shared/WebGLCheckWrapper";
 import {TakeoffControls} from "./components/surface/TakeoffControls";
 import {UILayoutProvider} from "./components/ui/UILayoutManager";
@@ -486,26 +487,29 @@ function GameContent() {
             {/* Show game when playing OR ended (for death screen) */}
             {(phase === "playing" || phase === "ended") && showCanvas && (
               <KeyboardControls map={keyboardMapRef.current}>
-                {/* Conditionally render EITHER space scene OR planet surface scene */}
-                {phase === "playing" && !isLanded && (
-                  // Space scene - Babylon.js powered
-                  <TouchPropulsionControls>
-                    <WebGLCheckWrapper fallbackMessage="WebGL is required to render the space environment.">
-                      <BabylonCanvasWithInit
-                        className="absolute inset-0"
-                        onReady={() => console.log("[BABYLON-SPACE] Engine ready")}
-                        onError={(err) => console.error("[BABYLON-SPACE] Engine error:", err)}
-                      >
-                        <BabylonSolarSystem />
-                      </BabylonCanvasWithInit>
-                    </WebGLCheckWrapper>
-                  </TouchPropulsionControls>
-                )}
-
-                {phase === "playing" && isLanded && (
-                  // Planet surface scene - only rendered when landed
-                  <PlanetSurfaceScene />
-                )}
+                {/* Unified Babylon.js canvas for all scenes - seamless transitions */}
+                <TouchPropulsionControls>
+                  <WebGLCheckWrapper fallbackMessage="WebGL is required to render the game.">
+                    <BabylonCanvasWithInit
+                      className="absolute inset-0"
+                      onReady={() => console.log("[BABYLON] Engine ready")}
+                      onError={(err) => console.error("[BABYLON] Engine error:", err)}
+                    >
+                      {/* Render appropriate scene based on landed state */}
+                      {!isLanded ? (
+                        <>
+                          {/* Space scene with orbital mechanics */}
+                          <BabylonSolarSystem />
+                          {/* Combat overlay - enemies and projectiles */}
+                          <BabylonCombatScene />
+                        </>
+                      ) : (
+                        /* Planet surface scene */
+                        <BabylonSurfaceScene />
+                      )}
+                    </BabylonCanvasWithInit>
+                  </WebGLCheckWrapper>
+                </TouchPropulsionControls>
 
                 {/* Common UI elements that persist across both scenes */}
                 <GameUI />

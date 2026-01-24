@@ -115,6 +115,15 @@ Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
 ## Recent Changes
 
+### 2026-01-24: Babylon.js Unified Scene Migration
+- Created BabylonCombatScene for enemies, projectiles, explosions in Babylon.js
+- Created BabylonSurfaceScene for terrain, sky, lighting, resource nodes in Babylon.js
+- Updated App.tsx to use single Babylon canvas for all scenes (seamless transitions)
+- Combat scene overlays space scene with real-time enemy/projectile tracking
+- Surface scene features dynamic lighting, resource pulsing, flashlight support
+- Removed Three.js/R3F dependency for space and surface rendering
+- All scenes share same stores for synchronized state
+
 ### 2026-01-24: Mobile UI Feature Parity
 - Created NavigationPanel for mobile with planet list, coordinates, autopilot
 - Created ShipStatusPanel with shields, hull, fuel bars (matching desktop)
