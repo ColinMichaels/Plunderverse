@@ -1,15 +1,15 @@
 // Auth Provider Component
 // Wraps the application and manages authentication state
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode } from 'react';
 import { useAuthStore, initializeAuth } from '../../lib/stores/auth/useAuthStore';
 import { AuthScreen } from './AuthScreen';
 
 interface AuthProviderProps {
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
+export function AuthProvider({ children }: AuthProviderProps) {
   const [isInitialized, setIsInitialized] = useState(false);
   const { isAuthenticated, isGuest, isLoading, checkAuth } = useAuthStore();
   
