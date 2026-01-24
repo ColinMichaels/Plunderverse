@@ -7,7 +7,7 @@ import {OrbitalInterface} from "../navigation/OrbitalInterface";
 import {NavigationSidebar} from "../navigation/NavigationSidebar";
 import {MusicPlayer} from "../screens/MusicPlayer";
 import {CrewRecruitmentInterface} from "../ship/CrewRecruitmentInterface";
-import {ParrotHolographicPopup} from "../ParrotHolographicPopup";
+import {ParrotHolographicPopup} from "../parrot/ParrotHolographicPopup";
 
 import {ActionBar} from "./ActionBar";
 import {ObjectiveTracker} from "../economy/ObjectiveTracker";

@@ -21,14 +21,10 @@ import {MissionDebugPanel} from "./components/debug/MissionDebugPanel";
 import {CombatDebugPanel} from "./components/debug/CombatDebugPanel";
 import {ResourceManager} from "./lib/utils/ResourceManager";
 import {memoryProfiler} from "./lib/utils/MemoryProfiler";
-import {testTerrainCacheManagement} from "./lib/tests/testTerrainCache";
 import {useAuthStore} from "./lib/stores/auth/useAuthStore";
 import {cloudSyncManager} from "./services/CloudSyncManager";
-import {CloudSyncManager} from "./services/CloudSyncWebSocket"; // NEW: WebSocket sync
+import {CloudSyncManager} from "./services/CloudSyncWebSocket";
 import {Toaster} from "./components/ui/sonner";
-import "./testSaveSystem"; // Import save system test module
-import "./utils/testSaveFixed"; // Import fixed save test
-import "./runImprovementTests"; // Import improvement tests
 import "@fontsource/inter";
 
 // Main Game component (without auth wrapper)
@@ -307,12 +303,6 @@ function GameContent() {
     contentRegistry.loadContent().catch((error) => {
       console.error("Failed to load Plunderverse content:", error);
     });
-
-    // Add terrain cache test to window for debugging
-    (window as any).testTerrainCacheManagement = testTerrainCacheManagement;
-    console.log(
-      "[TERRAIN-CACHE] Test function available: Run `testTerrainCacheManagement()` in the browser console to test terrain cache management.",
-    );
 
     // Add test notifications command for verifying dark theme styling
     (window as any).testNotifications = () => {

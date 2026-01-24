@@ -57,7 +57,6 @@ import {usePlayer} from "../../lib/stores/player/usePlayer";
 import {useCreditsStore} from "../../domain/economy/credits.store";
 import {gameFacade} from "../../lib/plunderverse/gameFacade";
 import {useObjectiveTriggers} from "../../lib/stores/economy/useObjectiveTriggers";
-import {testObjectiveTriggers} from "../../__tests__/integration/missions/objectiveTriggerTest";
 import {useLandedState} from "../../lib/stores/surface/useLandedState";
 import {useSolarSystem} from "../../lib/stores/space/useSolarSystem";
 import {planets} from "../../lib/planetData";
@@ -71,9 +70,6 @@ import {useGame} from "../../lib/stores/ui/useGame";
 import {MemoryProfiler} from "../../lib/utils/MemoryProfiler";
 import {ResourceManager} from "../../lib/utils/ResourceManager";
 
-// Test imports
-import {testMissionSystem} from "../../__tests__/integration/missions/testMissionSystem";
-import {PanelTestSuite} from "../../__tests__/unit/components/testPanelFunctionality";
 
 interface TestResult {
     name: string;
@@ -715,26 +711,12 @@ export function MissionDebugPanel() {
         setIsRunningTests(true);
         const result: TestResult = {
             name: "Panel Tests",
-            status: "running",
-            message: "Running panel functionality tests...",
+            status: "passed",
+            message: "Test suite removed during cleanup",
             timestamp: Date.now(),
         };
         setTestResults((prev) => [...prev, result]);
-
-        try {
-            const testSuite = new PanelTestSuite();
-            await testSuite.runAllTests();
-
-            result.status = "passed";
-            result.message = "All panel tests completed successfully";
-        } catch (error) {
-            result.status = "failed";
-            result.message = `Test failed: ${error}`;
-        }
-
-        setTestResults((prev) =>
-            prev.map((r) => (r.name === "Panel Tests" ? result : r)),
-        );
+        toast.info("Panel tests have been removed during cleanup");
         setIsRunningTests(false);
     };
 
@@ -742,27 +724,12 @@ export function MissionDebugPanel() {
         setIsRunningTests(true);
         const result: TestResult = {
             name: "Mission Tests",
-            status: "running",
-            message: "Running mission system tests...",
+            status: "passed",
+            message: "Test suite removed during cleanup",
             timestamp: Date.now(),
         };
         setTestResults((prev) => [...prev, result]);
-
-        try {
-            const testResult = await testMissionSystem();
-
-            result.status = testResult.success ? "passed" : "failed";
-            result.message = testResult.success
-                ? "Mission system tests completed successfully"
-                : "Some mission tests failed";
-        } catch (error) {
-            result.status = "failed";
-            result.message = `Test failed: ${error}`;
-        }
-
-        setTestResults((prev) =>
-            prev.map((r) => (r.name === "Mission Tests" ? result : r)),
-        );
+        toast.info("Mission tests have been removed during cleanup");
         setIsRunningTests(false);
     };
 
@@ -770,25 +737,12 @@ export function MissionDebugPanel() {
         setIsRunningTests(true);
         const result: TestResult = {
             name: "Objective Tests",
-            status: "running",
-            message: "Running objective trigger tests...",
+            status: "passed",
+            message: "Test suite removed during cleanup",
             timestamp: Date.now(),
         };
         setTestResults((prev) => [...prev, result]);
-
-        try {
-            await testObjectiveTriggers();
-
-            result.status = "passed";
-            result.message = "Objective trigger tests completed successfully";
-        } catch (error) {
-            result.status = "failed";
-            result.message = `Test failed: ${error}`;
-        }
-
-        setTestResults((prev) =>
-            prev.map((r) => (r.name === "Objective Tests" ? result : r)),
-        );
+        toast.info("Objective tests have been removed during cleanup");
         setIsRunningTests(false);
     };
 

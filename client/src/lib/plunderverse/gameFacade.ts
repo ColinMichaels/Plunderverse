@@ -10,7 +10,6 @@ import { useObjectiveTriggers } from "../stores/economy/useObjectiveTriggers";
 import { useGame, GamePhase } from "../stores/ui/useGame";
 import { ContentRegistry } from "./contentRegistry";
 import { toast } from "sonner";
-import { missionControlTest } from "../tests/missionControlTest";
 import {
   StarNode,
   Mission,
@@ -392,26 +391,6 @@ export class GameFacade {
    */
   private setupTestKeyboardShortcuts(): void {
     window.addEventListener("keydown", (e) => {
-      // Ctrl+T to run full test
-      if (e.ctrlKey && !e.shiftKey && e.key === "t") {
-        e.preventDefault();
-        console.log("[GameFacade] Running Mission Control test suite...");
-        toast.info("Starting Test Suite", {
-          description: "Running comprehensive Mission Control tests...",
-        });
-        missionControlTest.runAllTests(true); // Run in non-destructive mode
-      }
-
-      // Ctrl+Shift+Q for quick test
-      if (e.ctrlKey && e.shiftKey && e.key === "Q") {
-        e.preventDefault();
-        console.log("[GameFacade] Running quick test...");
-        toast.info("Quick Test", {
-          description: "Testing mission generation and acceptance...",
-        });
-        missionControlTest.testMissionGeneration();
-      }
-
       // Ctrl+M for mission info display
       if (e.ctrlKey && !e.shiftKey && e.key === "m") {
         e.preventDefault();

@@ -11,7 +11,7 @@ import {ShootingSystem} from "../combat/ShootingSystem";
 import {EnemyField} from "../combat/EnemyField";
 import {planets} from "@/lib/planetData.ts";
 import {useDebugTools, useSolarSystem} from "@/lib/stores";
-import {HolographicParrot} from "../HolographicParrot";
+import {HolographicParrot} from "../parrot/HolographicParrot";
 
 export function SolarSystem() {
   const systemRef = useRef<THREE.Group>(null);

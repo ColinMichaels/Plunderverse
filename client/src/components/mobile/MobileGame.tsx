@@ -19,8 +19,8 @@ import { useCloudSync } from '../../services/CloudSyncManager';
 import { useParrot } from '../../lib/stores/useParrot';
 import { useParrotEvents } from '../../hooks/useParrotEvents';
 import { useCrewManagement } from '../../lib/stores/ship/useCrewManagement';
-import { ParrotControls } from '../ParrotControls';
-import { ParrotTextDisplay } from '../ParrotTextDisplay';
+import { ParrotControls } from '../parrot/ParrotControls';
+import { ParrotTextDisplay } from '../parrot/ParrotTextDisplay';
 import { MusicPlayer } from '../screens/MusicPlayer';
 import type { Mission, MissionObjective } from '../../lib/plunderverse/types';
 
