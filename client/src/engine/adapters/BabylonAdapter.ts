@@ -558,7 +558,7 @@ export class BabylonAdapter implements IRenderingEngine {
       });
 
       const scene = this.getActiveScene();
-      if (scene) {
+      if (scene && scene.activeCamera) {
         scene.render();
       }
     });
