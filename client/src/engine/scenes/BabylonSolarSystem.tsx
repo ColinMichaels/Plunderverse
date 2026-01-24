@@ -3,6 +3,7 @@ import { useEngine, useEngineUpdate } from '../hooks/useEngine';
 import { Color } from '../utils/math';
 import { planets, distanceScale } from '@/lib/planetData';
 import { useSolarSystem, useDebugTools } from '@/lib/stores';
+import { BabylonCameraController } from './BabylonCameraController';
 
 export function BabylonSolarSystem() {
   const { engine, isInitialized } = useEngine();
@@ -15,17 +16,23 @@ export function BabylonSolarSystem() {
   }, [time]);
 
   const starPositions = useMemo(() => {
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed * 12.9898 + seed * 78.233) * 43758.5453;
+      return x - Math.floor(x);
+    };
+    
     const positions: { x: number; y: number; z: number; size: number; brightness: number }[] = [];
     for (let i = 0; i < 200; i++) {
-      const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 400 + Math.random() * 200;
+      const seed = i * 7.31;
+      const theta = seededRandom(seed) * Math.PI * 2;
+      const phi = Math.acos(2 * seededRandom(seed + 1) - 1);
+      const r = 400 + seededRandom(seed + 2) * 200;
       positions.push({
         x: r * Math.sin(phi) * Math.cos(theta),
         y: r * Math.sin(phi) * Math.sin(theta),
         z: r * Math.cos(phi),
-        size: 0.2 + Math.random() * 0.5,
-        brightness: 0.6 + Math.random() * 0.4
+        size: 0.2 + seededRandom(seed + 3) * 0.5,
+        brightness: 0.6 + seededRandom(seed + 4) * 0.4
       });
     }
     return positions;
@@ -209,21 +216,9 @@ export function BabylonSolarSystem() {
     engine.setNodeTransform('sun-core', {
       rotation: { x: 0, y: t * 0.1, z: 0 }
     });
-
-    const cameraRadius = 200;
-    const cameraSpeed = 0.05;
-    const cameraHeight = 50 + Math.sin(t * 0.2) * 30;
-    engine.setCameraTransform('main-camera', {
-      position: {
-        x: Math.cos(t * cameraSpeed) * cameraRadius,
-        y: cameraHeight,
-        z: Math.sin(t * cameraSpeed) * cameraRadius
-      },
-      target: { x: 0, y: 0, z: 0 }
-    });
   }, [engine, timeScale, setTime, updateUniverseTime]), [engine, timeScale]);
 
-  return null;
+  return <BabylonCameraController />;
 }
 
 function hexToRgb(hex: string): { r: number; g: number; b: number } {

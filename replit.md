@@ -53,11 +53,12 @@ server/
 ```
 
 ## Tech Stack
-- **Frontend**: React, Three.js (React Three Fiber), Babylon.js, Zustand, TailwindCSS
+- **Frontend**: React, Babylon.js (primary), Zustand, TailwindCSS
 - **Backend**: Express, PostgreSQL (Neon), Drizzle ORM
 - **Build**: Vite, TypeScript
 - **Audio**: Howler.js
 - **Network**: WebSocket for real-time sync
+- **Rendering**: Babylon.js (space scene migrated, surface scene pending)
 
 ## Architecture Patterns
 
@@ -67,19 +68,22 @@ server/
 - Use `useCreditsStore`, `useInventoryStore` for new code
 - Legacy `useCredits`, `useInventory` delegate to domain stores
 
-### Rendering Engine Abstraction
+### Rendering Engine (Babylon.js)
 Located in `client/src/engine/`:
 - `IRenderingEngine` - Engine-agnostic interface
-- `BabylonAdapter` - Babylon.js implementation with advanced features
+- `BabylonAdapter` - Primary Babylon.js implementation
 - `Vec3`, `Quat`, `Color` - Engine-agnostic math utilities
 - `useEngine`, `useEngineUpdate` - React hooks for engine access
-- Test via `?babylon=true` URL parameter
+- `BabylonCanvas` - Canvas component replacing R3F Canvas
+- `BabylonSolarSystem` - Main space scene (Sun, planets, starfield)
+- `BabylonCameraController` - Keyboard navigation controller
 
 **Babylon.js Features**:
 - Post-processing: Glow, Bloom, Vignette, Chromatic Aberration
 - Particle systems for effects (thrusters, explosions, corona)
 - Skybox/environment support
 - Scene management with proper cleanup
+- Camera transform control with setCameraTransform API
 
 ### Debug Utilities
 - `client/src/lib/utils/debug.ts` - Centralized logging
@@ -103,12 +107,21 @@ All sounds managed through `useAudio` hook with category-based volume control:
 Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
 ## Improvement Roadmap
-1. **Integrate Babylon Engine**: Migrate components from Three.js to abstraction layer
+1. **Complete Babylon Migration**: Port combat visuals and PlanetSurfaceScene to Babylon
 2. **Split App.tsx**: Extract scene management, cloud sync into providers
 3. **Domain Store Migration**: Move remaining legacy stores to domain pattern
 4. **Performance**: Add scene lifecycle manager for resource cleanup
+5. **Remove Three.js**: Clean up Three.js dependencies after full migration
 
 ## Recent Changes
+
+### 2026-01-24: Babylon.js Full Migration (Space Scene)
+- Replaced R3F Canvas with BabylonCanvas in App.tsx
+- Created BabylonSolarSystem scene with all planets, sun, moon, starfield
+- Implemented BabylonCameraController with keyboard navigation (WASD, QE, IJKL)
+- Added setCameraTransform API to engine interface
+- Orbital mechanics now run on Babylon update loop
+- All 8 planets orbit with correct speeds and distances
 
 ### 2026-01-24: Code Optimization
 - Created providers folder with DebugProvider and PlatformProvider

@@ -36,6 +36,12 @@ interface SolarSystemState {
   setShipVelocity: (velocity: THREE.Vector3) => void;
   setHasRestoredState: (restored: boolean) => void;
   cleanup: () => void; // Clean up store state but preserve universe time
+  
+  // Engine-agnostic setters (accept plain {x,y,z} objects for Babylon.js compatibility)
+  setCameraPositionRaw: (x: number, y: number, z: number) => void;
+  setShipPositionRaw: (x: number, y: number, z: number) => void;
+  setShipRotationRaw: (x: number, y: number, z: number) => void;
+  setShipVelocityRaw: (x: number, y: number, z: number) => void;
 }
 
 export const useSolarSystem = create<SolarSystemState>((set, get) => ({
@@ -108,6 +114,12 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
   setShipRotation: (rotation) => set({ shipRotation: rotation.clone() }),
   setShipVelocity: (velocity) => set({ shipVelocity: velocity.clone() }),
   setHasRestoredState: (restored) => set({ hasRestoredState: restored }),
+  
+  // Engine-agnostic setters for Babylon.js compatibility
+  setCameraPositionRaw: (x, y, z) => set({ cameraPosition: new THREE.Vector3(x, y, z) }),
+  setShipPositionRaw: (x, y, z) => set({ shipPosition: new THREE.Vector3(x, y, z) }),
+  setShipRotationRaw: (x, y, z) => set({ shipRotation: new THREE.Euler(x, y, z) }),
+  setShipVelocityRaw: (x, y, z) => set({ shipVelocity: new THREE.Vector3(x, y, z) }),
   
   cleanup: () => {
     console.log("[useSolarSystem] Cleanup: Preserving universe time, resetting scene state");
