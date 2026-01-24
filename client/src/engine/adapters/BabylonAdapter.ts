@@ -77,24 +77,16 @@ export class BabylonAdapter implements IRenderingEngine {
     // Dispose any existing engine first
     if (this.engine) {
       console.log('[BabylonAdapter] Disposing existing engine before reinitializing');
-      this.dispose();
+      this.stopRenderLoop();
+      this.scenes.forEach((data) => data.scene.dispose());
+      this.scenes.clear();
+      this.engine.dispose();
+      this.engine = null;
     }
     
     this.engine = new Engine(canvas, true, {
       preserveDrawingBuffer: true,
       stencil: true
-    });
-
-    // Wait for engine to be fully ready
-    await new Promise<void>((resolve) => {
-      if (this.engine) {
-        this.engine.runRenderLoop(() => {
-          this.engine?.stopRenderLoop();
-          resolve();
-        });
-      } else {
-        resolve();
-      }
     });
 
     console.log('[BabylonAdapter] Engine initialized');
