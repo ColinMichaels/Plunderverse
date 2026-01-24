@@ -11,6 +11,9 @@
     "db:push": "drizzle-kit push"
   },
   "dependencies": {
+    "@babylonjs/core": "^8.47.0",
+    "@babylonjs/loaders": "^8.47.0",
+    "@babylonjs/materials": "^8.47.0",
     "@fontsource/inter": "^5.2.5",
     "@jridgewell/trace-mapping": "^0.3.25",
     "@neondatabase/serverless": "^0.10.4",

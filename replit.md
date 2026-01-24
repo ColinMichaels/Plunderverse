@@ -27,6 +27,12 @@ client/src/
 │   ├── space/        # Solar system, planets, stars
 │   ├── surface/      # Planet surface rendering
 │   └── ui/           # Core UI components
+├── engine/           # Rendering engine abstraction layer
+│   ├── interfaces/   # Engine-agnostic interfaces
+│   ├── adapters/     # Engine implementations (Babylon, Three)
+│   ├── components/   # React components for engine
+│   ├── hooks/        # Engine React hooks
+│   └── utils/        # Math utilities (Vec3, Quat, Color)
 ├── hooks/            # Custom React hooks
 ├── lib/
 │   ├── stores/       # Zustand state management
@@ -41,11 +47,33 @@ server/
 ```
 
 ## Tech Stack
-- **Frontend**: React, Three.js (React Three Fiber), Zustand, TailwindCSS
+- **Frontend**: React, Three.js (React Three Fiber), Babylon.js, Zustand, TailwindCSS
 - **Backend**: Express, PostgreSQL (Neon), Drizzle ORM
 - **Build**: Vite, TypeScript
 - **Audio**: Howler.js
 - **Network**: WebSocket for real-time sync
+
+## Rendering Engine Abstraction
+
+The project uses an engine abstraction layer (`client/src/engine/`) that allows swapping rendering engines:
+
+### Key Components
+- `IRenderingEngine` - Interface defining engine-agnostic operations
+- `BabylonAdapter` - Babylon.js implementation
+- `Vec3`, `Quat`, `Color` - Engine-agnostic math utilities
+- `useEngine` hook - React context for engine access
+- `EngineProvider` - React provider for engine lifecycle
+
+### Testing Babylon.js
+Add `?babylon=true` to URL to test the Babylon.js rendering engine
+
+### Engine Features
+- Scene management (create, dispose, switch)
+- Mesh creation (box, sphere, plane, cylinder)
+- Light types (ambient, point, directional, spot)
+- Camera management (perspective, orthographic)
+- Update loop callbacks with delta time
+- Texture and model loading
 
 ## Key Features
 1. **Space Flight**: 3D navigation with autopilot, mouse steering, keyboard controls
@@ -64,6 +92,15 @@ All sounds managed through `useAudio` hook with category-based volume control:
 Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
 ## Recent Changes
+
+### 2026-01-24: Babylon.js Engine Abstraction
+- Created rendering engine abstraction layer in `client/src/engine/`
+- Implemented `IRenderingEngine` interface for engine-agnostic operations
+- Built `BabylonAdapter` with scene, mesh, light, camera management
+- Added engine-agnostic math utilities (Vec3, Quat, Color, MathUtils)
+- Created React hooks (`useEngine`, `useEngineUpdate`) for engine access
+- Added Babylon.js test page accessible via `?babylon=true` URL parameter
+- Installed @babylonjs/core, @babylonjs/loaders, @babylonjs/materials
 
 ### 2026-01-24: Codebase Cleanup
 - Removed scattered test files from src/ root

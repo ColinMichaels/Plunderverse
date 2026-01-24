@@ -25,11 +25,16 @@ import {useAuthStore} from "./lib/stores/auth/useAuthStore";
 import {cloudSyncManager} from "./services/CloudSyncManager";
 import {CloudSyncManager} from "./services/CloudSyncWebSocket";
 import {Toaster} from "./components/ui/sonner";
+import {BabylonTestPageWithMount} from "./components/debug/BabylonTestPage";
 import "@fontsource/inter";
 
 // Main Game component (without auth wrapper)
 function GameContent() {
   const [showCanvas, setShowCanvas] = useState(false);
+  const [showBabylonTest, setShowBabylonTest] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('babylon') === 'true';
+  });
   const { phase } = useGame();
   const { isLanded } = useLandedState();
     const {platformType, updatePlatform} = usePlatform();
@@ -459,15 +464,24 @@ function GameContent() {
           background: "black",
         }}
       >
+        {/* Babylon.js test page - access via ?babylon=true */}
+        {showBabylonTest && (
+          <BabylonTestPageWithMount onBack={() => {
+            setShowBabylonTest(false);
+            window.history.replaceState({}, '', window.location.pathname);
+          }} />
+        )}
+
         {/* Route to mobile experience for mobile devices */}
-        {effectivePlatformType === "mobile" ? (
-          // Mobile Experience
-          <MobileGame />
-        ) : (
-          // Desktop Experience
-          <>
-            {/* Show splash screen */}
-            {phase === "splash" && <EnhancedSplashScreen />}
+        {!showBabylonTest && (
+          effectivePlatformType === "mobile" ? (
+            // Mobile Experience
+            <MobileGame />
+          ) : (
+            // Desktop Experience
+            <>
+              {/* Show splash screen */}
+              {phase === "splash" && <EnhancedSplashScreen />}
 
             {/* Show game when playing OR ended (for death screen) */}
             {(phase === "playing" || phase === "ended") && showCanvas && (
@@ -520,7 +534,8 @@ function GameContent() {
                 <HintModal />
               </KeyboardControls>
             )}
-          </>
+            </>
+          )
         )}
 
         {/* Debug panel available even on splash screen in dev mode */}
