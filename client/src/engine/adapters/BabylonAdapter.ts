@@ -72,6 +72,7 @@ export class BabylonAdapter implements IRenderingEngine {
   }
 
   async initialize(canvas: HTMLCanvasElement): Promise<void> {
+    console.log('[BabylonAdapter] Starting initialization with canvas:', canvas);
     this.canvas = canvas;
     
     // Dispose any existing engine first
@@ -84,12 +85,23 @@ export class BabylonAdapter implements IRenderingEngine {
       this.engine = null;
     }
     
-    this.engine = new Engine(canvas, true, {
-      preserveDrawingBuffer: true,
-      stencil: true
-    });
-
-    console.log('[BabylonAdapter] Engine initialized');
+    try {
+      console.log('[BabylonAdapter] Creating new Babylon Engine...');
+      this.engine = new Engine(canvas, true, {
+        preserveDrawingBuffer: true,
+        stencil: true
+      });
+      console.log('[BabylonAdapter] Engine created:', this.engine);
+      
+      if (!this.engine) {
+        throw new Error('Engine creation returned null');
+      }
+      
+      console.log('[BabylonAdapter] Engine initialized successfully');
+    } catch (error) {
+      console.error('[BabylonAdapter] Failed to create engine:', error);
+      throw error;
+    }
   }
 
   dispose(): void {
