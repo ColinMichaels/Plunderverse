@@ -1,0 +1,39 @@
+[BabylonCanvasWithInit] Render - mounted: false canvasRef.current: false
+BabylonCanvas.tsx:61 [BabylonCanvasWithInit] Render - mounted: false canvasRef.current: false
+BabylonCanvas.tsx:57 [BabylonCanvasWithInit] Component mounted, canvas ref: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​
+BabylonCanvas.tsx:57 [BabylonCanvasWithInit] Component mounted, canvas ref: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​
+BabylonCanvas.tsx:61 [BabylonCanvasWithInit] Render - mounted: true canvasRef.current: true
+BabylonCanvas.tsx:61 [BabylonCanvasWithInit] Render - mounted: true canvasRef.current: true
+useEngine.tsx:41 [EngineProvider] Render - canvas: true isInitialized: false
+useEngine.tsx:41 [EngineProvider] Render - canvas: true isInitialized: false
+useEngine.tsx:45 [EngineProvider] useEffect - canvas: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​ engineRef: false
+useEngine.tsx:55 [EngineProvider] Creating babylon engine...
+BabylonAdapter.ts:75 [BabylonAdapter] Starting initialization with canvas: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​
+BabylonAdapter.ts:89 [BabylonAdapter] Creating new Babylon Engine...
+logger.ts:107 BJS - [22:51:19]: Babylon.js v8.47.0 - WebGL2 - Parallel shader compilation
+BabylonAdapter.ts:94 [BabylonAdapter] Engine created: _Engine {_colorWrite: true, _colorWriteChanged: true, _depthCullingState: DepthCullingState, _stencilStateComposer: StencilStateComposer, _stencilState: _StencilState, …}
+BabylonAdapter.ts:100 [BabylonAdapter] Engine initialized successfully
+useEngine.tsx:88 [EngineProvider] Cleanup - disposing engine
+BabylonAdapter.ts:114 [BabylonAdapter] Disposed
+useEngine.tsx:45 [EngineProvider] useEffect - canvas: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​ engineRef: false
+useEngine.tsx:55 [EngineProvider] Creating babylon engine...
+BabylonAdapter.ts:75 [BabylonAdapter] Starting initialization with canvas: <canvas class=​"w-full h-full block" touch-action=​"none" width=​"1060" height=​"1044" data-engine=​"Babylon.js v8.47.0" style=​"touch-action:​ none;​ -webkit-tap-highlight-color:​ transparent;​" tabindex=​"1">​
+BabylonAdapter.ts:89 [BabylonAdapter] Creating new Babylon Engine...
+logger.ts:107 BJS - [22:51:19]: Babylon.js v8.47.0 - WebGL2 - Parallel shader compilation
+BabylonAdapter.ts:94 [BabylonAdapter] Engine created: _Engine {_colorWrite: true, _colorWriteChanged: true, _depthCullingState: DepthCullingState, _stencilStateComposer: StencilStateComposer, _stencilState: _StencilState, …}
+BabylonAdapter.ts:100 [BabylonAdapter] Engine initialized successfully
+useEngine.tsx:65 [EngineProvider] Engine was replaced during init, aborting
+BabylonAdapter.ts:139 [BabylonAdapter] Scene created: main
+BabylonAdapter.ts:592 [BabylonAdapter] Render loop started
+useEngine.tsx:77 [EngineProvider] babylon engine initialized and running
+App.tsx:517 [BABYLON] Engine ready
+useEngine.tsx:41 [EngineProvider] Render - canvas: true isInitialized: true
+useEngine.tsx:41 [EngineProvider] Render - canvas: true isInitialized: true
+BabylonSurfaceScene.tsx:43 [BabylonSurfaceScene] Initializing surface scene for Earth
+BabylonAdapter.ts:708 [BabylonAdapter] Post-processing configured
+BabylonSurfaceScene.tsx:278 [BabylonSurfaceScene] Created 16 resource nodes
+BabylonSurfaceScene.tsx:109 [BabylonSurfaceScene] Scene setup complete
+useTerrain.tsx:62 [TERRAIN] Generating terrain for Earth...
+useTerrain.tsx:78 [TERRAIN] Generated terrain for Earth in 17.20ms
+useTerrain.tsx:79 [TERRAIN] Features: 0 craters, 3 ridges, 5 valleys, 2 plateaus, 0 volcanoes
+useTerrain.tsx:80 [TERRAIN] Height range: -5.95 to 14.22
