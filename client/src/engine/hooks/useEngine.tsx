@@ -42,35 +42,27 @@ export function EngineProvider({
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    console.log('[EngineProvider] useEffect - canvas:', canvas, 'initializing:', initializingRef.current, 'engineRef:', !!engineRef.current);
+    console.log('[EngineProvider] useEffect - canvas:', canvas, 'engineRef:', !!engineRef.current);
     if (!canvas) return;
-    if (initializingRef.current) return;
-    if (engineRef.current) return;
+    
+    // If we already have an initialized engine, don't reinitialize
+    if (engineRef.current) {
+      console.log('[EngineProvider] Engine already exists, skipping initialization');
+      return;
+    }
 
-    let isMounted = true;
+    // Create engine synchronously to avoid StrictMode race conditions
+    console.log(`[EngineProvider] Creating ${engineType} engine...`);
+    const newEngine = createRenderingEngine(engineType);
+    engineRef.current = newEngine;
 
     const initEngine = async () => {
-      initializingRef.current = true;
       try {
-        console.log(`[EngineProvider] Creating ${engineType} engine...`);
-        const newEngine = createRenderingEngine(engineType);
-        
-        // Check if we were unmounted during creation
-        if (!isMounted) {
-          console.log('[EngineProvider] Component unmounted during engine creation, disposing...');
-          newEngine.dispose();
-          return;
-        }
-        
-        engineRef.current = newEngine;
-
         await newEngine.initialize(canvas);
         
-        // Check if we were unmounted during initialization
-        if (!isMounted) {
-          console.log('[EngineProvider] Component unmounted during initialization, disposing...');
-          newEngine.dispose();
-          engineRef.current = null;
+        // Double-check engine wasn't disposed during async init
+        if (engineRef.current !== newEngine) {
+          console.log('[EngineProvider] Engine was replaced during init, aborting');
           return;
         }
         
@@ -87,23 +79,18 @@ export function EngineProvider({
       } catch (error) {
         console.error('[EngineProvider] Failed to initialize engine:', error);
         onError?.(error as Error);
-      } finally {
-        initializingRef.current = false;
       }
     };
 
     initEngine();
 
     return () => {
-      console.log('[EngineProvider] Cleanup called, isMounted will be false');
-      isMounted = false;
-      // Don't dispose immediately - let the async function handle it
-      // Only dispose if engine was fully initialized
-      if (engineRef.current && isInitialized) {
-        console.log('[EngineProvider] Disposing engine on unmount');
-        engineRef.current.dispose();
+      console.log('[EngineProvider] Cleanup - disposing engine');
+      if (engineRef.current === newEngine) {
+        newEngine.dispose();
         engineRef.current = null;
         setActiveEngine(null);
+        setIsInitialized(false);
       }
     };
   }, [canvasRef, engineType, onInitialized, onError]);
