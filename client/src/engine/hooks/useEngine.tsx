@@ -47,14 +47,33 @@ export function EngineProvider({
     if (initializingRef.current) return;
     if (engineRef.current) return;
 
+    let isMounted = true;
+
     const initEngine = async () => {
       initializingRef.current = true;
       try {
         console.log(`[EngineProvider] Creating ${engineType} engine...`);
         const newEngine = createRenderingEngine(engineType);
+        
+        // Check if we were unmounted during creation
+        if (!isMounted) {
+          console.log('[EngineProvider] Component unmounted during engine creation, disposing...');
+          newEngine.dispose();
+          return;
+        }
+        
         engineRef.current = newEngine;
 
         await newEngine.initialize(canvas);
+        
+        // Check if we were unmounted during initialization
+        if (!isMounted) {
+          console.log('[EngineProvider] Component unmounted during initialization, disposing...');
+          newEngine.dispose();
+          engineRef.current = null;
+          return;
+        }
+        
         newEngine.createScene('main');
         newEngine.setActiveScene('main');
         newEngine.startRenderLoop();
@@ -63,7 +82,7 @@ export function EngineProvider({
         setActiveEngine(newEngine);
         setIsInitialized(true);
 
-        console.log(`[EngineProvider] ${engineType} engine initialized`);
+        console.log(`[EngineProvider] ${engineType} engine initialized and running`);
         onInitialized?.();
       } catch (error) {
         console.error('[EngineProvider] Failed to initialize engine:', error);
@@ -76,7 +95,12 @@ export function EngineProvider({
     initEngine();
 
     return () => {
-      if (engineRef.current) {
+      console.log('[EngineProvider] Cleanup called, isMounted will be false');
+      isMounted = false;
+      // Don't dispose immediately - let the async function handle it
+      // Only dispose if engine was fully initialized
+      if (engineRef.current && isInitialized) {
+        console.log('[EngineProvider] Disposing engine on unmount');
         engineRef.current.dispose();
         engineRef.current = null;
         setActiveEngine(null);
