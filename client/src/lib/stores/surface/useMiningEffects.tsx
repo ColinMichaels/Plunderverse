@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { ResourceData } from '../../planetData';
-import * as THREE from 'three';
+
+interface Vec3 { x: number; y: number; z: number }
+interface CameraLike { position: Vec3 & { clone(): Vec3; lerp(v: Vec3, t: number): void; distanceTo(v: Vec3): number; copy(v: Vec3): void } }
 
 interface ScreenShakeConfig {
   intensity: number;
@@ -14,7 +16,7 @@ interface MiningEffectsState {
   isShaking: boolean;
   shakeConfig: ScreenShakeConfig | null;
   shakeStartTime: number;
-  originalCameraPosition: THREE.Vector3 | null;
+  originalCameraPosition: Vec3 | null;
   
   // Audio effects
   audioContext: AudioContext | null;
@@ -29,7 +31,7 @@ interface MiningEffectsState {
   triggerMiningImpact: (resource: ResourceData, progress: number) => void;
   startScreenShake: (config: ScreenShakeConfig) => void;
   stopScreenShake: () => void;
-  updateScreenShake: (camera: THREE.Camera, deltaTime: number) => void;
+  updateScreenShake: (camera: CameraLike, deltaTime: number) => void;
   
   // Dynamic audio
   playMiningSound: (resource: ResourceData, progress: number) => void;
@@ -316,7 +318,7 @@ export const useMiningEffects = create<MiningEffectsState>((set, get) => ({
     
     // Play the sound
     soundClone.play().catch(error => {
-      console.log('Mining sound play prevented:', error);
+
     });
     
     // Store reference for the audio system

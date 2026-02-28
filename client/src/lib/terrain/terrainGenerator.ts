@@ -1,5 +1,17 @@
-import * as THREE from 'three';
 import { NoiseGenerator, TerrainFeatures, PLANET_TERRAIN_CONFIGS, DEFAULT_TERRAIN_CONFIG, PlanetTerrainConfig } from './terrainGeneration';
+
+interface Vec3 { x: number; y: number; z: number }
+
+function vec3(x = 0, y = 0, z = 0): Vec3 { return { x, y, z }; }
+function subVectors(a: Vec3, b: Vec3): Vec3 { return { x: a.x - b.x, y: a.y - b.y, z: a.z - b.z }; }
+function crossVectors(a: Vec3, b: Vec3): Vec3 {
+  return { x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x };
+}
+function addVectors(a: Vec3, b: Vec3): Vec3 { return { x: a.x + b.x, y: a.y + b.y, z: a.z + b.z }; }
+function normalizeVec3(a: Vec3): Vec3 {
+  const len = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z) || 1;
+  return { x: a.x / len, y: a.y / len, z: a.z / len };
+}
 
 export interface TerrainData {
   vertices: Float32Array;
@@ -350,45 +362,33 @@ export class TerrainGenerator {
   }
 
   private calculateNormals(vertices: Float32Array, normals: Float32Array, segmentsX: number, segmentsZ: number): void {
-    const getVertex = (ix: number, iz: number): THREE.Vector3 => {
+    const getVertex = (ix: number, iz: number): Vec3 => {
       const index = iz * (segmentsX + 1) + ix;
-      return new THREE.Vector3(
-        vertices[index * 3],
-        vertices[index * 3 + 1],
-        vertices[index * 3 + 2]
-      );
+      return vec3(vertices[index * 3], vertices[index * 3 + 1], vertices[index * 3 + 2]);
     };
 
     for (let iz = 0; iz <= segmentsZ; iz++) {
       for (let ix = 0; ix <= segmentsX; ix++) {
         const index = iz * (segmentsX + 1) + ix;
-        const normal = new THREE.Vector3();
-
-        // Get neighboring vertices
+        let normal = vec3();
         const v0 = getVertex(ix, iz);
-        
-        // Calculate normal from surrounding faces
+
         if (ix > 0 && iz > 0) {
           const v1 = getVertex(ix - 1, iz);
           const v2 = getVertex(ix, iz - 1);
-          const edge1 = new THREE.Vector3().subVectors(v1, v0);
-          const edge2 = new THREE.Vector3().subVectors(v2, v0);
-          normal.add(new THREE.Vector3().crossVectors(edge1, edge2));
+          normal = addVectors(normal, crossVectors(subVectors(v1, v0), subVectors(v2, v0)));
         }
-        
+
         if (ix < segmentsX && iz < segmentsZ) {
           const v1 = getVertex(ix + 1, iz);
           const v2 = getVertex(ix, iz + 1);
-          const edge1 = new THREE.Vector3().subVectors(v1, v0);
-          const edge2 = new THREE.Vector3().subVectors(v2, v0);
-          normal.add(new THREE.Vector3().crossVectors(edge2, edge1));
+          normal = addVectors(normal, crossVectors(subVectors(v2, v0), subVectors(v1, v0)));
         }
 
-        normal.normalize();
-        
-        normals[index * 3] = normal.x;
-        normals[index * 3 + 1] = normal.y;
-        normals[index * 3 + 2] = normal.z;
+        const n = normalizeVec3(normal);
+        normals[index * 3] = n.x;
+        normals[index * 3 + 1] = n.y;
+        normals[index * 3 + 2] = n.z;
       }
     }
   }

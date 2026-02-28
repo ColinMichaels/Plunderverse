@@ -1,5 +1,6 @@
-// Legacy store exports for backward compatibility during transition
-// These will gradually be deprecated in favor of domain-based stores
+// Store barrel exports
+// PREFERRED: Use domain stores from client/src/domain/ for new code.
+// LEGACY: Stores marked @deprecated delegate to domain stores and will be removed in a future refactor.
 
 // Space stores
 export { useSolarSystem } from './space/useSolarSystem';
@@ -22,8 +23,10 @@ export { useWind } from './surface/useWind';
 export { useShooting } from './combat/useShooting';
 
 // Economy stores
-export { useInventory } from './economy/useInventory';
+/** @deprecated Use useCreditsStore from domain/economy/credits.store instead */
 export { useCredits } from './economy/useCredits';
+/** @deprecated Use useInventoryStore from domain/economy/inventory.store instead */
+export { useInventory } from './economy/useInventory';
 export { useMining } from './economy/useMining';
 export { useCrypto } from './economy/useCrypto';
 export { useMissions } from './economy/useMissions';
@@ -53,26 +56,20 @@ export { useRewards } from './ui/useRewards';
 // Debug stores
 export { useDebugTools } from './debug/useDebugTools';
 
-// Re-export new domain stores (preferred for new code)
+// Domain stores (PREFERRED for new code)
 export { useCreditsStore } from '../../domain/economy/credits.store';
 export { useInventoryStore } from '../../domain/economy/inventory.store';
 export { economyService } from '../../domain/economy/economy.service';
 
-// Re-export domain selectors for easier access
-export { 
-  useEconomySelectors, 
-  useTotalInventoryValue, 
-  useStorageInfo, 
+// Domain selectors
+export {
+  useEconomySelectors,
+  useTotalInventoryValue,
+  useStorageInfo,
   useCanAfford,
   useCreditsData,
-  useInventoryDisplayData 
+  useInventoryDisplayData
 } from '../../domain/economy/selectors';
 
-// Re-export domain events
+// Domain events
 export { economyEvents } from '../../domain/economy/events';
-
-// Equipment and Mining stores - these would be implemented next
-// export { useEquipmentStore } from '../domain/equipment/equipment.store';
-// export { equipmentService } from '../domain/equipment/equipment.service';
-// export { useMiningStore } from '../domain/mining/mining.store';
-// export { miningService } from '../domain/mining/mining.service';

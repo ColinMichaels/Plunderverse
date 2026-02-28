@@ -1,7 +1,4 @@
-import {Suspense, useEffect, useRef, useState} from "react";
-import {Canvas} from "@react-three/fiber";
-import {Bloom, DepthOfField, EffectComposer, Vignette,} from "@react-three/postprocessing";
-import {WebGLCheckWrapper} from "../shared/WebGLCheckWrapper";
+import {useEffect, useRef, useState} from "react";
 import {useGame} from "../../lib/stores/ui/useGame";
 import {useAuthStore} from "../../lib/stores/auth/useAuthStore";
 import {usePlayer} from "../../lib/stores/player/usePlayer";
@@ -20,12 +17,10 @@ import {HandbookContent} from "./HandbookContent";
 import {gameApi} from "../../services/gameApi";
 import {restoreGameState} from "../../utils/saveGame";
 import {AUDIO_CONFIG} from "../../lib/audioConfig";
-import {SolarSystemBackground} from "../space/SolarSystemBackground";
-import {SplashSolarSystem} from "../space/SplashSolarSystem";
+import {SplashStarfield} from "./SplashStarfield";
 import {
     AlertCircle,
     Award,
-    Camera,
     ChevronDown,
     ChevronUp,
     Coins,
@@ -47,7 +42,6 @@ import {
 export function EnhancedSplashScreen() {
   const [showHelp, setShowHelp] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [useFullSystem] = useState(true); // Enable full system for better preloading
   const [showTrailer, setShowTrailer] = useState(false);
   const [showGallery, setShowGallery] = useState(false);
   const [showVideos, setShowVideos] = useState(false);
@@ -59,14 +53,9 @@ export function EnhancedSplashScreen() {
   const [transitionSubtitle, setTransitionSubtitle] = useState("");
   const [transitionProgress, setTransitionProgress] = useState(0);
   const [isStatsExpanded, setIsStatsExpanded] = useState(false);
-  const [showCanvas, setShowCanvas] = useState(true); // Control Canvas visibility
-  const [cameraMode, setCameraMode] = useState<"simple" | "cinematic">(
-    "cinematic",
-  ); // Camera mode toggle
-  const [showDevelopmentNotice, setShowDevelopmentNotice] = useState(true); // Control dev notice visibility
-  const [showAccountMenu, setShowAccountMenu] = useState(false); // User account dropdown menu
-  const [showCinematicMenu, setShowCinematicMenu] = useState(false); // Cinematic sequence dropdown
-  const [selectedSequence, setSelectedSequence] = useState(0); // Selected cinematic sequence index
+  const [showCanvas, setShowCanvas] = useState(true);
+  const [showDevelopmentNotice, setShowDevelopmentNotice] = useState(true);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
 
   const { isAuthenticated, isGuest, user, logout } = useAuthStore();
   const { start } = useGame();
@@ -78,23 +67,6 @@ export function EnhancedSplashScreen() {
   const hasStartedGameRef = useRef(false);
 
   const gameVersion = "v0.8";
-
-  // Cinematic sequence options
-  const cinematicSequences = [
-    { name: "Mars Flyby", description: "Epic Mars flyby" },
-    { name: "Jupiter Orbital Cruise", description: "Cruise around Jupiter" },
-    {
-      name: "Saturn Dramatic Approach",
-      description: "Dramatic approach to Saturn",
-    },
-    { name: "System Overview", description: "Overview of inner solar system" },
-    { name: "Sun Skim", description: "Close sun skim" },
-    { name: "Venus to Earth", description: "Venus to Earth transition" },
-    { name: "Neptune Flyby", description: "Neptune distant view" },
-    { name: "Mercury Fast Pass", description: "Mercury fast pass" },
-    { name: "Earth Orbital Cruise", description: "Earth orbital cruise" },
-    { name: "System Pullback", description: "Cinematic system pullback" },
-  ];
 
   // Get player stats from stores
   const {
@@ -459,55 +431,10 @@ export function EnhancedSplashScreen() {
 
   return (
     <div className="fixed inset-0 bg-gray-950 flex items-center justify-center z-50 overflow-hidden">
-      {/* 3D Solar System Background - Only render when not transitioning */}
+      {/* Animated starfield background */}
       {showCanvas && (
         <div className="absolute inset-0 z-0">
-          <WebGLCheckWrapper
-            fallbackMessage="WebGL is required for the 3D background. You can still access the game menu."
-            showNavigation={false}
-          >
-            <Canvas
-              camera={{ position: [30, 10, 30], fov: 75 }}
-              style={{ background: "#000" }}
-              gl={{
-                antialias: true,
-                powerPreference: "high-performance",
-                preserveDrawingBuffer: false,
-                failIfMajorPerformanceCaveat: false,
-              }}
-            >
-              <Suspense fallback={null}>
-                {/* Use full solar system for better preloading if enabled */}
-                {useFullSystem ? (
-                  <SplashSolarSystem
-                    useFullComponents={true}
-                    cameraMode={cameraMode}
-                    selectedSequenceIndex={selectedSequence}
-                  />
-                ) : (
-                  <SolarSystemBackground />
-                )}
-                {/* Post-processing effects for sun glow and depth */}
-                <EffectComposer>
-                  <Bloom
-                    intensity={2.5}
-                    luminanceThreshold={0.4}
-                    luminanceSmoothing={0.9}
-                    radius={0.95}
-                    levels={8}
-                    mipmapBlur={true}
-                  />
-                  <DepthOfField
-                    focusDistance={0.01}
-                    focalLength={0.02}
-                    bokehScale={4}
-                    height={480}
-                  />
-                  <Vignette offset={0.3} darkness={0.4} />
-                </EffectComposer>
-              </Suspense>
-            </Canvas>
-          </WebGLCheckWrapper>
+          <SplashStarfield />
         </div>
       )}
 
@@ -1084,93 +1011,8 @@ export function EnhancedSplashScreen() {
         </div>
       )}
 
-      {/* Bottom Right Controls - Music Player and Camera Controls */}
+      {/* Bottom Right Controls - Music Player */}
       <div className="absolute bottom-4 right-4 z-30 flex items-end gap-3">
-        {/* Cinematic Sequence Selector - Only show when in cinematic mode */}
-        {cameraMode === "cinematic" && (
-          <div className="relative">
-            {/* Sequence Selector Button */}
-            <button
-              onClick={() => setShowCinematicMenu(!showCinematicMenu)}
-              className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-3 py-2
-                         hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group"
-              title="Select cinematic sequence"
-            >
-              <div className="flex items-center gap-2">
-                <Video className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
-                <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
-                  Scene {selectedSequence + 1}
-                </span>
-                <ChevronUp
-                  className={`w-4 h-4 text-cyan-400 group-hover:text-cyan-300 transition-transform duration-200 ${showCinematicMenu ? "rotate-180" : ""}`}
-                />
-              </div>
-            </button>
-
-            {/* Dropdown Menu - Opens upward */}
-            {showCinematicMenu && (
-              <div
-                className="absolute bottom-full right-0 mb-2 w-64 bg-black/90 backdrop-blur-sm border border-cyan-400/30 
-                              rounded-lg shadow-xl overflow-hidden max-h-96 overflow-y-auto"
-              >
-                {/* Menu Header */}
-                <div className="px-4 py-3 border-b border-cyan-400/20 bg-cyan-400/5 sticky top-0">
-                  <p className="text-xs text-cyan-400/70 uppercase tracking-wide">
-                    Cinematic Sequences
-                  </p>
-                </div>
-
-                {/* Sequence Options */}
-                <div className="py-1">
-                  {cinematicSequences.map((sequence, index) => (
-                    <button
-                      key={index}
-                      onClick={() => {
-                        setSelectedSequence(index);
-                        setShowCinematicMenu(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left text-sm transition-colors flex items-start gap-3
-                                 ${
-                                   selectedSequence === index
-                                     ? "bg-cyan-400/20 text-cyan-200 border-l-2 border-cyan-400"
-                                     : "text-cyan-300 hover:bg-cyan-400/10 hover:text-cyan-200"
-                                 }`}
-                    >
-                      <span className="text-xs text-cyan-400/70 font-mono mt-0.5 min-w-[1.5rem]">
-                        {index + 1}.
-                      </span>
-                      <div className="flex-1">
-                        <p className="font-medium">{sequence.name}</p>
-                        <p className="text-xs text-cyan-400/60 mt-0.5">
-                          {sequence.description}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Camera Mode Toggle */}
-        <button
-          onClick={() =>
-            setCameraMode(cameraMode === "cinematic" ? "simple" : "cinematic")
-          }
-          className="bg-black/60 backdrop-blur-sm border border-cyan-400/30 rounded-lg px-3 py-2
-                     hover:bg-black/80 hover:border-cyan-400/50 transition-all duration-300 group"
-          title={`Switch to ${cameraMode === "cinematic" ? "Simple" : "Cinematic"} camera`}
-        >
-          <div className="flex items-center gap-2">
-            <Camera className="w-4 h-4 text-cyan-400 group-hover:text-cyan-300" />
-            <span className="text-sm text-cyan-400 group-hover:text-cyan-300 font-medium">
-              {cameraMode === "cinematic" ? "Cinematic" : "Simple"}
-            </span>
-          </div>
-        </button>
-
-        {/* Music Player */}
         <MusicPlayer />
       </div>
 

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+interface Vec3 { x: number; y: number; z: number }
 
 // Simple seedable random number generator
 class SeededRandom {
@@ -17,7 +17,7 @@ class SeededRandom {
 // Improved Perlin/Simplex-like noise implementation
 export class NoiseGenerator {
   private permutation: number[];
-  private gradients3D: THREE.Vector3[];
+  private gradients3D: Vec3[];
 
   constructor(seed: number = 12345) {
     const rng = new SeededRandom(seed);
@@ -47,7 +47,7 @@ export class NoiseGenerator {
       const z = rng.next() * 2 - 1;
       const r = Math.sqrt(1 - z * z);
       this.gradients3D.push(
-        new THREE.Vector3(r * Math.cos(theta), r * Math.sin(theta), z)
+        { x: r * Math.cos(theta), y: r * Math.sin(theta), z }
       );
     }
   }

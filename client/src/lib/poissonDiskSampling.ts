@@ -1,7 +1,8 @@
-import * as THREE from 'three';
+interface Vec2 { x: number; y: number }
+interface Vec3 { x: number; y: number; z: number }
 
 export interface PoissonDiskSample {
-  position: THREE.Vector2;
+  position: Vec2;
   density: number; // 0.0 to 1.0 - affects object scale/count in this area
 }
 
@@ -11,7 +12,7 @@ export interface PoissonDiskOptions {
   minDistance: number;
   maxTries?: number;
   densityFunction?: (x: number, z: number) => number; // Returns 0.0 to 1.0
-  existingObjects?: Array<{ position: THREE.Vector3; radius: number }>;
+  existingObjects?: Array<{ position: Vec3; radius: number }>;
 }
 
 /**
@@ -28,7 +29,7 @@ export class PoissonDiskSampling {
   private gridRows: number;
   private grid: (PoissonDiskSample | null)[][];
   private densityFunction: (x: number, z: number) => number;
-  private existingObjects: Array<{ position: THREE.Vector3; radius: number }>;
+  private existingObjects: Array<{ position: Vec3; radius: number }>;
 
   constructor(options: PoissonDiskOptions) {
     this.width = options.width;
@@ -101,7 +102,7 @@ export class PoissonDiskSampling {
   private createSample(x: number, z: number): PoissonDiskSample {
     const density = this.densityFunction(x, z);
     return {
-      position: new THREE.Vector2(x, z),
+      position: { x, y: z },
       density: Math.max(0, Math.min(1, density))
     };
   }
@@ -162,7 +163,9 @@ export class PoissonDiskSampling {
           const neighbor = this.grid[checkZ][checkX];
           
           if (neighbor) {
-            const distance = sample.position.distanceTo(neighbor.position);
+            const dx = sample.position.x - neighbor.position.x;
+            const dy = sample.position.y - neighbor.position.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
             // Apply density-based distance modification
             const modifiedMinDistance = this.minDistance * 
               (1.0 - (sample.density * 0.3)); // Higher density allows closer packing
