@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { X, Navigation, MapPin, Compass, Rocket } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useSolarSystem } from '../../../lib/stores/space/useSolarSystem';
+import { useSolarSystem, vec3Distance } from '../../../lib/stores/space/useSolarSystem';
 import { useCreditsData } from '../../../domain/economy/selectors';
 import { useAutopilot } from '../../../lib/stores/navigation/useAutopilot';
 import { useRewards } from '../../../lib/stores/ui/useRewards';
@@ -34,7 +34,7 @@ export function NavigationPanel({ onClose }: NavigationPanelProps) {
         const planetX = Math.cos(angle) * planet.distance;
         const planetZ = Math.sin(angle) * planet.distance;
         const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
-        const distance = cameraPosition.distanceTo(planetPosition);
+        const distance = vec3Distance(cameraPosition, planetPosition);
 
         return {
           ...planet,
@@ -64,10 +64,8 @@ export function NavigationPanel({ onClose }: NavigationPanelProps) {
     if (spendCredits(autopilotCost)) {
       setSelectedPlanet(planet.name);
       
-      const approachDirection = cameraPosition
-        .clone()
-        .sub(planet.position)
-        .normalize();
+      const camVec = new THREE.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+      const approachDirection = camVec.sub(planet.position).normalize();
       const safeDistance = planet.size * 4;
       const targetPosition = planet.position
         .clone()

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAutopilot } from '../../lib/stores/navigation/useAutopilot';
-import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
+import { useSolarSystem, vec3Distance } from '../../lib/stores/space/useSolarSystem';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
 import { useLandedState } from '../../lib/stores/surface/useLandedState';
@@ -95,7 +95,7 @@ export const NavigationPanel: React.FC = () => {
     const updateDestinations = () => {
       const dests: DestinationInfo[] = planets.map(planet => {
         const planetPosition = calculatePlanetPosition(planet);
-        const distance = cameraPosition.distanceTo(planetPosition);
+        const distance = vec3Distance(cameraPosition, planetPosition);
         const speed = 5; // Base autopilot speed
         const eta = distance / speed;
         const fuelPerUnit = 0.1;
@@ -123,13 +123,13 @@ export const NavigationPanel: React.FC = () => {
   // Update current distance and speed to target (for autopilot)
   useEffect(() => {
     if (target && isActive) {
-      let lastDistance = cameraPosition.distanceTo(target);
+      let lastDistance = vec3Distance(cameraPosition, target);
       let lastTime = Date.now();
       
       const updateMetrics = () => {
         const currentTime = Date.now();
         const deltaTime = (currentTime - lastTime) / 1000;
-        const dist = cameraPosition.distanceTo(target);
+        const dist = vec3Distance(cameraPosition, target);
         const speed = Math.abs(lastDistance - dist) / deltaTime;
         
         setCurrentDistance(Math.round(dist));
@@ -180,8 +180,7 @@ export const NavigationPanel: React.FC = () => {
     }
 
     const planetPos = calculatePlanetPosition(planet);
-    const currentPos = new THREE.Vector3(shipPosition.x, shipPosition.y, shipPosition.z);
-    const distance = currentPos.distanceTo(planetPos);
+    const distance = vec3Distance(shipPosition, planetPos);
 
     const fuelCost = Math.ceil((distance / 100) * FUEL_COST_PER_100_UNITS);
     const fuelCostClamped = Math.min(fuelCost, 100);

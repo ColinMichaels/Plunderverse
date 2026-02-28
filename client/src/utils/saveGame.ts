@@ -1,7 +1,7 @@
 // Save Game State Serialization Helper
 // Collects and restores state from all Zustand stores
 
-import * as THREE from "three";
+
 import {
     useEquipment,
     usePlayer,
@@ -473,15 +473,15 @@ export function restoreGameState(gameState: GameStateData | any): void {
 
         if (stores.solarSystem.shipPosition) {
             const pos = stores.solarSystem.shipPosition;
-            solarState.setShipPosition(new THREE.Vector3(pos.x, pos.y, pos.z));
+            solarState.setShipPosition({ x: pos.x, y: pos.y, z: pos.z });
         }
         if (stores.solarSystem.shipRotation) {
             const rot = stores.solarSystem.shipRotation;
-            solarState.setShipRotation(new THREE.Euler(rot.x, rot.y, rot.z));
+            solarState.setShipRotation({ x: rot.x, y: rot.y, z: rot.z });
         }
         if (stores.solarSystem.shipVelocity) {
             const vel = stores.solarSystem.shipVelocity;
-            solarState.setShipVelocity(new THREE.Vector3(vel.x, vel.y, vel.z));
+            solarState.setShipVelocity({ x: vel.x, y: vel.y, z: vel.z });
         }
 
         solarState.setHasRestoredState(true);

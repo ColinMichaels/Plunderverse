@@ -6,7 +6,7 @@ import { useLandedState } from '../../lib/stores/surface/useLandedState';
 import { useMining } from '../../lib/stores/economy/useMining';
 import { useShooting } from '../../lib/stores/combat/useShooting';
 import { useEquipment } from '../../lib/stores/ship/useEquipment';
-import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
+import { useSolarSystem, vec3Distance } from '../../lib/stores/space/useSolarSystem';
 import { useHeatSystem } from '../../lib/stores/player/useHeatSystem';
 import { useWeaponSystems } from '../../lib/stores/combat/useWeaponSystems';
 import { Target, Crosshair } from 'lucide-react';
@@ -44,7 +44,7 @@ export function PrimaryControlsHUD() {
   
   // Calculate distance to autopilot target if active
   const distanceToTarget = autopilotTarget && cameraPosition
-    ? cameraPosition.distanceTo(autopilotTarget)
+    ? vec3Distance(cameraPosition, autopilotTarget)
     : null;
   
   // Track recent damage for visual feedback

@@ -107,7 +107,7 @@ export function CombatDebugPanel() {
   };
 
   const handleSpawnBasedOnHeat = () => {
-    enemies.spawnBasedOnHeat(cameraPosition);
+    enemies.spawnBasedOnHeat(new THREE.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z));
     toast.info('Heat-based spawn triggered', {
       description: `Heat level: ${heatSystem.currentHeat}`,
     });

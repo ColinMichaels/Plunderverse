@@ -1,5 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useRef } from "react";
+import * as THREE from "three";
 import { useAsteroids } from "../../lib/stores/space/useAsteroids";
 import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
 import { useShooting } from "../../lib/stores/combat/useShooting";
@@ -29,8 +30,10 @@ export function AsteroidField() {
     }
     previousAutopilotState.current = isAutopilotActive;
 
+    const camPos = new THREE.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+
     // Update asteroid positions
-    updateAsteroids(delta, cameraPosition);
+    updateAsteroids(delta, camPos);
 
     // Initial staggered spawn when scene loads (only once)
     if (!isAutopilotActive && !initialSpawnComplete.current && asteroids.length === 0) {
@@ -38,7 +41,7 @@ export function AsteroidField() {
       for (let i = 0; i < initialAsteroidCount; i++) {
         // Stagger spawn times between 0.2s and 1.5s
         const staggerDelay = 0.2 + (i * 0.4);
-        spawnRandomAsteroid(cameraPosition, staggerDelay);
+        spawnRandomAsteroid(camPos, staggerDelay);
       }
       initialSpawnComplete.current = true;
       console.log("Initial asteroids queued with staggered spawning");
@@ -50,7 +53,7 @@ export function AsteroidField() {
       if (currentTime - lastSpawnTime.current > 5 && asteroids.length < 8) { // Max 8 asteroids, spawn every 5 seconds
         // Use slight stagger delay for new spawns too (0.1 to 0.3 seconds)
         const staggerDelay = 0.1 + Math.random() * 0.2;
-        spawnRandomAsteroid(cameraPosition, staggerDelay);
+        spawnRandomAsteroid(camPos, staggerDelay);
         lastSpawnTime.current = currentTime;
       }
     }
@@ -76,7 +79,7 @@ export function AsteroidField() {
 
     // Check collisions between asteroids and ship
     asteroids.forEach(asteroid => {
-      const distance = cameraPosition.distanceTo(asteroid.position);
+      const distance = camPos.distanceTo(asteroid.position);
       const visualSize = asteroid.size * 0.15; // Match the visual scale from Asteroid.tsx
       if (distance < visualSize + 1) { // Ship collision radius adjusted for visual size
         // Ship takes damage

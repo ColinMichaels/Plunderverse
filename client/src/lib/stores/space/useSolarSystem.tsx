@@ -1,106 +1,93 @@
 import { create } from "zustand";
-import * as THREE from "three";
+
+export type Vec3 = { x: number; y: number; z: number };
+
+export function vec3Distance(a: Vec3, b: { x: number; y: number; z: number }): number {
+  const dx = a.x - b.x, dy = a.y - b.y, dz = a.z - b.z;
+  return Math.sqrt(dx * dx + dy * dy + dz * dz);
+}
 
 interface SolarSystemState {
-  // Persistent universe time tracking
   universeStartTime: number | null;
-  timeScale: number; // How much faster game time runs vs real time
-  accumulatedTime: number; // Total accumulated universe time in seconds
-  
-  // Scene-specific time (for local animations)
+  timeScale: number;
+  accumulatedTime: number;
+
   time: number;
-  
-  // Planet and landing state
+
   selectedPlanet: string | null;
   isLanding: boolean;
-  cameraPosition: THREE.Vector3;
+  cameraPosition: Vec3;
   distanceToTarget: number;
-  
-  // Ship state for save/load
-  shipPosition: THREE.Vector3;
-  shipRotation: THREE.Euler;
-  shipVelocity: THREE.Vector3;
-  hasRestoredState: boolean; // Flag to indicate if saved state was restored
-  
-  // Actions
+
+  shipPosition: Vec3;
+  shipRotation: Vec3;
+  shipVelocity: Vec3;
+  hasRestoredState: boolean;
+
   initializeUniverseTime: () => void;
   updateUniverseTime: (delta: number) => void;
   getUniverseTime: () => number;
   setTime: (time: number) => void;
   setSelectedPlanet: (planet: string | null) => void;
   setIsLanding: (landing: boolean) => void;
-  setCameraPosition: (position: THREE.Vector3) => void;
+  setCameraPosition: (position: Vec3) => void;
   setDistanceToTarget: (distance: number) => void;
-  setShipPosition: (position: THREE.Vector3) => void;
-  setShipRotation: (rotation: THREE.Euler) => void;
-  setShipVelocity: (velocity: THREE.Vector3) => void;
+  setShipPosition: (position: Vec3) => void;
+  setShipRotation: (rotation: Vec3) => void;
+  setShipVelocity: (velocity: Vec3) => void;
   setHasRestoredState: (restored: boolean) => void;
-  cleanup: () => void; // Clean up store state but preserve universe time
-  
-  // Engine-agnostic setters (accept plain {x,y,z} objects for Babylon.js compatibility)
+  cleanup: () => void;
+
   setCameraPositionRaw: (x: number, y: number, z: number) => void;
   setShipPositionRaw: (x: number, y: number, z: number) => void;
   setShipRotationRaw: (x: number, y: number, z: number) => void;
   setShipVelocityRaw: (x: number, y: number, z: number) => void;
 }
 
+const INITIAL_POS: Vec3 = { x: 0, y: 10, z: 50 };
+const ZERO_VEC3: Vec3 = { x: 0, y: 0, z: 0 };
+
 export const useSolarSystem = create<SolarSystemState>((set, get) => ({
-  // Persistent universe time - survives scene changes
   universeStartTime: null,
-  timeScale: 1, // 1 real second = 1 game second for realistic orbital periods
+  timeScale: 1,
   accumulatedTime: 0,
-  
-  // Local scene time
+
   time: 0,
   selectedPlanet: null,
   isLanding: false,
-  cameraPosition: new THREE.Vector3(0, 10, 50),
+  cameraPosition: { ...INITIAL_POS },
   distanceToTarget: 0,
-  
-  // Ship state for save/load
-  shipPosition: new THREE.Vector3(0, 10, 50),
-  shipRotation: new THREE.Euler(0, 0, 0),
-  shipVelocity: new THREE.Vector3(0, 0, 0),
+
+  shipPosition: { ...INITIAL_POS },
+  shipRotation: { ...ZERO_VEC3 },
+  shipVelocity: { ...ZERO_VEC3 },
   hasRestoredState: false,
-  
-  // Initialize universe time on first game start
+
   initializeUniverseTime: () => {
     const state = get();
     if (!state.universeStartTime) {
       const now = Date.now();
-      set({
-        universeStartTime: now,
-      });
+      set({ universeStartTime: now });
       console.log("[useSolarSystem] Universe time initialized at", now);
     }
   },
-  
-  // Update universe time based on delta
+
   updateUniverseTime: (delta: number) => {
     const state = get();
-    const scaledDelta = delta * state.timeScale;
-    set({
-      accumulatedTime: state.accumulatedTime + scaledDelta
-    });
+    set({ accumulatedTime: state.accumulatedTime + delta * state.timeScale });
   },
-  
-  // Get the current universe time (in seconds)
+
   getUniverseTime: () => {
     const state = get();
-    
-    // If not initialized, initialize now
     if (!state.universeStartTime) {
       state.initializeUniverseTime();
       return 0;
     }
-    
-    // Return accumulated time (already scaled)
     return state.accumulatedTime;
   },
-  
+
   setTime: (time) => set({ time }),
   setSelectedPlanet: (planet) => {
-    // Explicitly prevent sun from being selected
     if (planet === "Sun") {
       console.log("[useSolarSystem] Prevented Sun from being selected");
       return;
@@ -108,38 +95,29 @@ export const useSolarSystem = create<SolarSystemState>((set, get) => ({
     set({ selectedPlanet: planet });
   },
   setIsLanding: (landing) => set({ isLanding: landing }),
-  setCameraPosition: (position) => set({ cameraPosition: position.clone() }),
+  setCameraPosition: (position) => set({ cameraPosition: { x: position.x, y: position.y, z: position.z } }),
   setDistanceToTarget: (distance) => set({ distanceToTarget: distance }),
-  setShipPosition: (position) => set({ shipPosition: position.clone() }),
-  setShipRotation: (rotation) => set({ shipRotation: rotation.clone() }),
-  setShipVelocity: (velocity) => set({ shipVelocity: velocity.clone() }),
+  setShipPosition: (position) => set({ shipPosition: { x: position.x, y: position.y, z: position.z } }),
+  setShipRotation: (rotation) => set({ shipRotation: { x: rotation.x, y: rotation.y, z: rotation.z } }),
+  setShipVelocity: (velocity) => set({ shipVelocity: { x: velocity.x, y: velocity.y, z: velocity.z } }),
   setHasRestoredState: (restored) => set({ hasRestoredState: restored }),
-  
-  // Engine-agnostic setters for Babylon.js compatibility
-  setCameraPositionRaw: (x, y, z) => set({ cameraPosition: new THREE.Vector3(x, y, z) }),
-  setShipPositionRaw: (x, y, z) => set({ shipPosition: new THREE.Vector3(x, y, z) }),
-  setShipRotationRaw: (x, y, z) => set({ shipRotation: new THREE.Euler(x, y, z) }),
-  setShipVelocityRaw: (x, y, z) => set({ shipVelocity: new THREE.Vector3(x, y, z) }),
-  
+
+  setCameraPositionRaw: (x, y, z) => set({ cameraPosition: { x, y, z } }),
+  setShipPositionRaw: (x, y, z) => set({ shipPosition: { x, y, z } }),
+  setShipRotationRaw: (x, y, z) => set({ shipRotation: { x, y, z } }),
+  setShipVelocityRaw: (x, y, z) => set({ shipVelocity: { x, y, z } }),
+
   cleanup: () => {
     console.log("[useSolarSystem] Cleanup: Preserving universe time, resetting scene state");
-    
-    // Preserve universe time but reset everything else
     set({
-      // Keep universe time running
-      // universeStartTime: preserved
-      // timeScale: preserved
-      // accumulatedTime: preserved
-      
-      // Reset scene-specific state
       time: 0,
       selectedPlanet: null,
       isLanding: false,
-      cameraPosition: new THREE.Vector3(0, 10, 50),
+      cameraPosition: { ...INITIAL_POS },
       distanceToTarget: 0,
-      shipPosition: new THREE.Vector3(0, 10, 50),
-      shipRotation: new THREE.Euler(0, 0, 0),
-      shipVelocity: new THREE.Vector3(0, 0, 0),
+      shipPosition: { ...INITIAL_POS },
+      shipRotation: { ...ZERO_VEC3 },
+      shipVelocity: { ...ZERO_VEC3 },
       hasRestoredState: false,
     });
   }

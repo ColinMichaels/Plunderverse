@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSolarSystem } from "../../lib/stores/space/useSolarSystem";
+import { useSolarSystem, vec3Distance } from "../../lib/stores/space/useSolarSystem";
 import { useCreditsData } from "../../domain/economy/selectors";
 import { useShipStatus } from "../../lib/stores/ship/useShipStatus";
 import { useEquipment } from "../../lib/stores/ship/useEquipment";
@@ -57,7 +57,7 @@ export function CockpitHUD() {
       const planetX = Math.cos(angle) * planet.distance;
       const planetZ = Math.sin(angle) * planet.distance;
       const planetPosition = new THREE.Vector3(planetX, 0, planetZ);
-      const distance = cameraPosition.distanceTo(planetPosition);
+      const distance = vec3Distance(cameraPosition, planetPosition);
 
       return {
         ...planet,
@@ -98,12 +98,9 @@ export function CockpitHUD() {
       setSelectedPlanet(planet.name);
       setActivePanel("none");
 
-      // Calculate safe approach position near the planet - closer for easier landing
-      const approachDirection = cameraPosition
-        .clone()
-        .sub(planet.position)
-        .normalize();
-      const safeDistance = planet.size * 4; // Closer distance for easier landing
+      const camVec = new THREE.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+      const approachDirection = camVec.sub(planet.position).normalize();
+      const safeDistance = planet.size * 4;
       const targetPosition = planet.position
         .clone()
         .add(approachDirection.multiplyScalar(safeDistance));

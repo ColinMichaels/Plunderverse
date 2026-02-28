@@ -65,13 +65,15 @@ export function EnemyField() {
     // Don't update anything if the game is paused
     if (isPaused) return;
     
+    const camPos = new THREE.Vector3(cameraPosition.x, cameraPosition.y, cameraPosition.z);
+    
     // Update enemy AI
-    updateEnemies(delta, cameraPosition);
+    updateEnemies(delta, camPos);
     
     // Spawn enemies based on heat (check every 5 seconds)
     const now = Date.now();
     if (!isAutopilotActive && now - lastSpawnCheck.current > 5000) {
-      spawnBasedOnHeat(cameraPosition);
+      spawnBasedOnHeat(camPos);
       lastSpawnCheck.current = now;
     }
     
@@ -177,14 +179,14 @@ export function EnemyField() {
     enemies.forEach(enemy => {
       if (enemy.isDying) return;
       
-      const distance = cameraPosition.distanceTo(enemy.position);
+      const distance = camPos.distanceTo(enemy.position);
       if (distance < enemy.scale + 1.5) {
         // Collision damage
         takeDamage(20, "Collision with enemy ship");
         damageEnemy(enemy.id, 30);
         
         // Push enemy away
-        const pushDirection = enemy.position.clone().sub(cameraPosition).normalize();
+        const pushDirection = enemy.position.clone().sub(camPos).normalize();
         enemy.position.add(pushDirection.multiplyScalar(5));
       }
     });

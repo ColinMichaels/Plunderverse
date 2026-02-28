@@ -128,6 +128,18 @@ desktop and the mobile UI overlays on top:
 
 ## Recent Changes
 
+### 2026-02-28: Vec3 Migration in useSolarSystem (Safari iOS crash fix)
+- Fixed: `useSolarSystem` no longer stores `THREE.Vector3`/`THREE.Euler` in Zustand state
+- Changed: `cameraPosition`, `shipPosition`, `shipVelocity` → plain `Vec3 = {x,y,z}` objects
+- Changed: `shipRotation` → plain `Vec3` (was `THREE.Euler` with getter-based x/y/z)
+- Added: `vec3Distance(a, b)` helper exported from `useSolarSystem` — replaces `.distanceTo()`
+- Updated callers: `CockpitHUD`, `PrimaryControlsHUD`, `NavigationPanel` (desktop + mobile),
+  `EnemyField`, `AsteroidField`, `CombatDebugPanel`, `FastTravelMenu`, `saveGame.ts`
+- Why: `THREE.Euler` uses getter-defined `x/y/z` properties; Safari iOS JavaScriptCore's
+  `JSON.stringify` can fail on cyclic getter chains — this caused the `EngineErrorBoundary`
+  crash on real mobile devices when the Babylon canvas first mounted
+- Removed THREE import from `saveGame.ts` (no longer needed)
+
 ### 2026-02-28: Mobile Touch Fix + Regression Review
 - Fixed: Babylon canvas now renders on BOTH mobile and desktop (was mobile-only dashboard before)
 - Fixed: `MobileHUD` (ActionBar, ControlPanel, navigation panels) now renders in space flight view
