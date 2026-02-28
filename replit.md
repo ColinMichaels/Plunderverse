@@ -106,14 +106,41 @@ All sounds managed through `useAudio` hook with category-based volume control:
 ## Database
 Use `npm run db:push` for schema migrations. Never write raw SQL migrations.
 
+## Mobile Architecture
+
+On mobile (`effectivePlatformType === "mobile"`), the Babylon canvas renders just like
+desktop and the mobile UI overlays on top:
+
+- **In space** (`!isLanded`): Babylon canvas (BabylonSolarSystem + BabylonCombatScene) renders
+  behind a transparent `MobileHUD` overlay. `TouchPropulsionControls` wraps the canvas to
+  handle hold-to-thrust and drag-to-look.
+- **At station** (`isLanded`): `StationDashboard` covers the canvas (full-screen).
+- **Mini-game**: `MobileMinigame` (Phaser) covers the canvas (full-screen).
+- **Splash**: Phaser-based `MobileSplashScene` covers everything (full-screen).
+
+`useInput.isMobile` is derived from `ontouchstart`, `maxTouchPoints`, or `window.innerWidth < 768`
+(not UA sniffing), so Chrome DevTools mobile simulation works correctly.
+
 ## Improvement Roadmap
-1. **Complete Babylon Migration**: Port combat visuals and PlanetSurfaceScene to Babylon
-2. **Split App.tsx**: Extract scene management, cloud sync into providers
-3. **Domain Store Migration**: Move remaining legacy stores to domain pattern
-4. **Performance**: Add scene lifecycle manager for resource cleanup
-5. **Remove Three.js**: Clean up Three.js dependencies after full migration
+1. **Domain Store Migration**: Move remaining legacy stores to domain pattern
+2. **Performance**: Add scene lifecycle manager for resource cleanup
+3. **Remove Three.js**: Clean up Three.js dependencies after full R3F migration (minigames remain)
 
 ## Recent Changes
+
+### 2026-02-28: Mobile Touch Fix + Regression Review
+- Fixed: Babylon canvas now renders on BOTH mobile and desktop (was mobile-only dashboard before)
+- Fixed: `MobileHUD` (ActionBar, ControlPanel, navigation panels) now renders in space flight view
+- Fixed: `isMobile` in `useInput` now uses touch API + viewport width instead of User-Agent only
+- Fixed: `MobileHUD` guard `if (!isMobile) return null` removed (rendered only inside mobile path)
+- Fixed: AudioContext unhandledrejection suppressed before Replit error modal via capture phase listener
+- Extracted: `CloudSyncProvider` from App.tsx; App.tsx reduced to ~250 lines
+- Replaced: R3F Canvas splash screen background with Canvas2D `SplashStarfield`
+- Deleted: Dead files — CameraController.tsx (1509 lines), WarpingEffect.tsx, SolarSystem.tsx,
+  PlanetSurfaceScene.tsx (1643 lines), SurfaceScatter.tsx, CameraShake.tsx, ResourceManagerExample.tsx
+- Added: `EngineErrorBoundary` wrapping BabylonCanvasWithInit in App.tsx
+- Added: `/docs` folder with ARCHITECTURE, TODOS, FUTURE_FEATURES, README docs
+- Marked: Legacy stores with `@deprecated` JSDoc in `lib/stores/index.ts`
 
 ### 2026-01-24: Babylon.js Unified Scene Migration
 - Created BabylonCombatScene for enemies, projectiles, explosions in Babylon.js

@@ -80,6 +80,7 @@ function GameContent() {
   }, [platformType]);
 
   const effectivePlatformType = forceMobile ? "mobile" : platformType;
+  const isMobilePlatform = effectivePlatformType === "mobile";
 
   // Create a stable keyboard map using a ref to prevent infinite loops
   const keyboardMapRef = useRef(useSettings.getState().getKeyboardMap());
@@ -168,6 +169,8 @@ function GameContent() {
     setShowCanvas(true);
   }, []);
 
+  const showBabylonCanvas = (phase === "playing" || phase === "ended") && showCanvas;
+
   return (
     <UILayoutProvider>
       <div
@@ -188,43 +191,50 @@ function GameContent() {
         )}
 
         {!showBabylonTest && (
-          effectivePlatformType === "mobile" ? (
-            <MobileGame />
-          ) : (
-            <>
-              {phase === "splash" && <EnhancedSplashScreen />}
+          <>
+            {/* Desktop splash screen (mobile handles its own Phaser splash inside MobileGame) */}
+            {!isMobilePlatform && phase === "splash" && <EnhancedSplashScreen />}
 
-              {(phase === "playing" || phase === "ended") && showCanvas && (
+            {/* Babylon canvas — rendered on ALL platforms when playing.
+                On mobile it sits behind the MobileHUD transparent overlay.
+                On desktop it sits behind GameUI. */}
+            {showBabylonCanvas && (
+              <TouchPropulsionControls>
+                <WebGLCheckWrapper fallbackMessage="WebGL is required to render the game.">
+                  <EngineErrorBoundary>
+                    <BabylonCanvasWithInit
+                      className="absolute inset-0"
+                      onReady={() => debugLog('babylon', 'Engine ready')}
+                      onError={(err) => debugError('babylon', 'Engine error:', err)}
+                    >
+                      {!isLanded ? (
+                        <>
+                          <BabylonSolarSystem />
+                          <BabylonCombatScene />
+                        </>
+                      ) : (
+                        <BabylonSurfaceScene />
+                      )}
+                    </BabylonCanvasWithInit>
+                  </EngineErrorBoundary>
+                </WebGLCheckWrapper>
+              </TouchPropulsionControls>
+            )}
+
+            {/* Platform-specific UI overlay */}
+            {isMobilePlatform ? (
+              <MobileGame />
+            ) : (
+              showBabylonCanvas && (
                 <>
-                  <TouchPropulsionControls>
-                    <WebGLCheckWrapper fallbackMessage="WebGL is required to render the game.">
-                      <EngineErrorBoundary>
-                        <BabylonCanvasWithInit
-                          className="absolute inset-0"
-                          onReady={() => debugLog('babylon', 'Engine ready')}
-                          onError={(err) => debugError('babylon', 'Engine error:', err)}
-                        >
-                          {!isLanded ? (
-                            <>
-                              <BabylonSolarSystem />
-                              <BabylonCombatScene />
-                            </>
-                          ) : (
-                            <BabylonSurfaceScene />
-                          )}
-                        </BabylonCanvasWithInit>
-                      </EngineErrorBoundary>
-                    </WebGLCheckWrapper>
-                  </TouchPropulsionControls>
-
                   <GameUI />
                   <PatrolEncounter />
                   <TakeoffControls />
                   <HintModal />
                 </>
-              )}
-            </>
-          )
+              )
+            )}
+          </>
         )}
 
         {import.meta.env.DEV && <MissionDebugPanel />}

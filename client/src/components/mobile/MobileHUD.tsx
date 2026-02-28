@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { X, Info, Navigation, Zap, Settings, Target, Shield, Fuel } from 'lucide-react';
 import { AnimatePresence } from 'framer-motion';
-import { useInput } from '../../stores/useInput';
 import { useMobileLayout } from '../../stores/useMobileLayout';
 import { useSolarSystem } from '../../lib/stores/space/useSolarSystem';
 import { useShipStatus } from '../../lib/stores/ship/useShipStatus';
@@ -21,7 +20,6 @@ import { WantedLevelIndicator } from '../ui/WantedLevelIndicator';
 type ActivePanel = 'none' | 'navigation' | 'status' | 'missions' | 'settings';
 
 export function MobileHUD() {
-  const { isMobile } = useInput();
   const { config, isCleanViewMode } = useMobileLayout();
   const [showInstructions, setShowInstructions] = useState(true);
   const [activePanel, setActivePanel] = useState<ActivePanel>('none');
@@ -45,8 +43,6 @@ export function MobileHUD() {
     return 'bg-red-400';
   };
 
-  if (!isMobile) return null;
-  
   if (isLanded) return null;
 
   const openPanel = (panel: ActivePanel) => {

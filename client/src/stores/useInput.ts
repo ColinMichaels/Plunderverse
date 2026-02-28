@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 
+function detectMobile(): boolean {
+  return (
+    'ontouchstart' in window ||
+    navigator.maxTouchPoints > 0 ||
+    window.innerWidth < 768
+  );
+}
+
 export interface InputState {
   // Input actions
   look: (delta: { x: number; y: number }) => void;
@@ -17,6 +25,7 @@ export interface InputState {
   
   // Mobile state
   isMobile: boolean;
+  setMobile: (mobile: boolean) => void;
   isDragging: boolean;
   setDragging: (dragging: boolean) => void;
 }
@@ -36,11 +45,19 @@ export const useInput = create<InputState>((set) => ({
   isMouseSteering: false,
   setMouseSteering: (steering: boolean) => set({ isMouseSteering: steering }),
   
-  // Mobile detection
-  isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+  // Mobile detection — covers real devices, Chrome DevTools simulation, and small viewports
+  isMobile: detectMobile(),
+  setMobile: (mobile: boolean) => set({ isMobile: mobile }),
   isDragging: false,
   setDragging: (dragging: boolean) => set({ isDragging: dragging }),
 }));
+
+// Keep isMobile in sync with viewport size changes (handles DevTools simulation toggle)
+if (typeof window !== 'undefined') {
+  window.addEventListener('resize', () => {
+    useInput.setState({ isMobile: detectMobile() });
+  });
+}
 
 // Helper to bind input handlers from game components
 export const bindInputHandlers = (handlers: {
