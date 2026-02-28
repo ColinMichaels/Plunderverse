@@ -56,7 +56,9 @@ export class ParrotSpeechService {
 
         const unlock = async () => {
             try {
-                await this.audioContext?.resume?.();
+                if (this.audioContext && this.audioContext.state !== 'closed') {
+                    await this.audioContext.resume();
+                }
             } catch {
             }
             // Trigger a no-op utterance to satisfy autoplay policies in some UAs
@@ -156,9 +158,8 @@ export class ParrotSpeechService {
         this.lastSpeakAt = now;
 
         // Resume AudioContext on user interaction devices (mobile/safari autoplay policies)
-        try {
-            this.audioContext?.resume?.();
-        } catch {
+        if (this.audioContext && this.audioContext.state !== 'closed') {
+            this.audioContext.resume().catch(() => {});
         }
 
         // Cancel any current utterance cleanly
