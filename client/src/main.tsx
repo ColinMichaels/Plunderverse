@@ -23,14 +23,16 @@ import "./index.css";
 //   }, 3000);
 // }
 
-// Suppress known benign AudioContext errors originating from Howler.js when the
-// audio context is already closed (browser autoplay policy or page visibility).
+// Suppress known benign AudioContext errors from Howler.js (closed audio context).
+// capture:true runs BEFORE the Replit runtime-error-modal plugin's bubble listener.
+// stopImmediatePropagation prevents the error modal from ever receiving the event.
 window.addEventListener('unhandledrejection', (event) => {
   const msg = (event?.reason?.message ?? '').toLowerCase();
   if (msg.includes('audiocontext') || msg.includes('cannot suspend') || msg.includes('cannot resume')) {
     event.preventDefault();
+    event.stopImmediatePropagation();
   }
-});
+}, true);
 
 // Add console log to verify script is running
 console.log('[Main] React app starting...');
